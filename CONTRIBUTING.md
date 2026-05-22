@@ -42,11 +42,22 @@ node esbuild.js        # Bundle — outputs to dist/ and media/
 | `src/summarizers/` | Per-agent span → session summarizers |
 | `src/otlpCollector.ts` | OTLP/HTTP ingestion for the VS Code extension |
 
+## Branching and commit conventions
+
+**Branch naming:** `feat/<slug>` for new features, `fix/<slug>` for bug fixes. Branch from `main`; delete after merge.
+
+**Commit format:** [Conventional Commits](https://www.conventionalcommits.org/) — `type(scope): imperative subject`. Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`. Keep each commit a single logical unit.
+
+**Merging:** PRs are squash-merged into `main` so the history stays one-line-per-change readable.
+
+**Releases:** bump `version` in `package.json` and add a `CHANGELOG.md` entry in the same PR. After merge, tag `main` with `vX.Y.Z`.
+
 ## Submitting a pull request
 
-1. Fork the repo and create a feature branch
+1. Fork the repo and create a branch (`feat/<slug>` or `fix/<slug>`)
 2. Make your changes and verify `pnpm run check-types && pnpm run lint` pass
-3. Open a PR with a clear description of what changed and why
+3. Bump the version and update `CHANGELOG.md` if your change is user-facing
+4. Open a PR with a clear description of what changed and why; the PR title should follow Conventional Commits format
 
 Please keep PRs focused on a single change. Large refactors should be discussed in an issue first.
 
