@@ -58,6 +58,12 @@ export class OtlpCollector {
         const body = Buffer.concat(chunks).toString('utf-8')
         const bodyLen = body.length
         
+        if (req.method === 'GET' && req.url === '/agentlens/plugin') {
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ agentlens: true, kind: 'plugin' }))
+          return
+        }
+
         if (req.method !== 'POST') {
           this.log(req.method ?? '?', req.url ?? '/', 200, bodyLen, 'ignored (non-POST)')
           res.writeHead(200)
@@ -96,7 +102,9 @@ export class OtlpCollector {
     })
 
     this.server.on('error', (err) => {
-      this.output.appendLine(`[OTLP] ERR server: ${err.message}`)
+      if ((err as NodeJS.ErrnoException).code !== 'EADDRINUSE') {
+        this.output.appendLine(`[OTLP] ERR server: ${err.message}`)
+      }
     })
     
     await new Promise<void>((resolve, reject) => {

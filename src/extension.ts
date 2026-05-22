@@ -1,3 +1,4 @@
+import * as http from 'http'
 import * as vscode from 'vscode'
 import { OtlpCollector } from './otlpCollector'
 import { SessionStore } from './sessionStore'
@@ -8,6 +9,35 @@ import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } fro
 let collector: OtlpCollector | undefined
 let store: SessionStore | undefined
 let outputChannel: vscode.OutputChannel | undefined
+
+function probePort(port: number, path: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const req = http.get(`http://127.0.0.1:${port}${path}`, (res) => {
+      const chunks: Buffer[] = []
+      res.on('data', (chunk: Buffer) => chunks.push(chunk))
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(Buffer.concat(chunks).toString()) as Record<string, unknown>
+          resolve(json.agentlens === true)
+        } catch {
+          resolve(false)
+        }
+      })
+    })
+    req.on('error', () => resolve(false))
+    req.setTimeout(1000, () => { req.destroy(); resolve(false) })
+  })
+}
+
+async function detectPortOwner(port: number): Promise<'plugin' | 'standalone' | 'foreign'> {
+  const [isPlugin, isStandalone] = await Promise.all([
+    probePort(port, '/agentlens/plugin'),
+    probePort(port, '/agentlens/standalone'),
+  ])
+  if (isPlugin) return 'plugin'
+  if (isStandalone) return 'standalone'
+  return 'foreign'
+}
 
 export async function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel('AgentLens')
@@ -33,7 +63,23 @@ export async function activate(context: vscode.ExtensionContext) {
     await collector.start()
   } catch (err) {
     collectorFailed = true
-    outputChannel.appendLine(`Failed to start OTLP collector on port ${port}: ${err}`)
+    if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
+      const owner = await detectPortOwner(port)
+      if (owner === 'standalone') {
+        outputChannel.appendLine(`Port ${port} is in use by the AgentLens standalone server — change agentLens.otlpPort`)
+        vscode.window.showErrorMessage(
+          `AgentLens: Port ${port} is already in use by the AgentLens standalone server. Change the agentLens.otlpPort setting to use a different port.`
+        )
+      } else if (owner === 'foreign') {
+        outputChannel.appendLine(`Port ${port} is in use by an unknown process — change agentLens.otlpPort`)
+        vscode.window.showErrorMessage(
+          `AgentLens: Port ${port} is already in use by another application. Change the agentLens.otlpPort setting to use a different port.`
+        )
+      }
+      // owner === 'plugin': another VSCode window has it — silent fallback, existing behavior
+    } else {
+      outputChannel.appendLine(`Failed to start OTLP collector on port ${port}: ${err}`)
+    }
     collector = undefined
   }
 
@@ -66,8 +112,8 @@ export async function activate(context: vscode.ExtensionContext) {
   // Register sidebar webview
   const provider = new SidebarPanel(store, context.extensionUri)
   if (collectorFailed) {
-    const errMsg = `Port ${port} is already in use. No telemetry will be collected. Change agentLens.otlpPort in settings and reload.`
-    provider.setCollectorError(errMsg)
+    const pollTimer = setInterval(() => store!.syncFromGlobalState(), 2000)
+    context.subscriptions.push({ dispose: () => clearInterval(pollTimer) })
   }
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
@@ -159,10 +205,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
   function updateStatusBar() {
     if (collectorFailed) {
-      statusBar.text = '$(warning) AgentLens — port in use'
-      statusBar.color = new vscode.ThemeColor('statusBarItem.warningForeground')
-      statusBar.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-      statusBar.tooltip = `AgentLens collector could not start — port ${port} is in use`
+      statusBar.text = '$(graph) AgentLens — syncing'
+      statusBar.color = undefined
+      statusBar.backgroundColor = undefined
+      statusBar.tooltip = `AgentLens is syncing from the collector running in another window`
     } else {
       statusBar.text = '$(graph) AgentLens'
       statusBar.color = undefined
@@ -175,14 +221,11 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(store.onUpdate(updateStatusBar))
 
   if (collectorFailed) {
-    vscode.window.showErrorMessage(
-      `AgentLens: Port ${port} is already in use — no telemetry will be collected.`,
-      'Dismiss'
-    )
+    outputChannel.appendLine(`AgentLens syncing — collector already running in another window`)
   } else {
     vscode.window.showInformationMessage(`AgentLens active — listening on port ${port}`)
+    outputChannel.appendLine(`AgentLens active — OTLP collector listening on port ${port}`)
   }
-  outputChannel.appendLine(`AgentLens active — OTLP collector listening on port ${port}`)
   outputChannel.show(true)
 
   // Fire-and-forget: notification must not block plugin registration above

@@ -918,6 +918,11 @@ const uiServer = http.createServer((req, res) => {
 // ── OTLP server ───────────────────────────────────────────────────────────────
 
 const otlpServer = http.createServer((req, res) => {
+  if (req.method === 'GET' && req.url === '/agentlens/standalone') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ agentlens: true, kind: 'standalone' }))
+    return
+  }
   if (req.method !== 'POST') { res.writeHead(200); res.end(); return }
   const chunks: Buffer[] = []
   req.on('data', (c: Buffer) => chunks.push(c))

@@ -134,6 +134,14 @@ export class SessionStore {
   getSpans() { return this.spans }
   export() { return { summary: this.summary, spans: this.spans } }
   
+  syncFromGlobalState() {
+    const saved = this.context.globalState.get<Span[]>('agentLens.spans', [])
+    if (saved.length === this.spans.length) { return }
+    this.spans = saved
+    this.recomputeSummary()
+    this.notifyUpdate()
+  }
+
   clear() {
     this.spans = []
     this.summary = this.emptySummary()

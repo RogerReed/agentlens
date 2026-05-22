@@ -2,6 +2,13 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.1.1] — 2026-05-22
+
+### Fixed
+
+- Port conflict detection now distinguishes between another AgentLens VS Code window (silent fallback with cross-window sync), the AgentLens standalone server (error with specific message), and an unrelated process (error with instruction to change `agentLens.otlpPort`)
+- Plugin and standalone servers now expose fingerprint endpoints (`/agentlens/plugin` and `/agentlens/standalone`) so each can identify the other
+
 ## [0.1.0] — 2026-05-21
 
 ### Added
