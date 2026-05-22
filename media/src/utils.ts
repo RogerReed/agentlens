@@ -1,0 +1,433 @@
+import type { Span, SpanAttribute, SpanTreeNode, SessionSummaryCard } from './types'
+import { sessionSummary, displaySessions, agentFilteredSessions, sessionLimit } from './state'
+
+// ── HTML escape ───────────────────────────────────────────────────────────────
+
+export function esc(s: unknown): string {
+  if (!s) return ''
+  const d = document.createElement('div')
+  d.textContent = String(s)
+  return d.innerHTML
+}
+
+export function syntaxHighlightJson(jsonStr: string): string {
+  return esc(jsonStr)
+    .replace(/("(?:\\.|[^"\\])*")\s*:/g, '<span class="json-key">$1</span>:')
+    .replace(/:\s*("(?:\\.|[^"\\])*")/g, (_m, val) => ': <span class="json-string">' + val + '</span>')
+    .replace(/:\s*(\d+(?:\.\d+)?)/g, ': <span class="json-number">$1</span>')
+    .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>')
+    .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>')
+}
+
+// ── Number / time formatters ──────────────────────────────────────────────────
+
+export function nanoToMs(n: string | number | undefined): number {
+  try { return Number(BigInt(n ?? 0) / BigInt(1000000)) }
+  catch { return parseInt(String(n)) / 1000000 || 0 }
+}
+
+export function timestampToMs(value: string | number | undefined): number {
+  if (value === undefined || value === null || value === '') return 0
+  if (typeof value === 'number') return value
+  const raw = String(value)
+  if (/^\d+$/.test(raw)) return nanoToMs(raw)
+  const parsed = Date.parse(raw)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+export function sessionStartMs(session: Pick<SessionSummaryCard, 'startTime'>): number {
+  return timestampToMs(session.startTime)
+}
+
+export function formatMs(ms: number): string {
+  if (ms < 1) return '<1ms'
+  if (ms < 1000) return ms.toFixed(0) + 'ms'
+  if (ms < 60000) return (ms / 1000).toFixed(1) + 's'
+  if (ms < 3600000) return (ms / 60000).toFixed(1) + 'min'
+  return (ms / 3600000).toFixed(1) + 'h'
+}
+
+export function formatCompact(n: number): string {
+  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
+}
+
+// ── Span attribute helpers ────────────────────────────────────────────────────
+
+export function getAttr(span: Span, key: string): string | number | boolean | null {
+  const a = (span.attributes ?? []).find(x => x.key === key)
+  if (!a) return null
+  const v = a.value
+  return v.stringValue ?? v.intValue ?? v.doubleValue ?? v.boolValue ?? null
+}
+
+function intAttr(attrs: SpanAttribute[], key: string): number {
+  const a = attrs.find(x => x.key === key)
+  if (!a) return 0
+  return parseInt(String(a.value.intValue ?? a.value.stringValue ?? 0)) || 0
+}
+
+export function getInputTokens(span: Span): number {
+  const attrs = span.attributes ?? []
+  const genAiBase = intAttr(attrs, 'gen_ai.usage.input_tokens')
+  const genAiCache = intAttr(attrs, 'gen_ai.usage.cache_read.input_tokens')
+    + intAttr(attrs, 'gen_ai.usage.cache_creation.input_tokens')
+  if (genAiBase > 0 || genAiCache > 0) return genAiBase + genAiCache
+  return intAttr(attrs, 'input_tokens') + intAttr(attrs, 'prompt_tokens')
+    + intAttr(attrs, 'cache_read_tokens') + intAttr(attrs, 'cache_creation_tokens')
+    + intAttr(attrs, 'input_token_count') + intAttr(attrs, 'cached_token_count')
+    + intAttr(attrs, 'codex.turn.token_usage.input_tokens')
+    + intAttr(attrs, 'codex.turn.token_usage.cached_input_tokens')
+}
+
+export function getOutputTokens(span: Span): number {
+  const attrs = span.attributes ?? []
+  return intAttr(attrs, 'gen_ai.usage.output_tokens')
+    || intAttr(attrs, 'output_tokens')
+    || intAttr(attrs, 'completion_tokens')
+    || (intAttr(attrs, 'output_token_count') + intAttr(attrs, 'reasoning_token_count'))
+    || intAttr(attrs, 'codex.turn.token_usage.output_tokens')
+}
+
+export function getSpanTtft(span: Span): number {
+  return parseInt(String(
+    getAttr(span, 'copilot_chat.time_to_first_token')
+    ?? getAttr(span, 'ttft_ms')
+    ?? getAttr(span, 'codex.ttft_ms')
+    ?? 0
+  )) || 0
+}
+
+export function getTokenCount(span: Span): number {
+  let total = 0
+  let foundTotal = false
+  for (const a of span.attributes ?? []) {
+    if (/total.?tokens/i.test(a.key)) {
+      total = parseInt(String(a.value.intValue ?? a.value.stringValue ?? a.value.doubleValue)) || 0
+      foundTotal = true
+    }
+  }
+  if (foundTotal) return total
+  return getInputTokens(span) + getOutputTokens(span)
+}
+
+// ── Span classification ───────────────────────────────────────────────────────
+
+export function isSessionSpan(name: string): boolean {
+  return name.indexOf('invoke_agent') === 0
+    || name === 'claude_code.interaction'
+    || name === 'codex.user_prompt'
+    || name === 'codex.prompt'
+    || name === 'codex.user_message'
+    || name === 'codex.session_start'
+}
+
+export function isLlmSpanName(name: string): boolean {
+  return name.indexOf('chat') === 0
+    || name === 'claude_code.llm_request'
+    || name === 'handle_responses'
+    || name === 'codex.stream_event'
+    || name === 'codex.api_request'
+    || name === 'codex.completion'
+    || name === 'codex.response'
+    || name === 'codex.sse_event'
+}
+
+export function isToolSpanName(name: string): boolean {
+  return name.indexOf('execute_tool') === 0
+    || name === 'claude_code.tool'
+    || name === 'exec_command'
+    || name.indexOf('codex.tool') === 0
+}
+
+export function inferSpanSource(span: Span): string | null {
+  const name = span?.name ? String(span.name) : ''
+  if (name.indexOf('claude_code.') === 0) return 'claude_code'
+  if (name.indexOf('codex.') === 0) return 'codex'
+  if (getCodexSessionId(span)) return 'codex'
+  if (name.indexOf('invoke_agent') === 0 || name.indexOf('chat') === 0 || name.indexOf('execute_tool') === 0) return 'copilot'
+  return null
+}
+
+export function getCodexSessionId(span: Span): string {
+  const explicit = getAttr(span, 'codex.session.id')
+  if (explicit) return String(explicit)
+
+  const conversationId = getAttr(span, 'thread.id')
+    ?? getAttr(span, 'thread_id')
+    ?? getAttr(span, 'conversation.id')
+    ?? getAttr(span, 'conversation_id')
+    ?? getAttr(span, 'codex.conversation.id')
+  const turnId = getAttr(span, 'turn.id')
+    ?? getAttr(span, 'turn_id')
+    ?? getAttr(span, 'codex.turn.id')
+
+  if (conversationId && turnId) {
+    return 'codex:' + String(conversationId) + ':' + String(turnId)
+  }
+  return ''
+}
+
+export function getSessionUserRequest(span: Span): string {
+  return String(
+    getAttr(span, 'copilot_chat.user_request')
+    ?? getAttr(span, 'user_prompt')
+    ?? getAttr(span, 'prompt')
+    ?? getAttr(span, 'codex.user_prompt')
+    ?? getAttr(span, 'codex.prompt')
+    ?? getAttr(span, 'codex.user_message')
+    ?? getAttr(span, 'codex.input')
+    ?? ''
+  )
+}
+
+export function extractUserRequest(raw: string): string {
+  if (!raw) return ''
+  const trimmed = raw.trim()
+  if (trimmed.indexOf('<userRequest>') !== -1) {
+    const match = trimmed.match(/<userRequest>\s*([\s\S]*?)\s*<\/userRequest>/)
+    return match ? match[1].trim() : trimmed
+  }
+  const codexMatch = trimmed.match(/(?:^|\n)##\s+My request(?:\s+for\s+[^\n:]+)?:\s*\n([\s\S]*)$/i)
+  if (codexMatch?.[1]?.trim()) return codexMatch[1].trim()
+  const stripped = trimmed.replace(/<ide_[^>]*>[\s\S]*?<\/ide_[^>]*>/gi, '').trim()
+  return stripped || trimmed
+}
+
+export function spanColor(span: Span): string {
+  if (span.status?.code === 2) return 'var(--error)'
+  const n = span.name ?? ''
+  if (n.includes('llm') || n.includes('LLM')) return '#3794FF'
+  if (n.includes('tool') || n.indexOf('/') !== -1) return '#B8E986'
+  if (n.includes('agent') || n.includes('session')) return '#C49CFF'
+  if (n.includes('embed')) return '#FF85A1'
+  if (n.includes('search') || n.includes('retrieve')) return '#85E0D0'
+  return '#3794FF'
+}
+
+export function spanTypeBadge(span: Span): { label: string; color: string } {
+  const n = (span.name ?? '').toLowerCase()
+  const otelName = String(getAttr(span, 'otel.name') ?? '').toLowerCase()
+  if (getInputTokens(span) > 0 || getOutputTokens(span) > 0 || isLlmSpanName(span.name ?? '') || n === 'handle_responses') return { label: 'LLM', color: 'var(--accent)' }
+  if (n.includes('llm') || n.includes('chat') || n.includes('completion')) return { label: 'LLM', color: 'var(--accent)' }
+  if (isToolSpanName(span.name ?? '') || n.includes('tool')) return { label: 'TOOL', color: '#B8E986' }
+  if (n.includes('agent') || n.includes('session') || n.includes('turn') || otelName.includes('session_task')) return { label: 'AGENT', color: '#C49CFF' }
+  if (n.includes('embed')) return { label: 'EMBED', color: '#FF85A1' }
+  if (n.includes('search') || n.includes('retrieve')) return { label: 'RAG', color: '#85E0D0' }
+  return { label: 'SPAN', color: 'var(--muted)' }
+}
+
+// ── Agent label / color helpers ───────────────────────────────────────────────
+
+export function getAgentSourceLabel(source: string | null | undefined): string {
+  if (source === 'claude_code') return 'Claude'
+  if (source === 'codex') return 'Codex'
+  return 'Copilot'
+}
+
+export function getAgentColor(source: string | null | undefined): string {
+  if (source === 'claude_code') return '#FFB085'
+  if (source === 'codex') return '#F0FF42'
+  if (source === 'copilot') return '#00EAFF'
+  return '#90a4ae'
+}
+
+export function getAgentShortLabel(source: string | null | undefined): string {
+  if (source === 'claude_code') return 'CL'
+  if (source === 'codex') return 'CX'
+  return 'CP'
+}
+
+// ── Session helpers (reads from signals) ──────────────────────────────────────
+
+export function getAllSessionsChronological(): SessionSummaryCard[] {
+  return sessionSummary.value?.sessions ?? []
+}
+
+export function getSessionGlobalNumber(sess: SessionSummaryCard): number {
+  const all = getAllSessionsChronological()
+  if (!sess || all.length === 0) return 0
+  const idx = all.indexOf(sess)
+  if (idx !== -1) return idx + 1
+  for (let i = 0; i < all.length; i++) {
+    const s = all[i]
+    if (sess.sessionId && s.sessionId === sess.sessionId) return i + 1
+    if (sess.traceId && sess.startTime && s.traceId === sess.traceId && s.startTime === sess.startTime) return i + 1
+    if (sess.traceId && sess.userRequest && s.traceId === sess.traceId && s.userRequest === sess.userRequest) return i + 1
+  }
+  return 0
+}
+
+export function getSessionOffset(): number {
+  const all = agentFilteredSessions.value
+  const limit = sessionLimit.value
+  if (limit >= all.length) return 0
+  return all.length - limit
+}
+
+export function buildDisplaySummary() {
+  const sessions = displaySessions.value
+  let totalInputTokens = 0, totalOutputTokens = 0, totalLlmCalls = 0, cacheRead = 0
+  sessions.forEach(s => {
+    totalInputTokens += s.inputTokens ?? 0
+    totalOutputTokens += s.outputTokens ?? 0
+    totalLlmCalls += s.totalLlmCalls ?? 0
+    cacheRead += s.cacheReadTokens ?? 0
+  })
+  return {
+    sessions,
+    efficiency: {
+      totalInputTokens,
+      totalOutputTokens,
+      totalLlmCalls,
+      avgInputPerCall: totalLlmCalls > 0 ? Math.round(totalInputTokens / totalLlmCalls) : 0,
+      cacheHitRate: totalInputTokens > 0 ? cacheRead / totalInputTokens : 0,
+      toolDefWaste: sessionSummary.value?.efficiency?.toolDefWaste ?? 0,
+    },
+  }
+}
+
+// ── Agent key HTML builder ────────────────────────────────────────────────────
+
+export function buildAgentKeyHtml(sessions: SessionSummaryCard[], style: 'line' | 'dot'): string {
+  const sources: Record<string, { label: string; color: string }> = {}
+  sessions.forEach(sess => {
+    if (sess.source && !sources[sess.source]) {
+      sources[sess.source] = { label: getAgentSourceLabel(sess.source), color: getAgentColor(sess.source) }
+    }
+  })
+  const keys = Object.keys(sources)
+  if (keys.length === 0) return ''
+  let out = '<div style="display:flex;gap:14px;margin-bottom:8px;font-size:10px;color:var(--muted);align-items:center">'
+  out += '<span style="font-weight:600">Agent:</span>'
+  keys.forEach(src => {
+    if (style === 'line') {
+      out += `<span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:16px;height:3px;border-radius:1px;background:${sources[src].color}"></span>${sources[src].label}</span>`
+    } else {
+      out += `<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${sources[src].color}"></span> ${sources[src].label}</span>`
+    }
+  })
+  out += '</div>'
+  return out
+}
+
+export function getAgentDotHtml(source: string | null | undefined): string {
+  if (!source) return ''
+  return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getAgentColor(source)};vertical-align:middle" title="${getAgentSourceLabel(source)}"></span>`
+}
+
+// ── Label formatters ──────────────────────────────────────────────────────────
+
+export function formatLlmLabel(entry: { action?: string }): string {
+  const action = entry.action ?? ''
+  if (action.indexOf('called ') === 0) {
+    const tools = action.substring(7).split(/[,\s]+/).filter(Boolean)
+    const counts: Record<string, number> = {}
+    tools.forEach(t => { counts[t] = (counts[t] ?? 0) + 1 })
+    const parts = Object.keys(counts).map(t => {
+      const shortName = t.replace(/^execute_tool\s*/, '')
+      return counts[t] > 1 ? counts[t] + '× ' + shortName : shortName
+    })
+    return 'Decide → ' + parts.join(', ')
+  }
+  if (action === 'text response') return 'Respond with answer'
+  return action || 'LLM call'
+}
+
+export function formatToolLabel(entry: { label?: string }): string {
+  const label = entry.label ?? ''
+  const parts = label.match(/^(\S+)\s*([\s\S]*)$/)
+  if (!parts) return label
+  const toolName = parts[1]
+  const args = parts[2] ?? ''
+  switch (toolName) {
+    case 'read_file': {
+      const m = args.match(/^(\S+)\s*L(\d+)-(\d+)$/)
+      if (m) return 'Read ' + m[1] + ' :' + m[2] + '-' + m[3]
+      return 'Read ' + args
+    }
+    case 'file_search': {
+      const file = args.replace(/^\*\*\//, '').split('/').pop() ?? args
+      if (file.indexOf('*') !== -1) return 'Find files matching ' + file
+      return 'Find ' + file
+    }
+    case 'grep_search': {
+      const gm = args.match(/^"([^"]*?)"\s+in\s+(.*)$/)
+      if (gm) {
+        const inFile = gm[2].replace(/^\*\*\//, '').split('/').pop() ?? gm[2]
+        return 'Grep "' + gm[1] + '" in ' + inFile
+      }
+      return 'Grep ' + args
+    }
+    case 'list_dir': return 'List ' + args + '/'
+    case 'manage_todo_list': {
+      const tm = args.match(/(\d+)\s*items?\s*\(([^)]+)\)/)
+      if (tm) return 'Update todos (' + tm[2] + ')'
+      const nm = args.match(/(\d+)\s*items?/)
+      if (nm) return 'Update todos (' + nm[1] + ' items)'
+      return 'Check todos'
+    }
+    case 'semantic_search': return 'Search codebase ' + args
+    case 'replace_string_in_file':
+    case 'multi_replace_string_in_file': return 'Edit ' + args
+    case 'create_file': return 'Create ' + args
+    case 'run_in_terminal': return 'Run: ' + (args.length > 60 ? args.slice(0, 57) + '…' : args)
+    case 'explore_subagent':
+    case 'runSubagent': return 'Sub-agent: ' + args
+    default: return toolName + ' ' + args
+  }
+}
+
+export function formatToolResult(entry: { resultSummary?: string }): string {
+  const rs = entry.resultSummary ?? ''
+  if (!rs || rs === 'empty') return ''
+  if (rs === 'No todo list found.') return 'none'
+  if (rs.match(/^Successfully/)) return 'ok'
+  if (rs === 'no list') return 'none'
+  return rs
+}
+
+// ── Span tree builder ─────────────────────────────────────────────────────────
+
+export function buildSpanTree(traceSpans: Span[]): SpanTreeNode[] {
+  const byId: Record<string, SpanTreeNode> = {}
+  const roots: SpanTreeNode[] = []
+  traceSpans.forEach(s => { byId[s.spanId] = { span: s, children: [], depth: 0 } })
+  traceSpans.forEach(s => {
+    const node = byId[s.spanId]
+    if (s.parentSpanId && byId[s.parentSpanId]) {
+      byId[s.parentSpanId].children.push(node)
+    } else {
+      roots.push(node)
+    }
+  })
+  function setDepth(node: SpanTreeNode, d: number) {
+    node.depth = d
+    node.children.sort((a, b) => nanoToMs(a.span.startTime) - nanoToMs(b.span.startTime))
+    node.children.forEach(c => setDepth(c, d + 1))
+  }
+  roots.sort((a, b) => nanoToMs(a.span.startTime) - nanoToMs(b.span.startTime))
+  roots.forEach(r => setDepth(r, 0))
+  const flat: SpanTreeNode[] = []
+  function flatten(node: SpanTreeNode) { flat.push(node); node.children.forEach(flatten) }
+  roots.forEach(flatten)
+  return flat
+}
+
+// ── Sparkline / chart helpers ─────────────────────────────────────────────────
+
+export function drawSparkline(containerId: string, dataPoints: number[]): void {
+  const el = document.getElementById(containerId)
+  if (!el || dataPoints.length < 2) { if (el) el.innerHTML = ''; return }
+  const w = el.offsetWidth || 160, h = 30
+  const max = Math.max(...dataPoints) || 1
+  const pts = dataPoints.map((v, i) =>
+    (i / (dataPoints.length - 1)) * w + ',' + (h - (v / max) * (h - 4) - 2)
+  ).join(' ')
+  el.innerHTML = `<svg width="${w}" height="${h}"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="1.5" opacity="0.7"/></svg>`
+}
+
+export function getAgentSourceClass(source: string | null | undefined): string {
+  if (source === 'claude_code') return 'session-agent-claude'
+  if (source === 'codex') return 'session-agent-codex'
+  return 'session-agent-copilot'
+}

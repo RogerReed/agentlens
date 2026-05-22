@@ -1,0 +1,22 @@
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  border: none;
+  /* Bottom border is the active indicator — always 2px, transparent when inactive */
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  background: none;
+  margin-bottom: -1px; /* overlap the .tabs bottom border so active indicator connects */
+}
+
+.tab:hover { color: var(--fg); background: var(--hover); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(79, 195, 247, 0.07); }

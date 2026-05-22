@@ -1,0 +1,324 @@
+import { useState } from 'preact/hooks'
+import {
+  displaySessions, sessionSummary,
+} from '../state'
+import {
+  formatMs, formatCompact, syntaxHighlightJson, getSessionGlobalNumber,
+  getAgentDotHtml, formatLlmLabel, formatToolLabel, formatToolResult,
+} from '../utils'
+import type { SessionSummaryCard, TimelineEntry, BackgroundSpanSummary } from '../types'
+
+interface Step {
+  entry: TimelineEntry
+  offsetMs: number
+  durationMs: number
+}
+
+
+
+function BgSummaryBlock({ bgSpans }: { bgSpans: BackgroundSpanSummary[] }) {
+  const [open, setOpen] = useState(false)
+  if (!bgSpans?.length) return null
+
+  const groups: Record<string, { count: number; tokens: number; model: string }> = {}
+  let totalTokens = 0
+  bgSpans.forEach(bg => {
+    const key = bg.purpose || bg.name || 'Unknown'
+    if (!groups[key]) groups[key] = { count: 0, tokens: 0, model: bg.model || '' }
+    groups[key].count++
+    const tok = (bg.inputTokens ?? 0) + (bg.outputTokens ?? 0)
+    groups[key].tokens += tok
+    totalTokens += tok
+  })
+
+  const descriptions: Record<string, string> = {
+    'Generate chat title': 'Creates the title shown in the chat history sidebar.',
+    'Generate progress messages': 'Produces the status messages shown while the agent works.',
+    'Extension language model call': 'LLM call made by a VS Code extension — often used for completions or inline suggestions.',
+  }
+
+  const purposes = Object.keys(groups).sort((a, b) => groups[b].tokens - groups[a].tokens)
+
+  return (
+    <div class="sw-bg-group">
+      <div class="sw-bg-header" onClick={() => setOpen(v => !v)}>
+        <span class="sw-bg-chevron">{open ? '▼' : '▶'}</span>{' '}
+        <span>Background Overhead</span>
+        <span class="sw-bg-summary">{bgSpans.length} calls · {totalTokens.toLocaleString()} tokens</span>
+      </div>
+      {open && (
+        <div class="sw-bg-body">
+          <div class="sw-bg-note">Automatic LLM calls that ran alongside this prompt. These are not part of your agent session but still consume tokens.</div>
+          {purposes.map(purpose => (
+            <div key={purpose} class="sw-bg-item">
+              <div class="sw-bg-item-header">
+                <span class="sw-bg-item-name">{purpose}</span>
+                <span class="sw-bg-item-stats">{groups[purpose].count}× · {groups[purpose].tokens.toLocaleString()} tok · {groups[purpose].model}</span>
+              </div>
+              {descriptions[purpose] && <div class="sw-bg-item-desc">{descriptions[purpose]}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: number }) {
+  const [showOutput, setShowOutput] = useState(false)
+  const entry = step.entry
+
+  if (entry.type === 'llm') {
+    return (
+      <>
+        <div class="sw-detail-section"><div class="sw-detail-heading">Model</div><div class="sw-detail-value">{entry.model || 'unknown'}</div></div>
+        {((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">Token Usage</div>
+            <div class="sw-detail-value">
+              <span class="sw-token-in">{(entry.inputTokens ?? 0).toLocaleString()} input</span>
+              <span class="sw-token-arrow"> → </span>
+              <span class="sw-token-out">{(entry.outputTokens ?? 0).toLocaleString()} output</span>
+              {entry.responseText && (
+                <button class="sw-show-full-btn" style="margin-left:8px" onClick={() => setShowOutput(v => !v)}>
+                  {showOutput ? 'hide output' : 'view output'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        {showOutput && entry.responseText && <LongTextSection heading="Output" text={entry.responseText} id={'sw-output-' + sessIdx + '-' + idx} />}
+        {(entry.ttft ?? 0) > 0 && (
+          <div class="sw-detail-section"><div class="sw-detail-heading">Time to First Token</div><div class="sw-detail-value">{formatMs(entry.ttft!)}</div></div>
+        )}
+        <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
+        {entry.action && <div class="sw-detail-section"><div class="sw-detail-heading">Decision</div><div class="sw-detail-value">{entry.action}</div></div>}
+        {entry.thinking && <div class="sw-detail-section"><div class="sw-detail-heading">Reasoning</div><div class="sw-detail-thinking" style="white-space:pre-wrap">{entry.thinking}</div></div>}
+        {entry.timestamp && <div class="sw-detail-section"><div class="sw-detail-heading">Timestamp</div><div class="sw-detail-value sw-detail-muted">{entry.timestamp}</div></div>}
+      </>
+    )
+  }
+
+  if (entry.type === 'tool') {
+    const toolParts = (entry.label ?? '').match(/^(\S+)\s*([\s\S]*)$/)
+    const tName = toolParts ? toolParts[1] : entry.label
+    const tArgs = toolParts ? toolParts[2] : ''
+    const resultText = entry.fullResult || entry.resultSummary || ''
+    return (
+      <>
+        <div class="sw-detail-section"><div class="sw-detail-heading">Tool</div><div class="sw-detail-value"><code>{tName}</code></div></div>
+        {tArgs && <div class="sw-detail-section"><div class="sw-detail-heading">Arguments</div><div class="sw-detail-value"><code>{tArgs}</code></div></div>}
+        <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
+        {resultText && <LongTextSection heading="Result" text={resultText} id={'sw-result-' + sessIdx + '-' + idx} isJson />}
+        {entry.isError && <div class="sw-detail-section"><div class="sw-detail-heading err">Error</div><div class="sw-detail-value err">This step failed</div></div>}
+        {entry.timestamp && <div class="sw-detail-section"><div class="sw-detail-heading">Timestamp</div><div class="sw-detail-value sw-detail-muted">{entry.timestamp}</div></div>}
+      </>
+    )
+  }
+
+  return (
+    <>
+      <div class="sw-detail-section"><div class="sw-detail-heading">Background Task</div><div class="sw-detail-value">{entry.label || ''}</div></div>
+      <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
+    </>
+  )
+}
+
+function LongTextSection({ heading, text, id: _id, isJson }: { heading: string; text: string; id: string; isJson?: boolean }) {
+  const [expanded, setExpanded] = useState(false)
+  const maxPreviewChars = 600
+  const isLong = text.length > maxPreviewChars
+
+  let formatted = text.length > 6000 ? text.slice(0, 6000) + '\n... [truncated ' + (text.length - 6000).toLocaleString() + ' chars]' : text
+  if (formatted.length <= 2000) {
+    try { formatted = JSON.stringify(JSON.parse(formatted), null, 2) } catch { /* keep as-is */ }
+  }
+
+  return (
+    <>
+      <div class="sw-detail-section">
+        <div class="sw-detail-heading">
+          {heading}
+          {isLong && (
+            <button class="sw-show-full-btn" style="margin-left:8px" onClick={() => setExpanded(v => !v)}>
+              {expanded ? 'Collapse' : 'Show full'}
+            </button>
+          )}
+        </div>
+      </div>
+      {!isLong || !expanded ? (
+        <pre class="sw-full-result-pre" style="margin:0 0 8px">
+          {isJson && formatted.length <= 2000
+            ? <span dangerouslySetInnerHTML={{ __html: syntaxHighlightJson(isLong ? text.slice(0, maxPreviewChars) : formatted) }} />
+            : (isLong ? text.slice(0, maxPreviewChars) + '…' : formatted)
+          }
+        </pre>
+      ) : (
+        <pre class="sw-full-result-pre" style="margin:0 0 8px">
+          {isJson && formatted.length <= 2000
+            ? <span dangerouslySetInnerHTML={{ __html: syntaxHighlightJson(formatted) }} />
+            : formatted
+          }
+        </pre>
+      )}
+    </>
+  )
+}
+
+function StepRow({ step, idx, sessIdx, sessionDur }: { step: Step; idx: number; sessIdx: number; sessionDur: number }) {
+  const [open, setOpen] = useState(false)
+  const entry = step.entry
+
+  let badgeLabel: string, barColor: string
+  if (entry.type === 'llm') { badgeLabel = 'LLM'; barColor = 'var(--accent)' }
+  else if (entry.type === 'tool') { badgeLabel = 'TOOL'; barColor = '#B8E986' }
+  else { badgeLabel = 'BG'; barColor = 'var(--muted)' }
+  if (entry.isError) barColor = 'var(--error)'
+
+  const rowLabel = entry.type === 'llm' ? formatLlmLabel(entry)
+    : entry.type === 'tool' ? formatToolLabel(entry) + (formatToolResult(entry) ? ' → ' + formatToolResult(entry) : '')
+    : entry.label || ''
+
+  const left = sessionDur > 0 ? (step.offsetMs / sessionDur * 100) : 0
+  const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100
+
+  return (
+    <>
+      <div class="wf-row" onClick={() => setOpen(v => !v)}>
+        <div class="wf-label" title={rowLabel}>
+          <span class="wf-indent" />
+          <span class="sw-chevron">{open ? '▼' : '▶'}</span>
+          <span class="wf-type-badge" style={'background:' + barColor + ';color:#000'}>{badgeLabel}</span>
+          <span class="wf-name">{rowLabel}</span>
+        </div>
+        <div class="wf-bar-area">
+          <div class="wf-bar" style={`left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`}>
+            <div class="wf-bar-inner" style={'background:' + barColor + ';opacity:' + (entry.isError ? '1' : '0.7')} />
+          </div>
+        </div>
+        <div class="wf-info">
+          {formatMs(step.durationMs)}
+          {entry.type === 'llm' && ((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && (
+            <div style="font-size:9px;color:var(--muted);white-space:nowrap;margin-top:2px">
+              ↑{formatCompact(entry.inputTokens ?? 0)} ↓{formatCompact(entry.outputTokens ?? 0)}
+            </div>
+          )}
+        </div>
+      </div>
+      {open && (
+        <div class="sw-detail open">
+          <StepDetail step={step} idx={idx} sessIdx={sessIdx} />
+        </div>
+      )}
+    </>
+  )
+}
+
+function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
+  sess: SessionSummaryCard; sessIdx: number; totalCount: number; isFirst: boolean
+}) {
+  const [collapsed, setCollapsed] = useState(!isFirst)
+  const [promptExpanded, setPromptExpanded] = useState(false)
+  const isLongPrompt = (sess.userRequest?.length ?? 0) > 100
+
+  const sessionNum = getSessionGlobalNumber(sess) || (totalCount - sessIdx)
+  const sessionStartMs = sess.startTime ? new Date(sess.startTime).getTime() : 0
+  let sessionDur = sess.durationMs || 1
+
+  const steps: Step[] = (sess.timeline ?? []).map(entry => {
+    const entryStart = entry.timestamp ? new Date(entry.timestamp).getTime() : 0
+    const offset = sessionStartMs > 0 && entryStart > 0 ? entryStart - sessionStartMs : 0
+    return { entry, offsetMs: Math.max(offset, 0), durationMs: entry.durationMs || 0 }
+  })
+
+  if (steps.length > 0) {
+    const maxEnd = Math.max(...steps.map(s => s.offsetMs + s.durationMs))
+    if (maxEnd > sessionDur) sessionDur = maxEnd
+  }
+  if (sessionDur <= 0) sessionDur = 1
+
+  const errorCount = sess.errors || 0
+  const outcomeLabel = sess.outcome === 'text_response' ? 'Responded' : sess.outcome === 'tool_calls' ? 'Tool calls' : null
+
+  return (
+    <div class="wf-trace-group">
+      <div class="wf-trace-header" onClick={() => setCollapsed(v => !v)}>
+        <span>
+          <span class="wf-header-chevron">{collapsed ? '▶' : '▼'}</span>
+          <strong>{sessionNum}</strong>{' '}
+          <span dangerouslySetInnerHTML={{ __html: getAgentDotHtml(sess.source) }} />{' '}
+          "{sess.userRequest.slice(0, 100)}{isLongPrompt ? '…' : ''}"
+          {isLongPrompt && (
+            <button class="sw-show-full-btn" style="margin-left:8px" onClick={e => { e.stopPropagation(); setPromptExpanded(v => !v) }}>
+              {promptExpanded ? 'Collapse' : 'Show full prompt'}
+            </button>
+          )}
+        </span>
+        <span class="wf-trace-stats">
+          {steps.length} steps · {formatMs(sessionDur)} · {sess.model}
+          {errorCount > 0 && <span class="err"> · {errorCount} errors</span>}
+          {outcomeLabel && <>{' · '}{outcomeLabel}</>}
+        </span>
+      </div>
+
+      {promptExpanded && (
+        <div style="padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word">
+          {sess.userRequest}
+        </div>
+      )}
+      {!collapsed && (
+        <div class="wf-trace-body">
+          <div class="wf-time-ruler">
+            {Array.from({ length: 6 }, (_, t) => <span key={t}>{formatMs(sessionDur * t / 5)}</span>)}
+          </div>
+          {steps.map((step, si) => <StepRow key={step.entry.spanId + si} step={step} idx={si} sessIdx={sessIdx} sessionDur={sessionDur} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function Summaries() {
+  const base = displaySessions.value
+  const summary = sessionSummary.value
+
+  if (!summary?.sessions?.length) {
+    return <div id="summary-traces-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+  }
+
+  const sessionsToShow = [...base].reverse()
+  const totalLlmCalls = sessionsToShow.reduce((s, sess) => s + sess.totalLlmCalls, 0)
+  const totalToolCalls = sessionsToShow.reduce((s, sess) => s + sess.totalToolCalls, 0)
+  const totalTokens = sessionsToShow.reduce((s, sess) => s + sess.inputTokens + sess.outputTokens, 0)
+
+  return (
+    <div id="summary-traces-content">
+      <div class="tab-stats">
+        <div><strong class="tab-stat-val">{sessionsToShow.length}</strong> sessions</div>
+        <div><strong class="tab-stat-val">{totalLlmCalls}</strong> LLM calls</div>
+        <div><strong class="tab-stat-val">{totalToolCalls}</strong> tool calls</div>
+        <div><strong class="tab-stat-val">{formatCompact(totalTokens)}</strong> tokens</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)">
+        Each agent exposes different OTEL data — some fields may be missing or estimated. See the Traces tab for raw span-level detail.
+      </div>
+      <div class="waterfall">
+        {sessionsToShow.map((sess, idx) => (
+          <SessionBlock
+            key={sess.traceId + idx}
+            sess={sess}
+            sessIdx={idx}
+            totalCount={sessionsToShow.length}
+            isFirst={idx === 0}
+          />
+        ))}
+        {sessionsToShow.length === 0 && (
+          <div class="empty-state">No sessions to display</div>
+        )}
+      </div>
+      {summary.backgroundSpans?.length > 0 && (
+        <BgSummaryBlock bgSpans={summary.backgroundSpans} />
+      )}
+    </div>
+  )
+}

@@ -1,0 +1,142 @@
+name: Bug Report
+description: Something isn't working correctly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Attaching a redacted span export (see below) is the fastest way to reproduce most issues.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      placeholder: A clear description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start a session with …
+        2. Ask the agent to …
+        3. Open the Files / Timeline / … tab
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent
+      options:
+        - GitHub Copilot
+        - Claude Code
+        - Codex CLI
+        - Multiple / unsure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Running as
+      options:
+        - VS Code extension
+        - Standalone server (pnpm run standalone)
+        - Docker container
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: AgentLens version
+      placeholder: "e.g. 0.1.0  (Help tab → About, or check package.json)"
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Span data (recommended)
+
+        Attaching a redacted export lets maintainers replay the exact session that triggered the bug.
+
+        **Export and redact in one step:**
+
+        ```bash
+        # macOS / Linux — reads ~/.agentlens/spans.json by default
+        node scripts/redact-spans.js --output redacted-spans.json
+
+        # Windows (PowerShell)
+        node scripts/redact-spans.js --output redacted-spans.json
+
+        # To also strip prompt text and tool call content:
+        node scripts/redact-spans.js --redact-content --output redacted-spans.json
+        ```
+
+        Or export from the dashboard: **AgentLens → Export OTEL Data (sidebar button)**, then run the script against that file:
+
+        ```bash
+        node scripts/redact-spans.js --input exported-sessions.json --output redacted-spans.json
+        ```
+
+        **What the script removes automatically:**
+        | Data | Replaced with |
+        |------|---------------|
+        | `user.email`, emails in free text | `[REDACTED_USER_EMAIL]` |
+        | `user.id`, account / session / org UUIDs | `[REDACTED_*]` |
+        | Copilot session / conversation / request IDs | `[REDACTED_*]` |
+        | Home directory paths (`/Users/<name>/`, `C:\Users\<name>\`) | `[USER]` |
+        | Repo branch name and commit hash | `[REDACTED_*]` |
+
+        **With `--redact-content` also removes:**
+        | Data | Replaced with |
+        |------|---------------|
+        | Prompt text (`user_prompt`, `copilot_chat.user_request`) | `[REDACTED_CONTENT]` |
+        | Tool call arguments and results | `[REDACTED_CONTENT]` |
+        | LLM input / output messages | `[REDACTED_CONTENT]` |
+        | System instructions | `[REDACTED_CONTENT]` |
+
+        Attach `redacted-spans.json` to this issue (drag-and-drop, or rename to `.txt` if GitHub blocks `.json`).
+
+  - type: textarea
+    id: spans
+    attributes:
+      label: Redacted span export
+      description: >
+        Paste the contents of redacted-spans.json here, or attach the file above.
+        If the file is large (> 50 spans), attaching is preferred over pasting.
+      placeholder: Paste JSON here or attach the file…
+      render: json
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, console errors, output channel logs, or anything else that might help.
+    validations:
+      required: false
