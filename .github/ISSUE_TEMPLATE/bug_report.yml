@@ -83,50 +83,31 @@ body:
 
         Attaching a redacted export lets maintainers replay the exact session that triggered the bug.
 
-        **Export and redact in one step:**
+        **Export a redacted copy in one step:**
 
-        ```bash
-        # macOS / Linux — reads ~/.agentlens/spans.json by default
-        node scripts/redact-spans.js --output redacted-spans.json
+        **VS Code extension:** Open the **Export** tab in the AgentLens dashboard and click **Export Redacted**.
+        Alternatively, run **`AgentLens: Export OTEL Data (Redacted)`** from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`).
+        One or more `export_redacted_*.json` files will be written to your workspace root.
 
-        # Windows (PowerShell)
-        node scripts/redact-spans.js --output redacted-spans.json
+        **Standalone server:** Open the **Export** tab in the dashboard at `http://localhost:3000` and click **Export Redacted** to download the file.
 
-        # To also strip prompt text and tool call content:
-        node scripts/redact-spans.js --redact-content --output redacted-spans.json
-        ```
+        The command automatically replaces the following before writing the files:
 
-        Or export from the dashboard: **AgentLens → Export OTEL Data (sidebar button)**, then run the script against that file:
-
-        ```bash
-        node scripts/redact-spans.js --input exported-sessions.json --output redacted-spans.json
-        ```
-
-        **What the script removes automatically:**
         | Data | Replaced with |
         |------|---------------|
-        | `user.email`, emails in free text | `[REDACTED_USER_EMAIL]` |
-        | `user.id`, account / session / org UUIDs | `[REDACTED_*]` |
-        | Copilot session / conversation / request IDs | `[REDACTED_*]` |
-        | Home directory paths (`/Users/<name>/`, `C:\Users\<name>\`) | `[USER]` |
-        | Repo branch name and commit hash | `[REDACTED_*]` |
+        | Prompt text, tool inputs, tool results, LLM messages | `[redacted]` |
+        | `user.id`, `user.email`, `user.name`, `user.username` | `[redacted]` |
+        | `enduser.*`, `organization.id`, `organization.name` | `[redacted]` |
+        | `github.copilot.user`, `github.user` | `[redacted]` |
 
-        **With `--redact-content` also removes:**
-        | Data | Replaced with |
-        |------|---------------|
-        | Prompt text (`user_prompt`, `copilot_chat.user_request`) | `[REDACTED_CONTENT]` |
-        | Tool call arguments and results | `[REDACTED_CONTENT]` |
-        | LLM input / output messages | `[REDACTED_CONTENT]` |
-        | System instructions | `[REDACTED_CONTENT]` |
-
-        Attach `redacted-spans.json` to this issue (drag-and-drop, or rename to `.txt` if GitHub blocks `.json`).
+        Attach the exported file(s) to this issue (drag-and-drop, or rename to `.txt` if GitHub blocks `.json`).
 
   - type: textarea
     id: spans
     attributes:
       label: Redacted span export
       description: >
-        Paste the contents of redacted-spans.json here, or attach the file above.
+        Paste the contents of an export_redacted_*.json file here, or attach the file above.
         If the file is large (> 50 spans), attaching is preferred over pasting.
       placeholder: Paste JSON here or attach the file…
       render: json

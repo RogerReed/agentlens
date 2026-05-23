@@ -14,7 +14,7 @@ The sidebar gives you a compact live view. For the full experience, open the **e
 | **Agents** | Side-by-side comparison of Copilot, Claude, and Codex |
 | **Tokens / Latency / Tools** | Specialized charts for each dimension |
 | **Flow** | Semantic graph of LLM turns and tool calls |
-| **Timeline** | Chronological span list with expandable attributes |
 | **Errors** | All error-status spans with full detail |
+| **Export** | Export raw or redacted span data as JSON; includes replay instructions |
 
 Use the **agent filter** and **session limit** controls at the top to focus on what matters.

@@ -80,6 +80,12 @@ export class DashboardPanel {
         this.sidebarProvider.setAgentFilter(msg.value || 'all')
       } else if (msg.type === 'exportSessionData') {
         vscode.commands.executeCommand('agentLens.exportData')
+      } else if (msg.type === 'exportSessionDataRedacted') {
+        vscode.commands.executeCommand('agentLens.exportDataRedacted')
+      } else if (msg.type === 'openSidebar') {
+        vscode.commands.executeCommand('workbench.view.extension.agent-lens')
+      } else if (msg.type === 'closeSidebar') {
+        vscode.commands.executeCommand('workbench.action.closeSidebar')
       }
     }, null, this.disposables)
 

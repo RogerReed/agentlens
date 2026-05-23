@@ -6,13 +6,16 @@
  * tab has interesting data to show — no real AI agent required.
  *
  * Prerequisites:
- *   pnpm run standalone          (starts server on ports 4318 + 3000)
+ *   AgentLens VS Code extension (active in any workspace)  — OR —
+ *   pnpm run standalone          (starts collector on port 4318 + dashboard on port 3000)
  *
  * Usage:
  *   pnpm run demo
  *   pnpm run demo -- --speed 5
  *   pnpm run demo -- --scenario loop
  *   pnpm run demo -- --scenario all --speed 3 --port 4318
+ *   pnpm run demo -- --file /path/to/export_redacted_claude_main_20260522_152343.json
+ *   pnpm run demo -- --file ./export_claude_main_20260522_152343.json --speed 4
  *
  * Scenarios:
  *   normal      Clean 3-turn refactor — Tokens, Files, Timeline, Efficiency tabs
@@ -39,6 +42,7 @@ const SPEED    = parseFloat(flag('speed', '1')) || 1
 const PORT     = parseInt(flag('port', '4318')) || 4318
 const SCENARIO = flag('scenario', 'all')
 const FIXTURE  = flag('fixture', '')
+const FILE     = flag('file', '')
 
 // ── Primitive helpers ──────────────────────────────────────────────────────────
 
@@ -575,22 +579,31 @@ function temporalGroups(spans: CapturedSpan[], windowNs = 1_000_000_000n): Captu
   return groups
 }
 
-async function replayFixture(name: string): Promise<void> {
-  const fp = path.join(__dirname, 'fixtures', name + '.json')
+async function replayFile(fp: string, label: string, instant: boolean): Promise<void> {
   if (!fs.existsSync(fp)) {
-    err(`Fixture not found: ${fp}`)
-    err(`Run  pnpm run capture -- <name>  to record a session, or  pnpm run capture:list  to see saved fixtures.`)
+    err(`File not found: ${fp}`)
     process.exit(1)
   }
 
-  const fixture: Fixture = JSON.parse(fs.readFileSync(fp, 'utf-8'))
-  const spans = freshSpans(fixture.spans)
-  if (spans.length === 0) { err('Fixture is empty.'); process.exit(1) }
+  const raw = JSON.parse(fs.readFileSync(fp, 'utf-8'))
 
-  const agents = fixture.agents?.join(', ') || 'unknown'
-  const durSec = fixture.durationMs > 0 ? `${Math.round(fixture.durationMs / 1000)}s` : '?'
-  log(`Fixture: \x1b[32m${name}\x1b[0m  (${spans.length} spans, ${durSec}, ${agents})`)
-  log(`Captured: ${new Date(fixture.capturedAt).toLocaleString()}\n`)
+  // Support both export format (Span[]) and capture fixture format ({ spans: CapturedSpan[] })
+  let rawSpans: CapturedSpan[]
+  if (Array.isArray(raw)) {
+    rawSpans = raw as CapturedSpan[]
+    log(`File: \x1b[32m${label}\x1b[0m  (${rawSpans.length} spans — export format)`)
+  } else {
+    const fixture = raw as Fixture
+    rawSpans = fixture.spans
+    const agents = fixture.agents?.join(', ') || 'unknown'
+    const durSec = fixture.durationMs > 0 ? `${Math.round(fixture.durationMs / 1000)}s` : '?'
+    log(`Fixture: \x1b[32m${label}\x1b[0m  (${rawSpans.length} spans, ${durSec}, ${agents})`)
+    if (fixture.capturedAt) log(`Captured: ${new Date(fixture.capturedAt).toLocaleString()}`)
+  }
+  log('')
+
+  const spans = freshSpans(rawSpans)
+  if (spans.length === 0) { err('File contains no spans.'); process.exit(1) }
 
   // Remap timestamps: shift so the earliest span starts ~90s ago
   const minNano = spans.reduce<bigint>(
@@ -600,43 +613,71 @@ async function replayFixture(name: string): Promise<void> {
   const targetNano = BigInt(Date.now() - 90_000) * 1_000_000n
   const shift = targetNano - minNano
 
-  const groups = temporalGroups(spans)
-  log(`Streaming ${groups.length} temporal groups at ${SPEED}× speed…\n`)
-
-  for (let i = 0; i < groups.length; i++) {
-    const group = groups[i]
-    const otlpSpans = group.map(s => spanToOtlp(s, shift))
+  if (instant) {
+    // Send all spans in one shot — no pacing needed for historical files
+    const otlpSpans = spans.map(s => spanToOtlp(s, shift))
     await post('/v1/traces', { resourceSpans: [{ scopeSpans: [{ spans: otlpSpans }] }] })
+    ok(`Sent ${spans.length} span${spans.length !== 1 ? 's' : ''}`)
+  } else {
+    const groups = temporalGroups(spans)
+    log(`Streaming ${groups.length} temporal groups at ${SPEED}× speed…\n`)
 
-    // Show representative span names for this group
-    const names = [...new Set(group.map(s => s.name))].slice(0, 3).join(', ')
-    ok(`Group ${i + 1}/${groups.length}: ${group.length} span${group.length > 1 ? 's' : ''} (${names}${group.length > 3 ? ', …' : ''})`)
+    for (let i = 0; i < groups.length; i++) {
+      const group = groups[i]
+      const otlpSpans = group.map(s => spanToOtlp(s, shift))
+      await post('/v1/traces', { resourceSpans: [{ scopeSpans: [{ spans: otlpSpans }] }] })
 
-    // Delay proportional to gap between this group and the next (capped at 8s real-time)
-    if (i < groups.length - 1) {
-      const gapNano = BigInt(groups[i + 1][0].startTime) - BigInt(group[0].startTime)
-      const gapMs = Number(gapNano / 1_000_000n)
-      const delayMs = Math.min(gapMs / SPEED, 8_000)
-      if (delayMs > 100) await sleep(delayMs)
+      const names = [...new Set(group.map(s => s.name))].slice(0, 3).join(', ')
+      ok(`Group ${i + 1}/${groups.length}: ${group.length} span${group.length > 1 ? 's' : ''} (${names}${group.length > 3 ? ', …' : ''})`)
+
+      if (i < groups.length - 1) {
+        const gapNano = BigInt(groups[i + 1][0].startTime) - BigInt(group[0].startTime)
+        const gapMs = Number(gapNano / 1_000_000n)
+        const delayMs = Math.min(gapMs / SPEED, 8_000)
+        if (delayMs > 100) await sleep(delayMs)
+      }
     }
   }
-  ok(`Fixture replay complete\n`)
+  ok(`Replay complete\n`)
 }
+
+async function replayFixture(name: string): Promise<void> {
+  const fp = path.join(__dirname, 'fixtures', name + '.json')
+  if (!fs.existsSync(fp)) {
+    err(`Fixture not found: ${fp}`)
+    err(`Run  pnpm run capture -- <name>  to record a session, or  pnpm run capture:list  to see saved fixtures.`)
+    process.exit(1)
+  }
+  await replayFile(fp, name, false)
+}
+
+// ── CLI flags ──────────────────────────────────────────────────────────────────
+
+const hasSpeed = args.includes('--speed')
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 async function main() {
-  log(`Targeting http://127.0.0.1:${PORT}  speed=${SPEED}×  scenario=${SCENARIO}`)
+  const modeLabel = FILE ? `file=${FILE}` : `scenario=${SCENARIO}`
+  log(`Targeting http://127.0.0.1:${PORT}  ${modeLabel}`)
 
   const alive = await checkServer()
   if (!alive) {
-    err(`Cannot reach http://127.0.0.1:${PORT} — start the standalone server first:`)
-    err('  pnpm run standalone')
+    err(`Cannot reach http://127.0.0.1:${PORT} — start an AgentLens collector first:`)
+    err('  VS Code extension: open any workspace with AgentLens installed')
+    err('  Standalone server: pnpm run standalone')
     process.exit(1)
   }
-  log('Server reachable. Dashboard: http://localhost:3000\n')
+  log('Collector reachable.\n')
 
   try {
+    if (FILE) {
+      const fp = path.resolve(FILE)
+      // Export files are historical — send instantly unless the user asked for pacing with --speed
+      await replayFile(fp, path.basename(fp), !hasSpeed)
+      log('Done. Open the AgentLens sidebar or dashboard to see the replayed session.')
+      return
+    }
     if (FIXTURE === 'agent-matrix') {
       const matrix = ['claude-helloworld-real', 'codex-helloworld-real', 'copilot-helloworld-real']
       for (const name of matrix) await replayFixture(name)

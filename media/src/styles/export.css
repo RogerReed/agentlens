@@ -1,0 +1,184 @@
+/* ── Export tab ──────────────────────────────────────────────────────────── */
+
+#export-content {
+  padding: 4px 0 20px;
+  max-width: 860px;
+}
+
+.export-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.export-meta-mode {
+  opacity: 0.7;
+}
+
+/* Two-card row */
+.export-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+@media (max-width: 600px) {
+  .export-cards { grid-template-columns: 1fr; }
+}
+
+.export-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 20px;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.export-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.export-card-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.export-card-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.export-badge-raw {
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  color: var(--muted);
+}
+.export-badge-redacted {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+}
+
+.export-card-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+.export-card-desc code {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.export-card-includes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.export-card-includes li { display: flex; align-items: baseline; gap: 6px; }
+
+.export-redacted-label {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 10px;
+  color: var(--accent);
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.export-card-warning {
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.75;
+  font-style: italic;
+  margin-top: auto;
+}
+.export-card-safe {
+  font-size: 11px;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-top: auto;
+}
+
+.export-btn {
+  margin-top: 4px;
+  padding: 7px 14px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--vscode-button-background, var(--accent));
+  color: var(--vscode-button-foreground, #fff);
+  transition: opacity 0.15s;
+  align-self: flex-start;
+}
+.export-btn:hover:not(:disabled) { opacity: 0.85; }
+.export-btn:disabled { opacity: 0.4; cursor: default; }
+.export-btn-secondary {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.export-btn-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  opacity: 1;
+}
+.export-btn-done {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Replay box */
+.export-replay-box {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  background: var(--card-bg);
+}
+.export-replay-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.export-replay-desc {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+.export-replay-cmd {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 0 0 10px;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--fg);
+}
+.export-replay-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.5;
+}
+.export-replay-note code {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 10px;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+  padding: 1px 4px;
+  border-radius: 3px;
+}

@@ -1,1 +1,139 @@
-"use strict";(()=>{function u(t){return new Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(t)}function d(t){if(!t)return"No activity yet";let e=Math.floor((Date.now()-t)/1e3);if(e<60)return`${e}s ago`;let n=Math.floor(e/60);return n<60?`${n}m ago`:`${Math.floor(n/60)}h ago`}var a=__SIDEBAR_INIT__.lastActivityMs;function m(t,e){let n=document.getElementById("statusDot"),s=document.getElementById("statusText"),o=document.getElementById("statusLabel");!n||!s||!o||(e&&(a=e),t?(n.className="status-dot active",s.textContent="Active",s.style.color="var(--vscode-foreground)",o.textContent=""):(n.className="status-dot idle",s.textContent="Idle",s.style.color="var(--vscode-descriptionForeground)",o.textContent=a?d(a):"No activity yet"))}setInterval(()=>{if(document.getElementById("statusDot")?.classList.contains("idle")&&a){let e=document.getElementById("statusLabel");e&&(e.textContent=d(a))}},1e4);function p(t){return t==="claude_code"?"#FFB085":t==="codex"?"#F0FF42":t==="copilot"?"#00EAFF":"#90a4ae"}function f(t){return t==="claude_code"?"Claude":t==="codex"?"Codex":"Copilot"}function g(t){let e=document.getElementById("agentKey");if(e){if(!t.length){e.innerHTML="";return}e.innerHTML=`<div style="display:flex;gap:10px;font-size:10px;color:var(--vscode-descriptionForeground);align-items:center;flex-wrap:wrap">${t.map(n=>`<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${p(n)}"></span>${f(n)}</span>`).join("")}</div>`}}var r=__SIDEBAR_INIT__.agentSources;g(r);var i=acquireVsCodeApi();document.getElementById("openDashboard")?.addEventListener("click",()=>{i.postMessage({type:"openDashboard"})});document.getElementById("sessionLimitSelect")?.addEventListener("change",function(){i.postMessage({type:"setSessionLimit",value:this.value})});document.getElementById("agentFilterSelect")?.addEventListener("change",function(){i.postMessage({type:"setAgentFilter",value:this.value})});document.getElementById("clearBtn")?.addEventListener("click",()=>{i.postMessage({type:"clearAll"})});document.getElementById("exportSessionBtn")?.addEventListener("click",()=>{i.postMessage({type:"exportSessionData"})});window.addEventListener("message",t=>{let e=t.data;if(e.type==="update"){let n=document.getElementById("sessionCountLabel");n&&(n.textContent=String(e.sessionCount??0));let s=document.getElementById("outputTokens"),o=document.getElementById("inputTokens"),l=document.getElementById("cacheHitRate"),c=document.getElementById("avgTurns");s&&(s.textContent=u(e.totalOutputTokens??0)),o&&(o.textContent=u(e.totalInputTokens??0)),l&&(l.textContent=`${e.cacheHitPct??0}%`),c&&(c.textContent=String(e.avgTurns??0)),m(e.isActive??!1,e.lastActivityMs),e.agentSources&&(r=e.agentSources,g(r))}else if(e.type==="agentFilterChanged"){let n=document.getElementById("agentFilterSelect");n&&e.value&&(n.value=e.value)}});})();
+"use strict";
+(() => {
+  // media/src/sidebarWebview.ts
+  function formatCompact(n) {
+    return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(n);
+  }
+  function formatDuration(ms) {
+    if (ms < 6e4) return `${Math.round(ms / 1e3)}s`;
+    return `${Math.round(ms / 6e4)}m`;
+  }
+  function formatAgo(ms) {
+    if (!ms) return "No activity yet";
+    const secs = Math.floor((Date.now() - ms) / 1e3);
+    if (secs < 60) return `${secs}s ago`;
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return `${mins}m ago`;
+    return `${Math.floor(mins / 60)}h ago`;
+  }
+  var lastActivityMs = __SIDEBAR_INIT__.lastActivityMs;
+  function updateStatus(isActive, ms) {
+    const dot = document.getElementById("statusDot");
+    const text = document.getElementById("statusText");
+    const label = document.getElementById("statusLabel");
+    if (!dot || !text || !label) return;
+    if (ms) lastActivityMs = ms;
+    if (isActive) {
+      dot.className = "status-dot active";
+      text.textContent = "Active";
+      text.style.color = "var(--vscode-foreground)";
+      label.textContent = "";
+    } else {
+      dot.className = "status-dot idle";
+      text.textContent = "Idle";
+      text.style.color = "var(--vscode-descriptionForeground)";
+      label.textContent = lastActivityMs ? formatAgo(lastActivityMs) : "No activity yet";
+    }
+  }
+  setInterval(() => {
+    const dot = document.getElementById("statusDot");
+    if (dot?.classList.contains("idle") && lastActivityMs) {
+      const label = document.getElementById("statusLabel");
+      if (label) label.textContent = formatAgo(lastActivityMs);
+    }
+  }, 1e4);
+  function getAgentColor(source) {
+    if (source === "claude_code") return "#FFB085";
+    if (source === "codex") return "#F0FF42";
+    if (source === "copilot") return "#00EAFF";
+    return "#90a4ae";
+  }
+  function getAgentLabel(source) {
+    if (source === "claude_code") return "Claude";
+    if (source === "codex") return "Codex";
+    return "Copilot";
+  }
+  function refreshAgentKey(sources) {
+    const el = document.getElementById("agentKey");
+    if (!el) return;
+    if (!sources.length) {
+      el.innerHTML = "";
+      return;
+    }
+    el.innerHTML = `<div style="display:flex;gap:10px;font-size:10px;color:var(--vscode-descriptionForeground);align-items:center;flex-wrap:wrap">${sources.map(
+      (src) => `<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${getAgentColor(src)}"></span>${getAgentLabel(src)}</span>`
+    ).join("")}</div>`;
+  }
+  function renderLatestSession(s) {
+    const card = document.getElementById("latestSessionCard");
+    const body = document.getElementById("latestSessionBody");
+    if (!card || !body) return;
+    if (!s) {
+      card.style.display = "none";
+      return;
+    }
+    card.style.display = "";
+    const agentLabel = s.source === "claude_code" ? "Claude" : s.source === "codex" ? "Codex" : "Copilot";
+    const errHtml = s.errors > 0 ? `<span style="color:var(--vscode-testing-iconFailed,#f44)">${s.errors} err</span>` : "";
+    body.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+      <span style="color:var(--vscode-descriptionForeground)">${agentLabel}</span>
+      <span style="color:var(--vscode-descriptionForeground)">${formatDuration(s.durationMs)}</span>
+    </div>
+    <div style="color:var(--vscode-textLink-foreground);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.model || "\u2014"}</div>
+    <div style="display:flex;gap:12px;font-size:10px;color:var(--vscode-descriptionForeground)">
+      <span>${s.totalLlmCalls} turn${s.totalLlmCalls !== 1 ? "s" : ""}</span>
+      <span>${s.totalToolCalls} tool${s.totalToolCalls !== 1 ? "s" : ""}</span>
+      ${errHtml}
+      <span>${Math.round(s.cacheHitRate * 100)}% cache</span>
+    </div>`;
+  }
+  var agentSources = __SIDEBAR_INIT__.agentSources;
+  refreshAgentKey(agentSources);
+  renderLatestSession(__SIDEBAR_INIT__.latestSession);
+  var vscode = acquireVsCodeApi();
+  document.getElementById("sessionLimitSelect")?.addEventListener("change", function() {
+    vscode.postMessage({ type: "setSessionLimit", value: this.value });
+  });
+  document.getElementById("agentFilterSelect")?.addEventListener("change", function() {
+    vscode.postMessage({ type: "setAgentFilter", value: this.value });
+  });
+  document.getElementById("clearBtn")?.addEventListener("click", () => {
+    vscode.postMessage({ type: "clearAll" });
+  });
+  window.addEventListener("message", (e) => {
+    const msg = e.data;
+    if (msg.type === "update") {
+      const countLabel = document.getElementById("sessionCountLabel");
+      if (countLabel) countLabel.textContent = String(msg.sessionCount ?? 0);
+      const outputEl = document.getElementById("outputTokens");
+      const inputEl = document.getElementById("inputTokens");
+      const cacheEl = document.getElementById("cacheHitRate");
+      const turnsEl = document.getElementById("avgTurns");
+      const errorsEl = document.getElementById("totalErrors");
+      const toolsEl = document.getElementById("totalToolCalls");
+      if (outputEl) outputEl.textContent = formatCompact(msg.totalOutputTokens ?? 0);
+      if (inputEl) inputEl.textContent = formatCompact(msg.totalInputTokens ?? 0);
+      if (cacheEl) cacheEl.textContent = `${msg.cacheHitPct ?? 0}%`;
+      if (turnsEl) turnsEl.textContent = String(msg.avgTurns ?? 0);
+      if (errorsEl) {
+        const n = msg.totalErrors ?? 0;
+        errorsEl.textContent = String(n);
+        errorsEl.style.color = n > 0 ? "var(--vscode-testing-iconFailed,#f44)" : "";
+      }
+      if (toolsEl) toolsEl.textContent = String(msg.totalToolCalls ?? 0);
+      updateStatus(msg.isActive ?? false, msg.lastActivityMs);
+      if (msg.agentSources) {
+        agentSources = msg.agentSources;
+        refreshAgentKey(agentSources);
+      }
+      if ("latestSession" in msg) {
+        renderLatestSession(msg.latestSession ?? null);
+      }
+    } else if (msg.type === "agentFilterChanged") {
+      const sel = document.getElementById("agentFilterSelect");
+      if (sel && msg.value) sel.value = msg.value;
+    }
+  });
+})();
+//# sourceMappingURL=sidebar.js.map

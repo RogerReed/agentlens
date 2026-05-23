@@ -3,7 +3,6 @@ import { SessionStore } from './sessionStore'
 import { summarizeSpans } from './spanSummarizer'
 import { nanoToMs } from './summarizers/helpers'
 import { Span } from './types'
-import { SpanAttribute } from './types'
 
 function isSessionSpan(name: string): boolean {
   return name.includes('invoke_agent')
@@ -44,11 +43,11 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'media')],
     }
     webviewView.webview.html = this.getHtml(webviewView.webview)
-    
+
+    vscode.commands.executeCommand('agentLens.openDashboard')
+
     const msgDisposable = webviewView.webview.onDidReceiveMessage(async msg => {
-      if (msg.type === 'openDashboard') {
-        vscode.commands.executeCommand('agentLens.openDashboard')
-      } else if (msg.type === 'openDashboardTab') {
+      if (msg.type === 'openDashboardTab') {
         vscode.commands.executeCommand('agentLens.openDashboard')
         setTimeout(() => {
           const { DashboardPanel } = require('./dashboardPanel')
@@ -63,67 +62,23 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
         this.refresh()
         const { DashboardPanel } = require('./dashboardPanel')
         DashboardPanel.sendClearAll()
-      } else if (msg.type === 'exportSessionData') {
-        // Organize raw spans by endpoint type + agent, write each group to a separate file
-        try {
-          const spans: Span[] = this.getFilteredSpans()
-          // Use summarizeSpans (same logic as the rest of the app) to build a
-          // reliable traceId → agent map; skip any trace not in a known session
-          const sessions = summarizeSpans(spans).sessions
-          const traceAgent: Record<string, string> = {}
-          for (const session of sessions) {
-            const agent = session.source === 'claude_code' ? 'claude' : session.source
-            traceAgent[session.traceId] = agent
-          }
-          // Group by collector path (endpoint) + agent, skipping unclassified traces
-          const groups: Record<string, Span[]> = {}
-          for (const span of spans) {
-            const agent = traceAgent[span.traceId]
-            if (!agent) continue
-            const attrs: SpanAttribute[] = Array.isArray(span.attributes) ? span.attributes : []
-            const rawPath = attrs.find((a: SpanAttribute) => a.key === '_agentlens.collector_path')?.value?.stringValue || ''
-            const endpoint = rawPath ? rawPath.replace(/^\//, '').replace(/\//g, '-') : 'main'
-            const key = `${endpoint}__${agent}`
-            if (!groups[key]) groups[key] = []
-            groups[key].push(span)
-          }
-          const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-          const baseUri = workspaceFolder ? workspaceFolder.uri : this.extensionUri
-          const now = new Date()
-          const pad = (n: number) => n.toString().padStart(2, '0')
-          const timestamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
-          const writtenFiles: string[] = []
-          for (const [key, groupSpans] of Object.entries(groups)) {
-            const parts = key.split('__')
-            const endpoint = parts[0] || 'main'
-            const agent = parts[1] || 'unknown'
-            const filename = `export_${agent}_${endpoint}_${timestamp}.json`
-            const uri = vscode.Uri.joinPath(baseUri, filename)
-            const data = JSON.stringify(groupSpans, null, 2)
-            await vscode.workspace.fs.writeFile(uri, Buffer.from(data))
-            writtenFiles.push(filename)
-          }
-          vscode.window.showInformationMessage(`Exported raw session data to: ${writtenFiles.join(', ')}`)
-          for (const fname of writtenFiles) {
-            const uri = vscode.Uri.joinPath(baseUri, fname)
-            const doc = await vscode.workspace.openTextDocument(uri)
-            vscode.window.showTextDocument(doc, { preview: false })
-          }
-        } catch (err: unknown) {
-          let msg = 'Export failed.'
-          if (err && typeof err === 'object' && 'message' in err && typeof (err as { message?: string }).message === 'string') {
-            msg = 'Export failed: ' + (err as { message: string }).message
-          } else if (typeof err === 'string') {
-            msg = 'Export failed: ' + err
-          }
-          vscode.window.showErrorMessage(msg)
-        }
       }
     })
 
-    // Push updates to webview every 5 seconds
+    // Push updates within 300ms of new spans arriving; 5s heartbeat as fallback
+    let pendingRefresh: ReturnType<typeof setTimeout> | undefined
+    const scheduleRefresh = () => {
+      if (pendingRefresh) return
+      pendingRefresh = setTimeout(() => { pendingRefresh = undefined; this.refresh() }, 300)
+    }
+    const updateDisposable = this.store.onUpdate(scheduleRefresh)
     const interval = setInterval(() => this.refresh(), 5000)
-    webviewView.onDidDispose(() => { clearInterval(interval); msgDisposable.dispose() })
+    webviewView.onDidDispose(() => {
+      clearInterval(interval)
+      if (pendingRefresh) clearTimeout(pendingRefresh)
+      updateDisposable.dispose()
+      msgDisposable.dispose()
+    })
   }
 
   setAgentFilter(value: string) {
@@ -166,13 +121,16 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
   refresh() {
     if (!this.view) {return}
     const spans = this.getFilteredSpans()
-    const limited = this.limitSessions(summarizeSpans(spans).sessions)
+    const summary = summarizeSpans(spans)
+    const limited = this.limitSessions(summary.sessions)
     const sessionCount = limited.length
     const tokenTotals = this.getTotalInputOutputTokens(spans)
     const cacheHitPct = limited.length > 0
       ? Math.round(limited.reduce((a, s) => a + s.cacheHitRate, 0) / limited.length * 100) : 0
     const avgTurns = limited.length > 0
       ? Math.round(limited.reduce((a, s) => a + s.totalLlmCalls, 0) / limited.length * 10) / 10 : 0
+    const totalErrors = limited.reduce((a, s) => a + s.errors, 0)
+    const totalToolCalls = limited.reduce((a, s) => a + s.totalToolCalls, 0)
     const activity = this.getLastActivity(spans)
     const AGENT_KEY_ORDER = ['copilot', 'claude_code', 'codex']
     const agentSources = [...new Set(
@@ -181,7 +139,23 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       const ai = AGENT_KEY_ORDER.indexOf(a), bi = AGENT_KEY_ORDER.indexOf(b)
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
     })
-    this.view.webview.postMessage({ type: 'update', sessionCount, agentSources, totalInputTokens: tokenTotals.input, totalOutputTokens: tokenTotals.output, cacheHitPct, avgTurns, isActive: activity.isActive, lastActivityMs: activity.lastMs })
+    const latest = limited.length > 0 ? limited[limited.length - 1] : null
+    const latestSession = latest ? {
+      model: latest.model || '',
+      source: latest.source,
+      totalLlmCalls: latest.totalLlmCalls,
+      totalToolCalls: latest.totalToolCalls,
+      durationMs: latest.durationMs,
+      errors: latest.errors,
+      cacheHitRate: latest.cacheHitRate,
+    } : null
+    this.view.webview.postMessage({
+      type: 'update', sessionCount, agentSources,
+      totalInputTokens: tokenTotals.input, totalOutputTokens: tokenTotals.output,
+      cacheHitPct, avgTurns, totalErrors, totalToolCalls,
+      isActive: activity.isActive, lastActivityMs: activity.lastMs,
+      latestSession,
+    })
   }
 
   private limitSessions<T extends { inputTokens: number }>(sessions: T[]): T[] {
@@ -220,8 +194,15 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       ? Math.round(limited.reduce((a, s) => a + s.cacheHitRate, 0) / limited.length * 100) : 0
     const avgTurns = limited.length > 0
       ? Math.round(limited.reduce((a, s) => a + s.totalLlmCalls, 0) / limited.length * 10) / 10 : 0
+    const totalErrors = limited.reduce((a, s) => a + s.errors, 0)
+    const totalToolCalls = limited.reduce((a, s) => a + s.totalToolCalls, 0)
+    const latestSession = limited.length > 0 ? limited[limited.length - 1] : null
     function formatCompact(n: number): string {
       return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
+    }
+    function formatDuration(ms: number): string {
+      if (ms < 60_000) return `${Math.round(ms / 1000)}s`
+      return `${Math.round(ms / 60_000)}m`
     }
 
     const sidebarJsUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'sidebar.js'))
@@ -257,7 +238,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     <html>
     <head>
       <style>
-        body { font-family: var(--vscode-font-family); padding: 8px; color: var(--vscode-foreground); }
+        body { font-family: var(--vscode-font-family); padding: 0 8px 8px; color: var(--vscode-foreground); }
         .open-btn {
           display: block; width: 100%; padding: 6px 10px; margin-bottom: 8px;
           font-size: 12px; font-weight: 600; text-align: center; cursor: pointer;
@@ -297,7 +278,8 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
         <div>${this.collectorError}</div>
         <button onclick="document.getElementById('collector-error-banner').remove()" style="margin-top:6px;font-size:10px;padding:2px 8px;cursor:pointer;background:transparent;border:1px solid currentColor;border-radius:3px;color:inherit">Dismiss</button>
       </div>` : ''}
-      <button class="open-btn" id="openDashboard">Open Dashboard</button>
+
+      <!-- Filters -->
       <div class="card" style="margin-bottom:6px;padding:7px 10px">
         <div style="display:flex;gap:5px;align-items:flex-end">
           <div style="flex:1;min-width:0">
@@ -309,53 +291,96 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
             <select id="agentFilterSelect" style="${selectStyle}">${agentOptions}</select>
           </div>
         </div>
-        <div id="agentKey" style="margin-top:8px"></div>
-        <button class="clear-btn" id="clearBtn">Clear All Data</button>
+        <div id="agentKey" style="margin-top:6px"></div>
       </div>
+
+      <!-- Status + Sessions -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
         <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Status<span class="tip">Active when a span was received in the last 20 seconds. Reverts to idle when no telemetry arrives.</span></span></h3>
+          <h3><span class="has-tip">Status<span class="tip">Active when a span was received in the last 20 seconds.</span></span></h3>
           <div style="display:flex;align-items:center;gap:5px;margin:2px 0">
             <span class="status-dot ${initActivity.isActive ? 'active' : 'idle'}" id="statusDot"></span>
-            <span class="metric" style="font-size:12px;color:${initActivity.isActive ? 'var(--vscode-foreground)' : 'var(--vscode-descriptionForeground)'}" id="statusText">${initActivity.isActive ? 'Receiving' : 'Idle'}</span>
+            <span class="metric" style="font-size:12px;color:${initActivity.isActive ? 'var(--vscode-foreground)' : 'var(--vscode-descriptionForeground)'}" id="statusText">${initActivity.isActive ? 'Active' : 'Idle'}</span>
           </div>
           <div class="label" id="statusLabel">${initActivity.lastMs === 0 ? 'No activity yet' : ''}</div>
         </div>
         <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Sessions<span class="tip">A single prompt-to-response cycle. One session may contain multiple LLM calls and tool invocations.</span></span></h3>
+          <h3><span class="has-tip">Sessions<span class="tip">Prompt-to-response cycles in the selected window.</span></span></h3>
           <div class="metric" id="sessionCountLabel" style="font-size:18px">${sessionCount}</div>
         </div>
       </div>
-      <div class="card tokens-card">
+
+      <!-- Tokens -->
+      <div class="card tokens-card" style="margin-bottom:6px">
         <div class="tokens-half">
-          <h3><span class="has-tip">Input<span class="tip">Tokens sent to the model per request, including system instructions, conversation history, tool definitions, and the user prompt.</span></span></h3>
+          <h3><span class="has-tip">Input<span class="tip">Tokens sent to the model — context, history, tools, and the user prompt.</span></span></h3>
           <div class="metric" id="inputTokens" style="font-size:15px">${formatCompact(tokenTotals.input)}</div>
-          <div class="label">Consumed tokens</div>
+          <div class="label">Total</div>
         </div>
         <div class="tokens-divider"></div>
         <div class="tokens-half">
-          <h3><span class="has-tip">Output<span class="tip">Tokens generated by the model in its response, including reasoning, tool call instructions, and final answers.</span></span></h3>
+          <h3><span class="has-tip">Output<span class="tip">Tokens generated by the model across all sessions.</span></span></h3>
           <div class="metric" id="outputTokens" style="font-size:15px">${formatCompact(tokenTotals.output)}</div>
-          <div class="label">Generated tokens</div>
+          <div class="label">Total</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+
+      <!-- Cache / Turns / Errors / Tools grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
         <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Cache Hit<span class="tip">Average percentage of input tokens served from cache. Higher is better — cached tokens cost less and process faster.</span></span></h3>
+          <h3><span class="has-tip">Cache Hit<span class="tip">Average % of input tokens served from cache. Higher is cheaper and faster.</span></span></h3>
           <div class="metric" id="cacheHitRate" style="font-size:18px">${cacheHitPct}%</div>
-          <div class="label">Average</div>
+          <div class="label">Avg</div>
         </div>
         <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Turns<span class="tip">Average number of LLM calls per session. Fewer turns means the agent resolved tasks more efficiently.</span></span></h3>
+          <h3><span class="has-tip">Turns<span class="tip">Average LLM calls per session. Fewer turns = more efficient.</span></span></h3>
           <div class="metric" id="avgTurns" style="font-size:18px">${avgTurns}</div>
-          <div class="label">Average</div>
+          <div class="label">Avg</div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <h3><span class="has-tip">Errors<span class="tip">Total spans that completed with an error status across the selected sessions.</span></span></h3>
+          <div class="metric" id="totalErrors" style="font-size:18px;color:${totalErrors > 0 ? 'var(--vscode-testing-iconFailed,#f44)' : 'inherit'}">${totalErrors}</div>
+          <div class="label">Total</div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <h3><span class="has-tip">Tool Calls<span class="tip">Total tool invocations across the selected sessions.</span></span></h3>
+          <div class="metric" id="totalToolCalls" style="font-size:18px">${totalToolCalls}</div>
+          <div class="label">Total</div>
         </div>
       </div>
-      <button class="open-btn" id="exportSessionBtn" style="margin-top:8px;">Export OTEL Data</button>
+
+      <!-- Latest session -->
+      <div class="card" id="latestSessionCard" style="margin-bottom:6px;${latestSession ? '' : 'display:none'}">
+        <h3>Latest Session</h3>
+        <div id="latestSessionBody" style="font-size:11px;color:var(--vscode-foreground);margin-top:4px">${latestSession ? `
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+            <span style="color:var(--vscode-descriptionForeground)">${latestSession.source === 'claude_code' ? 'Claude' : latestSession.source === 'codex' ? 'Codex' : 'Copilot'}</span>
+            <span style="color:var(--vscode-descriptionForeground)">${formatDuration(latestSession.durationMs)}</span>
+          </div>
+          <div style="color:var(--vscode-textLink-foreground);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${latestSession.model || '—'}</div>
+          <div style="display:flex;gap:12px;font-size:10px;color:var(--vscode-descriptionForeground)">
+            <span>${latestSession.totalLlmCalls} turn${latestSession.totalLlmCalls !== 1 ? 's' : ''}</span>
+            <span>${latestSession.totalToolCalls} tool${latestSession.totalToolCalls !== 1 ? 's' : ''}</span>
+            ${latestSession.errors > 0 ? `<span style="color:var(--vscode-testing-iconFailed,#f44)">${latestSession.errors} err</span>` : ''}
+            <span>${Math.round(latestSession.cacheHitRate * 100)}% cache</span>
+          </div>` : ''}</div>
+      </div>
+
+      <!-- Actions -->
+      <button class="clear-btn" id="clearBtn">Clear All Data</button>
       <script>
         var __SIDEBAR_INIT__ = {
           lastActivityMs: ${initActivity.lastMs},
-          agentSources: ${agentSourcesJson}
+          agentSources: ${agentSourcesJson},
+          latestSession: ${latestSession ? JSON.stringify({
+            source: latestSession.source,
+            model: latestSession.model,
+            totalLlmCalls: latestSession.totalLlmCalls,
+            totalToolCalls: latestSession.totalToolCalls,
+            durationMs: latestSession.durationMs,
+            errors: latestSession.errors,
+            cacheHitRate: latestSession.cacheHitRate,
+          }) : 'null'}
         };
       </script>
       <script src="${sidebarJsUri}"></script>

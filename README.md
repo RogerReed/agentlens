@@ -1,8 +1,13 @@
-# AgentLens
+<h1><img src="media/mascot.png" alt="" width="48" align="center" /> AgentLens</h1>
 
-![AgentLens mascot](media/mascot.png)
+[![CI](https://github.com/RogerReed/agentlens/actions/workflows/ci.yml/badge.svg)](https://github.com/RogerReed/agentlens/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/RogerReed/agentlens)](LICENSE)
 
-Observability for AI agent sessions in VS Code. AgentLens collects OpenTelemetry (OTLP) traces and logs from AI coding agents, normalizes them into prompt-to-response sessions, and presents real-time dashboards covering token usage, latency, errors, file changes, and more.
+![AgentLens demo](media/demo.gif)
+
+Observability for AI agent sessions in VS Code. AgentLens collects OpenTelemetry (OTEL) traces and logs from AI coding agents via the OTLP (OpenTelemetry Protocol) HTTP endpoint, normalizes them into prompt-to-response sessions, and presents real-time dashboards covering token usage, latency, errors, file changes, and more.
+
+**[Install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)**
 
 ## Features
 
@@ -11,7 +16,7 @@ Observability for AI agent sessions in VS Code. AgentLens collects OpenTelemetry
 - **Recommendations & Malfunction Detection** — Surfaces efficiency issues and detects five agent failure patterns (see below)
 - **Files Changed** — Track which files each agent session modified
 - **Configurable Alerts** — Threshold-based notifications with shared context/cache rules and per-agent thresholds for turns, errors, active time, and repeat loops
-- **Multi-session Support** — Compare up to 25 sessions side-by-side
+- **Multi-session Support** — Compare sessions side-by-side
 
 ## Session Model
 
@@ -38,7 +43,7 @@ The **Recommendations** tab analyzes session data and surfaces two categories of
 | **Ambiguous Success / Escalating Scope** | Too many steps for the task complexity | No clear completion condition |
 | **Infinite Loop — Context Accumulation** | Input tokens growing while output ratio collapses 70%+ | Agent stuck, accumulating context without progress |
 
-Each signal includes a specific recommended action and an **Ask AI to Help** button that sends the issue to your AI chat panel. Use the **Ignore** button to dismiss signals that represent intentional behavior.
+Each signal includes a specific recommended action and a **Copy for {Agent}** button that copies the recommendation prompt to your clipboard so you can paste it into your AI session. Use the **Ignore** button to dismiss signals that represent intentional behavior.
 
 ## Getting Started
 
@@ -294,6 +299,44 @@ Start capture before sending the agent prompt. The capture script ignores spans 
 
 Use `pnpm run capture:list` to see saved fixtures, and check the standalone terminal for `[OTLP] ... ingested` lines if no file is written.
 
+### Replaying exported span files
+
+The **Export** dashboard tab (and the corresponding Command Palette commands) write `export_*.json` files to your workspace root. You can replay these files to re-examine a past session in the dashboard without the original agent running.
+
+Replay sends OTLP spans to port `4318` — the same port used by both the VS Code extension and the standalone server. You only need one running.
+
+**Replay into the VS Code extension** (no extra server needed — the extension is already listening on port 4318):
+
+```bash
+pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json
+```
+
+The spans are sent instantly in one batch. Open (or re-open) the AgentLens dashboard to see the session appear.
+
+**Replay into the standalone server**:
+
+```bash
+# Terminal 1
+pnpm run standalone
+
+# Terminal 2
+pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json
+```
+
+Open **<http://localhost:3000>** to see the replayed session.
+
+**Options**:
+
+```bash
+# Simulate real-time pacing (e.g. to watch spans arrive live)
+pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json --speed 4
+
+# Use a raw (non-redacted) export
+pnpm run demo -- --file ./export_claude_main_20260522_152343.json
+```
+
+By default `--file` sends all spans in one shot (no delay). Pass `--speed N` to pace the replay proportionally to the original session timing. Each replay assigns fresh trace and span IDs so the session appears as a new entry rather than merging with any previous run.
+
 ## Automation — Write Prompts File
 
 When an automation threshold is crossed, AgentLens can write the generated prompt to a markdown file so you have a persistent, reviewable record of every suggestion. This works identically in both the VS Code extension and standalone mode.
@@ -335,6 +378,17 @@ When **Write prompts file** is off (default), triggering an automation shows a n
 
 Automations evaluate only sessions with activity in the last 2 minutes. Historical sessions visible in the dashboard do not trigger automations even if they meet a threshold — changing the session filter will not cause old sessions to fire.
 
+## Commands
+
+Open the VS Code Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for **AgentLens**:
+
+| Command | Description |
+| ------- | ----------- |
+| `AgentLens: Open Dashboard` | Open the full 15-tab dashboard in an editor panel |
+| `AgentLens: Clear Session Data` | Wipe all collected spans from memory |
+| `AgentLens: Export OTEL Data` | Write raw OTEL spans to JSON files in your workspace root (also available in the **Export** dashboard tab) |
+| `AgentLens: Export OTEL Data (Redacted)` | Same, with prompt text, tool inputs, tool results, and PII replaced with `[redacted]` (also available in the **Export** tab) |
+
 ## Extension Settings
 
 This extension contributes the following settings:
@@ -349,7 +403,7 @@ This extension contributes the following settings:
 
 ## Agent Telemetry Formats
 
-Each AI coding agent emits a different OTEL shape. AgentLens normalizes all three into a shared session model for the dashboard, while keeping raw telemetry available in the Traces and Timeline tabs.
+Each AI coding agent emits a different OTEL shape. AgentLens normalizes all three into a shared session model for the dashboard, while keeping raw telemetry available in the Traces tab.
 
 ### Copilot
 
@@ -377,7 +431,7 @@ Each AI coding agent emits a different OTEL shape. AgentLens normalizes all thre
 
 **What's included:** With the recommended configuration (`log_user_prompt = true` and both exporters set): prompt text, token counts, model name, time-to-first-token, tool names, tool arguments, tool results, and span timing are all present.
 
-**Gaps:** Traces and Timeline tabs have less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without `trace_exporter`, span waterfall data is limited.
+**Gaps:** The Traces tab has less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without `trace_exporter`, span waterfall data is limited.
 
 ---
 
@@ -397,7 +451,7 @@ Initial release.
 - Auto-configuration of GitHub Copilot (`github.copilot.chat.otel.*` VS Code settings), Claude Code (`~/.claude/settings.json` env block), and Codex (`~/.codex/config.toml` `[otel]` block)
 - Support for GitHub Copilot, Claude Code, and OpenAI Codex CLI
 
-#### Dashboard — 15 tabs
+#### Dashboard
 
 - **Efficiency** — per-session metrics (turns, cache hit rate, error rate), heat-scored session breakdown table with inline diagnostics, and context growth chart showing input token accumulation across LLM calls
 - **Recommendations** — actionable insights for context bloat, cache misses, tool failures, redundant searches, and oversized tool results; loop and malfunction detection (tool call deadlock, edit-revert cycles, error recurrence, runaway steps, token runaway)
@@ -411,14 +465,14 @@ Initial release.
 - **Latency** — color-coded heatmap of span durations across sessions
 - **Flow** — semantic graph of LLM turns and tool calls with playback animation
 - **Tools** — donut chart of tool call distribution with counts
-- **Timeline** — chronological span list with expandable JSON attributes
 - **Errors** — all error-status spans with full detail expansion
+- **Export** — export raw or redacted span data as JSON; includes replay instructions and links to both Command Palette commands
 - **Help** — glossary and tab descriptions
 
 #### Controls
 
 - Agent filter (All / Copilot / Claude / Codex)
-- Session limit selector (5 – 25 sessions)
+- Session limit selector (1 – 25 sessions)
 - Retain or live-only mode for Summaries and Traces tabs
 - Sidebar panel and full-width editor tab dashboard
 
