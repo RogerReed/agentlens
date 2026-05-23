@@ -2,6 +2,25 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.1.2] — 2026-05-22
+
+### Added
+
+- **Export tab** — new dashboard tab (between Errors and Help) with Export Raw and Export Redacted buttons, 3-second confirmation state, and inline replay instructions
+- **Export Redacted** — `AgentLens: Export OTEL Data (Redacted)` command; prompt text, tool inputs/results, and PII fields (`user.*`, `enduser.*`, `organization.*`) replaced with `[redacted]`; files named `export_redacted_*`
+- **Replay from exported file** — `pnpm run demo -- --file <path>` replays any exported JSON (raw or redacted) directly into the dashboard; instant send by default, `--speed N` for paced replay; works with both plugin and standalone on port 4318
+- **Sidebar latest session card** — model, source, turns, tool calls, errors, and cache hit rate for the most recent session
+- **Sidebar expand/collapse** — ◄/► toggle to show or hide the AgentLens sidebar panel; dashboard opens automatically on first activation
+
+### Changed
+
+- Recommendations action buttons unified to "Copy for {Agent}" / "Copy to Clipboard" (removed "Ask Claude / Ask Copilot / Ask Codex" labels)
+- Standalone export now downloads a ZIP archive; plugin export writes JSON files to workspace root
+
+### Fixed
+
+- Export `message` event listener was registered inside the tooltip `useEffect` without cleanup — moved to its own `useEffect` with proper removal on unmount
+
 ## [0.1.1] — 2026-05-22
 
 ### Fixed
