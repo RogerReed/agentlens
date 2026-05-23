@@ -417,13 +417,12 @@ function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgnored: bo
         <span style="white-space:pre-wrap">{ins.action}</span>
       </div>
       {!isIgnored && (() => {
-        const standalone = !!window.__STANDALONE__
         type ActionButton = { agent: string; label: string; color: string }
         const buttonForAgent = (agent: SessionSummaryCard['source']): ActionButton => {
           const label = getAgentSourceLabel(agent)
           return {
             agent,
-            label: standalone ? 'Copy for ' + label : 'Ask ' + label,
+            label: 'Copy for ' + label,
             color: getAgentColor(agent),
           }
         }
@@ -438,7 +437,7 @@ function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgnored: bo
             presence.codex && buttonForAgent('codex'),
           ].filter(Boolean) as ActionButton[]
         }
-        if (buttons.length === 0) buttons.push({ agent: 'generic', label: standalone ? 'Copy Prompt' : 'Ask AI to Help', color: 'var(--accent)' })
+        if (buttons.length === 0) buttons.push({ agent: 'generic', label: 'Copy to Clipboard', color: 'var(--accent)' })
         const prompt = buildAiPrompt()
         return (
           <div class="insight-ask-ai-group">

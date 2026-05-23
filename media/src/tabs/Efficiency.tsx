@@ -246,7 +246,7 @@ export function Efficiency() {
                 <th style="text-align:center" data-tip="Session number">#</th>
                 <th style="text-align:left" data-tip="The user prompt that started this session">Prompt</th>
                 <th style="text-align:left" data-tip="LLM model used">Model</th>
-                <th style="text-align:left" data-tip="Conversation thread ID — groups multiple sessions from the same chat thread. Copilot and Codex report this; Claude sessions are standalone with no conversation wrapper.">Conv</th>
+                <th style="text-align:left" data-tip="Conversation thread ID — groups multiple sessions from the same chat thread. Copilot and Codex report this; Claude sessions are standalone with no conversation wrapper.">Conv ID</th>
                 <th class="right" data-tip="LLM round-trips">LLM Calls</th>
                 <th class="right" data-tip="Tool invocations">Tool Calls</th>
                 <th class="right" data-tip="Total input tokens">Input Tokens</th>

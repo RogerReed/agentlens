@@ -49,3 +49,19 @@ body { font-family: var(--vscode-font-family); color: var(--fg); background: var
 .flex-4 { display: flex; align-items: center; gap: 4px }
 .flex-6 { display: flex; align-items: center; gap: 6px }
 .flex-8 { display: flex; align-items: center; gap: 8px }
+
+/* ── Component: sidebar toggle button in tab bar (VS Code extension only) ── */
+.sidebar-toggle-btn {
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 11px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  background: none;
+  margin-bottom: -1px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+.sidebar-toggle-btn:hover { color: var(--fg); background: var(--hover); }

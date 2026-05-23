@@ -5,6 +5,7 @@ import { SessionStore } from './sessionStore'
 import { SidebarPanel } from './sidebarPanel'
 import { DashboardPanel } from './dashboardPanel'
 import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } from './autoConfig'
+import { exportSpans, exportSpansRedacted } from './exportData'
 
 let collector: OtlpCollector | undefined
 let store: SessionStore | undefined
@@ -181,20 +182,28 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   )
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('agentLens.exportData', async () => {
-      const data = store!.export()
-      const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-      const baseUri = workspaceFolder
-        ? workspaceFolder.uri
-        : context.globalStorageUri
-      const filename = `agent-lens-export-${new Date().toISOString().replace(/[:.]/g, '-')}.json`
-      const uri = vscode.Uri.joinPath(baseUri, filename)
-      await vscode.workspace.fs.writeFile(uri, Buffer.from(JSON.stringify(data, null, 2)))
+  async function runExport(exporter: typeof exportSpans) {
+    const spans = store!.getSpans()
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+    const baseUri = workspaceFolder ? workspaceFolder.uri : context.globalStorageUri
+    const writtenFiles = await exporter(spans, baseUri)
+    if (writtenFiles.length === 0) {
+      vscode.window.showInformationMessage('AgentLens: No session data to export')
+      return
+    }
+    vscode.window.showInformationMessage(`AgentLens: Exported to: ${writtenFiles.join(', ')}`)
+    for (const fname of writtenFiles) {
+      const uri = vscode.Uri.joinPath(baseUri, fname)
       const doc = await vscode.workspace.openTextDocument(uri)
-      vscode.window.showTextDocument(doc)
-      vscode.window.showInformationMessage(`Exported ${data.spans.length} spans to ${filename}`)
-    })
+      vscode.window.showTextDocument(doc, { preview: false })
+    }
+  }
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('agentLens.exportData', () => runExport(exportSpans))
+  )
+  context.subscriptions.push(
+    vscode.commands.registerCommand('agentLens.exportDataRedacted', () => runExport(exportSpansRedacted))
   )
 
   // Status bar item

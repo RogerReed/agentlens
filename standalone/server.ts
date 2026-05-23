@@ -278,6 +278,18 @@ function computeSidebarData(summary: ReturnType<typeof summarizeSpans>, allSpans
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
   })
 
+  const totalToolCalls = sessions.reduce((s, sess) => s + sess.totalToolCalls, 0)
+  const latest = sessions.length > 0 ? sessions[sessions.length - 1] : null
+  const latestSession = latest ? {
+    source: latest.source,
+    model: latest.model || '',
+    totalLlmCalls: latest.totalLlmCalls,
+    totalToolCalls: latest.totalToolCalls,
+    durationMs: latest.durationMs,
+    errors: latest.errors,
+    cacheHitRate: latest.cacheHitRate,
+  } : null
+
   return {
     sessionCount: sessions.length + inProgressTraceIds.length,
     turnCount: sessions.reduce((s, sess) => s + sess.totalLlmCalls, 0) + inProgressTurns,
@@ -285,9 +297,11 @@ function computeSidebarData(summary: ReturnType<typeof summarizeSpans>, allSpans
     totalOutputTokens: sessions.reduce((s, sess) => s + sess.outputTokens, 0) + inProgressOutput,
     filesChangedCount: filesSet.size,
     errors: errorCount,
+    totalToolCalls,
     cacheHitPct,
     avgTurns,
     agentSources,
+    latestSession,
   }
 }
 
@@ -312,7 +326,8 @@ function getHtml(): string {
   try { sessionSummary = summarizeSpans(spans) } catch { /* ignore */ }
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : {
     sessionCount: 0, turnCount: 0, totalInputTokens: 0, totalOutputTokens: 0,
-    filesChangedCount: 0, errors: 0, cacheHitPct: 0, avgTurns: 0, agentSources: [],
+    filesChangedCount: 0, errors: 0, totalToolCalls: 0, cacheHitPct: 0, avgTurns: 0,
+    agentSources: [], latestSession: null,
   }
   const sessionSummaryJson = safeJson(sessionSummary)
   const sidebarJson = safeJson(sidebar)
@@ -365,47 +380,10 @@ function getHtml(): string {
     }
     #sa-sidebar.sa-collapsed { width: 0; min-width: 0; }
 
-    .sa-sidebar-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 10px 8px 12px;
-      border-bottom: 1px solid var(--vscode-panel-border);
-      flex-shrink: 0;
-    }
-    .sa-sidebar-title {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--vscode-descriptionForeground);
-      white-space: nowrap;
-    }
-    #sa-toggle {
-      background: none; border: none;
-      color: var(--vscode-descriptionForeground);
-      cursor: pointer; font-size: 13px; padding: 2px 4px; border-radius: 3px; line-height: 1;
-    }
-    #sa-toggle:hover { background: var(--vscode-list-hoverBackground); color: var(--vscode-foreground); }
-
-    /* re-open button (shown when sidebar is collapsed) */
-    #sa-reopen {
-      display: none;
-      position: fixed; top: 8px; left: 6px; z-index: 100;
-      background: var(--vscode-editorWidget-background);
-      border: 1px solid var(--vscode-panel-border);
-      color: var(--vscode-descriptionForeground);
-      cursor: pointer; font-size: 13px; padding: 3px 6px; border-radius: 4px; line-height: 1;
-    }
-    #sa-reopen:hover { color: var(--vscode-foreground); }
-    #sa-wrap.sa-collapsed #sa-reopen { display: block; }
-
     /* Sidebar content */
     .sa-body { flex: 1; overflow-y: auto; padding: 8px; font-family: var(--vscode-font-family); color: var(--vscode-foreground); }
     .sb-card { background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 8px 10px; margin-bottom: 6px; position: relative; }
     .sb-metric { font-size: 24px; font-weight: bold; color: var(--vscode-textLink-foreground); }
-    .sb-metric.link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
-    .sb-metric.link:hover { opacity: 0.8; }
     .sb-label { font-size: 11px; color: var(--vscode-descriptionForeground); margin-top: 2px; }
     .sb-h3 { margin: 0 0 4px 0; font-size: 12px; text-transform: uppercase; color: var(--vscode-descriptionForeground); cursor: default; }
     .sb-has-tip { position: static; border-bottom: 1px dotted var(--vscode-descriptionForeground); display: inline-block; margin-bottom: 6px; cursor: help; }
@@ -427,24 +405,6 @@ function getHtml(): string {
     .sb-select { width:100%;padding:3px 6px;font-size:11px;background:var(--vscode-dropdown-background);color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);border-radius:3px;cursor:pointer; }
     .sb-clear-btn { display:block;width:100%;padding:4px 8px;font-size:11px;cursor:pointer;border:1px solid var(--vscode-testing-iconFailed,#f44);border-radius:3px;background:transparent;color:var(--vscode-testing-iconFailed,#f44);margin-top:8px; }
     .sb-clear-btn:hover { background:rgba(255,68,68,0.08); }
-    .open-btn, .sb-export-btn {
-      display: block;
-      width: 100%;
-      padding: 6px 10px;
-      margin-top: 10px;
-      margin-bottom: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      text-align: center;
-      cursor: pointer;
-      color: var(--vscode-button-foreground);
-      background: var(--vscode-button-background);
-      border: none;
-      border-radius: 4px;
-    }
-    .open-btn:hover, .sb-export-btn:hover {
-      background: var(--vscode-button-hoverBackground);
-    }
 
     /* ── Main panel ──────────────────────────────────────────────────────── */
     #sa-main { flex: 1; overflow-y: auto; min-width: 0; padding: 16px 18px; }
@@ -564,6 +524,10 @@ function getHtml(): string {
             }).catch(function() {
               showToast('Could not copy — check browser clipboard permissions');
             });
+          } else if (msg.type === 'exportSessionData' || msg.type === 'exportSessionDataRedacted') {
+            window.dispatchEvent(new MessageEvent('message', { data: { type: msg.type } }));
+          } else if (msg.type === 'openSidebar' || msg.type === 'closeSidebar') {
+            window.dispatchEvent(new CustomEvent('agentlens:sidebar', { detail: { open: msg.type === 'openSidebar' } }));
           } else if (msg.type === 'alert' && msg.label) {
             var color = msg.severity === 'error' ? '#f44747' : msg.severity === 'info' ? '#4fc3f7' : '#f6a623';
             var container = getNotifContainer();
@@ -598,39 +562,35 @@ function getHtml(): string {
   <div id="sa-wrap">
     <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
     <div id="sa-sidebar" style="display:flex;flex-direction:column;height:100%">
-      <div class="sa-sidebar-head">
-        <span class="sa-sidebar-title">AgentLens</span>
-        <button id="sa-toggle" title="Collapse sidebar">&#x25C4;</button>
-      </div>
-      <div class="sa-body" style="flex:1 1 auto;display:flex;flex-direction:column;min-height:0;">
-        <div style="flex:1 1 auto;display:flex;flex-direction:column;min-height:0;">
-          <div class="sb-card" style="margin-bottom:6px;padding:7px 10px">
-            <div style="display:flex;gap:5px;align-items:flex-end">
-              <div style="flex:1;min-width:0">
-                <div class="sb-filter-label">Sessions</div>
-                <select id="sb-session-limit" class="sb-select">
-                  <option value="1">Last 1</option>
-                  <option value="5">Last 5</option>
-                  <option value="10" selected>Last 10</option>
-                  <option value="25">Last 25</option>
-                </select>
-              </div>
-              <div style="flex:1;min-width:0">
-                <div class="sb-filter-label">Agent</div>
-                <select id="sb-agent-filter" class="sb-select">
-                  <option value="all">All</option>
-                  <option value="copilot">Copilot</option>
-                  <option value="claude_code">Claude</option>
-                  <option value="codex">Codex</option>
-                </select>
-              </div>
+      <div class="sa-body" style="flex:1 1 auto;overflow-y:auto">
+        <!-- Filters -->
+        <div class="sb-card" style="margin-bottom:6px;padding:7px 10px">
+          <div style="display:flex;gap:5px;align-items:flex-end">
+            <div style="flex:1;min-width:0">
+              <div class="sb-filter-label">Sessions</div>
+              <select id="sb-session-limit" class="sb-select">
+                <option value="1">Last 1</option>
+                <option value="5">Last 5</option>
+                <option value="10" selected>Last 10</option>
+                <option value="25">Last 25</option>
+              </select>
             </div>
-            <div id="sa-agent-key" style="margin-top:8px"></div>
-            <button class="sb-clear-btn" id="sb-clear-btn">Clear All Data</button>
+            <div style="flex:1;min-width:0">
+              <div class="sb-filter-label">Agent</div>
+              <select id="sb-agent-filter" class="sb-select">
+                <option value="all">All</option>
+                <option value="copilot">Copilot</option>
+                <option value="claude_code">Claude</option>
+                <option value="codex">Codex</option>
+              </select>
+            </div>
           </div>
-          <div class="sb-stat-grid">
+          <div id="sa-agent-key" style="margin-top:6px"></div>
+        </div>
+        <!-- Status + Sessions -->
+        <div class="sb-stat-grid">
           <div class="sb-card" style="margin-bottom:0">
-            <div class="sb-h3"><span class="sb-has-tip">Status<span class="sb-tip">Active when a span was received in the last 20 seconds. Reverts to idle when no telemetry arrives.</span></span></div>
+            <div class="sb-h3"><span class="sb-has-tip">Status<span class="sb-tip">Active when a span was received in the last 20 seconds.</span></span></div>
             <div style="display:flex;align-items:center;gap:5px;margin:2px 0">
               <span class="sb-status-dot idle" id="sb-status-dot"></span>
               <span class="sb-metric" style="font-size:12px;color:var(--vscode-descriptionForeground)" id="sb-status-text">Idle</span>
@@ -638,44 +598,56 @@ function getHtml(): string {
             <div class="sb-label" id="sb-status-label">No activity yet</div>
           </div>
           <div class="sb-card" style="margin-bottom:0">
-            <div class="sb-h3"><span class="sb-has-tip">Sessions<span class="sb-tip">A single prompt-to-response cycle. One session may contain multiple LLM calls and tool invocations.</span></span></div>
+            <div class="sb-h3"><span class="sb-has-tip">Sessions<span class="sb-tip">Prompt-to-response cycles in the selected window.</span></span></div>
             <div class="sb-metric" id="sb-sessions" style="font-size:18px">${sidebar.sessionCount}</div>
           </div>
         </div>
-        <div class="sb-card sb-tokens-card">
+        <!-- Tokens -->
+        <div class="sb-card sb-tokens-card" style="margin-bottom:6px">
           <div class="sb-tokens-half">
-            <div class="sb-h3"><span class="sb-has-tip">Input<span class="sb-tip">Tokens sent to the model per request, including system instructions, conversation history, tool definitions, and the user prompt.</span></span></div>
+            <div class="sb-h3"><span class="sb-has-tip">Input<span class="sb-tip">Tokens sent to the model — context, history, tools, and the user prompt.</span></span></div>
             <div class="sb-metric" id="sb-input" style="font-size:15px">0</div>
-            <div class="sb-label">Consumed tokens</div>
+            <div class="sb-label">Total</div>
           </div>
           <div class="sb-tokens-divider"></div>
           <div class="sb-tokens-half">
-            <div class="sb-h3"><span class="sb-has-tip">Output<span class="sb-tip">Tokens generated by the model in its response, including reasoning, tool call instructions, and final answers.</span></span></div>
+            <div class="sb-h3"><span class="sb-has-tip">Output<span class="sb-tip">Tokens generated by the model across all sessions.</span></span></div>
             <div class="sb-metric" id="sb-output" style="font-size:15px">0</div>
-            <div class="sb-label">Generated tokens</div>
+            <div class="sb-label">Total</div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <!-- Cache / Turns / Errors / Tools -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
           <div class="sb-card" style="margin-bottom:0">
-            <div class="sb-h3"><span class="sb-has-tip">Cache Hit<span class="sb-tip">Average percentage of input tokens served from cache. Higher is better — cached tokens cost less and process faster.</span></span></div>
+            <div class="sb-h3"><span class="sb-has-tip">Cache Hit<span class="sb-tip">Average % of input tokens served from cache. Higher is cheaper and faster.</span></span></div>
             <div class="sb-metric" id="sb-cache" style="font-size:18px">${sidebar.cacheHitPct}%</div>
-            <div class="sb-label">Average</div>
+            <div class="sb-label">Avg</div>
           </div>
           <div class="sb-card" style="margin-bottom:0">
-            <div class="sb-h3"><span class="sb-has-tip">Turns<span class="sb-tip">Average number of LLM calls per session. Fewer turns means the agent resolved tasks more efficiently.</span></span></div>
+            <div class="sb-h3"><span class="sb-has-tip">Turns<span class="sb-tip">Average LLM calls per session. Fewer turns = more efficient.</span></span></div>
             <div class="sb-metric" id="sb-turns" style="font-size:18px">${sidebar.avgTurns}</div>
-            <div class="sb-label">Average</div>
+            <div class="sb-label">Avg</div>
+          </div>
+          <div class="sb-card" style="margin-bottom:0">
+            <div class="sb-h3"><span class="sb-has-tip">Errors<span class="sb-tip">Total spans that completed with an error status across the selected sessions.</span></span></div>
+            <div class="sb-metric" id="sb-errors" style="font-size:18px;${sidebar.errors > 0 ? 'color:var(--vscode-testing-iconFailed,#f44)' : ''}">${sidebar.errors}</div>
+            <div class="sb-label">Total</div>
+          </div>
+          <div class="sb-card" style="margin-bottom:0">
+            <div class="sb-h3"><span class="sb-has-tip">Tool Calls<span class="sb-tip">Total tool invocations across the selected sessions.</span></span></div>
+            <div class="sb-metric" id="sb-tools" style="font-size:18px">${sidebar.totalToolCalls}</div>
+            <div class="sb-label">Total</div>
           </div>
         </div>
-        <!-- Export button directly under metrics/stat boxes -->
-        <button class="sb-export-btn" id="sb-export-btn">Export OTEL Data</button>
+        <!-- Latest session -->
+        <div class="sb-card" id="sb-latest-card" style="${sidebar.latestSession ? '' : 'display:none'}">
+          <div class="sb-h3">Latest Session</div>
+          <div id="sb-latest-body" style="font-size:11px;color:var(--vscode-foreground);margin-top:4px"></div>
         </div>
-
+        <!-- Actions -->
+        <button class="sb-clear-btn" id="sb-clear-btn">Clear All Data</button>
       </div>
     </div>
-
-    <!-- re-open button shown when sidebar is collapsed -->
-    <button id="sa-reopen" title="Open sidebar">&#x25BA;</button>
 
     <!-- ── Main dashboard ─────────────────────────────────────────────────── -->
     <div id="sa-main">
@@ -701,35 +673,32 @@ function getHtml(): string {
     function fmt(n) {
       return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n || 0);
     }
-
-    // ── Export Session Data ─────────────────────────────────────────────
-    document.getElementById('sb-export-btn').addEventListener('click', function() {
-      window.postMessage({ type: 'exportSessionData' }, '*');
-    });
-
-    // ── Sidebar toggle ────────────────────────────────────────────────────
-    var sidebar  = document.getElementById('sa-sidebar');
-    var wrap     = document.getElementById('sa-wrap');
-    var toggle   = document.getElementById('sa-toggle');
-    var reopen   = document.getElementById('sa-reopen');
-
-    function setCollapsed(c) {
-      sidebar.classList.toggle('sa-collapsed', c);
-      wrap.classList.toggle('sa-collapsed', c);
-      localStorage.setItem('sa-sidebar-collapsed', c ? '1' : '0');
+    function fmtDur(ms) {
+      if (!ms) return '0s';
+      if (ms < 60000) return Math.round(ms / 1000) + 's';
+      return Math.round(ms / 60000) + 'm';
     }
-    if (localStorage.getItem('sa-sidebar-collapsed') === '1') setCollapsed(true);
-    toggle.addEventListener('click', function() { setCollapsed(true); });
-    reopen.addEventListener('click', function() { setCollapsed(false); });
+    function formatAgo(ms) {
+      if (!ms) return 'No activity yet';
+      var secs = Math.floor((Date.now() - ms) / 1000);
+      if (secs < 60) return secs + 's ago';
+      var mins = Math.floor(secs / 60);
+      if (mins < 60) return mins + 'm ago';
+      return Math.floor(mins / 60) + 'h ago';
+    }
+
+    // ── Sidebar collapse (driven by dashboard tab-bar toggle) ─────────────
+    var sidebarEl = document.getElementById('sa-sidebar');
+    window.addEventListener('agentlens:sidebar', function(e) {
+      sidebarEl.classList.toggle('sa-collapsed', !e.detail.open);
+    });
 
     // ── Filter controls ───────────────────────────────────────────────────
     document.getElementById('sb-session-limit').addEventListener('change', function() {
-      var val = this.value;
-      window.dispatchEvent(new MessageEvent('message', { data: { type: 'setFilter', sessionLimit: Number(val) } }));
+      window.dispatchEvent(new MessageEvent('message', { data: { type: 'setFilter', sessionLimit: Number(this.value) } }));
     });
     document.getElementById('sb-agent-filter').addEventListener('change', function() {
-      var val = this.value;
-      window.dispatchEvent(new MessageEvent('message', { data: { type: 'setFilter', agentFilter: val } }));
+      window.dispatchEvent(new MessageEvent('message', { data: { type: 'setFilter', agentFilter: this.value } }));
     });
     document.getElementById('sb-clear-btn').addEventListener('click', function() {
       fetch('/api/clear', { method: 'POST' });
@@ -762,10 +731,35 @@ function getHtml(): string {
       el.innerHTML = html;
     }
 
+    // ── Latest session card ───────────────────────────────────────────────
+    function renderLatestSession(s) {
+      var card = document.getElementById('sb-latest-card');
+      var body = document.getElementById('sb-latest-body');
+      if (!card || !body) return;
+      if (!s) { card.style.display = 'none'; return; }
+      card.style.display = '';
+      var agentLabel = s.source === 'claude_code' ? 'Claude' : s.source === 'codex' ? 'Codex' : 'Copilot';
+      var errHtml = s.errors > 0 ? '<span style="color:var(--vscode-testing-iconFailed,#f44)">' + s.errors + ' err</span>' : '';
+      body.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">' +
+          '<span style="color:var(--vscode-descriptionForeground)">' + agentLabel + '</span>' +
+          '<span style="color:var(--vscode-descriptionForeground)">' + fmtDur(s.durationMs) + '</span>' +
+        '</div>' +
+        '<div style="color:var(--vscode-textLink-foreground);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (s.model || '—') + '</div>' +
+        '<div style="display:flex;gap:12px;font-size:10px;color:var(--vscode-descriptionForeground)">' +
+          '<span>' + s.totalLlmCalls + ' turn' + (s.totalLlmCalls !== 1 ? 's' : '') + '</span>' +
+          '<span>' + s.totalToolCalls + ' tool' + (s.totalToolCalls !== 1 ? 's' : '') + '</span>' +
+          errHtml +
+          '<span>' + Math.round(s.cacheHitRate * 100) + '% cache</span>' +
+        '</div>';
+    }
+
     // ── Live updates from SSE ─────────────────────────────────────────────
     var lastActivityMs = 0;
-    var agentSources = ${sidebarJson}.agentSources || [];
+    var initSb = ${sidebarJson};
+    var agentSources = initSb.agentSources || [];
     refreshAgentKey(agentSources);
+    renderLatestSession(initSb.latestSession || null);
 
     function updateStatus(isActive, ms) {
       var dot = document.getElementById('sb-status-dot');
@@ -785,14 +779,6 @@ function getHtml(): string {
         label.textContent = lastActivityMs ? formatAgo(lastActivityMs) : 'No activity yet';
       }
     }
-    function formatAgo(ms) {
-      if (!ms) return 'No activity yet';
-      var secs = Math.floor((Date.now() - ms) / 1000);
-      if (secs < 60) return secs + 's ago';
-      var mins = Math.floor(secs / 60);
-      if (mins < 60) return mins + 'm ago';
-      return Math.floor(mins / 60) + 'h ago';
-    }
     setInterval(function() {
       var dot = document.getElementById('sb-status-dot');
       if (dot && dot.classList.contains('idle') && lastActivityMs) {
@@ -810,6 +796,11 @@ function getHtml(): string {
       document.getElementById('sb-output').textContent   = fmt(sb.totalOutputTokens);
       document.getElementById('sb-input').textContent    = fmt(sb.totalInputTokens);
       document.getElementById('sb-cache').textContent    = (sb.cacheHitPct || 0) + '%';
+      var errEl = document.getElementById('sb-errors');
+      if (errEl) { errEl.textContent = sb.errors || 0; errEl.style.color = sb.errors > 0 ? 'var(--vscode-testing-iconFailed,#f44)' : ''; }
+      var toolsEl = document.getElementById('sb-tools');
+      if (toolsEl) toolsEl.textContent = sb.totalToolCalls || 0;
+      renderLatestSession(sb.latestSession || null);
       updateStatus(true, Date.now());
       clearTimeout(window._idleTimer);
       window._idleTimer = setTimeout(function() { updateStatus(false, lastActivityMs); }, 20000);
@@ -823,13 +814,9 @@ function getHtml(): string {
       }
     });
 
-    // Set initial formatted token values
-    var initSb = ${sidebarJson};
     document.getElementById('sb-output').textContent = fmt(initSb.totalOutputTokens);
     document.getElementById('sb-input').textContent  = fmt(initSb.totalInputTokens);
-    if (initSb.sessionCount > 0) {
-      updateStatus(false, Date.now() - 30000);
-    }
+    if (initSb.sessionCount > 0) updateStatus(false, Date.now() - 30000);
   })();
   </script>
 </body>

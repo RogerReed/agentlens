@@ -1,4 +1,5 @@
 import { useEffect } from 'preact/hooks'
+import { signal } from '@preact/signals'
 import { zipSync, strToU8 } from 'fflate'
 import {
   spans, sessionSummary, toolCalls, waterfallSpans, dismissedSpanIds,
@@ -22,9 +23,12 @@ import { Flow } from './tabs/Flow'
 import { Agents } from './tabs/Agents'
 import { Tools } from './tabs/Tools'
 import { Errors } from './tabs/Errors'
+import { Export } from './tabs/Export'
 import { Help } from './tabs/Help'
 import { Automation, checkAutomations } from './tabs/Automation'
 
+
+const sidebarOpen = signal(true)
 
 const TABS = [
   { id: 'efficiency',      label: 'Efficiency',      title: 'Per-session metrics and token usage breakdown.' },
@@ -40,6 +44,7 @@ const TABS = [
   { id: 'agents',          label: 'Agents',          title: 'Copilot, Claude, and Codex — session counts, token usage, tools, and latency broken down by agent source.' },
   { id: 'tools',           label: 'Tools',           title: 'Tool call distribution broken down by tool name, with token usage and performance stats per tool.' },
   { id: 'errors',          label: 'Errors',          title: 'All spans that completed with an error status. Click any item to expand its full details and attributes.' },
+  { id: 'export',          label: 'Export',          title: 'Export raw or redacted OTEL span data as JSON files.' },
   { id: 'help',            label: 'Help',            title: 'Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard.' },
 ]
 
@@ -215,6 +220,7 @@ function ActivePanel() {
     case 'agents':          return <Agents />
     case 'tools':           return <Tools />
     case 'errors':          return <Errors />
+    case 'export':          return <Export />
     case 'automation':      return <Automation />
     case 'help':            return <Help />
     default:                return null
@@ -226,65 +232,77 @@ function normalizeTabId(tab: string): string {
 }
 
 export function App() {
+  // Listen for export requests (standalone only — plugin handles via dashboardPanel)
+  useEffect(() => {
+    const exportHandler = (e: MessageEvent) => {
+      const type = e.data?.type
+      if (type !== 'exportSessionData' && type !== 'exportSessionDataRedacted') return
+      if (!(window as unknown as { __STANDALONE__?: boolean }).__STANDALONE__) return
+
+      const redact = type === 'exportSessionDataRedacted'
+      const allSpans = spans.value
+      const sessions = displaySessions.value
+
+      const _now = new Date()
+      const _pad = (n: number) => n.toString().padStart(2, '0')
+      const timestamp = `${_now.getFullYear()}${_pad(_now.getMonth()+1)}${_pad(_now.getDate())}_${_pad(_now.getHours())}${_pad(_now.getMinutes())}${_pad(_now.getSeconds())}`
+      const prefix = redact ? 'export_redacted' : 'export'
+
+      const REDACT_CONTENT = new Set(['gen_ai.prompt','gen_ai.completion','llm.prompts','llm.completions',
+        'tool_input','tool_result','user_prompt','system_prompt','input','output'])
+      const REDACT_PII = new Set(['user.id','user.name','user.email','user.username',
+        'enduser.id','enduser.name','enduser.email','organization.id','organization.name',
+        'github.copilot.user','github.user'])
+      const shouldRedact = (key: string) =>
+        REDACT_CONTENT.has(key) || REDACT_PII.has(key) || key.endsWith('.content') ||
+        key.includes('prompt') || key.includes('tool_input') || key.includes('tool_result') ||
+        key.startsWith('user.') || key.startsWith('enduser.') || key.startsWith('organization.')
+
+      const traceAgent: Record<string, string> = {}
+      for (const s of sessions) {
+        const agent = s.source === 'claude_code' ? 'claude' : (s.source || 'unknown')
+        if (s.traceId) traceAgent[s.traceId] = agent
+      }
+
+      const groups: Record<string, Span[]> = {}
+      for (const span of allSpans) {
+        const agent = traceAgent[span.traceId]
+        if (!agent) continue
+        const attrs = Array.isArray(span.attributes) ? span.attributes : []
+        const rawPath = attrs.find(a => a.key === '_agentlens.collector_path')?.value?.stringValue || ''
+        const endpoint = rawPath ? rawPath.replace(/^\//, '').replace(/\//g, '-') : 'main'
+        const key = `${endpoint}__${agent}`
+        if (!groups[key]) groups[key] = []
+        const exportSpan = redact
+          ? { ...span, attributes: attrs.map(a => shouldRedact(a.key) ? { key: a.key, value: { stringValue: '[redacted]' } } : a) }
+          : span
+        groups[key].push(exportSpan)
+      }
+
+      const triggerDownload = (blob: Blob, filename: string) => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url; a.download = filename
+        document.body.appendChild(a); a.click()
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url) }, 100)
+      }
+
+      const groupEntries = Object.entries(groups)
+      if (groupEntries.length === 0) return
+      const files: Record<string, Uint8Array> = {}
+      for (const [key, groupSpans] of groupEntries) {
+        const [endpoint, agent] = key.split('__')
+        files[`${prefix}_${agent}_${endpoint}_${timestamp}.json`] = strToU8(JSON.stringify(groupSpans, null, 2))
+      }
+      const blob = new Blob([zipSync(files)], { type: 'application/zip' })
+      triggerDownload(blob, `agentlens_${prefix}_${timestamp}.zip`)
+    }
+    window.addEventListener('message', exportHandler)
+    return () => window.removeEventListener('message', exportHandler)
+  }, [])
+
   // Global smart tooltip for [data-tip] elements
   useEffect(() => {
-    // Listen for exportSessionData request from sidebar (standalone only)
-    window.addEventListener('message', (e: MessageEvent) => {
-      if (e.data && e.data.type === 'exportSessionData') {
-        // Only handle in standalone mode (VS Code webview handles via dashboardPanel)
-        if (!(window as unknown as { __STANDALONE__?: boolean }).__STANDALONE__) return
-        // Standalone: Export filtered/visible sessions, grouped by agent + endpoint
-        const sessions = displaySessions.value
-        const allSpans = spans.value
-        const _now = new Date()
-        const _pad = (n: number) => n.toString().padStart(2, '0')
-        const timestamp = `${_now.getFullYear()}${_pad(_now.getMonth()+1)}${_pad(_now.getDate())}_${_pad(_now.getHours())}${_pad(_now.getMinutes())}${_pad(_now.getSeconds())}`
-
-        // Derive endpoint for a session from its spans' _agentlens.collector_path attribute
-        const getEndpoint = (traceId: string): string => {
-          const span = allSpans.find(s => s.traceId === traceId)
-          const attrs = Array.isArray(span?.attributes) ? span!.attributes : []
-          const rawPath = attrs.find(a => a.key === '_agentlens.collector_path')?.value?.stringValue || ''
-          return rawPath ? rawPath.replace(/^\//, '').replace(/\//g, '-') : 'main'
-        }
-
-        // Group by agent + endpoint
-        const groups: Record<string, SessionSummaryCard[]> = {}
-        for (const s of sessions) {
-          const agent = s.source === 'claude_code' ? 'claude' : (s.source || 'unknown')
-          const endpoint = getEndpoint(s.traceId)
-          const key = `${agent}__${endpoint}`
-          if (!groups[key]) groups[key] = []
-          groups[key].push(s)
-        }
-
-        const triggerDownload = (blob: Blob, filename: string) => {
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = filename
-          document.body.appendChild(a)
-          a.click()
-          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url) }, 100)
-        }
-
-        const groupEntries = Object.entries(groups)
-        if (groupEntries.length <= 1) {
-          const [key] = groupEntries[0] ?? ['unknown__main']
-          const [agent, endpoint] = key.split('__')
-          const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: 'application/json' })
-          triggerDownload(blob, `export_${agent}_${endpoint}_${timestamp}.json`)
-        } else {
-          const files: Record<string, Uint8Array> = {}
-          for (const [key, keySessions] of groupEntries) {
-            const [agent, endpoint] = key.split('__')
-            files[`export_${agent}_${endpoint}_${timestamp}.json`] = strToU8(JSON.stringify(keySessions, null, 2))
-          }
-          const blob = new Blob([zipSync(files)], { type: 'application/zip' })
-          triggerDownload(blob, `agentlens_export_${timestamp}.zip`)
-        }
-      }
-    })
     let tipEl: HTMLDivElement | null = null
     function show(e: MouseEvent) {
       const target = (e.target as HTMLElement).closest('[data-tip]') as HTMLElement | null
@@ -397,6 +415,21 @@ export function App() {
   return (
     <>
       <div class="tabs">
+        <button
+          class="sidebar-toggle-btn"
+          title={sidebarOpen.value ? 'Close AgentLens sidebar' : 'Open AgentLens sidebar'}
+          onClick={() => {
+            const opening = !sidebarOpen.value
+            sidebarOpen.value = opening
+            if (vscode) {
+              vscode.postMessage({ type: opening ? 'openSidebar' : 'closeSidebar' })
+            } else {
+              window.dispatchEvent(new CustomEvent('agentlens:sidebar', { detail: { open: opening } }))
+            }
+          }}
+        >
+          {sidebarOpen.value ? '◄' : '►'}
+        </button>
         {TABS.map(t =>
           t.id === 'alerts'
             ? <AlertsTab key="alerts" />
