@@ -1,7 +1,7 @@
 When AgentLens activated, it automatically wrote the telemetry configuration for each agent it detected:
 
 | Agent | Config location |
-|---|---|
+| --- | --- |
 | **Claude Code** | `~/.claude/settings.json` |
 | **GitHub Copilot** | VS Code user settings |
 | **Codex CLI** | `~/.codex/config.toml` |

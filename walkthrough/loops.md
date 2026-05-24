@@ -1,7 +1,7 @@
 The **Recommendations** tab continuously scans your sessions for five failure patterns:
 
 | Signal | What it detects |
-|---|---|
+| --- | --- |
 | **Tool Call Deadlock** | Same tool + arguments called 5+ times — agent not retaining results |
 | **State Corruption Spiral** | File edited then reverted — agent oscillating between conflicting states |
 | **Hallucination Amplification** | Same error recurring 3+ times — fix attempts not resolving root cause |

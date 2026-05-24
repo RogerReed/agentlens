@@ -2,6 +2,13 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.1.3] — 2026-05-24
+
+### Changed
+
+- README overhauled — restructured around a local/transparency theme; Getting Started split into VS Code Extension and Standalone (Docker) subsections with ephemeral and persistent Docker commands; Configuration reorganized with Manual Configuration first followed by Auto-configuration; Replaying Exported Spans promoted to its own top-level section; section headers simplified throughout
+- Removed unused setting from VS Code extension settings contributions
+
 ## [0.1.2] — 2026-05-22
 
 ### Added

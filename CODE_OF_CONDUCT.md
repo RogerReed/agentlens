@@ -7,11 +7,13 @@ We are committed to making participation in this project a welcoming, respectful
 ## Standards
 
 **Expected behavior:**
+
 - Be respectful and constructive in discussions and code review
 - Welcome newcomers and help them get started
 - Accept feedback gracefully
 
 **Unacceptable behavior:**
+
 - Harassment, insults, or personal attacks
 - Dismissing issues or PRs without explanation
 - Publishing others' private information

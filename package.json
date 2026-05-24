@@ -2,7 +2,7 @@
   "name": "agentlens-dashboard",
   "displayName": "AgentLens - AI Agent Observability",
   "description": "Observability for AI agent sessions in VS Code",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "agentlens",
   "license": "MIT",
   "repository": {
@@ -148,11 +148,6 @@
           "type": "number",
           "default": 4318,
           "description": "Local port for OTLP trace receiver"
-        },
-        "agentLens.syncToCloud": {
-          "type": "boolean",
-          "default": false,
-          "description": "Sync session data to AgentLens cloud dashboard (Pro)"
         }
       }
     }

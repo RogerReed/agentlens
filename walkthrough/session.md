@@ -1,14 +1,16 @@
 Start a session with any supported agent and traces will begin flowing in automatically:
 
 **Claude Code** — open a terminal and run:
-```
+
+```bash
 claude
 ```
 
 **GitHub Copilot** — ask a question in the Copilot Chat panel.
 
 **Codex CLI** — open a terminal and run:
-```
+
+```bash
 codex
 ```
 

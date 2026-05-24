@@ -5,18 +5,18 @@
 
 ![AgentLens demo](media/demo.gif)
 
-Observability for AI agent sessions in VS Code. AgentLens collects OpenTelemetry (OTEL) traces and logs from AI coding agents via the OTLP (OpenTelemetry Protocol) HTTP endpoint, normalizes them into prompt-to-response sessions, and presents real-time dashboards covering token usage, latency, errors, file changes, and more.
+**Local** observability that makes AI agent sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. AgentLens captures OpenTelemetry traces from your agents and surfaces context growth, tool usage, token consumption, latency, errors, and file changes in real time — then helps you prompt your agents on inefficiencies to improve interactions.
 
 **[Install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)**
 
 ## Features
 
-- **OTLP Collection** — Built-in HTTP collector receives traces, logs, and metrics-compatible payloads on `127.0.0.1:4318`
-- **Session Dashboard** — Interactive panels for tokens, latency, efficiency, errors, flow, and timeline
-- **Recommendations & Malfunction Detection** — Surfaces efficiency issues and detects five agent failure patterns (see below)
-- **Files Changed** — Track which files each agent session modified
-- **Configurable Alerts** — Threshold-based notifications with shared context/cache rules and per-agent thresholds for turns, errors, active time, and repeat loops
-- **Multi-session Support** — Compare sessions side-by-side
+- **Telemetry Collection** — Built-in OpenTelemetry receiver captures traces and logs from Copilot, Claude Code, and Codex — no external infrastructure needed
+- **Session Dashboard** — See inside every agent run: context growth, tool calls, token usage, latency, errors, and file changes across interactive real-time panels
+- **Recommendations & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns — with suggested prompts to correct course
+- **Files Changed** — Track which files each session created or modified, with before/after diffs
+- **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat loops — per-agent or shared
+- **Multi-session Support** — Compare sessions side-by-side to spot patterns across runs 
 
 ## Session Model
 
@@ -37,7 +37,7 @@ The **Recommendations** tab analyzes session data and surfaces two categories of
 
 | Signal | Description | Trigger |
 | ------ | ----------- | ------- |
-| **Tool Call Deadlock** | Same tool + arguments called 5+ times | Agent not retaining tool results |
+| **Tool Call Deadlock** | Same tool + arguments called 3+ times (critical at 5+) | Agent not retaining tool results |
 | **State Corruption Spiral** | A file edited then reverted to a prior state | Agent oscillating between conflicting constraints |
 | **Hallucination Amplification Loop** | Same error recurring 3+ times | Fix attempts not resolving the root cause |
 | **Ambiguous Success / Escalating Scope** | Too many steps for the task complexity | No clear completion condition |
@@ -47,30 +47,37 @@ Each signal includes a specific recommended action and a **Copy for {Agent}** bu
 
 ## Getting Started
 
-1. Install the extension from the VS Code Marketplace
+### VS Code Extension
+
+1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)
 2. Open the **AgentLens** view from the Activity Bar
-3. AgentLens automatically configures **GitHub Copilot**, **Claude Code**, and **Codex** to send OTLP telemetry to the built-in collector
-4. Start an agent session and watch the dashboard populate in real-time
+3. AgentLens automatically configures supported agents on activation — see [Auto-configuration](#auto-configuration)
+4. Start an agent session and watch the dashboard populate in real time
 
-## Setup
+### Standalone (Docker)
 
-AgentLens auto-configures all supported agents on activation. If auto-config fails, or you need to verify or configure manually, use the instructions below.
+```bash
+# Ephemeral — data cleared on container stop
+docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 agentlens/agentlens
 
-### Auto-configuration
+# Persistent — spans survive restarts (macOS/Linux)
+docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 \
+  -v ~/.agentlens:/data \
+  agentlens/agentlens
 
-On activation, AgentLens automatically writes the required telemetry config for each detected agent. This runs both when the VS Code extension activates and when the standalone server starts.
+# Persistent — spans survive restarts (Windows)
+docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
+  -v "$env:USERPROFILE\.agentlens:/data" `
+  agentlens/agentlens
+```
 
-| Agent | Config file written |
-| --- | --- |
-| Claude Code (CLI + VS Code extension) | `~/.claude/settings.json` (macOS/Linux) · `%USERPROFILE%\.claude\settings.json` (Windows) |
-| GitHub Copilot (VS Code extension) | VS Code User Settings via VS Code API — same on all platforms |
-| OpenAI Codex CLI | `~/.codex/config.toml` (macOS/Linux) · `%USERPROFILE%\.codex\config.toml` (Windows) |
+Open <http://localhost:3000> after the container starts. Configure your agents to send telemetry to `http://localhost:4318` — see [Manual Configuration](#manual-configuration) below.
 
-After first install, **restart any running agent sessions** to pick up the new config.
+## Configuration
 
----
+### Manual Configuration
 
-### Claude Code — CLI and VS Code Extension
+#### Claude Code Configuration
 
 The `claude` CLI and the Claude Code VS Code extension both read from the same settings file. Add the following to the `"env"` block:
 
@@ -107,7 +114,7 @@ If `settings.json` already exists, merge the `env` block — do not replace the 
 
 ---
 
-### GitHub Copilot — VS Code Extension
+#### Copilot Configuration
 
 Add the following to VS Code **User Settings** (`Cmd+Shift+P` / `Ctrl+Shift+P` → *Preferences: Open User Settings (JSON)*). These settings work the same on macOS, Linux, and Windows.
 
@@ -121,7 +128,7 @@ Add the following to VS Code **User Settings** (`Cmd+Shift+P` / `Ctrl+Shift+P` �
 
 ---
 
-### OpenAI Codex CLI
+#### Codex Configuration
 
 Add an `[otel]` section to the Codex config file. Restart any running Codex sessions after saving.
 
@@ -145,7 +152,7 @@ If `config.toml` already has an `[otel]` section, add only the missing keys. Aft
 
 ---
 
-### VS Code Integrated Terminal
+#### VS Code Integrated Terminal
 
 If the Claude Code CLI runs inside VS Code's integrated terminal and traces are not appearing, add the env vars directly to VS Code's terminal environment. Use the key matching your OS in VS Code User Settings:
 
@@ -167,7 +174,7 @@ If the Claude Code CLI runs inside VS Code's integrated terminal and traces are 
 
 Troubleshooting: open the **AgentLens** output channel (*View → Output → AgentLens*) to confirm spans are arriving. Check that your shell profile does not override `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
-### Quick Verification
+#### Quick Verification
 
 - **Claude (macOS/Linux):** `echo $OTEL_EXPORTER_OTLP_ENDPOINT` — should print `http://localhost:4318`
 - **Claude (Windows cmd):** `echo %OTEL_EXPORTER_OTLP_ENDPOINT%` · PowerShell: `$env:OTEL_EXPORTER_OTLP_ENDPOINT`
@@ -175,60 +182,43 @@ Troubleshooting: open the **AgentLens** output channel (*View → Output → Age
 - **Codex (macOS/Linux):** `cat ~/.codex/config.toml` and confirm the `[otel]` section
 - **Codex (Windows):** `type %USERPROFILE%\.codex\config.toml`
 
-## Standalone Mode (no VS Code required)
+### Auto-configuration
 
-AgentLens can run as a standalone web server outside of VS Code — useful for CI, remote machines, or when you prefer a browser tab over the editor panel.
+When the VS Code extension activates, AgentLens automatically writes the required telemetry config for each detected agent — no manual steps needed. After first install, **restart any running agent sessions** to pick up the new config.
 
-### Option 1 — Docker (recommended)
+| Agent | Config file written |
+| --- | --- |
+| Claude Code (CLI + VS Code extension) | `~/.claude/settings.json` (macOS/Linux) · `%USERPROFILE%\.claude\settings.json` (Windows) |
+| GitHub Copilot (VS Code extension) | VS Code User Settings via VS Code API — same on all platforms |
+| OpenAI Codex CLI | `~/.codex/config.toml` (macOS/Linux) · `%USERPROFILE%\.codex\config.toml` (Windows) |
 
-No Node.js or clone required. The image exposes port `4318` for OTLP traces and port `3000` for the dashboard UI.
+If auto-configuration fails or you need to verify what was written, use the [Manual Configuration](#manual-configuration) instructions above.
 
-> **Network exposure:** `-p 3000:3000` binds to all host interfaces by default, making both ports reachable from your local network. Use `127.0.0.1:3000:3000` to restrict to localhost only (recommended for personal use).
+## Replaying Exported Spans
 
-#### macOS / Linux
+The **Export** tab writes span files to your workspace root — `export_*.json` for full data or `export_redacted_*.json` with prompt text, tool inputs, and tool results replaced with `[redacted]`. Replay either to re-examine a past session without the original agent running:
 
 ```bash
-# Ephemeral — data is lost when the container stops (localhost only)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 agentlens/agentlens
-
-# Persistent — spans survive restarts (localhost only)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 \
-  -v ~/.agentlens:/data \
-  agentlens/agentlens
-
-# LAN-accessible — exposes to other devices on your network
-docker run -p 3000:3000 -p 4318:4318 \
-  -v ~/.agentlens:/data \
-  agentlens/agentlens
+pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json
 ```
 
-#### Windows (PowerShell)
+Spans are sent to port `4318` — the VS Code extension or standalone server must be running. Pass `--speed N` to pace the replay proportionally to the original session timing.
 
-```powershell
-# Ephemeral (localhost only)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 agentlens/agentlens
+## Standalone Mode Options
 
-# Persistent (localhost only)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
-  -v "$env:USERPROFILE\.agentlens:/data" `
-  agentlens/agentlens
+AgentLens runs as a standalone web server outside VS Code — useful for CI, remote machines, or when you prefer a browser tab.
+
+### Docker
+
+Quick-start commands are in [Getting Started](#standalone-docker). Additional options:
+
+**LAN-accessible** — exposes the dashboard to other devices on your network:
+
+```bash
+docker run -p 3000:3000 -p 4318:4318 -v ~/.agentlens:/data agentlens/agentlens
 ```
 
-#### Windows (Command Prompt)
-
-```cmd
-rem Ephemeral (localhost only)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 agentlens/agentlens
-
-rem Persistent (localhost only)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 ^
-  -v "%USERPROFILE%\.agentlens:/data" ^
-  agentlens/agentlens
-```
-
-Open **<http://localhost:3000>** after the container starts. Span data is stored in `~/.agentlens` on the host when using the persistent mount.
-
-To use a different port pair (e.g. if `4318` is already in use by the VS Code extension):
+**Custom ports** — if `4318` is already in use by the VS Code extension:
 
 ```bash
 docker run -p 127.0.0.1:3001:3000 -p 127.0.0.1:4319:4318 \
@@ -236,110 +226,28 @@ docker run -p 127.0.0.1:3001:3000 -p 127.0.0.1:4319:4318 \
   agentlens/agentlens
 ```
 
-Then point your agents at `http://localhost:4319` and open **<http://localhost:3001>**.
+Then point your agents at `http://localhost:4319` and open <http://localhost:3001>.
 
----
+### Node.js (from source)
 
-### Option 2 — Node.js (from source)
-
-### Prerequisites
-
-- Node.js 18+
-- Clone or download this repository
-
-### Quick start
+Requires Node.js 18+ and this repository cloned.
 
 ```bash
-# 1. Install dependencies
-pnpm install   # or: npm install
-
-# 2. Build and start the standalone server
+pnpm install
 pnpm run standalone
 ```
 
-This builds all assets and starts two servers:
-
-| Server | Default port | Purpose |
-| ------ | ------------ | ------- |
-| OTLP receiver | `4318` | Accepts traces/logs from Copilot, Claude Code, Codex |
-| Dashboard UI | `3000` | Serves the dashboard at `http://localhost:3000` |
-
-Open **<http://localhost:3000>** in your browser. The dashboard updates live as agent sessions send data.
-
-### Agent configuration
-
-The standalone server uses the same OTLP port (`4318`) as the VS Code extension. Your agents do not need reconfiguration if you've already set them up — just make sure the VS Code extension is not running at the same time (both cannot bind port `4318` simultaneously).
-
-If you need both running simultaneously, use a different port for the standalone server:
+Starts the OTLP receiver on port `4318` and the dashboard at <http://localhost:3000>. The standalone server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously:
 
 ```bash
 OTLP_PORT=4319 UI_PORT=3001 pnpm run standalone
 ```
 
-Then point your agents at `http://localhost:4319` instead.
+Spans are saved to `~/.agentlens/spans.json` and reloaded on restart. Set `DATA_DIR` to override the location.
 
-### Stopping
+## Automation Prompts File
 
-Press `Ctrl+C` in the terminal where the server is running.
-
-### Data persistence
-
-Spans are saved to `~/.agentlens/spans.json` (configurable via `DATA_DIR` env var) and reloaded automatically on the next start. The "Clear All Data" button in the dashboard also clears this file. The VS Code extension persists spans separately via its own storage.
-
-### Capturing demo fixtures
-
-The standalone server can record real Claude Code and Codex sessions as replayable fixtures:
-
-```bash
-pnpm run standalone
-pnpm run capture -- my-session --duration 180 --clear
-```
-
-Start capture before sending the agent prompt. The capture script ignores spans that already existed when it connected, so a file is only written when new spans arrive after the `Recording started` message. Press `s` in the **capture** terminal to save and exit early. Saved fixtures appear under `demo/fixtures/<name>.json`.
-
-Use `pnpm run capture:list` to see saved fixtures, and check the standalone terminal for `[OTLP] ... ingested` lines if no file is written.
-
-### Replaying exported span files
-
-The **Export** dashboard tab (and the corresponding Command Palette commands) write `export_*.json` files to your workspace root. You can replay these files to re-examine a past session in the dashboard without the original agent running.
-
-Replay sends OTLP spans to port `4318` — the same port used by both the VS Code extension and the standalone server. You only need one running.
-
-**Replay into the VS Code extension** (no extra server needed — the extension is already listening on port 4318):
-
-```bash
-pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json
-```
-
-The spans are sent instantly in one batch. Open (or re-open) the AgentLens dashboard to see the session appear.
-
-**Replay into the standalone server**:
-
-```bash
-# Terminal 1
-pnpm run standalone
-
-# Terminal 2
-pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json
-```
-
-Open **<http://localhost:3000>** to see the replayed session.
-
-**Options**:
-
-```bash
-# Simulate real-time pacing (e.g. to watch spans arrive live)
-pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json --speed 4
-
-# Use a raw (non-redacted) export
-pnpm run demo -- --file ./export_claude_main_20260522_152343.json
-```
-
-By default `--file` sends all spans in one shot (no delay). Pass `--speed N` to pace the replay proportionally to the original session timing. Each replay assigns fresh trace and span IDs so the session appears as a new entry rather than merging with any previous run.
-
-## Automation — Write Prompts File
-
-When an automation threshold is crossed, AgentLens can write the generated prompt to a markdown file so you have a persistent, reviewable record of every suggestion. This works identically in both the VS Code extension and standalone mode.
+When an automation threshold is crossed, AgentLens can write the generated prompt to a markdown file. To act on it automatically, configure your agent to watch or include that file as an input — for example, by pointing Claude Code at it via a hook or referencing it in a system prompt. Without that wiring, the file serves as a persistent, reviewable log you can paste from manually. For simpler workflows, leave **Write prompts file** off and use the **Copy Prompt** notification button instead.
 
 ### How it works
 
@@ -393,19 +301,13 @@ Open the VS Code Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for
 
 This extension contributes the following settings:
 
-- `agentLens.otlpPort`: Port for the OTLP HTTP collector (default: `4318`)
-- `agentLens.syncToCloud`: Reserved for the AgentLens cloud dashboard (default: `false`)
-
-## Requirements
-
-- VS Code 1.118.0 or later
-- At least one supported agent: GitHub Copilot in VS Code, Claude Code, or OpenAI Codex CLI
+- `agentLens.otlpPort`: Local port for the OTLP trace receiver (default: `4318`)
 
 ## Agent Telemetry Formats
 
 Each AI coding agent emits a different OTEL shape. AgentLens normalizes all three into a shared session model for the dashboard, while keeping raw telemetry available in the Traces tab.
 
-### Copilot
+### Copilot OTEL Format
 
 **Format:** OpenTelemetry trace spans with a clean single-trace hierarchy. Each conversation is one trace; LLM calls and tool calls are child spans nested under a session root. No extra configuration needed.
 
@@ -415,7 +317,7 @@ Each AI coding agent emits a different OTEL shape. AgentLens normalizes all thre
 
 ---
 
-### Claude Code
+### Claude Code OTEL Format
 
 **Format:** OpenTelemetry trace spans. The session root span closes when the interaction ends, with LLM calls and tool calls as children. Optional supplemental log records are emitted when enhanced telemetry env vars are set.
 
@@ -425,7 +327,7 @@ Each AI coding agent emits a different OTEL shape. AgentLens normalizes all thre
 
 ---
 
-### Codex CLI
+### Codex OTEL Format
 
 **Format:** Primarily flat OTLP log records (structured JSON events sent to `/v1/logs`), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding `trace_exporter` to config also emits timing spans to `/v1/traces`.
 
