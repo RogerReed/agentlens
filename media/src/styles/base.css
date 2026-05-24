@@ -1,0 +1,67 @@
+:root {
+  --bg: var(--vscode-editor-background);
+  --fg: var(--vscode-foreground);
+  --border: var(--vscode-panel-border);
+  --accent: var(--vscode-textLink-foreground);
+  --card-bg: var(--vscode-editorWidget-background, var(--bg));
+  --error: var(--vscode-testing-iconFailed, #f44);
+  --success: var(--vscode-testing-iconPassed, #4c4);
+  --muted: var(--vscode-descriptionForeground);
+  --hover: var(--vscode-list-hoverBackground);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--vscode-font-family); color: var(--fg); background: var(--bg); padding: 16px; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.empty-state { text-align: center; padding: 40px; color: var(--muted); font-style: italic; }
+
+.json-key { color: #9cdcfe; }
+.json-string { color: #ce9178; }
+.json-number { color: #b5cea8; }
+.json-bool { color: #569cd6; }
+.json-null { color: #569cd6; font-style: italic; }
+
+/* ── Utility: color & typography ─────────────────────────────────────────── */
+.muted { color: var(--muted) }
+.accent { color: var(--accent) }
+.err { color: var(--error) }
+.bold { font-weight: 600 }
+.right { text-align: right }
+.upper { text-transform: uppercase }
+.no-select { user-select: none }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.clickable { cursor: pointer; user-select: none }
+
+/* ── Component: tab-level stat header ────────────────────────────────────── */
+.tab-stats { display: flex; gap: 20px; margin-bottom: 16px; font-size: 12px; color: var(--muted) }
+.tab-stat-val { color: var(--accent); font-size: 16px }
+
+/* ── Component: section label (uppercase muted group header) ─────────────── */
+.section-label { font-weight: 600; font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px }
+
+/* ── Component: number table cell (right-aligned) ────────────────────────── */
+.td-num { padding: 5px 8px; text-align: right }
+
+/* ── Component: flex row helpers ─────────────────────────────────────────── */
+.flex-4 { display: flex; align-items: center; gap: 4px }
+.flex-6 { display: flex; align-items: center; gap: 6px }
+.flex-8 { display: flex; align-items: center; gap: 8px }
+
+/* ── Component: sidebar toggle button in tab bar (VS Code extension only) ── */
+.sidebar-toggle-btn {
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 11px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  background: none;
+  margin-bottom: -1px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+.sidebar-toggle-btn:hover { color: var(--fg); background: var(--hover); }

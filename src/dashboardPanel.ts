@@ -1,0 +1,283 @@
+import * as vscode from 'vscode'
+import { SessionStore } from './sessionStore'
+import { SidebarPanel } from './sidebarPanel'
+import { summarizeSpans } from './spanSummarizer'
+
+export class DashboardPanel {
+  public static currentPanel: DashboardPanel | undefined
+  private readonly panel: vscode.WebviewPanel
+  private disposables: vscode.Disposable[] = []
+  private pendingUpdate: ReturnType<typeof setTimeout> | undefined
+
+  static show(context: vscode.ExtensionContext, store: SessionStore, sidebarProvider?: SidebarPanel) {
+    if (DashboardPanel.currentPanel) {
+      DashboardPanel.currentPanel.panel.reveal()
+      DashboardPanel.currentPanel.update()
+      return
+    }
+    const panel = vscode.window.createWebviewPanel(
+      'agentLens.fullDashboard',
+      'AgentLens Dashboard',
+      vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
+      }
+    )
+    DashboardPanel.currentPanel = new DashboardPanel(panel, context, store, sidebarProvider)
+  }
+
+  static switchToTab(tab: string) {
+    if (DashboardPanel.currentPanel) {
+      DashboardPanel.currentPanel.panel.webview.postMessage({ type: 'switchTab', tab })
+    }
+  }
+
+  static sendFilter(agentFilter?: string, sessionLimit?: number) {
+    if (DashboardPanel.currentPanel) {
+      DashboardPanel.currentPanel.panel.webview.postMessage({ type: 'setFilter', agentFilter, sessionLimit })
+    }
+  }
+
+  static sendClearAll() {
+    if (DashboardPanel.currentPanel) {
+      DashboardPanel.currentPanel.panel.webview.postMessage({ type: 'clearAll' })
+    }
+  }
+
+  static disposePanel() {
+    DashboardPanel.currentPanel?.dispose()
+  }
+
+  private constructor(
+    panel: vscode.WebviewPanel,
+    private context: vscode.ExtensionContext,
+    private store: SessionStore,
+    private sidebarProvider?: SidebarPanel
+  ) {
+    this.panel = panel
+    this.panel.onDidDispose(() => this.dispose(), null, this.disposables)
+    this.panel.webview.html = this.getHtml()
+
+    this.panel.webview.onDidReceiveMessage(msg => {
+      if (msg.type === 'clearAll') {
+        vscode.commands.executeCommand('agentLens.clearSessions')
+        this.update()
+      } else if (msg.type === 'askAI' && msg.prompt) {
+        const prompt = `AgentLens detected the following efficiency issue in my workspace. Help me fix it:\n\n${msg.prompt}`
+        openAIChat(prompt, msg.agent)
+      } else if (msg.type === 'alert' && msg.label) {
+        handleAlertNotification(msg as { label: string; detail?: string; severity: string }, context, store, sidebarProvider)
+      } else if (msg.type === 'automation' && msg.prompt) {
+        handleAutomation(msg as { label: string; writePromptsFile: boolean; agent: string; sessionTitle: string; prompt: string })
+      } else if (msg.type === 'openFile' && msg.filePath) {
+        const uri = vscode.Uri.file(msg.filePath)
+        vscode.window.showTextDocument(uri, { preview: true }).then(undefined, () => {
+          vscode.window.showWarningMessage(`Could not open file: ${msg.filePath}`)
+        })
+      } else if (msg.type === 'agentFilterChanged' && this.sidebarProvider) {
+        this.sidebarProvider.setAgentFilter(msg.value || 'all')
+      } else if (msg.type === 'exportSessionData') {
+        vscode.commands.executeCommand('agentLens.exportData')
+      } else if (msg.type === 'exportSessionDataRedacted') {
+        vscode.commands.executeCommand('agentLens.exportDataRedacted')
+      } else if (msg.type === 'openSidebar') {
+        vscode.commands.executeCommand('workbench.view.extension.agent-lens')
+      } else if (msg.type === 'closeSidebar') {
+        vscode.commands.executeCommand('workbench.action.closeSidebar')
+      }
+    }, null, this.disposables)
+
+    // Push updates within 300ms of new spans arriving; fall back to 10s heartbeat.
+    const pushDisposable = store.onUpdate(() => this.scheduleUpdate())
+    this.disposables.push(pushDisposable)
+    const interval = setInterval(() => this.update(), 10000)
+    this.disposables.push({ dispose: () => clearInterval(interval) })
+  }
+
+  private scheduleUpdate() {
+    if (this.pendingUpdate) { return }
+    this.pendingUpdate = setTimeout(() => {
+      this.pendingUpdate = undefined
+      this.update()
+    }, 300)
+  }
+
+  update() {
+    const spans = this.store.getSpans()
+    const summary = this.store.getSummary()
+    let sessionSummary
+    try {
+      sessionSummary = summarizeSpans(spans)
+    } catch {
+      sessionSummary = null
+    }
+    this.panel.webview.postMessage({ type: 'update', spans, summary, sessionSummary })
+  }
+
+  private dispose() {
+    DashboardPanel.currentPanel = undefined
+    if (this.pendingUpdate) { clearTimeout(this.pendingUpdate); this.pendingUpdate = undefined }
+    this.panel.dispose()
+    this.disposables.forEach(d => d.dispose())
+  }
+
+  private getWebviewUri(filename: string): vscode.Uri {
+    return this.panel.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'media', filename)
+    )
+  }
+
+  private getHtml(): string {
+    const summary = this.store.getSummary()
+    const cssUri = this.getWebviewUri('dashboard.css')
+    const jsUri = this.getWebviewUri('dashboard.js')
+    const mascotUri = this.getWebviewUri('help-mascot.png')
+    const nonce = getNonce()
+
+    let sessionSummaryJson: string
+    try {
+      sessionSummaryJson = safeJsonForScript(summarizeSpans(this.store.getSpans()))
+    } catch {
+      sessionSummaryJson = 'null'
+    }
+
+    let spansJson: string
+    try {
+      spansJson = safeJsonForScript(this.store.getSpans())
+    } catch {
+      spansJson = '[]'
+    }
+
+    let toolCallsJson: string
+    try {
+      toolCallsJson = safeJsonForScript(summary.toolCalls)
+    } catch {
+      toolCallsJson = '{}'
+    }
+
+    const initialData = `<script nonce="${nonce}">
+        window.__INITIAL_SPANS__ = ${spansJson};
+        window.__INITIAL_TOOL_CALLS__ = ${toolCallsJson};
+        window.__INITIAL_SESSION_SUMMARY__ = ${sessionSummaryJson};
+        window.__MASCOT_URI__ = ${safeJsonForScript(mascotUri.toString())};
+      </script>`
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; img-src ${this.panel.webview.cspSource}; style-src ${this.panel.webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' ${this.panel.webview.cspSource};">
+  <link rel="stylesheet" href="${cssUri}">
+</head>
+<body>
+  ${initialData}
+  <div id="app"></div>
+  <script nonce="${nonce}" src="${jsUri}"></script>
+</body>
+</html>`
+  }
+}
+
+async function handleAlertNotification(
+  msg: { label: string; detail?: string; severity: string },
+  context: vscode.ExtensionContext,
+  store: SessionStore,
+  sidebarProvider?: SidebarPanel
+): Promise<void> {
+  const text = `AgentLens: ${msg.label}${msg.detail ? ' — ' + msg.detail : ''}`
+  let promise: Thenable<string | undefined>
+  if (msg.severity === 'error') {
+    promise = vscode.window.showErrorMessage(text, 'View Alerts')
+  } else if (msg.severity === 'info') {
+    promise = vscode.window.showInformationMessage(text, 'View Alerts')
+  } else {
+    promise = vscode.window.showWarningMessage(text, 'View Alerts')
+  }
+  promise.then(action => {
+    if (action === 'View Alerts') {
+      DashboardPanel.show(context, store, sidebarProvider)
+      DashboardPanel.switchToTab('alerts')
+    }
+  })
+}
+
+async function openAIChat(prompt: string, agent?: string): Promise<void> {
+  const commands = await vscode.commands.getCommands(true)
+  if (agent === 'copilot') {
+    const cmd = ['github.copilot.chat.open', 'workbench.action.chat.open'].find(c => commands.includes(c))
+    if (cmd) { vscode.commands.executeCommand(cmd, { query: prompt }); return }
+  }
+  // Claude, Codex, and Copilot fallback — user explicitly clicked, so clipboard write is their intent
+  await vscode.env.clipboard.writeText(prompt)
+  const label = agent === 'claude_code' ? 'Claude' : agent === 'codex' ? 'Codex' : 'AI'
+  vscode.window.showInformationMessage(`AgentLens: Prompt copied — paste into your ${label} session.`)
+}
+
+async function writeAutomationPrompt(agent: string, label: string, fullPrompt: string): Promise<string | undefined> {
+  const agentSlug = agent === 'claude_code' ? 'claude' : agent === 'codex' ? 'codex' : 'copilot'
+  const agentName = agent === 'claude_code' ? 'Claude' : agent === 'codex' ? 'Codex' : 'Copilot'
+  const filename = `agentlens-prompts-${agentSlug}.md`
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+  if (!workspaceFolder) {
+    vscode.window.showWarningMessage('AgentLens: No workspace folder open — cannot write prompts file.')
+    return undefined
+  }
+  const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, filename)
+  const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19)
+  const entry = `## ${timestamp} — ${label}\n\n${fullPrompt}\n\n---\n\n`
+  let existing = ''
+  try {
+    const data = await vscode.workspace.fs.readFile(fileUri)
+    existing = Buffer.from(data).toString('utf8')
+  } catch { /* file doesn't exist yet */ }
+  const content = existing ? existing + entry : `# AgentLens Prompts — ${agentName}\n\n${entry}`
+  await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'))
+  return filename
+}
+
+async function handleAutomation(msg: { label: string; writePromptsFile: boolean; agent: string; sessionTitle: string; prompt: string }): Promise<void> {
+  const agentLabel = msg.agent === 'claude_code' ? 'Claude' : msg.agent === 'copilot' ? 'Copilot' : msg.agent === 'codex' ? 'Codex' : 'AI'
+  const fullPrompt = `[AgentLens Automation: ${msg.label}]\n\n${msg.prompt}`
+  const snippet = msg.sessionTitle.length > 50 ? msg.sessionTitle.slice(0, 50) + '…' : msg.sessionTitle
+
+  if (msg.writePromptsFile) {
+    const filename = await writeAutomationPrompt(msg.agent, msg.label, fullPrompt)
+    if (filename) {
+      vscode.window.showInformationMessage(`AgentLens [${msg.label}]: prompt written to ${filename}`, 'Dismiss')
+    }
+    return
+  }
+
+  // writePromptsFile off: show notification with manual Copy Prompt button only
+  const action = await vscode.window.showWarningMessage(
+    `AgentLens [${msg.label}]: "${snippet}"`,
+    { modal: false },
+    'Copy Prompt',
+    'Dismiss',
+  )
+  if (action === 'Copy Prompt') {
+    await vscode.env.clipboard.writeText(fullPrompt)
+    vscode.window.showInformationMessage(`AgentLens: Prompt copied — paste into your ${agentLabel} session.`)
+  }
+}
+
+function getNonce(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let nonce = ''
+  for (let i = 0; i < 32; i++) {
+    nonce += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return nonce
+}
+
+/** Escape JSON for safe embedding inside a <script> tag */
+function safeJsonForScript(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/<\//g, '<\\/')
+    .replace(/<!--/g, '<\\!--')
+    .replace(/\$\{/g, '\\${')
+}
+

@@ -1,0 +1,27 @@
+.git/
+node_modules/
+dist/
+out/
+.vscode-test/
+*.vsix
+
+# Pre-built JS — Dockerfile rebuilds from source
+standalone/server.js
+standalone/server.js.map
+media/dashboard.js
+media/dashboard.js.map
+media/sidebar.js
+media/sidebar.js.map
+
+# Demo / test artifacts
+demo/
+walkthrough/
+
+# Docs
+README.md
+CHANGELOG.md
+TEST_DATA.md
+
+# OS / editor
+.DS_Store
+.vscode/

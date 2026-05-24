@@ -1,0 +1,13 @@
+.DS_Store
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
+standalone/server.js
+standalone/server.js.map
+# Captured fixture files contain real telemetry — opt-in to commit specific ones
+demo/fixtures/*.json
+# Session data exports
+export_*.json
+agent-lens-export-*.json

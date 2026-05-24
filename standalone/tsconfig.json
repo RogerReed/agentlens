@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "outDir": "../out/standalone"
+  },
+  "include": ["server.ts", "../src/**/*.ts"],
+  "exclude": ["../src/test", "../media"]
+}
