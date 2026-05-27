@@ -311,9 +311,9 @@ Each AI coding agent emits a different OTEL shape. AgentLens normalizes all thre
 
 **Format:** OpenTelemetry trace spans with a clean single-trace hierarchy. Each conversation is one trace; LLM calls and tool calls are child spans nested under a session root. No extra configuration needed.
 
-**What's included:** Prompt text, token counts (input, output), model name, time-to-first-token, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.
+**What's included:** Prompt text, token counts (input, output, cache read), model name, time-to-first-token, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.
 
-**Gaps:** Cache token data (read/create) is not part of Copilot's telemetry. No additional configuration unlocks further data — what Copilot exposes is already fully available.
+**Gaps:** Cache write token counts are not exposed — Copilot manages cache creation server-side and does not include it in telemetry. Cache read tokens (`gen_ai.usage.cache_read.input_tokens`) are available. No additional configuration unlocks further data — what Copilot exposes is already fully available.
 
 ---
 
