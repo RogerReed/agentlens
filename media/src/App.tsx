@@ -15,6 +15,7 @@ import { Efficiency } from './tabs/Efficiency'
 import { Recommendations } from './tabs/Recommendations'
 import { Alerts, computeAlertCount, checkAlerts } from './tabs/Alerts'
 import { Tokens } from './tabs/Tokens'
+import { Cost } from './tabs/Cost'
 import { Latency } from './tabs/Latency'
 import { Summaries } from './tabs/Summaries'
 import { Traces } from './tabs/Traces'
@@ -36,6 +37,7 @@ const TABS = [
   { id: 'alerts',          label: 'Alerts',          title: 'Configurable alerts for context window usage, error rates, session length, and other efficiency signals.' },
   { id: 'automation',      label: 'Automation',      title: 'Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed.' },
   { id: 'tokens',          label: 'Tokens',          title: 'Token consumption aggregated by span name and per session, sorted from highest to lowest.' },
+  { id: 'cost',            label: 'Cost',            title: 'Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing.' },
   { id: 'latency',         label: 'Latency',         title: 'Span durations as a color-coded grid, helping identify which operations are consistently slow.' },
   { id: 'summaries',       label: 'Summaries',       title: 'A high-level, human-readable timeline of each session — LLM calls with their decisions, tool calls with arguments, and token usage.' },
   { id: 'traces',          label: 'Traces',          title: 'Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing.' },
@@ -212,6 +214,7 @@ function ActivePanel() {
     case 'recommendations': return <Recommendations />
     case 'alerts':          return <Alerts />
     case 'tokens':          return <Tokens />
+    case 'cost':            return <Cost />
     case 'latency':         return <Latency />
     case 'summaries':       return <Summaries />
     case 'traces':          return <Traces />
