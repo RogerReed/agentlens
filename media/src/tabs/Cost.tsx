@@ -194,15 +194,24 @@ export function Cost() {
   const sessions = displaySessions.value
   const [mode, setMode] = useState<PricingMode>('token')
 
-  if (sessions.length === 0) {
+  const copilotSessions = sessions.filter(s => s.source === 'copilot')
+
+  const scopeNote = (
+    <div style="font-size:11px;color:var(--muted);background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:7px 10px;margin-bottom:16px;line-height:1.5">
+      Cost estimation is currently implemented for <strong>Copilot</strong> sessions only. Claude and Codex support coming soon.
+    </div>
+  )
+
+  if (copilotSessions.length === 0) {
     return (
       <div id="cost-content">
-        <div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div>
+        {scopeNote}
+        <div class="empty-state">No Copilot sessions recorded — start a Copilot chat session to see cost estimates</div>
       </div>
     )
   }
 
-  const costs = sessions.map(s => ({ session: s, cost: calcSessionCost(s, mode) }))
+  const costs = copilotSessions.map(s => ({ session: s, cost: calcSessionCost(s, mode) }))
   const totalUsd = costs.reduce((sum, c) => sum + c.cost.totalUsd, 0)
   const totalCredits = totalUsd / 0.01
   const anyUnknown = costs.some(c => c.cost.modelUnknown)
@@ -211,6 +220,7 @@ export function Cost() {
 
   return (
     <div id="cost-content">
+      {scopeNote}
       {/* Mode toggle */}
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
         <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Pricing model</span>
@@ -235,7 +245,7 @@ export function Cost() {
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#FFB085;vertical-align:middle;margin-right:3px" />Claude</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#F0FF42;vertical-align:middle;margin-right:3px" />Codex</span>
       </div>
-      <CostBarChart sessions={sessions} mode={mode} />
+      <CostBarChart sessions={copilotSessions} mode={mode} />
 
       {/* Per-turn cumulative cost chart */}
       <h3 style="margin:24px 0 8px;font-size:13px;color:var(--muted)">COST OVER TURNS</h3>
@@ -244,7 +254,7 @@ export function Cost() {
           ? 'Cumulative cost per LLM call. Cache tokens included in session totals below but not per-turn (not separately tracked in telemetry).'
           : 'Cumulative cost per LLM call at multiplier × $0.04/request.'}
       </div>
-      <CostGrowthChart sessions={sessions} mode={mode} />
+      <CostGrowthChart sessions={copilotSessions} mode={mode} />
 
       {/* Session cost table */}
       <h3 style="margin:24px 0 8px;font-size:13px;color:var(--muted)">SESSION COST TABLE</h3>
@@ -295,7 +305,7 @@ export function Cost() {
           </tbody>
           <tfoot>
             <tr style="border-top:2px solid var(--vscode-panel-border);font-weight:600">
-              <td colSpan={7} style="padding:6px 8px;text-align:right;color:var(--muted)">Total ({sessions.length} session{sessions.length !== 1 ? 's' : ''})</td>
+              <td colSpan={7} style="padding:6px 8px;text-align:right;color:var(--muted)">Total ({copilotSessions.length} Copilot session{copilotSessions.length !== 1 ? 's' : ''})</td>
               <td style="padding:6px 8px;text-align:right">{anyUnknown ? '~' : ''}{fmtUsd(totalUsd)}</td>
               {mode === 'token' && <td style="padding:6px 8px;text-align:right;color:var(--muted)">{anyUnknown ? '~' : ''}{fmtCredits(totalCredits)}</td>}
             </tr>
