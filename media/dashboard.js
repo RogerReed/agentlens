@@ -6344,9 +6344,9 @@
   var AGENT_OTEL_SHAPES = [
     {
       agent: "Copilot",
-      format: "OpenTelemetry trace spans with a clean single-trace hierarchy. Each conversation is one trace; LLM calls and tool calls are child spans nested under a session root. No extra configuration needed.",
-      coverage: "Prompt text, token counts (input, output), model name, TTFT, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.",
-      gaps: "Cache token data (read/create) is not part of Copilot's telemetry. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available."
+      format: 'OpenTelemetry <a href="#gl-trace" style="color:inherit;text-underline-offset:2px">trace</a> <a href="#gl-span" style="color:inherit;text-underline-offset:2px">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call" style="color:inherit;text-underline-offset:2px">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
+      coverage: 'Prompt text, token counts (<a href="#gl-input-tokens" style="color:inherit;text-underline-offset:2px">input</a>, <a href="#gl-output-tokens" style="color:inherit;text-underline-offset:2px">output</a>), model name, <a href="#gl-ttft" style="color:inherit;text-underline-offset:2px">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
+      gaps: `<a href="#gl-cache-read-tokens" style="color:inherit;text-underline-offset:2px">Cache</a> token data (read/create) is not part of Copilot's telemetry. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available.`
     },
     {
       agent: "Claude Code",
@@ -6445,13 +6445,30 @@
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-config", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.config.heading }),
       /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 6px;color:var(--foreground)", children: "Not seeing any data?" }),
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 8px", children: [
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 10px;color:var(--foreground)", children: "Not seeing any data?" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 4px", children: [
+          /* @__PURE__ */ u4("strong", { style: "color:var(--foreground)", children: "VS Code extension:" }),
+          " AgentLens automatically configures all supported agents on first activation. Just restart each agent once \u2014 sessions will start appearing immediately."
+        ] }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 6px", children: [
+          /* @__PURE__ */ u4("strong", { style: "color:var(--foreground)", children: "Standalone server:" }),
+          " Run the setup script once to configure Claude Code and Codex automatically, then restart each agent. GitHub Copilot requires the VS Code extension for auto-configuration."
+        ] }),
+        /* @__PURE__ */ u4("pre", { style: "font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 10px;overflow-x:auto;white-space:pre", children: `# macOS / Linux \u2014 configure all agents, or pick one:
+./scripts/configure-agents.sh
+./scripts/configure-agents.sh --agent claude
+./scripts/configure-agents.sh --agent codex
+
+# Windows (PowerShell) \u2014 configure all agents, or pick one:
+.\\scripts\\configure-agents.ps1
+.\\scripts\\configure-agents.ps1 -Agent claude
+.\\scripts\\configure-agents.ps1 -Agent codex` }),
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0 0 6px", children: [
           "Config is read at startup \u2014 a running ",
           /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
           " ",
           /* @__PURE__ */ u4("a", { href: "#gl-session", style: "color:inherit;text-underline-offset:2px", children: "session" }),
-          " will not pick up changes automatically. Restart the agent after AgentLens writes its config:"
+          " started before configuration will not emit telemetry. Restart using the steps below:"
         ] }),
         /* @__PURE__ */ u4("table", { style: "font-size:11px;border-collapse:collapse;width:100%", children: /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
           /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
@@ -6488,9 +6505,7 @@
             /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
               "Exit any running ",
               /* @__PURE__ */ u4("code", { style: codeStyle, children: "codex" }),
-              " session and start a new one, or reload the VS Code window if using the Codex extension. Config is read from ",
-              /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.codex/config.toml" }),
-              " on each startup."
+              " session and start a new one, or reload the VS Code window if using the Codex extension."
             ] })
           ] })
         ] }) }),
@@ -6739,15 +6754,15 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
           /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
             /* @__PURE__ */ u4("p", { style: "margin:0 0 6px", children: [
               /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Format: " }),
-              row.format
+              /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: row.format } })
             ] }),
             /* @__PURE__ */ u4("p", { style: "margin:0 0 6px", children: [
               /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "What's included: " }),
-              row.coverage
+              /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: row.coverage } })
             ] }),
             /* @__PURE__ */ u4("p", { style: "margin:0", children: [
               /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Gaps: " }),
-              row.gaps
+              /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: row.gaps } })
             ] })
           ] })
         ] })) }),
@@ -6929,7 +6944,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             {
               id: "help-context-accumulation",
               title: "Infinite Loop \u2014 Context Accumulation",
-              why: "Input tokens grew by 30,000+ across 4+ calls while output-to-input ratio collapsed by 70%+. The agent is consuming context while producing less output.",
+              why: `<a href="#gl-input-tokens" style="color:inherit;text-underline-offset:2px">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio" style="color:inherit;text-underline-offset:2px">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`,
               example: "First call: 8K in \u2192 600 out (7.5%). Last call: 65K in \u2192 80 out (0.12%). Five turns reading the same files without edits.",
               steps: `<li>Stop immediately \u2014 cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Summaries tab to review what was accomplished.</li>`,
               impact: "Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."

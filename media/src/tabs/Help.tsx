@@ -102,9 +102,9 @@ const AGENT_OTEL_SHAPES: Array<{
 }> = [
   {
     agent: 'Copilot',
-    format: 'OpenTelemetry trace spans with a clean single-trace hierarchy. Each conversation is one trace; LLM calls and tool calls are child spans nested under a session root. No extra configuration needed.',
-    coverage: 'Prompt text, token counts (input, output), model name, TTFT, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
-    gaps: 'Cache token data (read/create) is not part of Copilot\'s telemetry. No additional configuration unlocks further data — what Copilot exposes is already fully available.',
+    format: 'OpenTelemetry <a href="#gl-trace" style="color:inherit;text-underline-offset:2px">trace</a> <a href="#gl-span" style="color:inherit;text-underline-offset:2px">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call" style="color:inherit;text-underline-offset:2px">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
+    coverage: 'Prompt text, token counts (<a href="#gl-input-tokens" style="color:inherit;text-underline-offset:2px">input</a>, <a href="#gl-output-tokens" style="color:inherit;text-underline-offset:2px">output</a>), model name, <a href="#gl-ttft" style="color:inherit;text-underline-offset:2px">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
+    gaps: '<a href="#gl-cache-read-tokens" style="color:inherit;text-underline-offset:2px">Cache</a> token data (read/create) is not part of Copilot\'s telemetry. No additional configuration unlocks further data — what Copilot exposes is already fully available.',
   },
   {
     agent: 'Claude Code',
@@ -209,8 +209,26 @@ function ConfigSection() {
       <h3 class="help-heading">{HELP_SECTIONS.config.heading}</h3>
 
       <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
-        <p style="font-size:12px;font-weight:600;margin:0 0 6px;color:var(--foreground)">Not seeing any data?</p>
-        <p style="font-size:12px;color:var(--muted);margin:0 0 8px">Config is read at startup — a running <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> <a href="#gl-session" style="color:inherit;text-underline-offset:2px">session</a> will not pick up changes automatically. Restart the agent after AgentLens writes its config:</p>
+        <p style="font-size:12px;font-weight:600;margin:0 0 10px;color:var(--foreground)">Not seeing any data?</p>
+
+        <p style="font-size:12px;color:var(--muted);margin:0 0 4px">
+          <strong style="color:var(--foreground)">VS Code extension:</strong> AgentLens automatically configures all supported agents on first activation. Just restart each agent once — sessions will start appearing immediately.
+        </p>
+
+        <p style="font-size:12px;color:var(--muted);margin:0 0 6px">
+          <strong style="color:var(--foreground)">Standalone server:</strong> Run the setup script once to configure Claude Code and Codex automatically, then restart each agent. GitHub Copilot requires the VS Code extension for auto-configuration.
+        </p>
+        <pre style="font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 10px;overflow-x:auto;white-space:pre">{`# macOS / Linux — configure all agents, or pick one:
+./scripts/configure-agents.sh
+./scripts/configure-agents.sh --agent claude
+./scripts/configure-agents.sh --agent codex
+
+# Windows (PowerShell) — configure all agents, or pick one:
+.\\scripts\\configure-agents.ps1
+.\\scripts\\configure-agents.ps1 -Agent claude
+.\\scripts\\configure-agents.ps1 -Agent codex`}</pre>
+
+        <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — a running <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> <a href="#gl-session" style="color:inherit;text-underline-offset:2px">session</a> started before configuration will not emit telemetry. Restart using the steps below:</p>
         <table style="font-size:11px;border-collapse:collapse;width:100%">
           <tbody style="color:var(--muted)">
             <tr style="border-bottom:1px solid var(--border)">
@@ -227,7 +245,7 @@ function ConfigSection() {
             </tr>
             <tr>
               <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">OpenAI Codex</td>
-              <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one, or reload the VS Code window if using the Codex extension. Config is read from <code style={codeStyle}>~/.codex/config.toml</code> on each startup.</td>
+              <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one, or reload the VS Code window if using the Codex extension.</td>
             </tr>
           </tbody>
         </table>
@@ -354,9 +372,9 @@ function AgentOtelSection() {
             <div class="glossary-item" style="flex-direction:column;gap:6px">
               <dt class="glossary-term">{row.agent}</dt>
               <dd class="glossary-def" style="display:block">
-                <p style="margin:0 0 6px"><strong style="color:var(--fg)">Format: </strong>{row.format}</p>
-                <p style="margin:0 0 6px"><strong style="color:var(--fg)">What's included: </strong>{row.coverage}</p>
-                <p style="margin:0"><strong style="color:var(--fg)">Gaps: </strong>{row.gaps}</p>
+                <p style="margin:0 0 6px"><strong style="color:var(--fg)">Format: </strong><span dangerouslySetInnerHTML={{ __html: row.format }} /></p>
+                <p style="margin:0 0 6px"><strong style="color:var(--fg)">What's included: </strong><span dangerouslySetInnerHTML={{ __html: row.coverage }} /></p>
+                <p style="margin:0"><strong style="color:var(--fg)">Gaps: </strong><span dangerouslySetInnerHTML={{ __html: row.gaps }} /></p>
               </dd>
             </div>
           ))}
@@ -452,7 +470,7 @@ function LoopsSection() {
             steps={`<li>Add explicit stopping conditions.</li><li>Avoid open-ended phrasing — name specific functions and files.</li><li>Specify scope: <em>"Only change files in src/auth/"</em>.</li><li>Monitor the context growth chart for steep rises.</li>`}
             impact="A 5-step prompt vs. a 90-step session saves 85 tool calls — a 5–20x token reduction."
           />
-          <LoopBlock id="help-context-accumulation" title="Infinite Loop — Context Accumulation"            why="Input tokens grew by 30,000+ across 4+ calls while output-to-input ratio collapsed by 70%+. The agent is consuming context while producing less output."
+          <LoopBlock id="help-context-accumulation" title="Infinite Loop — Context Accumulation"            why={`<a href="#gl-input-tokens" style="color:inherit;text-underline-offset:2px">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio" style="color:inherit;text-underline-offset:2px">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`}
             example="First call: 8K in → 600 out (7.5%). Last call: 65K in → 80 out (0.12%). Five turns reading the same files without edits."
             steps={`<li>Stop immediately — cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Summaries tab to review what was accomplished.</li>`}
             impact="Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."
