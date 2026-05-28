@@ -12,7 +12,7 @@ const VIEWS: [string, string][] = [
   ['Agents',          'Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table.'],
   ['Traces',          'Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing.'],
   ['Tokens',          'Token consumption aggregated by span name and per session, sorted from highest to lowest.'],
-  ['Cost',            'Estimated session cost for Copilot sessions. Supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Shows a per-session bar chart and a cross-session cost table. Estimates only — not your actual bill.'],
+  ['Cost',            'Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cost table. Estimates only — not your actual bill.'],
   ['Tools',           'Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool.'],
   ['Timeline',        'All spans in chronological order as a vertical event list. Click any item to expand its attributes as formatted JSON.'],
   ['Latency',         'Span durations as a color-coded grid, helping identify which operations are consistently slow.'],
@@ -56,6 +56,10 @@ const TERMS: [string, string][] = [
   ['TTFT',                   'Time to First Token — the latency between sending a prompt and receiving the first token of the response.'],
   ['Waterfall',              'A visualization where spans are displayed as horizontal bars on a time axis, with nesting depth shown by indentation.'],
 ]
+
+function termId(term: string): string {
+  return 'gl-' + term.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+}
 
 const HELP_SECTIONS = {
   overview: {
@@ -109,8 +113,8 @@ const AGENT_OTEL_SHAPES: Array<{
     gaps: 'The three OTEL_LOG_* env vars are not enabled by default — without them, tool arguments are absent, prompt text is omitted, and file diff content is unavailable. Cache token data is only present when using a model that supports prompt caching.',
   },
   {
-    agent: 'Codex CLI',
-    format: 'Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to config also emits timing spans to /v1/traces.',
+    agent: 'OpenAI Codex',
+    format: 'Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to ~/.codex/config.toml also emits timing spans to /v1/traces. Both the CLI and the VS Code extension read the same config file.',
     coverage: 'With the recommended configuration (log_user_prompt = true and both exporters set): prompt text, token counts, model name, TTFT, tool names, tool arguments, tool results, and span timing are all present.',
     gaps: 'Trace and Timeline tabs have less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without trace_exporter, span waterfall data is limited.',
   },
@@ -187,7 +191,7 @@ function OverviewSection() {
       )}
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
-        <p><strong>AgentLens</strong> is a local observability dashboard for AI coding agents — GitHub Copilot, Claude Code, and Codex. It captures the OpenTelemetry (OTLP) traces each agent emits and surfaces them through an interactive dashboard showing token usage, cost, latency, tool calls, file changes, cache performance, and loop detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image.</p>
+        <p><strong>AgentLens</strong> is a local observability dashboard for AI coding <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agents</a> — GitHub Copilot, Claude Code, and Codex. It captures the <a href="#gl-otlp" style="color:inherit;text-underline-offset:2px">OpenTelemetry (OTLP)</a> traces each agent emits and surfaces them through an interactive dashboard showing <a href="#gl-tokens" style="color:inherit;text-underline-offset:2px">token</a> usage, cost, latency, <a href="#gl-tool-call" style="color:inherit;text-underline-offset:2px">tool calls</a>, file changes, <a href="#gl-cache-hit-rate" style="color:inherit;text-underline-offset:2px">cache</a> performance, and <a href="#gl-agent-loop-malfunction" style="color:inherit;text-underline-offset:2px">loop</a> detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image.</p>
       </div>
     </div>
   )
@@ -206,7 +210,7 @@ function ConfigSection() {
 
       <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
         <p style="font-size:12px;font-weight:600;margin:0 0 6px;color:var(--foreground)">Not seeing any data?</p>
-        <p style="font-size:12px;color:var(--muted);margin:0 0 8px">Config is read at startup — a running agent session will not pick up changes automatically. Restart the agent after AgentLens writes its config:</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 8px">Config is read at startup — a running <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> <a href="#gl-session" style="color:inherit;text-underline-offset:2px">session</a> will not pick up changes automatically. Restart the agent after AgentLens writes its config:</p>
         <table style="font-size:11px;border-collapse:collapse;width:100%">
           <tbody style="color:var(--muted)">
             <tr style="border-bottom:1px solid var(--border)">
@@ -222,8 +226,8 @@ function ConfigSection() {
               <td style="padding:4px 0;vertical-align:top">Reload the VS Code window (<em>Reload Window</em> from the Command Palette).</td>
             </tr>
             <tr>
-              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Codex CLI</td>
-              <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one. Config is read from <code style={codeStyle}>~/.codex/config.toml</code> on each invocation.</td>
+              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">OpenAI Codex</td>
+              <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one, or reload the VS Code window if using the Codex extension. Config is read from <code style={codeStyle}>~/.codex/config.toml</code> on each startup.</td>
             </tr>
           </tbody>
         </table>
@@ -243,7 +247,7 @@ function ConfigSection() {
           <tbody style="color:var(--muted)">
             <tr><td style="padding:4px 10px 4px 0;vertical-align:top">GitHub Copilot</td><td>VS Code User Settings (via VS Code API — same on all platforms)</td></tr>
             <tr><td style="padding:4px 10px 4px 0;vertical-align:top">Claude Code</td><td><code style={codeStyle}>~/.claude/settings.json</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.claude\settings.json</code> (Windows)</td></tr>
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">OpenAI Codex CLI</td><td><code style={codeStyle}>~/.codex/config.toml</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.codex\config.toml</code> (Windows)</td></tr>
+            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">OpenAI Codex</td><td><code style={codeStyle}>~/.codex/config.toml</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.codex\config.toml</code> (Windows)</td></tr>
           </tbody>
         </table>
         <p style="font-size:11px;color:var(--muted);margin:0">After first install, <strong>restart any running agent sessions</strong> to pick up the new config.</p>
@@ -284,8 +288,8 @@ function ConfigSection() {
       </div>
 
       <div style="margin-bottom:20px">
-        <h4 style={h4Style}>OpenAI Codex CLI</h4>
-        <p style={mutedP}>Add an <code style={codeStyle}>[otel]</code> section to the Codex config file. Restart any running Codex sessions after saving.</p>
+        <h4 style={h4Style}>OpenAI Codex</h4>
+        <p style={mutedP}>Add an <code style={codeStyle}>[otel]</code> section to the Codex config file (shared by both the CLI and VS Code extension). Restart any running Codex sessions after saving.</p>
         {pathNote('~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml')}
         <pre style={preStyle}>{`[otel]
 log_user_prompt = true
@@ -344,7 +348,7 @@ function AgentOtelSection() {
     <div class="help-section" id="help-otel">
       <h3 class="help-heading">{HELP_SECTIONS.otel.heading}</h3>
       <div class="help-overview-body">
-        <p>AgentLens normalizes three different OTEL shapes into one dashboard model. The shared model is a prompt-to-response session with LLM turns, tool calls, token usage, timing, errors, and files, but the raw data arrives differently for each agent.</p>
+        <p>AgentLens normalizes three different <a href="#gl-otlp" style="color:inherit;text-underline-offset:2px">OTEL</a> shapes into one dashboard model. The shared model is a prompt-to-response <a href="#gl-session" style="color:inherit;text-underline-offset:2px">session</a> with <a href="#gl-turn" style="color:inherit;text-underline-offset:2px">LLM turns</a>, <a href="#gl-tool-call" style="color:inherit;text-underline-offset:2px">tool calls</a>, <a href="#gl-tokens" style="color:inherit;text-underline-offset:2px">token</a> usage, timing, errors, and files, but the raw data arrives differently for each agent.</p>
         <div class="glossary">
           {AGENT_OTEL_SHAPES.map(row => (
             <div class="glossary-item" style="flex-direction:column;gap:6px">
@@ -357,7 +361,7 @@ function AgentOtelSection() {
             </div>
           ))}
         </div>
-        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side.</p>
+        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: <a href="#gl-trace" style="color:inherit;text-underline-offset:2px">Traces</a> and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side.</p>
       </div>
     </div>
   )
@@ -368,7 +372,7 @@ function InsightsSection() {
     <div class="help-section" id="help-insights">
       <h3 class="help-heading">{HELP_SECTIONS.insights.heading}</h3>
       <div class="help-overview-body">
-        <p>The <strong>Recommendations</strong> tab surfaces efficiency insights for token waste, cache patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer turns and fewer tokens on the same work.</p>
+        <p>The <strong>Recommendations</strong> tab surfaces efficiency insights for <a href="#gl-tokens" style="color:inherit;text-underline-offset:2px">token</a> waste, <a href="#gl-cache-hit-rate" style="color:inherit;text-underline-offset:2px">cache</a> patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer <a href="#gl-turn" style="color:inherit;text-underline-offset:2px">turns</a> and fewer tokens on the same work.</p>
         <div class="glossary">
           <InsightBlock id="help-context-bloat" title="Context Bloat"
             why="Every LLM turn receives the full conversation so far. When tool results are large — full file reads, wide search outputs — the context balloons quickly. Instruction files that repeat the same guidance across turns are another common cause."
@@ -426,7 +430,7 @@ function LoopsSection() {
     <div class="help-section" id="help-loops">
       <h3 class="help-heading">{HELP_SECTIONS.loops.heading}</h3>
       <div class="help-overview-body">
-        <p>Loop signals are behavioral patterns indicating the agent is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity.</p>
+        <p><a href="#gl-loop-signal" style="color:inherit;text-underline-offset:2px">Loop signals</a> are behavioral patterns indicating the <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity.</p>
         <div class="glossary">
           <LoopBlock id="help-tool-deadlock" title="Tool Call Deadlock"            why="The same tool call — identical name and arguments — was executed 5+ times. The agent is not retaining the result, likely lost in a long context."
             example={`The agent ran <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">read_file src/types.ts</code> eight times in one session.`}
@@ -483,7 +487,7 @@ function GlossarySection() {
       <h3 class="help-heading">{HELP_SECTIONS.glossary.heading}</h3>
       <div class="glossary">
         {TERMS.map(([term, def]) => (
-          <div class="glossary-item">
+          <div class="glossary-item" id={termId(term)} style="scroll-margin-top:44px">
             <dt class="glossary-term">{term}</dt>
             <dd class="glossary-def">{def}</dd>
           </div>

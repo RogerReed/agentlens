@@ -6264,7 +6264,7 @@
     ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
     ["Traces", "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."],
     ["Tokens", "Token consumption aggregated by span name and per session, sorted from highest to lowest."],
-    ["Cost", "Estimated session cost for Copilot sessions. Supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Shows a per-session bar chart and a cross-session cost table. Estimates only \u2014 not your actual bill."],
+    ["Cost", "Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cost table. Estimates only \u2014 not your actual bill."],
     ["Tools", "Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],
     ["Timeline", "All spans in chronological order as a vertical event list. Click any item to expand its attributes as formatted JSON."],
     ["Latency", "Span durations as a color-coded grid, helping identify which operations are consistently slow."],
@@ -6307,6 +6307,9 @@
     ["TTFT", "Time to First Token \u2014 the latency between sending a prompt and receiving the first token of the response."],
     ["Waterfall", "A visualization where spans are displayed as horizontal bars on a time axis, with nesting depth shown by indentation."]
   ];
+  function termId(term) {
+    return "gl-" + term.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  }
   var HELP_SECTIONS = {
     overview: {
       href: "#help-overview",
@@ -6352,8 +6355,8 @@
       gaps: "The three OTEL_LOG_* env vars are not enabled by default \u2014 without them, tool arguments are absent, prompt text is omitted, and file diff content is unavailable. Cache token data is only present when using a model that supports prompt caching."
     },
     {
-      agent: "Codex CLI",
-      format: "Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to config also emits timing spans to /v1/traces.",
+      agent: "OpenAI Codex",
+      format: "Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to ~/.codex/config.toml also emits timing spans to /v1/traces. Both the CLI and the VS Code extension read the same config file.",
       coverage: "With the recommended configuration (log_user_prompt = true and both exporters set): prompt text, token counts, model name, TTFT, tool names, tool arguments, tool results, and span timing are all present.",
       gaps: "Trace and Timeline tabs have less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without trace_exporter, span waterfall data is limited."
     }
@@ -6415,7 +6418,19 @@
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.overview.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: /* @__PURE__ */ u4("p", { children: [
         /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
-        " is a local observability dashboard for AI coding agents \u2014 GitHub Copilot, Claude Code, and Codex. It captures the OpenTelemetry (OTLP) traces each agent emits and surfaces them through an interactive dashboard showing token usage, cost, latency, tool calls, file changes, cache performance, and loop detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image."
+        " is a local observability dashboard for AI coding ",
+        /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agents" }),
+        " \u2014 GitHub Copilot, Claude Code, and Codex. It captures the ",
+        /* @__PURE__ */ u4("a", { href: "#gl-otlp", style: "color:inherit;text-underline-offset:2px", children: "OpenTelemetry (OTLP)" }),
+        " traces each agent emits and surfaces them through an interactive dashboard showing ",
+        /* @__PURE__ */ u4("a", { href: "#gl-tokens", style: "color:inherit;text-underline-offset:2px", children: "token" }),
+        " usage, cost, latency, ",
+        /* @__PURE__ */ u4("a", { href: "#gl-tool-call", style: "color:inherit;text-underline-offset:2px", children: "tool calls" }),
+        ", file changes, ",
+        /* @__PURE__ */ u4("a", { href: "#gl-cache-hit-rate", style: "color:inherit;text-underline-offset:2px", children: "cache" }),
+        " performance, and ",
+        /* @__PURE__ */ u4("a", { href: "#gl-agent-loop-malfunction", style: "color:inherit;text-underline-offset:2px", children: "loop" }),
+        " detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image."
       ] }) })
     ] });
   }
@@ -6431,7 +6446,13 @@
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.config.heading }),
       /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
         /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 6px;color:var(--foreground)", children: "Not seeing any data?" }),
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 8px", children: "Config is read at startup \u2014 a running agent session will not pick up changes automatically. Restart the agent after AgentLens writes its config:" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 8px", children: [
+          "Config is read at startup \u2014 a running ",
+          /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
+          " ",
+          /* @__PURE__ */ u4("a", { href: "#gl-session", style: "color:inherit;text-underline-offset:2px", children: "session" }),
+          " will not pick up changes automatically. Restart the agent after AgentLens writes its config:"
+        ] }),
         /* @__PURE__ */ u4("table", { style: "font-size:11px;border-collapse:collapse;width:100%", children: /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
           /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
             /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "GitHub Copilot" }),
@@ -6463,13 +6484,13 @@
             ] })
           ] }),
           /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Codex CLI" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "OpenAI Codex" }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
               "Exit any running ",
               /* @__PURE__ */ u4("code", { style: codeStyle, children: "codex" }),
-              " session and start a new one. Config is read from ",
+              " session and start a new one, or reload the VS Code window if using the Codex extension. Config is read from ",
               /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.codex/config.toml" }),
-              " on each invocation."
+              " on each startup."
             ] })
           ] })
         ] }) }),
@@ -6512,7 +6533,7 @@
               ] })
             ] }),
             /* @__PURE__ */ u4("tr", { children: [
-              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "OpenAI Codex CLI" }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "OpenAI Codex" }),
               /* @__PURE__ */ u4("td", { children: [
                 /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.codex/config.toml" }),
                 " (macOS/Linux)",
@@ -6587,11 +6608,11 @@
         ] })
       ] }),
       /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "OpenAI Codex CLI" }),
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "OpenAI Codex" }),
         /* @__PURE__ */ u4("p", { style: mutedP, children: [
           "Add an ",
           /* @__PURE__ */ u4("code", { style: codeStyle, children: "[otel]" }),
-          " section to the Codex config file. Restart any running Codex sessions after saving."
+          " section to the Codex config file (shared by both the CLI and VS Code extension). Restart any running Codex sessions after saving."
         ] }),
         pathNote("~/.codex/config.toml", "%USERPROFILE%\\.codex\\config.toml"),
         /* @__PURE__ */ u4("pre", { style: preStyle, children: `[otel]
@@ -6700,7 +6721,19 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-otel", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.otel.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("p", { children: "AgentLens normalizes three different OTEL shapes into one dashboard model. The shared model is a prompt-to-response session with LLM turns, tool calls, token usage, timing, errors, and files, but the raw data arrives differently for each agent." }),
+        /* @__PURE__ */ u4("p", { children: [
+          "AgentLens normalizes three different ",
+          /* @__PURE__ */ u4("a", { href: "#gl-otlp", style: "color:inherit;text-underline-offset:2px", children: "OTEL" }),
+          " shapes into one dashboard model. The shared model is a prompt-to-response ",
+          /* @__PURE__ */ u4("a", { href: "#gl-session", style: "color:inherit;text-underline-offset:2px", children: "session" }),
+          " with ",
+          /* @__PURE__ */ u4("a", { href: "#gl-turn", style: "color:inherit;text-underline-offset:2px", children: "LLM turns" }),
+          ", ",
+          /* @__PURE__ */ u4("a", { href: "#gl-tool-call", style: "color:inherit;text-underline-offset:2px", children: "tool calls" }),
+          ", ",
+          /* @__PURE__ */ u4("a", { href: "#gl-tokens", style: "color:inherit;text-underline-offset:2px", children: "token" }),
+          " usage, timing, errors, and files, but the raw data arrives differently for each agent."
+        ] }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: AGENT_OTEL_SHAPES.map((row) => /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:6px", children: [
           /* @__PURE__ */ u4("dt", { class: "glossary-term", children: row.agent }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
@@ -6718,7 +6751,11 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             ] })
           ] })
         ] })) }),
-        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: "The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side." })
+        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: [
+          "The practical effect: ",
+          /* @__PURE__ */ u4("a", { href: "#gl-trace", style: "color:inherit;text-underline-offset:2px", children: "Traces" }),
+          " and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side."
+        ] })
       ] })
     ] });
   }
@@ -6729,7 +6766,13 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
         /* @__PURE__ */ u4("p", { children: [
           "The ",
           /* @__PURE__ */ u4("strong", { children: "Recommendations" }),
-          " tab surfaces efficiency insights for token waste, cache patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer turns and fewer tokens on the same work."
+          " tab surfaces efficiency insights for ",
+          /* @__PURE__ */ u4("a", { href: "#gl-tokens", style: "color:inherit;text-underline-offset:2px", children: "token" }),
+          " waste, ",
+          /* @__PURE__ */ u4("a", { href: "#gl-cache-hit-rate", style: "color:inherit;text-underline-offset:2px", children: "cache" }),
+          " patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer ",
+          /* @__PURE__ */ u4("a", { href: "#gl-turn", style: "color:inherit;text-underline-offset:2px", children: "turns" }),
+          " and fewer tokens on the same work."
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
           /* @__PURE__ */ u4(
@@ -6830,7 +6873,12 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-loops", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.loops.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("p", { children: "Loop signals are behavioral patterns indicating the agent is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity." }),
+        /* @__PURE__ */ u4("p", { children: [
+          /* @__PURE__ */ u4("a", { href: "#gl-loop-signal", style: "color:inherit;text-underline-offset:2px", children: "Loop signals" }),
+          " are behavioral patterns indicating the ",
+          /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
+          " is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity."
+        ] }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
           /* @__PURE__ */ u4(
             LoopBlock,
@@ -6910,7 +6958,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
   function GlossarySection() {
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-glossary", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.glossary.heading }),
-      /* @__PURE__ */ u4("div", { class: "glossary", children: TERMS.map(([term, def]) => /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
+      /* @__PURE__ */ u4("div", { class: "glossary", children: TERMS.map(([term, def]) => /* @__PURE__ */ u4("div", { class: "glossary-item", id: termId(term), style: "scroll-margin-top:44px", children: [
         /* @__PURE__ */ u4("dt", { class: "glossary-term", children: term }),
         /* @__PURE__ */ u4("dd", { class: "glossary-def", children: def })
       ] })) })
