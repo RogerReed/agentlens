@@ -10,6 +10,7 @@
 
 param(
     [ValidateSet("all", "claude", "codex", "copilot")]
+    # all = Claude + Codex + Copilot CLI
     [string]$Agent = "all",
     [int]$Port = $(if ($env:AGENTLENS_PORT) { [int]$env:AGENTLENS_PORT } else { 4318 })
 )
@@ -95,16 +96,40 @@ trace_exporter = { otlp-http = { endpoint = "$Endpoint", protocol = "json" } }
     Write-Host "  Restart: CLI — exit session and reopen | VS Code — Reload Window"
 }
 
+# ── GitHub Copilot CLI ─────────────────────────────────────────────────────────
+
+function Configure-Copilot {
+    Write-Host "Configuring GitHub Copilot CLI..."
+    Write-Host "  (The Copilot VS Code extension is configured automatically by AgentLens — no script needed.)"
+
+    $existing = [System.Environment]::GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "User")
+    if ($existing) {
+        Write-Host "  OTEL_EXPORTER_OTLP_ENDPOINT already set ($existing) — skipping."
+        if ($existing -ne $Endpoint) {
+            Write-Host "  Updating to: $Endpoint"
+            [System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $Endpoint, "User")
+        }
+    } else {
+        [System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $Endpoint, "User")
+        Write-Host "  Set OTEL_EXPORTER_OTLP_ENDPOINT = $Endpoint"
+    }
+
+    $existingCapture = [System.Environment]::GetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "User")
+    if (-not $existingCapture) {
+        [System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")
+        Write-Host "  Set OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = true"
+    }
+
+    Write-Host "  Open a new terminal to pick up the env vars, then restart Copilot CLI."
+}
+
 # ── Dispatch ───────────────────────────────────────────────────────────────────
 
 switch ($Agent) {
-    "claude" { Configure-Claude }
-    "codex"  { Configure-Codex }
-    "all"    { Configure-Claude; Write-Host ""; Configure-Codex }
-    "copilot" {
-        Write-Host "GitHub Copilot is configured automatically by the AgentLens VS Code extension."
-        Write-Host "No standalone script is needed or possible — Copilot configuration requires the VS Code API."
-    }
+    "claude"  { Configure-Claude }
+    "codex"   { Configure-Codex }
+    "copilot" { Configure-Copilot }
+    "all"     { Configure-Claude; Write-Host ""; Configure-Codex; Write-Host ""; Configure-Copilot }
 }
 
 Write-Host ""

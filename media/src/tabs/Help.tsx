@@ -222,11 +222,13 @@ function ConfigSection() {
 ./scripts/configure-agents.sh
 ./scripts/configure-agents.sh --agent claude
 ./scripts/configure-agents.sh --agent codex
+./scripts/configure-agents.sh --agent copilot   # Copilot CLI only
 
 # Windows (PowerShell) — configure all agents, or pick one:
 .\\scripts\\configure-agents.ps1
 .\\scripts\\configure-agents.ps1 -Agent claude
-.\\scripts\\configure-agents.ps1 -Agent codex`}</pre>
+.\\scripts\\configure-agents.ps1 -Agent codex
+.\\scripts\\configure-agents.ps1 -Agent copilot  # Copilot CLI only`}</pre>
 
         <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — a running <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> <a href="#gl-session" style="color:inherit;text-underline-offset:2px">session</a> started before configuration will not emit telemetry. Restart using the steps below:</p>
         <table style="font-size:11px;border-collapse:collapse;width:100%">
@@ -252,38 +254,33 @@ function ConfigSection() {
         <p style="font-size:11px;color:var(--muted);margin:8px 0 0">After restarting, run a short session and check whether a session card appears in the sidebar. Open the <em>AgentLens</em> output channel (<em>View → Output → AgentLens</em>) to confirm spans are arriving.</p>
       </div>
 
-      <p style={mutedP}>AgentLens auto-configures supported agents on activation. If auto-config fails, or you prefer to configure manually, use the instructions below. Replace <code style={codeStyle}>4318</code> with your custom port if you changed <em>agentLens.otlpPort</em>.</p>
+      <p style={mutedP}>Manual configuration — replace <code style={codeStyle}>4318</code> with your custom port if you changed <em>agentLens.otlpPort</em>.</p>
 
       <div style="margin-bottom:20px">
-        <h4 style={h4Style}>Auto-configuration</h4>
-        <p style={mutedP}>On activation, AgentLens automatically writes the required telemetry config for each supported agent. This happens both when running as a VS Code extension and when running as the standalone server.</p>
-        <table style="font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px">
-          <thead><tr style="border-bottom:1px solid var(--border)">
-            <th style="text-align:left;padding:4px 10px 4px 0;color:var(--fg)">Agent</th>
-            <th style="text-align:left;padding:4px 10px 4px 0;color:var(--fg)">Config location</th>
-          </tr></thead>
-          <tbody style="color:var(--muted)">
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">GitHub Copilot</td><td>VS Code User Settings (via VS Code API — same on all platforms)</td></tr>
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">Claude Code</td><td><code style={codeStyle}>~/.claude/settings.json</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.claude\settings.json</code> (Windows)</td></tr>
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">OpenAI Codex</td><td><code style={codeStyle}>~/.codex/config.toml</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.codex\config.toml</code> (Windows)</td></tr>
-          </tbody>
-        </table>
-        <p style="font-size:11px;color:var(--muted);margin:0">After first install, <strong>restart any running agent sessions</strong> to pick up the new config.</p>
-      </div>
+        <h4 style={h4Style}>GitHub Copilot</h4>
 
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>GitHub Copilot — VS Code Extension</h4>
-        <p style={mutedP}>Add the following to VS Code <strong>User Settings</strong> (<kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Preferences: Open User Settings (JSON)</em>). These settings work the same on macOS, Linux, and Windows.</p>
+        <p style="font-size:11px;font-weight:600;color:var(--fg);margin:0 0 4px">VS Code extension</p>
+        <p style={mutedP}>Add to VS Code <strong>User Settings</strong> (<kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Preferences: Open User Settings (JSON)</em>):</p>
         <pre style={preStyle}>{`{
   "github.copilot.chat.otel.enabled": true,
   "github.copilot.chat.otel.exporterType": "otlp-http",
   "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
 }`}</pre>
+
+        <p style="font-size:11px;font-weight:600;color:var(--fg);margin:12px 0 4px">Copilot CLI</p>
+        <p style={mutedP}>Set these environment variables so they are available when you run <code style={codeStyle}>copilot</code>. The configure script updates your shell profile automatically; or set them manually.</p>
+        <pre style={preStyle}>{`# macOS / Linux — add to ~/.zshrc or ~/.bashrc, then: source ~/.zshrc
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
+
+# Windows — run once in PowerShell (sets user-level env vars, persists across sessions):
+[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
+[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")`}</pre>
       </div>
 
       <div style="margin-bottom:20px">
-        <h4 style={h4Style}>Claude Code — CLI and VS Code Extension</h4>
-        <p style={mutedP}>The <code style={codeStyle}>claude</code> CLI and the Claude Code VS Code extension both read from the same settings file. Add the following to the <code style={codeStyle}>"env"</code> block:</p>
+        <h4 style={h4Style}>Claude Code</h4>
+        <p style={mutedP}>The CLI and VS Code extension both read the same file. Add to the <code style={codeStyle}>"env"</code> block:</p>
         {pathNote('~/.claude/settings.json', '%USERPROFILE%\\.claude\\settings.json')}
         <pre style={preStyle}>{`{
   "env": {
@@ -297,65 +294,24 @@ function ConfigSection() {
     "OTEL_LOG_USER_PROMPTS": "1"
   }
 }`}</pre>
-        <p style="font-size:11px;color:var(--muted);margin-top:6px">
-          <strong>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1</strong> enables span-level tracing: without it Claude only emits aggregate metrics, so turns and LLM calls are indistinguishable and cache token breakdowns are unavailable.{' '}
-          <strong>OTEL_LOG_TOOL_DETAILS=1</strong> unlocks tool call records (tool name + file path).{' '}
-          <strong>OTEL_LOG_TOOL_CONTENT=1</strong> includes full file contents and terminal output — needed for Summaries tool outputs and Files tab diffs.{' '}
-          <strong>OTEL_LOG_USER_PROMPTS=1</strong> includes your typed prompt; without it sessions show <code style={codeStyle}>[N chars — prompt not included]</code>.
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
+          <strong>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1</strong> enables span-level tracing — without it <a href="#gl-turn" style="color:inherit;text-underline-offset:2px">turns</a> and <a href="#gl-llm-call" style="color:inherit;text-underline-offset:2px">LLM calls</a> are indistinguishable and cache token breakdowns are unavailable.{' '}
+          The three <strong>OTEL_LOG_*</strong> vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt.
         </p>
       </div>
 
-      <div style="margin-bottom:20px">
+      <div style="margin-bottom:4px">
         <h4 style={h4Style}>OpenAI Codex</h4>
-        <p style={mutedP}>Add an <code style={codeStyle}>[otel]</code> section to the Codex config file (shared by both the CLI and VS Code extension). Restart any running Codex sessions after saving.</p>
+        <p style={mutedP}>The CLI and VS Code extension both read the same file. Add an <code style={codeStyle}>[otel]</code> section:</p>
         {pathNote('~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml')}
         <pre style={preStyle}>{`[otel]
 log_user_prompt = true
 exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
 trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }`}</pre>
-        <p style="font-size:11px;color:var(--muted);margin-top:6px">
+        <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
           <strong>log_user_prompt=true</strong> includes your typed prompt; without it sessions show <code style={codeStyle}>[session in progress]</code>.{' '}
-          <code style={codeStyle}>exporter</code> sends log events (<code style={codeStyle}>/v1/logs</code>);{' '}
-          <code style={codeStyle}>trace_exporter</code> sends trace spans (<code style={codeStyle}>/v1/traces</code>). Both point at the same endpoint but cover different OTLP signal types.
+          <code style={codeStyle}>exporter</code> sends log events; <code style={codeStyle}>trace_exporter</code> sends <a href="#gl-span" style="color:inherit;text-underline-offset:2px">trace spans</a>. Both point at the same endpoint.
         </p>
-      </div>
-
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>VS Code Integrated Terminal</h4>
-        <p style={mutedP}>If the Claude Code CLI runs inside VS Code's integrated terminal and traces are not appearing, add the env vars directly to VS Code's terminal environment. Use the key matching your OS:</p>
-        <pre style={preStyle}>{`// macOS — add to VS Code User Settings (JSON):
-"terminal.integrated.env.osx": {
-  "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-  "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
-  "OTEL_TRACES_EXPORTER": "otlp",
-  "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
-  "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
-  "OTEL_LOG_TOOL_DETAILS": "1",
-  "OTEL_LOG_TOOL_CONTENT": "1",
-  "OTEL_LOG_USER_PROMPTS": "1"
-}
-
-// Linux — same keys, different top-level key:
-"terminal.integrated.env.linux": { ... }
-
-// Windows — same keys, different top-level key:
-"terminal.integrated.env.windows": { ... }`}</pre>
-        <ul style="font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:6px 0 0">
-          <li>Open the <strong>AgentLens</strong> output channel (<em>View → Output → AgentLens</em>) to confirm spans are arriving.</li>
-          <li>Check that your shell profile does not override <code style={codeStyle}>OTEL_EXPORTER_OTLP_ENDPOINT</code>.</li>
-          <li>Confirm the collector is running on the correct port.</li>
-        </ul>
-      </div>
-
-      <div style="margin-bottom:4px">
-        <h4 style={h4Style}>Quick Verification</h4>
-        <ul style="font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:0">
-          <li><strong>Copilot:</strong> confirm <code style={codeStyle}>github.copilot.chat.otel.enabled</code> is <code style={codeStyle}>true</code> in VS Code User Settings.</li>
-          <li><strong>Claude (macOS/Linux):</strong> run <code style={codeStyle}>echo $OTEL_EXPORTER_OTLP_ENDPOINT</code> — should print <code style={codeStyle}>http://localhost:4318</code>.</li>
-          <li><strong>Claude (Windows cmd):</strong> run <code style={codeStyle}>echo %OTEL_EXPORTER_OTLP_ENDPOINT%</code>; in PowerShell: <code style={codeStyle}>$env:OTEL_EXPORTER_OTLP_ENDPOINT</code>.</li>
-          <li><strong>Codex (macOS/Linux):</strong> run <code style={codeStyle}>cat ~/.codex/config.toml</code> and confirm the <code style={codeStyle}>[otel]</code> section.</li>
-          <li><strong>Codex (Windows):</strong> run <code style={codeStyle}>type %USERPROFILE%\.codex\config.toml</code>.</li>
-        </ul>
       </div>
     </div>
   )

@@ -6458,11 +6458,13 @@
 ./scripts/configure-agents.sh
 ./scripts/configure-agents.sh --agent claude
 ./scripts/configure-agents.sh --agent codex
+./scripts/configure-agents.sh --agent copilot   # Copilot CLI only
 
 # Windows (PowerShell) \u2014 configure all agents, or pick one:
 .\\scripts\\configure-agents.ps1
 .\\scripts\\configure-agents.ps1 -Agent claude
-.\\scripts\\configure-agents.ps1 -Agent codex` }),
+.\\scripts\\configure-agents.ps1 -Agent codex
+.\\scripts\\configure-agents.ps1 -Agent copilot  # Copilot CLI only` }),
         /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0 0 6px", children: [
           "Config is read at startup \u2014 a running ",
           /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
@@ -6518,57 +6520,17 @@
         ] })
       ] }),
       /* @__PURE__ */ u4("p", { style: mutedP, children: [
-        "AgentLens auto-configures supported agents on activation. If auto-config fails, or you prefer to configure manually, use the instructions below. Replace ",
+        "Manual configuration \u2014 replace ",
         /* @__PURE__ */ u4("code", { style: codeStyle, children: "4318" }),
         " with your custom port if you changed ",
         /* @__PURE__ */ u4("em", { children: "agentLens.otlpPort" }),
         "."
       ] }),
       /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Auto-configuration" }),
-        /* @__PURE__ */ u4("p", { style: mutedP, children: "On activation, AgentLens automatically writes the required telemetry config for each supported agent. This happens both when running as a VS Code extension and when running as the standalone server." }),
-        /* @__PURE__ */ u4("table", { style: "font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px", children: [
-          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
-            /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 10px 4px 0;color:var(--fg)", children: "Agent" }),
-            /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 10px 4px 0;color:var(--fg)", children: "Config location" })
-          ] }) }),
-          /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
-            /* @__PURE__ */ u4("tr", { children: [
-              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "GitHub Copilot" }),
-              /* @__PURE__ */ u4("td", { children: "VS Code User Settings (via VS Code API \u2014 same on all platforms)" })
-            ] }),
-            /* @__PURE__ */ u4("tr", { children: [
-              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "Claude Code" }),
-              /* @__PURE__ */ u4("td", { children: [
-                /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.claude/settings.json" }),
-                " (macOS/Linux)",
-                /* @__PURE__ */ u4("br", {}),
-                /* @__PURE__ */ u4("code", { style: codeStyle, children: "%USERPROFILE%\\.claude\\settings.json" }),
-                " (Windows)"
-              ] })
-            ] }),
-            /* @__PURE__ */ u4("tr", { children: [
-              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "OpenAI Codex" }),
-              /* @__PURE__ */ u4("td", { children: [
-                /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.codex/config.toml" }),
-                " (macOS/Linux)",
-                /* @__PURE__ */ u4("br", {}),
-                /* @__PURE__ */ u4("code", { style: codeStyle, children: "%USERPROFILE%\\.codex\\config.toml" }),
-                " (Windows)"
-              ] })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0", children: [
-          "After first install, ",
-          /* @__PURE__ */ u4("strong", { children: "restart any running agent sessions" }),
-          " to pick up the new config."
-        ] })
-      ] }),
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "GitHub Copilot \u2014 VS Code Extension" }),
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "GitHub Copilot" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:0 0 4px", children: "VS Code extension" }),
         /* @__PURE__ */ u4("p", { style: mutedP, children: [
-          "Add the following to VS Code ",
+          "Add to VS Code ",
           /* @__PURE__ */ u4("strong", { children: "User Settings" }),
           " (",
           /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Cmd+Shift+P" }),
@@ -6576,20 +6538,31 @@
           /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Ctrl+Shift+P" }),
           " \u2192 ",
           /* @__PURE__ */ u4("em", { children: "Preferences: Open User Settings (JSON)" }),
-          "). These settings work the same on macOS, Linux, and Windows."
+          "):"
         ] }),
         /* @__PURE__ */ u4("pre", { style: preStyle, children: `{
   "github.copilot.chat.otel.enabled": true,
   "github.copilot.chat.otel.exporterType": "otlp-http",
   "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
-}` })
+}` }),
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:12px 0 4px", children: "Copilot CLI" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: [
+          "Set these environment variables so they are available when you run ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "copilot" }),
+          ". The configure script updates your shell profile automatically; or set them manually."
+        ] }),
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: `# macOS / Linux \u2014 add to ~/.zshrc or ~/.bashrc, then: source ~/.zshrc
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
+
+# Windows \u2014 run once in PowerShell (sets user-level env vars, persists across sessions):
+[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
+[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")` })
       ] }),
       /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Claude Code \u2014 CLI and VS Code Extension" }),
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Claude Code" }),
         /* @__PURE__ */ u4("p", { style: mutedP, children: [
-          "The ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: "claude" }),
-          " CLI and the Claude Code VS Code extension both read from the same settings file. Add the following to the ",
+          "The CLI and VS Code extension both read the same file. Add to the ",
           /* @__PURE__ */ u4("code", { style: codeStyle, children: '"env"' }),
           " block:"
         ] }),
@@ -6606,128 +6579,43 @@
     "OTEL_LOG_USER_PROMPTS": "1"
   }
 }` }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px", children: [
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6", children: [
           /* @__PURE__ */ u4("strong", { children: "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1" }),
-          " enables span-level tracing: without it Claude only emits aggregate metrics, so turns and LLM calls are indistinguishable and cache token breakdowns are unavailable.",
+          " enables span-level tracing \u2014 without it ",
+          /* @__PURE__ */ u4("a", { href: "#gl-turn", style: "color:inherit;text-underline-offset:2px", children: "turns" }),
+          " and ",
+          /* @__PURE__ */ u4("a", { href: "#gl-llm-call", style: "color:inherit;text-underline-offset:2px", children: "LLM calls" }),
+          " are indistinguishable and cache token breakdowns are unavailable.",
           " ",
-          /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_TOOL_DETAILS=1" }),
-          " unlocks tool call records (tool name + file path).",
-          " ",
-          /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_TOOL_CONTENT=1" }),
-          " includes full file contents and terminal output \u2014 needed for Summaries tool outputs and Files tab diffs.",
-          " ",
-          /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_USER_PROMPTS=1" }),
-          " includes your typed prompt; without it sessions show ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: "[N chars \u2014 prompt not included]" }),
-          "."
+          "The three ",
+          /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_*" }),
+          " vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt."
         ] })
       ] }),
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:4px", children: [
         /* @__PURE__ */ u4("h4", { style: h4Style, children: "OpenAI Codex" }),
         /* @__PURE__ */ u4("p", { style: mutedP, children: [
-          "Add an ",
+          "The CLI and VS Code extension both read the same file. Add an ",
           /* @__PURE__ */ u4("code", { style: codeStyle, children: "[otel]" }),
-          " section to the Codex config file (shared by both the CLI and VS Code extension). Restart any running Codex sessions after saving."
+          " section:"
         ] }),
         pathNote("~/.codex/config.toml", "%USERPROFILE%\\.codex\\config.toml"),
         /* @__PURE__ */ u4("pre", { style: preStyle, children: `[otel]
 log_user_prompt = true
 exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
 trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }` }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px", children: [
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6", children: [
           /* @__PURE__ */ u4("strong", { children: "log_user_prompt=true" }),
           " includes your typed prompt; without it sessions show ",
           /* @__PURE__ */ u4("code", { style: codeStyle, children: "[session in progress]" }),
           ".",
           " ",
           /* @__PURE__ */ u4("code", { style: codeStyle, children: "exporter" }),
-          " sends log events (",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: "/v1/logs" }),
-          ");",
-          " ",
+          " sends log events; ",
           /* @__PURE__ */ u4("code", { style: codeStyle, children: "trace_exporter" }),
-          " sends trace spans (",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: "/v1/traces" }),
-          "). Both point at the same endpoint but cover different OTLP signal types."
-        ] })
-      ] }),
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "VS Code Integrated Terminal" }),
-        /* @__PURE__ */ u4("p", { style: mutedP, children: "If the Claude Code CLI runs inside VS Code's integrated terminal and traces are not appearing, add the env vars directly to VS Code's terminal environment. Use the key matching your OS:" }),
-        /* @__PURE__ */ u4("pre", { style: preStyle, children: `// macOS \u2014 add to VS Code User Settings (JSON):
-"terminal.integrated.env.osx": {
-  "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-  "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
-  "OTEL_TRACES_EXPORTER": "otlp",
-  "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
-  "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
-  "OTEL_LOG_TOOL_DETAILS": "1",
-  "OTEL_LOG_TOOL_CONTENT": "1",
-  "OTEL_LOG_USER_PROMPTS": "1"
-}
-
-// Linux \u2014 same keys, different top-level key:
-"terminal.integrated.env.linux": { ... }
-
-// Windows \u2014 same keys, different top-level key:
-"terminal.integrated.env.windows": { ... }` }),
-        /* @__PURE__ */ u4("ul", { style: "font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:6px 0 0", children: [
-          /* @__PURE__ */ u4("li", { children: [
-            "Open the ",
-            /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
-            " output channel (",
-            /* @__PURE__ */ u4("em", { children: "View \u2192 Output \u2192 AgentLens" }),
-            ") to confirm spans are arriving."
-          ] }),
-          /* @__PURE__ */ u4("li", { children: [
-            "Check that your shell profile does not override ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "OTEL_EXPORTER_OTLP_ENDPOINT" }),
-            "."
-          ] }),
-          /* @__PURE__ */ u4("li", { children: "Confirm the collector is running on the correct port." })
-        ] })
-      ] }),
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:4px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Quick Verification" }),
-        /* @__PURE__ */ u4("ul", { style: "font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:0", children: [
-          /* @__PURE__ */ u4("li", { children: [
-            /* @__PURE__ */ u4("strong", { children: "Copilot:" }),
-            " confirm ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "github.copilot.chat.otel.enabled" }),
-            " is ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "true" }),
-            " in VS Code User Settings."
-          ] }),
-          /* @__PURE__ */ u4("li", { children: [
-            /* @__PURE__ */ u4("strong", { children: "Claude (macOS/Linux):" }),
-            " run ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "echo $OTEL_EXPORTER_OTLP_ENDPOINT" }),
-            " \u2014 should print ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "http://localhost:4318" }),
-            "."
-          ] }),
-          /* @__PURE__ */ u4("li", { children: [
-            /* @__PURE__ */ u4("strong", { children: "Claude (Windows cmd):" }),
-            " run ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "echo %OTEL_EXPORTER_OTLP_ENDPOINT%" }),
-            "; in PowerShell: ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "$env:OTEL_EXPORTER_OTLP_ENDPOINT" }),
-            "."
-          ] }),
-          /* @__PURE__ */ u4("li", { children: [
-            /* @__PURE__ */ u4("strong", { children: "Codex (macOS/Linux):" }),
-            " run ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "cat ~/.codex/config.toml" }),
-            " and confirm the ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "[otel]" }),
-            " section."
-          ] }),
-          /* @__PURE__ */ u4("li", { children: [
-            /* @__PURE__ */ u4("strong", { children: "Codex (Windows):" }),
-            " run ",
-            /* @__PURE__ */ u4("code", { style: codeStyle, children: "type %USERPROFILE%\\.codex\\config.toml" }),
-            "."
-          ] })
+          " sends ",
+          /* @__PURE__ */ u4("a", { href: "#gl-span", style: "color:inherit;text-underline-offset:2px", children: "trace spans" }),
+          ". Both point at the same endpoint."
         ] })
       ] })
     ] });

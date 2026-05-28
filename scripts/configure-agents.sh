@@ -125,6 +125,44 @@ TOML
   echo "  Restart: CLI — exit session and reopen | VS Code — Reload Window"
 }
 
+# ── GitHub Copilot CLI ─────────────────────────────────────────────────────────
+
+configure_copilot() {
+  echo "Configuring GitHub Copilot CLI..."
+  echo "  (The Copilot VS Code extension is configured automatically by AgentLens — no script needed.)"
+
+  # Detect shell profile
+  local profile=""
+  if [ -n "${ZSH_VERSION:-}" ] && [ -f "$HOME/.zshrc" ]; then
+    profile="$HOME/.zshrc"
+  elif [ -n "${BASH_VERSION:-}" ] && [ -f "$HOME/.bashrc" ]; then
+    profile="$HOME/.bashrc"
+  elif [ -f "$HOME/.zshrc" ]; then
+    profile="$HOME/.zshrc"
+  elif [ -f "$HOME/.bashrc" ]; then
+    profile="$HOME/.bashrc"
+  elif [ -f "$HOME/.bash_profile" ]; then
+    profile="$HOME/.bash_profile"
+  fi
+
+  if [ -z "$profile" ]; then
+    echo "  Could not detect a shell profile. Add manually:"
+    echo "    export OTEL_EXPORTER_OTLP_ENDPOINT=\"${ENDPOINT}\""
+    echo "    export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true"
+    return
+  fi
+
+  if grep -q 'OTEL_EXPORTER_OTLP_ENDPOINT' "$profile" 2>/dev/null; then
+    echo "  OTEL_EXPORTER_OTLP_ENDPOINT already set in ${profile} — skipping."
+    echo "  Verify it is: ${ENDPOINT}"
+    return
+  fi
+
+  printf "\n# AgentLens — Copilot CLI telemetry\nexport OTEL_EXPORTER_OTLP_ENDPOINT=\"${ENDPOINT}\"\nexport OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true\n" >> "$profile"
+  echo "  Updated ${profile}"
+  echo "  Run: source ${profile}, then restart Copilot CLI."
+}
+
 # ── Dispatch ───────────────────────────────────────────────────────────────────
 
 case "$AGENT" in
@@ -132,15 +170,16 @@ case "$AGENT" in
     configure_claude ;;
   codex)
     configure_codex ;;
+  copilot)
+    configure_copilot ;;
   all)
     configure_claude
     echo ""
-    configure_codex ;;
-  copilot)
-    echo "GitHub Copilot is configured automatically by the AgentLens VS Code extension."
-    echo "No standalone script is needed or possible — Copilot configuration requires the VS Code API." ;;
+    configure_codex
+    echo ""
+    configure_copilot ;;
   *)
-    echo "Unknown agent: ${AGENT}. Choose from: claude, codex, all"
+    echo "Unknown agent: ${AGENT}. Choose from: claude, codex, copilot, all"
     exit 1 ;;
 esac
 
