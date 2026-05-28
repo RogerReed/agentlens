@@ -1,49 +1,53 @@
-// Pricing data for cost estimation across Copilot, Claude Code, and Codex.
-// Source: https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
-// and Anthropic/OpenAI direct API pricing pages.
+// Pricing data for Copilot cost estimation.
+// Token rates (post Jun 1, 2026): https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
+// Request multipliers (pre Jun 1, 2026): https://docs.github.com/en/copilot/concepts/billing/copilot-requests
 export const PRICING_LAST_UPDATED = '2026-05-27'
 
 export type PricingMode = 'token' | 'request'
 
 export interface ModelRates {
-  inputPerMTok: number       // USD per 1M input tokens
-  cacheReadPerMTok: number   // USD per 1M cache-read tokens (0 if n/a)
-  cacheWritePerMTok: number  // USD per 1M cache-write tokens (0 if n/a)
-  outputPerMTok: number      // USD per 1M output tokens
-  multiplier: number         // Legacy request-based multiplier (× $0.04/call)
+  inputPerMTok: number       // USD per 1M input tokens (token mode)
+  cacheReadPerMTok: number   // USD per 1M cache-read tokens (token mode, 0 if n/a)
+  cacheWritePerMTok: number  // USD per 1M cache-write tokens (token mode, 0 if n/a)
+  outputPerMTok: number      // USD per 1M output tokens (token mode)
+  multiplier: number         // Request multiplier × $0.04/prompt (request mode, 0 = included/free)
 }
 
 // Keyed by normalized model ID (lowercase, no date suffix).
-// Covers Copilot AI Credits rates and direct API rates for Claude/Codex.
 const RATES: Record<string, ModelRates> = {
-  // ── OpenAI ──────────────────────────────────────────────────────────────────
-  'gpt-5-mini':        { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025, cacheWritePerMTok: 0,    outputPerMTok: 2.00,  multiplier: 0 },
-  'gpt-5 mini':        { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025, cacheWritePerMTok: 0,    outputPerMTok: 2.00,  multiplier: 0 },
-  'gpt-4o-mini':       { inputPerMTok: 0.15,  cacheReadPerMTok: 0.075, cacheWritePerMTok: 0,    outputPerMTok: 0.60,  multiplier: 0 },
-  'gpt-4o':            { inputPerMTok: 2.50,  cacheReadPerMTok: 1.25,  cacheWritePerMTok: 0,    outputPerMTok: 10.00, multiplier: 0 },
-  'gpt-4.1':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 0 },
-  'gpt-5.2':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 1 },
-  'gpt-5.2-codex':     { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 1 },
-  'gpt-5.3-codex':     { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 1 },
-  'gpt-5.4':           { inputPerMTok: 2.50,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 15.00, multiplier: 1 },
-  'gpt-5.4-mini':      { inputPerMTok: 0.40,  cacheReadPerMTok: 0.10,  cacheWritePerMTok: 0,    outputPerMTok: 1.60,  multiplier: 0 },
-  'gpt-5.4-nano':      { inputPerMTok: 0.10,  cacheReadPerMTok: 0.025, cacheWritePerMTok: 0,    outputPerMTok: 0.40,  multiplier: 0 },
-  'gpt-5.5':           { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 30.00, multiplier: 7.5 },
-  'raptor-mini':       { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025, cacheWritePerMTok: 0,    outputPerMTok: 2.00,  multiplier: 0 },
-  // ── Anthropic ───────────────────────────────────────────────────────────────
-  'claude-haiku-4-5':          { inputPerMTok: 1.00,  cacheReadPerMTok: 0.10,  cacheWritePerMTok: 1.25, outputPerMTok: 5.00,  multiplier: 0.33 },
-  'claude-sonnet-4':           { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
-  'claude-sonnet-4-5':         { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
-  'claude-sonnet-4-6':         { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
-  'claude-opus-4-5':           { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3 },
-  'claude-opus-4-6':           { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3 },
-  'claude-opus-4-6-fast':      { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 30 },
-  'claude-opus-4-7':           { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 15 },
-  // ── Google ───────────────────────────────────────────────────────────────────
-  'gemini-2.5-pro':    { inputPerMTok: 1.25,  cacheReadPerMTok: 0.31,  cacheWritePerMTok: 0,    outputPerMTok: 10.00, multiplier: 1 },
-  'gemini-3-flash':    { inputPerMTok: 0.50,  cacheReadPerMTok: 0.125, cacheWritePerMTok: 0,    outputPerMTok: 3.00,  multiplier: 0.33 },
-  'gemini-3.1-pro':    { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 12.00, multiplier: 1 },
-  'gemini-3.5-flash':  { inputPerMTok: 0.75,  cacheReadPerMTok: 0.188, cacheWritePerMTok: 0,    outputPerMTok: 3.75,  multiplier: 14 },
+  // ── OpenAI ── token rates from models-and-pricing, multipliers from copilot-requests ──────────
+  // included models (multiplier 0 = free under request-based billing)
+  'gpt-4.1':       { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 0 },
+  'gpt-5-mini':    { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0,    outputPerMTok: 2.00,  multiplier: 0 },
+  'gpt-5 mini':    { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0,    outputPerMTok: 2.00,  multiplier: 0 },
+  // older included models (not in new token table, kept for historical sessions)
+  'gpt-4o':        { inputPerMTok: 2.50,  cacheReadPerMTok: 1.25,   cacheWritePerMTok: 0,    outputPerMTok: 10.00, multiplier: 0 },
+  'gpt-4o-mini':   { inputPerMTok: 0.15,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0,    outputPerMTok: 0.60,  multiplier: 0 },
+  // premium models
+  'gpt-5.2':           { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0,    outputPerMTok: 14.00, multiplier: 1 },
+  'gpt-5.2-codex':     { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0,    outputPerMTok: 14.00, multiplier: 1 },
+  'gpt-5.3-codex':     { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0,    outputPerMTok: 14.00, multiplier: 1 },
+  'gpt-5.4':           { inputPerMTok: 2.50,  cacheReadPerMTok: 0.25,   cacheWritePerMTok: 0,    outputPerMTok: 15.00, multiplier: 1 },
+  'gpt-5.4-mini':      { inputPerMTok: 0.75,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0,    outputPerMTok: 4.50,  multiplier: 0.33 },
+  'gpt-5.4-nano':      { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0,    outputPerMTok: 1.25,  multiplier: 0.25 },
+  'gpt-5.5':           { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0,    outputPerMTok: 30.00, multiplier: 7.5 },
+  // ── Anthropic ── token rates from models-and-pricing, multipliers from copilot-requests ────────
+  'claude-haiku-4-5':      { inputPerMTok: 1.00,  cacheReadPerMTok: 0.10,  cacheWritePerMTok: 1.25, outputPerMTok: 5.00,  multiplier: 0.33 },
+  'claude-sonnet-4':       { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
+  'claude-sonnet-4-5':     { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
+  'claude-sonnet-4-6':     { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
+  'claude-opus-4-5':       { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3 },
+  'claude-opus-4-6':       { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3 },
+  'claude-opus-4-6-fast':  { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 30 },
+  'claude-opus-4-7':       { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 15 },
+  // ── Google ── token rates from models-and-pricing, multipliers from copilot-requests ──────────
+  'gemini-2.5-pro':   { inputPerMTok: 1.25,  cacheReadPerMTok: 0.125,  cacheWritePerMTok: 0,    outputPerMTok: 10.00, multiplier: 1 },
+  'gemini-3-flash':   { inputPerMTok: 0.50,  cacheReadPerMTok: 0.05,   cacheWritePerMTok: 0,    outputPerMTok: 3.00,  multiplier: 0.33 },
+  'gemini-3.1-pro':   { inputPerMTok: 2.00,  cacheReadPerMTok: 0.20,   cacheWritePerMTok: 0,    outputPerMTok: 12.00, multiplier: 1 },
+  'gemini-3.5-flash': { inputPerMTok: 1.50,  cacheReadPerMTok: 0.15,   cacheWritePerMTok: 0,    outputPerMTok: 9.00,  multiplier: 14 },
+  // ── Fine-tuned ───────────────────────────────────────────────────────────────────────────────
+  'raptor-mini':  { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0,    outputPerMTok: 2.00,  multiplier: 0 },
+  'goldeneye':    { inputPerMTok: 1.25,  cacheReadPerMTok: 0.125,  cacheWritePerMTok: 0,    outputPerMTok: 10.00, multiplier: 0 },
 }
 
 function normalizeModelId(modelId: string): string {
