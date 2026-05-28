@@ -6274,7 +6274,7 @@
   ];
   var TERMS = [
     ["Agent Loop / Malfunction", "A behavioral pattern in which an AI agent is stuck, oscillating, or spiraling into unproductive work. AgentLens detects five patterns: Tool Call Deadlock, State Corruption Spiral, Hallucination Amplification Loop, Ambiguous Success / Escalating Scope, and Infinite Loop \u2014 Context Accumulation."],
-    ["Agent", "The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that processes your prompts, reasons about tasks, and invokes tools to accomplish work."],
+    ["Agent", "The AI coding assistant (e.g. GitHub Copilot, Claude Code, Codex) that receives your prompt, reasons about the task, and decides which tools to use. It manages the workflow, breaks down tasks, and may call the underlying LLM multiple times per session to complete a single request. The agent is the orchestrator; the LLM is the engine it drives."],
     ["Avg Input/Call", "Average number of input tokens sent to the language model per LLM call. Lower means leaner prompts. Under 10K is lean; 10-30K is normal; 30K+ suggests large instruction files, verbose tool definitions, or accumulated context bloat."],
     ["Avg Turns/Session", "Average number of LLM round-trips per session. Lower is more efficient. 1-3 turns is typical for simple tasks; 5+ may indicate the agent is struggling or the prompt needs more specifics."],
     ["Background Span", "A span that runs outside the main request/response cycle \u2014 e.g., telemetry uploads, extension lifecycle events, or periodic health checks."],
@@ -6285,7 +6285,7 @@
     ["Files Changed", "Unique files that were created or modified by the agent during the current data collection period."],
     ["Input Tokens", "The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt."],
     ["Loop Signal", "A behavioral signal in the Recommendations tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a \u21BA icon."],
-    ["LLM", "Large Language Model \u2014 the AI model (e.g., GPT-4, Claude) that the agent calls to reason, generate text, or decide which tools to use."],
+    ["LLM", "Large Language Model. The underlying AI model (e.g. GPT-4o, Claude Sonnet) that generates text, answers questions, or produces code. The agent sends requests to the LLM as needed; the model itself does not manage tools or workflow. It is the engine that generates language and code for the agent to act on."],
     ["LLM Call", "A single request-response cycle to the language model. One session typically includes multiple LLM calls as the agent iterates."],
     ["OTLP", "OpenTelemetry Protocol \u2014 the standard format used to collect and transmit telemetry from AI agents to this extension. AgentLens accepts trace spans and log-derived events."],
     ["Outcome", 'How a session concluded: "text" means the agent responded with a text answer; "tool" means the last action was a tool call.'],
@@ -6413,30 +6413,10 @@
         /* @__PURE__ */ u4("p", { style: { textAlign: "center", fontStyle: "italic", color: "var(--muted)", marginTop: 8, marginBottom: 0 }, children: "Watching your agents so you don't have to." })
       ] }),
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.overview.heading }),
-      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("p", { children: [
-          /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
-          " is a local observability dashboard for AI coding agents \u2014 GitHub Copilot, Claude Code, and Codex. It captures the OpenTelemetry (OTLP) traces each agent emits and surfaces them through an interactive dashboard showing token usage, cost, latency, tool calls, file changes, cache performance, and loop detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image."
-        ] }),
-        /* @__PURE__ */ u4("div", { style: { background: "var(--panel-bg)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 16px", marginTop: 14 }, children: [
-          /* @__PURE__ */ u4("h4", { style: { fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: "var(--fg,inherit)" }, children: "Agent vs LLM Model" }),
-          /* @__PURE__ */ u4("p", { style: { fontSize: 13, margin: 0 }, children: [
-            /* @__PURE__ */ u4("strong", { children: "Agent:" }),
-            " The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that receives your prompt, reasons about the task, and decides which tools to use. The agent manages the workflow, breaks down tasks, and may call the LLM multiple times per session."
-          ] }),
-          /* @__PURE__ */ u4("p", { style: { fontSize: 13, margin: 0, marginTop: 6 }, children: [
-            /* @__PURE__ */ u4("strong", { children: "LLM Model:" }),
-            " The underlying Large Language Model (e.g. GPT-4, Claude 3) that generates text, answers questions, or provides code. The agent sends requests to the LLM model as needed, but the model itself does not manage tools or workflow."
-          ] }),
-          /* @__PURE__ */ u4("p", { style: { fontSize: 12, color: "var(--muted)", margin: "8px 0 0" }, children: /* @__PURE__ */ u4("em", { children: [
-            "In short: The ",
-            /* @__PURE__ */ u4("strong", { children: "agent" }),
-            " is the smart assistant orchestrating your work; the ",
-            /* @__PURE__ */ u4("strong", { children: "LLM model" }),
-            " is the engine that generates language and code for the agent."
-          ] }) })
-        ] })
-      ] })
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: /* @__PURE__ */ u4("p", { children: [
+        /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
+        " is a local observability dashboard for AI coding agents \u2014 GitHub Copilot, Claude Code, and Codex. It captures the OpenTelemetry (OTLP) traces each agent emits and surfaces them through an interactive dashboard showing token usage, cost, latency, tool calls, file changes, cache performance, and loop detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image."
+      ] }) })
     ] });
   }
   function ConfigSection() {
@@ -6449,54 +6429,6 @@
     ] });
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-config", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.config.heading }),
-      /* @__PURE__ */ u4("p", { style: mutedP, children: [
-        "AgentLens auto-configures supported agents on activation. If auto-config fails, or you prefer to configure manually, use the instructions below. Replace ",
-        /* @__PURE__ */ u4("code", { style: codeStyle, children: "4318" }),
-        " with your custom port if you changed ",
-        /* @__PURE__ */ u4("em", { children: "agentLens.otlpPort" }),
-        "."
-      ] }),
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Auto-configuration" }),
-        /* @__PURE__ */ u4("p", { style: mutedP, children: "On activation, AgentLens automatically writes the required telemetry config for each supported agent. This happens both when running as a VS Code extension and when running as the standalone server." }),
-        /* @__PURE__ */ u4("table", { style: "font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px", children: [
-          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
-            /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 10px 4px 0;color:var(--fg)", children: "Agent" }),
-            /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 10px 4px 0;color:var(--fg)", children: "Config location" })
-          ] }) }),
-          /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
-            /* @__PURE__ */ u4("tr", { children: [
-              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "GitHub Copilot" }),
-              /* @__PURE__ */ u4("td", { children: "VS Code User Settings (via VS Code API \u2014 same on all platforms)" })
-            ] }),
-            /* @__PURE__ */ u4("tr", { children: [
-              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "Claude Code" }),
-              /* @__PURE__ */ u4("td", { children: [
-                /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.claude/settings.json" }),
-                " (macOS/Linux)",
-                /* @__PURE__ */ u4("br", {}),
-                /* @__PURE__ */ u4("code", { style: codeStyle, children: "%USERPROFILE%\\.claude\\settings.json" }),
-                " (Windows)"
-              ] })
-            ] }),
-            /* @__PURE__ */ u4("tr", { children: [
-              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "OpenAI Codex CLI" }),
-              /* @__PURE__ */ u4("td", { children: [
-                /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.codex/config.toml" }),
-                " (macOS/Linux)",
-                /* @__PURE__ */ u4("br", {}),
-                /* @__PURE__ */ u4("code", { style: codeStyle, children: "%USERPROFILE%\\.codex\\config.toml" }),
-                " (Windows)"
-              ] })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0", children: [
-          "After first install, ",
-          /* @__PURE__ */ u4("strong", { children: "restart any running agent sessions" }),
-          " to pick up the new config."
-        ] })
-      ] }),
       /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
         /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 6px;color:var(--foreground)", children: "Not seeing any data?" }),
         /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 8px", children: "Config is read at startup \u2014 a running agent session will not pick up changes automatically. Restart the agent after AgentLens writes its config:" }),
@@ -6547,6 +6479,54 @@
           " output channel (",
           /* @__PURE__ */ u4("em", { children: "View \u2192 Output \u2192 AgentLens" }),
           ") to confirm spans are arriving."
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("p", { style: mutedP, children: [
+        "AgentLens auto-configures supported agents on activation. If auto-config fails, or you prefer to configure manually, use the instructions below. Replace ",
+        /* @__PURE__ */ u4("code", { style: codeStyle, children: "4318" }),
+        " with your custom port if you changed ",
+        /* @__PURE__ */ u4("em", { children: "agentLens.otlpPort" }),
+        "."
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Auto-configuration" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: "On activation, AgentLens automatically writes the required telemetry config for each supported agent. This happens both when running as a VS Code extension and when running as the standalone server." }),
+        /* @__PURE__ */ u4("table", { style: "font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px", children: [
+          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+            /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 10px 4px 0;color:var(--fg)", children: "Agent" }),
+            /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 10px 4px 0;color:var(--fg)", children: "Config location" })
+          ] }) }),
+          /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
+            /* @__PURE__ */ u4("tr", { children: [
+              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "GitHub Copilot" }),
+              /* @__PURE__ */ u4("td", { children: "VS Code User Settings (via VS Code API \u2014 same on all platforms)" })
+            ] }),
+            /* @__PURE__ */ u4("tr", { children: [
+              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "Claude Code" }),
+              /* @__PURE__ */ u4("td", { children: [
+                /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.claude/settings.json" }),
+                " (macOS/Linux)",
+                /* @__PURE__ */ u4("br", {}),
+                /* @__PURE__ */ u4("code", { style: codeStyle, children: "%USERPROFILE%\\.claude\\settings.json" }),
+                " (Windows)"
+              ] })
+            ] }),
+            /* @__PURE__ */ u4("tr", { children: [
+              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "OpenAI Codex CLI" }),
+              /* @__PURE__ */ u4("td", { children: [
+                /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.codex/config.toml" }),
+                " (macOS/Linux)",
+                /* @__PURE__ */ u4("br", {}),
+                /* @__PURE__ */ u4("code", { style: codeStyle, children: "%USERPROFILE%\\.codex\\config.toml" }),
+                " (Windows)"
+              ] })
+            ] })
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0", children: [
+          "After first install, ",
+          /* @__PURE__ */ u4("strong", { children: "restart any running agent sessions" }),
+          " to pick up the new config."
         ] })
       ] }),
       /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [

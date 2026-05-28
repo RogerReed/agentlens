@@ -23,7 +23,7 @@ const VIEWS: [string, string][] = [
 
 const TERMS: [string, string][] = [
   ['Agent Loop / Malfunction', 'A behavioral pattern in which an AI agent is stuck, oscillating, or spiraling into unproductive work. AgentLens detects five patterns: Tool Call Deadlock, State Corruption Spiral, Hallucination Amplification Loop, Ambiguous Success / Escalating Scope, and Infinite Loop — Context Accumulation.'],
-  ['Agent',                  'The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that processes your prompts, reasons about tasks, and invokes tools to accomplish work.'],
+  ['Agent',                  'The AI coding assistant (e.g. GitHub Copilot, Claude Code, Codex) that receives your prompt, reasons about the task, and decides which tools to use. It manages the workflow, breaks down tasks, and may call the underlying LLM multiple times per session to complete a single request. The agent is the orchestrator; the LLM is the engine it drives.'],
   ['Avg Input/Call',         'Average number of input tokens sent to the language model per LLM call. Lower means leaner prompts. Under 10K is lean; 10-30K is normal; 30K+ suggests large instruction files, verbose tool definitions, or accumulated context bloat.'],
   ['Avg Turns/Session',      'Average number of LLM round-trips per session. Lower is more efficient. 1-3 turns is typical for simple tasks; 5+ may indicate the agent is struggling or the prompt needs more specifics.'],
   ['Background Span',        'A span that runs outside the main request/response cycle — e.g., telemetry uploads, extension lifecycle events, or periodic health checks.'],
@@ -34,7 +34,7 @@ const TERMS: [string, string][] = [
   ['Files Changed',          'Unique files that were created or modified by the agent during the current data collection period.'],
   ['Input Tokens',           'The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt.'],
   ['Loop Signal',            'A behavioral signal in the Recommendations tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a ↺ icon.'],
-  ['LLM',                    'Large Language Model — the AI model (e.g., GPT-4, Claude) that the agent calls to reason, generate text, or decide which tools to use.'],
+  ['LLM',                    'Large Language Model. The underlying AI model (e.g. GPT-4o, Claude Sonnet) that generates text, answers questions, or produces code. The agent sends requests to the LLM as needed; the model itself does not manage tools or workflow. It is the engine that generates language and code for the agent to act on.'],
   ['LLM Call',               'A single request-response cycle to the language model. One session typically includes multiple LLM calls as the agent iterates.'],
   ['OTLP',                   'OpenTelemetry Protocol — the standard format used to collect and transmit telemetry from AI agents to this extension. AgentLens accepts trace spans and log-derived events.'],
   ['Outcome',                'How a session concluded: "text" means the agent responded with a text answer; "tool" means the last action was a tool call.'],
@@ -188,12 +188,6 @@ function OverviewSection() {
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
         <p><strong>AgentLens</strong> is a local observability dashboard for AI coding agents — GitHub Copilot, Claude Code, and Codex. It captures the OpenTelemetry (OTLP) traces each agent emits and surfaces them through an interactive dashboard showing token usage, cost, latency, tool calls, file changes, cache performance, and loop detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image.</p>
-        <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 16px', marginTop: 14 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 600, margin: '0 0 6px', color: 'var(--fg,inherit)' }}>Agent vs LLM Model</h4>
-          <p style={{ fontSize: 13, margin: 0 }}><strong>Agent:</strong> The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that receives your prompt, reasons about the task, and decides which tools to use. The agent manages the workflow, breaks down tasks, and may call the LLM multiple times per session.</p>
-          <p style={{ fontSize: 13, margin: 0, marginTop: 6 }}><strong>LLM Model:</strong> The underlying Large Language Model (e.g. GPT-4, Claude 3) that generates text, answers questions, or provides code. The agent sends requests to the LLM model as needed, but the model itself does not manage tools or workflow.</p>
-          <p style={{ fontSize: 12, color: 'var(--muted)', margin: '8px 0 0' }}><em>In short: The <strong>agent</strong> is the smart assistant orchestrating your work; the <strong>LLM model</strong> is the engine that generates language and code for the agent.</em></p>
-        </div>
       </div>
     </div>
   )
@@ -209,24 +203,6 @@ function ConfigSection() {
   return (
     <div class="help-section" id="help-config">
       <h3 class="help-heading">{HELP_SECTIONS.config.heading}</h3>
-      <p style={mutedP}>AgentLens auto-configures supported agents on activation. If auto-config fails, or you prefer to configure manually, use the instructions below. Replace <code style={codeStyle}>4318</code> with your custom port if you changed <em>agentLens.otlpPort</em>.</p>
-
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>Auto-configuration</h4>
-        <p style={mutedP}>On activation, AgentLens automatically writes the required telemetry config for each supported agent. This happens both when running as a VS Code extension and when running as the standalone server.</p>
-        <table style="font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px">
-          <thead><tr style="border-bottom:1px solid var(--border)">
-            <th style="text-align:left;padding:4px 10px 4px 0;color:var(--fg)">Agent</th>
-            <th style="text-align:left;padding:4px 10px 4px 0;color:var(--fg)">Config location</th>
-          </tr></thead>
-          <tbody style="color:var(--muted)">
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">GitHub Copilot</td><td>VS Code User Settings (via VS Code API — same on all platforms)</td></tr>
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">Claude Code</td><td><code style={codeStyle}>~/.claude/settings.json</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.claude\settings.json</code> (Windows)</td></tr>
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">OpenAI Codex CLI</td><td><code style={codeStyle}>~/.codex/config.toml</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.codex\config.toml</code> (Windows)</td></tr>
-          </tbody>
-        </table>
-        <p style="font-size:11px;color:var(--muted);margin:0">After first install, <strong>restart any running agent sessions</strong> to pick up the new config.</p>
-      </div>
 
       <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
         <p style="font-size:12px;font-weight:600;margin:0 0 6px;color:var(--foreground)">Not seeing any data?</p>
@@ -252,6 +228,25 @@ function ConfigSection() {
           </tbody>
         </table>
         <p style="font-size:11px;color:var(--muted);margin:8px 0 0">After restarting, run a short session and check whether a session card appears in the sidebar. Open the <em>AgentLens</em> output channel (<em>View → Output → AgentLens</em>) to confirm spans are arriving.</p>
+      </div>
+
+      <p style={mutedP}>AgentLens auto-configures supported agents on activation. If auto-config fails, or you prefer to configure manually, use the instructions below. Replace <code style={codeStyle}>4318</code> with your custom port if you changed <em>agentLens.otlpPort</em>.</p>
+
+      <div style="margin-bottom:20px">
+        <h4 style={h4Style}>Auto-configuration</h4>
+        <p style={mutedP}>On activation, AgentLens automatically writes the required telemetry config for each supported agent. This happens both when running as a VS Code extension and when running as the standalone server.</p>
+        <table style="font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 10px 4px 0;color:var(--fg)">Agent</th>
+            <th style="text-align:left;padding:4px 10px 4px 0;color:var(--fg)">Config location</th>
+          </tr></thead>
+          <tbody style="color:var(--muted)">
+            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">GitHub Copilot</td><td>VS Code User Settings (via VS Code API — same on all platforms)</td></tr>
+            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">Claude Code</td><td><code style={codeStyle}>~/.claude/settings.json</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.claude\settings.json</code> (Windows)</td></tr>
+            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">OpenAI Codex CLI</td><td><code style={codeStyle}>~/.codex/config.toml</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.codex\config.toml</code> (Windows)</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:11px;color:var(--muted);margin:0">After first install, <strong>restart any running agent sessions</strong> to pick up the new config.</p>
       </div>
 
       <div style="margin-bottom:20px">
