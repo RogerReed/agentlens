@@ -2,6 +2,25 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.1.4] — 2026-05-27
+
+### Added
+
+- **Cost tab** — estimates Copilot session cost with three billing model toggles: token-based AI Credits (Jun 2026+, default), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders)
+- Per-session cost bar chart; zero-cost sessions shown as a colored tick on the x-axis
+- Cross-session cost table with token breakdown, cost, and AI Credits columns; respects active session filter
+- Estimates-only disclaimer with last-updated date and anchor-linked Known Gaps section
+- `media/src/pricing.ts` — rate table for all Copilot models verified against GitHub pricing docs, including footnotes for included models (GPT-4.1, GPT-5 mini → $0 in token mode) and long-context surcharge notes
+- `PRICING_SOURCES.md` — authoritative source URLs and maintainer notes for all three Copilot billing models
+
+### Fixed
+
+- README "Agent Telemetry Formats — Copilot" section incorrectly stated cache token data is unavailable; corrected to note cache read tokens are present via `gen_ai.usage.cache_read.input_tokens` and only cache write is absent
+
+### Changed
+
+- README: added Cost Estimation section, updated feature list, corrected dashboard tab count to 16
+
 ## [0.1.3] — 2026-05-24
 
 ### Changed
