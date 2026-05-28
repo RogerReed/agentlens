@@ -21,10 +21,16 @@ export function calcSessionCost(session: SessionSummaryCard, mode: PricingMode):
     if (!rates || rates.multiplier === 0) {
       return { totalUsd: 0, aiCredits: 0, byTurn: llmEntries.map(() => 0), modelUnknown: !rates, pricingMode: mode }
     }
-    const perCall = calcRequestCost(1, rates)
+    // Only the user-initiated prompt counts as a premium request in agentic sessions;
+    // autonomous tool calls and internal LLM calls within a session do not.
+    // session.turns reflects user prompt count; fall back to 1 if unavailable.
+    const promptCount = session.turns || 1
+    const totalUsd = calcRequestCost(promptCount, rates)
+    const perPrompt = totalUsd / promptCount
     let cum = 0
-    const byTurn = llmEntries.map(() => { cum += perCall; return cum })
-    return { totalUsd: cum, aiCredits: cum / 0.01, byTurn, modelUnknown: false, pricingMode: mode }
+    // Spread cost evenly across LLM entries for the chart shape, but total is prompt-based.
+    const byTurn = llmEntries.map(() => { cum = Math.min(cum + perPrompt, totalUsd); return cum })
+    return { totalUsd, aiCredits: totalUsd / 0.01, byTurn, modelUnknown: false, pricingMode: mode }
   }
 
   // Token-based mode.

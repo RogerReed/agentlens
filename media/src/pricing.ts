@@ -31,18 +31,19 @@ const RATES: Record<string, ModelRates> = {
   'gpt-5.5':           { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 30.00, multiplier: 7.5 },
   'raptor-mini':       { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025, cacheWritePerMTok: 0,    outputPerMTok: 2.00,  multiplier: 0 },
   // ── Anthropic ───────────────────────────────────────────────────────────────
-  'claude-haiku-4-5':  { inputPerMTok: 1.00,  cacheReadPerMTok: 0.10,  cacheWritePerMTok: 1.25, outputPerMTok: 5.00,  multiplier: 0 },
-  'claude-sonnet-4':   { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
-  'claude-sonnet-4-5': { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
-  'claude-sonnet-4-6': { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
-  'claude-opus-4-5':   { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3 },
-  'claude-opus-4-6':   { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3 },
-  'claude-opus-4-7':   { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3 },
+  'claude-haiku-4-5':          { inputPerMTok: 1.00,  cacheReadPerMTok: 0.10,  cacheWritePerMTok: 1.25, outputPerMTok: 5.00,  multiplier: 0.33 },
+  'claude-sonnet-4':           { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
+  'claude-sonnet-4-5':         { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
+  'claude-sonnet-4-6':         { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,  cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1 },
+  'claude-opus-4-5':           { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3 },
+  'claude-opus-4-6':           { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3 },
+  'claude-opus-4-6-fast':      { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 30 },
+  'claude-opus-4-7':           { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 15 },
   // ── Google ───────────────────────────────────────────────────────────────────
-  'gemini-2.5-pro':    { inputPerMTok: 1.25,  cacheReadPerMTok: 0.31,  cacheWritePerMTok: 0,    outputPerMTok: 10.00, multiplier: 0 },
-  'gemini-3-flash':    { inputPerMTok: 0.50,  cacheReadPerMTok: 0.125, cacheWritePerMTok: 0,    outputPerMTok: 3.00,  multiplier: 0 },
-  'gemini-3.1-pro':    { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 12.00, multiplier: 0 },
-  'gemini-3.5-flash':  { inputPerMTok: 0.75,  cacheReadPerMTok: 0.188, cacheWritePerMTok: 0,    outputPerMTok: 3.75,  multiplier: 0 },
+  'gemini-2.5-pro':    { inputPerMTok: 1.25,  cacheReadPerMTok: 0.31,  cacheWritePerMTok: 0,    outputPerMTok: 10.00, multiplier: 1 },
+  'gemini-3-flash':    { inputPerMTok: 0.50,  cacheReadPerMTok: 0.125, cacheWritePerMTok: 0,    outputPerMTok: 3.00,  multiplier: 0.33 },
+  'gemini-3.1-pro':    { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 12.00, multiplier: 1 },
+  'gemini-3.5-flash':  { inputPerMTok: 0.75,  cacheReadPerMTok: 0.188, cacheWritePerMTok: 0,    outputPerMTok: 3.75,  multiplier: 14 },
 }
 
 function normalizeModelId(modelId: string): string {
