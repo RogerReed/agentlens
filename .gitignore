@@ -11,3 +11,5 @@ demo/fixtures/*.json
 # Session data exports
 export_*.json
 agent-lens-export-*.json
+# Local staging
+.staged-issues/

@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { useEffect, useRef } from 'preact/hooks'
-import { displaySessions, COLORS } from '../state'
+import { displaySessions } from '../state'
 import { getAgentColor, getSessionGlobalNumber, formatCompact, getAgentSourceLabel } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { PRICING_LAST_UPDATED } from '../pricing'
@@ -76,13 +76,20 @@ function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode
       const x = offsetX + i * (barW + barGap)
       const barH = (d.cost / maxCost) * chartH
       const y = pad.top + chartH - barH
-      ctx.fillStyle = d.unknown ? '#666' : getAgentColor(d.source)
-      ctx.fillRect(x, y, barW, barH)
+      const color = d.unknown ? '#666' : getAgentColor(d.source)
+      if (barH < 1) {
+        // Zero-cost: draw a tick on the x-axis instead of an invisible bar
+        ctx.strokeStyle = color; ctx.lineWidth = 2
+        ctx.beginPath(); ctx.moveTo(x, pad.top + chartH); ctx.lineTo(x + barW, pad.top + chartH); ctx.stroke()
+      } else {
+        ctx.fillStyle = color
+        ctx.fillRect(x, y, barW, barH)
+      }
       ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'top'
       ctx.fillText(String(d.session), x + barW / 2, pad.top + chartH + 4)
       if (d.unknown) {
         ctx.fillStyle = '#999'; ctx.textBaseline = 'bottom'
-        ctx.fillText('?', x + barW / 2, y - 1)
+        ctx.fillText('?', x + barW / 2, pad.top + chartH - 3)
       }
     })
   })
@@ -95,98 +102,7 @@ function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode
   )
 }
 
-// ── Per-turn cumulative cost line chart ────────────────────────────────────────
 
-function CostGrowthChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode: PricingMode }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const seriesData: Array<{ label: string; points: number[]; color: string }> = []
-    let globalMax = 0, globalMaxPoints = 0
-
-    sessions.forEach((sess, idx) => {
-      const cost = calcSessionCost(sess, mode)
-      if (cost.byTurn.length === 0) return
-      const max = cost.byTurn[cost.byTurn.length - 1]
-      if (max > globalMax) globalMax = max
-      if (cost.byTurn.length > globalMaxPoints) globalMaxPoints = cost.byTurn.length
-      seriesData.push({
-        label: String(getSessionGlobalNumber(sess) || (idx + 1)),
-        points: cost.byTurn,
-        color: getAgentColor(sess.source) || COLORS[idx % COLORS.length],
-      })
-    })
-
-    if (seriesData.length === 0) { canvas.style.display = 'none'; return }
-    canvas.style.display = 'block'
-
-    const yMax = globalMax * 1.1 || 0.001
-
-    const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    if (rect.width === 0 || rect.height === 0) return
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
-    const ctx = canvas.getContext('2d')!
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    const w = rect.width, h = rect.height
-    ctx.clearRect(0, 0, w, h)
-
-    const pad = { top: 8, right: 40, bottom: 24, left: 64 }
-    const chartW = w - pad.left - pad.right
-    const chartH = h - pad.top - pad.bottom
-
-    const cs = getComputedStyle(document.body)
-    const gridColor = cs.getPropertyValue('--vscode-panel-border').trim() || '#333'
-    const textColor = cs.getPropertyValue('--vscode-descriptionForeground').trim() || '#888'
-    const fontStr = '10px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
-
-    ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5
-    for (let i = 0; i <= 4; i++) {
-      const y = pad.top + chartH * i / 4
-      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke()
-    }
-    ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
-    for (let i = 0; i <= 4; i++) {
-      const val = yMax * (4 - i) / 4
-      ctx.fillText('$' + (val < 0.01 ? val.toFixed(3) : val.toFixed(2)), pad.left - 4, pad.top + chartH * i / 4)
-    }
-    ctx.save()
-    ctx.translate(10, pad.top + chartH / 2)
-    ctx.rotate(-Math.PI / 2)
-    ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-    ctx.fillText('Cumulative Cost (USD)', 0, 0)
-    ctx.restore()
-    ctx.fillStyle = textColor; ctx.textAlign = 'center'; ctx.textBaseline = 'top'
-    ctx.fillText('Turns (LLM Calls)', pad.left + chartW / 2, pad.top + chartH + 10)
-
-    seriesData.forEach(series => {
-      const pts = series.points
-      const lastX = pad.left + (pts.length - 1) / Math.max(globalMaxPoints - 1, 1) * chartW
-      const lastY = pad.top + chartH - (pts[pts.length - 1] / yMax) * chartH
-      if (pts.length >= 2) {
-        ctx.beginPath()
-        for (let j = 0; j < pts.length; j++) {
-          const x = pad.left + j / Math.max(globalMaxPoints - 1, 1) * chartW
-          const y = pad.top + chartH - (pts[j] / yMax) * chartH
-          j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-        }
-        ctx.strokeStyle = series.color; ctx.lineWidth = 1.5; ctx.stroke()
-      }
-      ctx.beginPath()
-      ctx.arc(lastX, lastY, pts.length === 1 ? 5 : 3, 0, Math.PI * 2)
-      ctx.fillStyle = series.color; ctx.fill()
-      ctx.fillStyle = series.color; ctx.font = 'bold 10px sans-serif'
-      ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
-      ctx.fillText(series.label, lastX + (pts.length === 1 ? 9 : 5), lastY)
-    })
-  })
-
-  return <canvas ref={canvasRef} style="width:100%;height:180px;display:block" />
-}
 
 // ── Main tab ──────────────────────────────────────────────────────────────────
 
@@ -197,8 +113,15 @@ export function Cost() {
   const copilotSessions = sessions.filter(s => s.source === 'copilot')
 
   const scopeNote = (
-    <div style="font-size:11px;color:var(--muted);background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:7px 10px;margin-bottom:16px;line-height:1.5">
+    <div style="font-size:11px;color:var(--muted);background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:7px 10px;margin-bottom:12px;line-height:1.5">
       Cost estimation is currently implemented for <strong>Copilot</strong> sessions only. Claude and Codex support coming soon.
+    </div>
+  )
+
+  const disclaimer = (
+    <div style="font-size:11px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:8px 10px;margin-bottom:16px;line-height:1.6;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <span><strong style="color:var(--foreground)">Estimates only</strong> — not your actual bill. <a href="#cost-known-gaps" style="color:inherit;text-decoration:underline;text-underline-offset:2px">See known gaps.</a></span>
+      <span style="white-space:nowrap">Rates last updated: {PRICING_LAST_UPDATED}</span>
     </div>
   )
 
@@ -206,6 +129,7 @@ export function Cost() {
     return (
       <div id="cost-content">
         {scopeNote}
+        {disclaimer}
         <div class="empty-state">No Copilot sessions recorded — start a Copilot chat session to see cost estimates</div>
       </div>
     )
@@ -221,10 +145,14 @@ export function Cost() {
   return (
     <div id="cost-content">
       {scopeNote}
+      {disclaimer}
       {/* Mode toggle */}
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Pricing model</span>
-        <div style="display:flex;gap:4px">
+        <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">
+          <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;background:' + getAgentColor('copilot') + ';vertical-align:middle;margin-right:5px'} />
+          Copilot — pricing model
+        </span>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
           <button
             class={'tab-mini' + (mode === 'token' ? ' active' : '')}
             onClick={() => setMode('token')}
@@ -235,6 +163,11 @@ export function Cost() {
             onClick={() => setMode('request')}
             title="Request-based billing with model multipliers, active before Jun 1, 2026"
           >Request-based (pre-Jun 1, 2026)</button>
+          <button
+            class={'tab-mini' + (mode === 'request-annual' ? ' active' : '')}
+            onClick={() => setMode('request-annual')}
+            title="Annual plan holders staying on request billing after Jun 1, 2026 face significantly higher multipliers"
+          >Annual plan request-based (post-Jun 1, 2026)</button>
         </div>
       </div>
 
@@ -246,15 +179,6 @@ export function Cost() {
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#F0FF42;vertical-align:middle;margin-right:3px" />Codex</span>
       </div>
       <CostBarChart sessions={copilotSessions} mode={mode} />
-
-      {/* Per-turn cumulative cost chart */}
-      <h3 style="margin:24px 0 8px;font-size:13px;color:var(--muted)">COST OVER TURNS</h3>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
-        {mode === 'token'
-          ? 'Cumulative cost per LLM call. Cache tokens included in session totals below but not per-turn (not separately tracked in telemetry).'
-          : 'Cumulative cost per LLM call at multiplier × $0.04/request.'}
-      </div>
-      <CostGrowthChart sessions={copilotSessions} mode={mode} />
 
       {/* Session cost table */}
       <h3 style="margin:24px 0 8px;font-size:13px;color:var(--muted)">SESSION COST TABLE</h3>
@@ -315,11 +239,27 @@ export function Cost() {
 
       {/* Footer note */}
       <div style="margin-top:16px;font-size:10px;color:var(--muted);line-height:1.6">
-        Rates as of {PRICING_LAST_UPDATED} ·{' '}
-        {anyUnknown && <span style="color:var(--warning,#ffb74d)">⚠ Some models not in rate table (shown as ~$?) · </span>}
         {mode === 'token'
           ? 'Token-based AI Credits: effective Jun 1, 2026. Per-turn chart uses input+output only; session totals include cache tokens.'
-          : 'Request-based: active before Jun 1, 2026. Cost = multiplier × $0.04 per LLM call. Models marked 0× (e.g. GPT-4.1) are free under this model.'}
+          : mode === 'request'
+            ? 'Request-based: active before Jun 1, 2026. Cost = multiplier × $0.04 per user prompt. Models marked 0× (e.g. GPT-4.1) are free under this model.'
+            : 'Annual plan request-based: for annual-plan holders staying on old billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June.'}
+      </div>
+
+      {/* Known gaps */}
+      <div id="cost-known-gaps" style="margin-top:24px;padding-top:16px;border-top:1px solid var(--vscode-panel-border);font-size:11px;color:var(--muted);line-height:1.7">
+        <strong style="color:var(--foreground);font-size:12px">Known gaps</strong>
+        <div style="margin-top:8px">
+          <span style="font-size:10px;text-transform:uppercase;letter-spacing:.4px">
+            <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor('copilot') + ';vertical-align:middle;margin-right:4px'} />
+            Copilot
+          </span>
+          <ul style="margin:4px 0 0;padding-left:18px">
+            <li>Long-context surcharges are not applied — GPT-5.4 (prompts &gt;272K tokens) and Gemini 2.5 Pro / 3.1 Pro (prompts &gt;200K tokens) have higher rates above those thresholds, which require per-prompt token counts not available in session telemetry.</li>
+            <li>Models not in the rate table are shown as <strong>~$?</strong> — this can happen when GitHub releases a new model after the last rate update, or when the model ID in telemetry doesn't match the published name.</li>
+            <li>Request-based cost uses session turn count as a proxy for billable prompts, which may not match exactly for all session shapes.</li>
+          </ul>
+        </div>
       </div>
     </div>
   )

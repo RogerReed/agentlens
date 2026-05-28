@@ -1,22 +1,6556 @@
-"use strict";(()=>{var Jt,W,So,In,tt,yo,To,Co,Cn,jt,Ct,Ao,Mn,An,Ln,Si,Kt={},Yt=[],Ti=/acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i,Zt=Array.isArray;function je(e,t){for(var o in t)e[o]=t[o];return e}function Rn(e){e&&e.parentNode&&e.parentNode.removeChild(e)}function Ci(e,t,o){var r,i,s,a={};for(s in t)s=="key"?r=t[s]:s=="ref"?i=t[s]:a[s]=t[s];if(arguments.length>2&&(a.children=arguments.length>3?Jt.call(arguments,2):o),typeof e=="function"&&e.defaultProps!=null)for(s in e.defaultProps)a[s]===void 0&&(a[s]=e.defaultProps[s]);return Gt(e,a,r,i,null)}function Gt(e,t,o,r,i){var s={type:e,props:t,key:o,ref:r,__k:null,__:null,__b:0,__e:null,__c:null,constructor:void 0,__v:i??++So,__i:-1,__u:0};return i==null&&W.vnode!=null&&W.vnode(s),s}function z(e){return e.children}function gt(e,t){this.props=e,this.context=t}function mt(e,t){if(t==null)return e.__?mt(e.__,e.__i+1):null;for(var o;t<e.__k.length;t++)if((o=e.__k[t])!=null&&o.__e!=null)return o.__e;return typeof e.type=="function"?mt(e):null}function Ai(e){if(e.__P&&e.__d){var t=e.__v,o=t.__e,r=[],i=[],s=je({},t);s.__v=t.__v+1,W.vnode&&W.vnode(s),zn(e.__P,s,t,e.__n,e.__P.namespaceURI,32&t.__u?[o]:null,r,o??mt(t),!!(32&t.__u),i),s.__v=t.__v,s.__.__k[s.__i]=s,Mo(r,s,i),t.__e=t.__=null,s.__e!=o&&Lo(s)}}function Lo(e){if((e=e.__)!=null&&e.__c!=null)return e.__e=e.__c.base=null,e.__k.some(function(t){if(t!=null&&t.__e!=null)return e.__e=e.__c.base=t.__e}),Lo(e)}function wo(e){(!e.__d&&(e.__d=!0)&&tt.push(e)&&!Xt.__r++||yo!=W.debounceRendering)&&((yo=W.debounceRendering)||To)(Xt)}function Xt(){try{for(var e,t=1;tt.length;)tt.length>t&&tt.sort(Co),e=tt.shift(),t=tt.length,Ai(e)}finally{tt.length=Xt.__r=0}}function Eo(e,t,o,r,i,s,a,l,p,d,u){var c,m,h,f,g,w,k,C=r&&r.__k||Yt,S=t.length;for(p=Li(o,t,C,p,S),c=0;c<S;c++)(h=o.__k[c])!=null&&(m=h.__i!=-1&&C[h.__i]||Kt,h.__i=c,w=zn(e,h,m,i,s,a,l,p,d,u),f=h.__e,h.ref&&m.ref!=h.ref&&(m.ref&&On(m.ref,null,h),u.push(h.ref,h.__c||f,h)),g==null&&f!=null&&(g=f),(k=!!(4&h.__u))||m.__k===h.__k?(p=Io(h,p,e,k),k&&m.__e&&(m.__e=null)):typeof h.type=="function"&&w!==void 0?p=w:f&&(p=f.nextSibling),h.__u&=-7);return o.__e=g,p}function Li(e,t,o,r,i){var s,a,l,p,d,u=o.length,c=u,m=0;for(e.__k=new Array(i),s=0;s<i;s++)(a=t[s])!=null&&typeof a!="boolean"&&typeof a!="function"?(typeof a=="string"||typeof a=="number"||typeof a=="bigint"||a.constructor==String?a=e.__k[s]=Gt(null,a,null,null,null):Zt(a)?a=e.__k[s]=Gt(z,{children:a},null,null,null):a.constructor===void 0&&a.__b>0?a=e.__k[s]=Gt(a.type,a.props,a.key,a.ref?a.ref:null,a.__v):e.__k[s]=a,p=s+m,a.__=e,a.__b=e.__b+1,l=null,(d=a.__i=Ei(a,o,p,c))!=-1&&(c--,(l=o[d])&&(l.__u|=2)),l==null||l.__v==null?(d==-1&&(i>u?m--:i<u&&m++),typeof a.type!="function"&&(a.__u|=4)):d!=p&&(d==p-1?m--:d==p+1?m++:(d>p?m--:m++,a.__u|=4))):e.__k[s]=null;if(c)for(s=0;s<u;s++)(l=o[s])!=null&&(2&l.__u)==0&&(l.__e==r&&(r=mt(l)),zo(l,l));return r}function Io(e,t,o,r){var i,s;if(typeof e.type=="function"){for(i=e.__k,s=0;i&&s<i.length;s++)i[s]&&(i[s].__=e,t=Io(i[s],t,o,r));return t}e.__e!=t&&(r&&(t&&e.type&&!t.parentNode&&(t=mt(e)),o.insertBefore(e.__e,t||null)),t=e.__e);do t=t&&t.nextSibling;while(t!=null&&t.nodeType==8);return t}function Ei(e,t,o,r){var i,s,a,l=e.key,p=e.type,d=t[o],u=d!=null&&(2&d.__u)==0;if(d===null&&l==null||u&&l==d.key&&p==d.type)return o;if(r>(u?1:0)){for(i=o-1,s=o+1;i>=0||s<t.length;)if((d=t[a=i>=0?i--:s++])!=null&&(2&d.__u)==0&&l==d.key&&p==d.type)return a}return-1}function _o(e,t,o){t[0]=="-"?e.setProperty(t,o??""):e[t]=o==null?"":typeof o!="number"||Ti.test(t)?o:o+"px"}function Vt(e,t,o,r,i){var s,a;e:if(t=="style")if(typeof o=="string")e.style.cssText=o;else{if(typeof r=="string"&&(e.style.cssText=r=""),r)for(t in r)o&&t in o||_o(e.style,t,"");if(o)for(t in o)r&&o[t]==r[t]||_o(e.style,t,o[t])}else if(t[0]=="o"&&t[1]=="n")s=t!=(t=t.replace(Ao,"$1")),a=t.toLowerCase(),t=a in e||t=="onFocusOut"||t=="onFocusIn"?a.slice(2):t.slice(2),e.l||(e.l={}),e.l[t+s]=o,o?r?o[Ct]=r[Ct]:(o[Ct]=Mn,e.addEventListener(t,s?Ln:An,s)):e.removeEventListener(t,s?Ln:An,s);else{if(i=="http://www.w3.org/2000/svg")t=t.replace(/xlink(H|:h)/,"h").replace(/sName$/,"s");else if(t!="width"&&t!="height"&&t!="href"&&t!="list"&&t!="form"&&t!="tabIndex"&&t!="download"&&t!="rowSpan"&&t!="colSpan"&&t!="role"&&t!="popover"&&t in e)try{e[t]=o??"";break e}catch{}typeof o=="function"||(o==null||o===!1&&t[4]!="-"?e.removeAttribute(t):e.setAttribute(t,t=="popover"&&o==1?"":o))}}function ko(e){return function(t){if(this.l){var o=this.l[t.type+e];if(t[jt]==null)t[jt]=Mn++;else if(t[jt]<o[Ct])return;return o(W.event?W.event(t):t)}}}function zn(e,t,o,r,i,s,a,l,p,d){var u,c,m,h,f,g,w,k,C,S,I,_,T,x,v,y=t.type;if(t.constructor!==void 0)return null;128&o.__u&&(p=!!(32&o.__u),s=[l=t.__e=o.__e]),(u=W.__b)&&u(t);e:if(typeof y=="function")try{if(k=t.props,C=y.prototype&&y.prototype.render,S=(u=y.contextType)&&r[u.__c],I=u?S?S.props.value:u.__:r,o.__c?w=(c=t.__c=o.__c).__=c.__E:(C?t.__c=c=new y(k,I):(t.__c=c=new gt(k,I),c.constructor=y,c.render=Mi),S&&S.sub(c),c.state||(c.state={}),c.__n=r,m=c.__d=!0,c.__h=[],c._sb=[]),C&&c.__s==null&&(c.__s=c.state),C&&y.getDerivedStateFromProps!=null&&(c.__s==c.state&&(c.__s=je({},c.__s)),je(c.__s,y.getDerivedStateFromProps(k,c.__s))),h=c.props,f=c.state,c.__v=t,m)C&&y.getDerivedStateFromProps==null&&c.componentWillMount!=null&&c.componentWillMount(),C&&c.componentDidMount!=null&&c.__h.push(c.componentDidMount);else{if(C&&y.getDerivedStateFromProps==null&&k!==h&&c.componentWillReceiveProps!=null&&c.componentWillReceiveProps(k,I),t.__v==o.__v||!c.__e&&c.shouldComponentUpdate!=null&&c.shouldComponentUpdate(k,c.__s,I)===!1){t.__v!=o.__v&&(c.props=k,c.state=c.__s,c.__d=!1),t.__e=o.__e,t.__k=o.__k,t.__k.some(function(A){A&&(A.__=t)}),Yt.push.apply(c.__h,c._sb),c._sb=[],c.__h.length&&a.push(c);break e}c.componentWillUpdate!=null&&c.componentWillUpdate(k,c.__s,I),C&&c.componentDidUpdate!=null&&c.__h.push(function(){c.componentDidUpdate(h,f,g)})}if(c.context=I,c.props=k,c.__P=e,c.__e=!1,_=W.__r,T=0,C)c.state=c.__s,c.__d=!1,_&&_(t),u=c.render(c.props,c.state,c.context),Yt.push.apply(c.__h,c._sb),c._sb=[];else do c.__d=!1,_&&_(t),u=c.render(c.props,c.state,c.context),c.state=c.__s;while(c.__d&&++T<25);c.state=c.__s,c.getChildContext!=null&&(r=je(je({},r),c.getChildContext())),C&&!m&&c.getSnapshotBeforeUpdate!=null&&(g=c.getSnapshotBeforeUpdate(h,f)),x=u!=null&&u.type===z&&u.key==null?Ro(u.props.children):u,l=Eo(e,Zt(x)?x:[x],t,o,r,i,s,a,l,p,d),c.base=t.__e,t.__u&=-161,c.__h.length&&a.push(c),w&&(c.__E=c.__=null)}catch(A){if(t.__v=null,p||s!=null)if(A.then){for(t.__u|=p?160:128;l&&l.nodeType==8&&l.nextSibling;)l=l.nextSibling;s[s.indexOf(l)]=null,t.__e=l}else{for(v=s.length;v--;)Rn(s[v]);En(t)}else t.__e=o.__e,t.__k=o.__k,A.then||En(t);W.__e(A,t,o)}else s==null&&t.__v==o.__v?(t.__k=o.__k,t.__e=o.__e):l=t.__e=Ii(o.__e,t,o,r,i,s,a,p,d);return(u=W.diffed)&&u(t),128&t.__u?void 0:l}function En(e){e&&(e.__c&&(e.__c.__e=!0),e.__k&&e.__k.some(En))}function Mo(e,t,o){for(var r=0;r<o.length;r++)On(o[r],o[++r],o[++r]);W.__c&&W.__c(t,e),e.some(function(i){try{e=i.__h,i.__h=[],e.some(function(s){s.call(i)})}catch(s){W.__e(s,i.__v)}})}function Ro(e){return typeof e!="object"||e==null||e.__b>0?e:Zt(e)?e.map(Ro):je({},e)}function Ii(e,t,o,r,i,s,a,l,p){var d,u,c,m,h,f,g,w=o.props||Kt,k=t.props,C=t.type;if(C=="svg"?i="http://www.w3.org/2000/svg":C=="math"?i="http://www.w3.org/1998/Math/MathML":i||(i="http://www.w3.org/1999/xhtml"),s!=null){for(d=0;d<s.length;d++)if((h=s[d])&&"setAttribute"in h==!!C&&(C?h.localName==C:h.nodeType==3)){e=h,s[d]=null;break}}if(e==null){if(C==null)return document.createTextNode(k);e=document.createElementNS(i,C,k.is&&k),l&&(W.__m&&W.__m(t,s),l=!1),s=null}if(C==null)w===k||l&&e.data==k||(e.data=k);else{if(s=s&&Jt.call(e.childNodes),!l&&s!=null)for(w={},d=0;d<e.attributes.length;d++)w[(h=e.attributes[d]).name]=h.value;for(d in w)h=w[d],d=="dangerouslySetInnerHTML"?c=h:d=="children"||d in k||d=="value"&&"defaultValue"in k||d=="checked"&&"defaultChecked"in k||Vt(e,d,null,h,i);for(d in k)h=k[d],d=="children"?m=h:d=="dangerouslySetInnerHTML"?u=h:d=="value"?f=h:d=="checked"?g=h:l&&typeof h!="function"||w[d]===h||Vt(e,d,h,w[d],i);if(u)l||c&&(u.__html==c.__html||u.__html==e.innerHTML)||(e.innerHTML=u.__html),t.__k=[];else if(c&&(e.innerHTML=""),Eo(t.type=="template"?e.content:e,Zt(m)?m:[m],t,o,r,C=="foreignObject"?"http://www.w3.org/1999/xhtml":i,s,a,s?s[0]:o.__k&&mt(o,0),l,p),s!=null)for(d=s.length;d--;)Rn(s[d]);l||(d="value",C=="progress"&&f==null?e.removeAttribute("value"):f!=null&&(f!==e[d]||C=="progress"&&!f||C=="option"&&f!=w[d])&&Vt(e,d,f,w[d],i),d="checked",g!=null&&g!=e[d]&&Vt(e,d,g,w[d],i))}return e}function On(e,t,o){try{if(typeof e=="function"){var r=typeof e.__u=="function";r&&e.__u(),r&&t==null||(e.__u=e(t))}else e.current=t}catch(i){W.__e(i,o)}}function zo(e,t,o){var r,i;if(W.unmount&&W.unmount(e),(r=e.ref)&&(r.current&&r.current!=e.__e||On(r,null,t)),(r=e.__c)!=null){if(r.componentWillUnmount)try{r.componentWillUnmount()}catch(s){W.__e(s,t)}r.base=r.__P=null}if(r=e.__k)for(i=0;i<r.length;i++)r[i]&&zo(r[i],t,o||typeof e.type!="function");o||Rn(e.__e),e.__c=e.__=e.__e=void 0}function Mi(e,t,o){return this.constructor(e,o)}function Oo(e,t,o){var r,i,s,a;t==document&&(t=document.documentElement),W.__&&W.__(e,t),i=(r=typeof o=="function")?null:o&&o.__k||t.__k,s=[],a=[],zn(t,e=(!r&&o||t).__k=Ci(z,null,[e]),i||Kt,Kt,t.namespaceURI,!r&&o?[o]:i?null:t.firstChild?Jt.call(t.childNodes):null,s,!r&&o?o:i?i.__e:t.firstChild,r,a),Mo(s,e,a)}Jt=Yt.slice,W={__e:function(e,t,o,r){for(var i,s,a;t=t.__;)if((i=t.__c)&&!i.__)try{if((s=i.constructor)&&s.getDerivedStateFromError!=null&&(i.setState(s.getDerivedStateFromError(e)),a=i.__d),i.componentDidCatch!=null&&(i.componentDidCatch(e,r||{}),a=i.__d),a)return i.__E=i}catch(l){e=l}throw e}},So=0,In=function(e){return e!=null&&e.constructor===void 0},gt.prototype.setState=function(e,t){var o;o=this.__s!=null&&this.__s!=this.state?this.__s:this.__s=je({},this.state),typeof e=="function"&&(e=e(je({},o),this.props)),e&&je(o,e),e!=null&&this.__v&&(t&&this._sb.push(t),wo(this))},gt.prototype.forceUpdate=function(e){this.__v&&(this.__e=!0,e&&this.__h.push(e),wo(this))},gt.prototype.render=z,tt=[],To=typeof Promise=="function"?Promise.prototype.then.bind(Promise.resolve()):setTimeout,Co=function(e,t){return e.__v.__b-t.__v.__b},Xt.__r=0,Cn=Math.random().toString(8),jt="__d"+Cn,Ct="__a"+Cn,Ao=/(PointerCapture)$|Capture$/i,Mn=0,An=ko(!1),Ln=ko(!0),Si=0;var At,oe,Pn,Po,en=0,$o=[],ie=W,No=ie.__b,Fo=ie.__r,Do=ie.diffed,Ho=ie.__c,Bo=ie.unmount,Uo=ie.__;function Fn(e,t){ie.__h&&ie.__h(oe,e,en||t),en=0;var o=oe.__H||(oe.__H={__:[],__h:[]});return e>=o.__.length&&o.__.push({}),o.__[e]}function D(e){return en=1,Ri(Vo,e)}function Ri(e,t,o){var r=Fn(At++,2);if(r.t=e,!r.__c&&(r.__=[o?o(t):Vo(void 0,t),function(l){var p=r.__N?r.__N[0]:r.__[0],d=r.t(p,l);p!==d&&(r.__N=[d,r.__[1]],r.__c.setState({}))}],r.__c=oe,!oe.__f)){var i=function(l,p,d){if(!r.__c.__H)return!0;var u=r.__c.__H.__.filter(function(m){return m.__c});if(u.every(function(m){return!m.__N}))return!s||s.call(this,l,p,d);var c=r.__c.props!==l;return u.some(function(m){if(m.__N){var h=m.__[0];m.__=m.__N,m.__N=void 0,h!==m.__[0]&&(c=!0)}}),s&&s.call(this,l,p,d)||c};oe.__f=!0;var s=oe.shouldComponentUpdate,a=oe.componentWillUpdate;oe.componentWillUpdate=function(l,p,d){if(this.__e){var u=s;s=void 0,i(l,p,d),s=u}a&&a.call(this,l,p,d)},oe.shouldComponentUpdate=i}return r.__N||r.__}function ve(e,t){var o=Fn(At++,3);!ie.__s&&qo(o.__H,t)&&(o.__=e,o.u=t,oe.__H.__h.push(o))}function Pe(e){return en=5,tn(function(){return{current:e}},[])}function tn(e,t){var o=Fn(At++,7);return qo(o.__H,t)&&(o.__=e(),o.__H=t,o.__h=e),o.__}function zi(){for(var e;e=$o.shift();){var t=e.__H;if(e.__P&&t)try{t.__h.some(Qt),t.__h.some(Nn),t.__h=[]}catch(o){t.__h=[],ie.__e(o,e.__v)}}}ie.__b=function(e){oe=null,No&&No(e)},ie.__=function(e,t){e&&t.__k&&t.__k.__m&&(e.__m=t.__k.__m),Uo&&Uo(e,t)},ie.__r=function(e){Fo&&Fo(e),At=0;var t=(oe=e.__c).__H;t&&(Pn===oe?(t.__h=[],oe.__h=[],t.__.some(function(o){o.__N&&(o.__=o.__N),o.u=o.__N=void 0})):(t.__h.some(Qt),t.__h.some(Nn),t.__h=[],At=0)),Pn=oe},ie.diffed=function(e){Do&&Do(e);var t=e.__c;t&&t.__H&&(t.__H.__h.length&&($o.push(t)!==1&&Po===ie.requestAnimationFrame||((Po=ie.requestAnimationFrame)||Oi)(zi)),t.__H.__.some(function(o){o.u&&(o.__H=o.u),o.u=void 0})),Pn=oe=null},ie.__c=function(e,t){t.some(function(o){try{o.__h.some(Qt),o.__h=o.__h.filter(function(r){return!r.__||Nn(r)})}catch(r){t.some(function(i){i.__h&&(i.__h=[])}),t=[],ie.__e(r,o.__v)}}),Ho&&Ho(e,t)},ie.unmount=function(e){Bo&&Bo(e);var t,o=e.__c;o&&o.__H&&(o.__H.__.some(function(r){try{Qt(r)}catch(i){t=i}}),o.__H=void 0,t&&ie.__e(t,o.__v))};var Wo=typeof requestAnimationFrame=="function";function Oi(e){var t,o=function(){clearTimeout(r),Wo&&cancelAnimationFrame(t),setTimeout(e)},r=setTimeout(o,35);Wo&&(t=requestAnimationFrame(o))}function Qt(e){var t=oe,o=e.__c;typeof o=="function"&&(e.__c=void 0,o()),oe=t}function Nn(e){var t=oe;e.__c=e.__(),oe=t}function qo(e,t){return!e||e.length!==t.length||t.some(function(o,r){return o!==e[r]})}function Vo(e,t){return typeof t=="function"?t(e):t}var Pi=Symbol.for("preact-signals");function sn(){if(Ge>1)Ge--;else{var e,t=!1;for((function(){var i=on;for(on=void 0;i!==void 0;)i.S.v===i.v&&(i.S.i=i.i),i=i.o})();Lt!==void 0;){var o=Lt;for(Lt=void 0,nn++;o!==void 0;){var r=o.u;if(o.u=void 0,o.f&=-3,!(8&o.f)&&Ko(o))try{o.c()}catch(i){t||(e=i,t=!0)}o=r}}if(nn=0,Ge--,t)throw e}}function Hn(e){if(Ge>0)return e();Dn=++Ni,Ge++;try{return e()}finally{sn()}}var X=void 0;function an(e){var t=X;X=void 0;try{return e()}finally{X=t}}var jo,Lt=void 0,Ge=0,nn=0,Ni=0,Dn=0,on=void 0,rn=0;function Go(e){if(X!==void 0){var t=e.n;if(t===void 0||t.t!==X)return t={i:0,S:e,p:X.s,n:void 0,t:X,e:void 0,x:void 0,r:t},X.s!==void 0&&(X.s.n=t),X.s=t,e.n=t,32&X.f&&e.S(t),t;if(t.i===-1)return t.i=0,t.n!==void 0&&(t.n.p=t.p,t.p!==void 0&&(t.p.n=t.n),t.p=X.s,t.n=void 0,X.s.n=t,X.s=t),t}}function ae(e,t){this.v=e,this.i=0,this.n=void 0,this.t=void 0,this.l=0,this.W=t?.watched,this.Z=t?.unwatched,this.name=t?.name}ae.prototype.brand=Pi;ae.prototype.h=function(){return!0};ae.prototype.S=function(e){var t=this,o=this.t;o!==e&&e.e===void 0&&(e.x=o,this.t=e,o!==void 0?o.e=e:an(function(){var r;(r=t.W)==null||r.call(t)}))};ae.prototype.U=function(e){var t=this;if(this.t!==void 0){var o=e.e,r=e.x;o!==void 0&&(o.x=r,e.e=void 0),r!==void 0&&(r.e=o,e.x=void 0),e===this.t&&(this.t=r,r===void 0&&an(function(){var i;(i=t.Z)==null||i.call(t)}))}};ae.prototype.subscribe=function(e){var t=this;return lt(function(){var o=t.value,r=X;X=void 0;try{e(o)}finally{X=r}},{name:"sub"})};ae.prototype.valueOf=function(){return this.value};ae.prototype.toString=function(){return this.value+""};ae.prototype.toJSON=function(){return this.value};ae.prototype.peek=function(){var e=this;return an(function(){return e.value})};Object.defineProperty(ae.prototype,"value",{get:function(){var e=Go(this);return e!==void 0&&(e.i=this.i),this.v},set:function(e){if(e!==this.v){if(nn>100)throw new Error("Cycle detected");(function(o){Ge!==0&&nn===0&&o.l!==Dn&&(o.l=Dn,on={S:o,v:o.v,i:o.i,o:on})})(this),this.v=e,this.i++,rn++,Ge++;try{for(var t=this.t;t!==void 0;t=t.x)t.t.N()}finally{sn()}}}});function se(e,t){return new ae(e,t)}function Ko(e){for(var t=e.s;t!==void 0;t=t.n)if(t.S.i!==t.i||!t.S.h()||t.S.i!==t.i)return!0;return!1}function Yo(e){for(var t=e.s;t!==void 0;t=t.n){var o=t.S.n;if(o!==void 0&&(t.r=o),t.S.n=t,t.i=-1,t.n===void 0){e.s=t;break}}}function Xo(e){for(var t=e.s,o=void 0;t!==void 0;){var r=t.p;t.i===-1?(t.S.U(t),r!==void 0&&(r.n=t.n),t.n!==void 0&&(t.n.p=r)):o=t,t.S.n=t.r,t.r!==void 0&&(t.r=void 0),t=r}e.s=o}function at(e,t){ae.call(this,void 0),this.x=e,this.s=void 0,this.g=rn-1,this.f=4,this.W=t?.watched,this.Z=t?.unwatched,this.name=t?.name}at.prototype=new ae;at.prototype.h=function(){if(this.f&=-3,1&this.f)return!1;if((36&this.f)==32||(this.f&=-5,this.g===rn))return!0;if(this.g=rn,this.f|=1,this.i>0&&!Ko(this))return this.f&=-2,!0;var e=X;try{Yo(this),X=this;var t=this.x();(16&this.f||this.v!==t||this.i===0)&&(this.v=t,this.f&=-17,this.i++)}catch(o){this.v=o,this.f|=16,this.i++}return X=e,Xo(this),this.f&=-2,!0};at.prototype.S=function(e){if(this.t===void 0){this.f|=36;for(var t=this.s;t!==void 0;t=t.n)t.S.S(t)}ae.prototype.S.call(this,e)};at.prototype.U=function(e){if(this.t!==void 0&&(ae.prototype.U.call(this,e),this.t===void 0)){this.f&=-33;for(var t=this.s;t!==void 0;t=t.n)t.S.U(t)}};at.prototype.N=function(){if(!(2&this.f)){this.f|=6;for(var e=this.t;e!==void 0;e=e.x)e.t.N()}};Object.defineProperty(at.prototype,"value",{get:function(){if(1&this.f)throw new Error("Cycle detected");var e=Go(this);if(this.h(),e!==void 0&&(e.i=this.i),16&this.f)throw this.v;return this.v}});function Ke(e,t){return new at(e,t)}function Jo(e){var t=e.m;if(e.m=void 0,typeof t=="function"){Ge++;var o=X;X=void 0;try{t()}catch(r){throw e.f&=-2,e.f|=8,Bn(e),r}finally{X=o,sn()}}}function Bn(e){for(var t=e.s;t!==void 0;t=t.n)t.S.U(t);e.x=void 0,e.s=void 0,Jo(e)}function Fi(e){if(X!==this)throw new Error("Out-of-order effect");Xo(this),X=e,this.f&=-2,8&this.f&&Bn(this),sn()}function vt(e,t){this.x=e,this.m=void 0,this.s=void 0,this.u=void 0,this.f=32,this.name=t?.name,jo&&jo.push(this)}vt.prototype.c=function(){var e=this.S();try{if(8&this.f||this.x===void 0)return;var t=this.x();typeof t=="function"&&(this.m=t)}finally{e()}};vt.prototype.S=function(){if(1&this.f)throw new Error("Cycle detected");this.f|=1,this.f&=-9,Jo(this),Yo(this),Ge++;var e=X;return X=this,Fi.bind(this,e)};vt.prototype.N=function(){2&this.f||(this.f|=2,this.u=Lt,Lt=this)};vt.prototype.d=function(){this.f|=8,1&this.f||Bn(this)};vt.prototype.dispose=function(){this.d()};function lt(e,t){var o=new vt(e,t);try{o.c()}catch(i){throw o.d(),i}var r=o.d.bind(o);return r[Symbol.dispose]=r,r}var Zo,Un,ln,Di=typeof window<"u"&&!!window.__PREACT_SIGNALS_DEVTOOLS__;var Qo=[];lt(function(){Zo=this.N})();function xt(e,t){W[e]=t.bind(null,W[e]||function(){})}function cn(e){if(ln){var t=ln;ln=void 0,t()}ln=e&&e.S()}function er(e){var t=this,o=e.data,r=Bi(o);r.value=o;var i=tn(function(){for(var l=t,p=t.__v;p=p.__;)if(p.__c){p.__c.__$f|=4;break}var d=Ke(function(){var h=r.value.value;return h===0?0:h===!0?"":h||""}),u=Ke(function(){return!Array.isArray(d.value)&&!In(d.value)}),c=lt(function(){if(this.N=tr,u.value){var h=d.value;l.__v&&l.__v.__e&&l.__v.__e.nodeType===3&&(l.__v.__e.data=h)}}),m=t.__$u.d;return t.__$u.d=function(){c(),m.call(this)},[u,d]},[]),s=i[0],a=i[1];return s.value?a.peek():a.value}er.displayName="ReactiveTextNode";Object.defineProperties(ae.prototype,{constructor:{configurable:!0,value:void 0},type:{configurable:!0,value:er},props:{configurable:!0,get:function(){var e=this;return{data:{get value(){return e.value}}}}},__b:{configurable:!0,value:1}});xt("__b",function(e,t){if(typeof t.type=="string"){var o,r=t.props;for(var i in r)if(i!=="children"){var s=r[i];s instanceof ae&&(o||(t.__np=o={}),o[i]=s,r[i]=s.peek())}}e(t)});xt("__r",function(e,t){if(e(t),t.type!==z){cn();var o,r=t.__c;r&&(r.__$f&=-2,(o=r.__$u)===void 0&&(r.__$u=o=(function(i,s){var a;return lt(function(){a=this},{name:s}),a.c=i,a})(function(){var i;Di&&((i=o.y)==null||i.call(o)),r.__$f|=1,r.setState({})},typeof t.type=="function"?t.type.displayName||t.type.name:""))),Un=r,cn(o)}});xt("__e",function(e,t,o,r){cn(),Un=void 0,e(t,o,r)});xt("diffed",function(e,t){cn(),Un=void 0;var o;if(typeof t.type=="string"&&(o=t.__e)){var r=t.__np,i=t.props;if(r){var s=o.U;if(s)for(var a in s){var l=s[a];l!==void 0&&!(a in r)&&(l.d(),s[a]=void 0)}else s={},o.U=s;for(var p in r){var d=s[p],u=r[p];d===void 0?(d=Hi(o,p,u),s[p]=d):d.o(u,i)}for(var c in r)i[c]=r[c]}}e(t)});function Hi(e,t,o,r){var i=t in e&&e.ownerSVGElement===void 0,s=se(o),a=o.peek();return{o:function(l,p){s.value=l,a=l.peek()},d:lt(function(){this.N=tr;var l=s.value.value;a!==l?(a=void 0,i?e[t]=l:l!=null&&(l!==!1||t[4]==="-")?e.setAttribute(t,l):e.removeAttribute(t)):a=void 0})}}xt("unmount",function(e,t){if(typeof t.type=="string"){var o=t.__e;if(o){var r=o.U;if(r){o.U=void 0;for(var i in r){var s=r[i];s&&s.d()}}}t.__np=void 0}else{var a=t.__c;if(a){var l=a.__$u;l&&(a.__$u=void 0,l.d())}}e(t)});xt("__h",function(e,t,o,r){(r<3||r===9)&&(t.__$f|=2),e(t,o,r)});gt.prototype.shouldComponentUpdate=function(e,t){if(this.__R)return!0;var o=this.__$u,r=o&&o.s!==void 0;for(var i in t)return!0;if(this.__f||typeof this.u=="boolean"&&this.u===!0){var s=2&this.__$f;if(!(r||s||4&this.__$f)||1&this.__$f)return!0}else if(!(r||4&this.__$f)||3&this.__$f)return!0;for(var a in e)if(a!=="__source"&&e[a]!==this.props[a])return!0;for(var l in this.props)if(!(l in e))return!0;return!1};function Bi(e,t){return tn(function(){return se(e,t)},[])}var Ui=function(e){queueMicrotask(function(){queueMicrotask(e)})};function Wi(){Hn(function(){for(var e;e=Qo.shift();)Zo.call(e)})}function tr(){Qo.push(this)===1&&(W.requestAnimationFrame||Ui)(Wi)}var xe=Uint8Array,Ie=Uint16Array,Gn=Int32Array,Kn=new xe([0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,0,0,0]),Yn=new xe([0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,0,0]),nr=new xe([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15]),lr=function(e,t){for(var o=new Ie(31),r=0;r<31;++r)o[r]=t+=1<<e[r-1];for(var i=new Gn(o[30]),r=1;r<30;++r)for(var s=o[r];s<o[r+1];++s)i[s]=s-o[r]<<5|r;return{b:o,r:i}},cr=lr(Kn,2),$i=cr.b,$n=cr.r;$i[28]=258,$n[258]=28;var dr=lr(Yn,0),Ia=dr.b,or=dr.r,qn=new Ie(32768);for(V=0;V<32768;++V)Ye=(V&43690)>>1|(V&21845)<<1,Ye=(Ye&52428)>>2|(Ye&13107)<<2,Ye=(Ye&61680)>>4|(Ye&3855)<<4,qn[V]=((Ye&65280)>>8|(Ye&255)<<8)>>1;var Ye,V,Mt=(function(e,t,o){for(var r=e.length,i=0,s=new Ie(t);i<r;++i)e[i]&&++s[e[i]-1];var a=new Ie(t);for(i=1;i<t;++i)a[i]=a[i-1]+s[i-1]<<1;var l;if(o){l=new Ie(1<<t);var p=15-t;for(i=0;i<r;++i)if(e[i])for(var d=i<<4|e[i],u=t-e[i],c=a[e[i]-1]++<<u,m=c|(1<<u)-1;c<=m;++c)l[qn[c]>>p]=d}else for(l=new Ie(r),i=0;i<r;++i)e[i]&&(l[i]=qn[a[e[i]-1]++]>>15-e[i]);return l}),ct=new xe(288);for(V=0;V<144;++V)ct[V]=8;var V;for(V=144;V<256;++V)ct[V]=9;var V;for(V=256;V<280;++V)ct[V]=7;var V;for(V=280;V<288;++V)ct[V]=8;var V,dn=new xe(32);for(V=0;V<32;++V)dn[V]=5;var V,qi=Mt(ct,9,0);var Vi=Mt(dn,5,0);var pr=function(e){return(e+7)/8|0},ur=function(e,t,o){return(t==null||t<0)&&(t=0),(o==null||o>e.length)&&(o=e.length),new xe(e.subarray(t,o))};var ji=["unexpected EOF","invalid block type","invalid length/literal","invalid distance","stream finished","no stream handler",,"no callback","invalid UTF-8 data","extra field too long","date not in range 1980-2099","filename too long","stream finishing","invalid zip data"],un=function(e,t,o){var r=new Error(t||ji[e]);if(r.code=e,Error.captureStackTrace&&Error.captureStackTrace(r,un),!o)throw r;return r};var Xe=function(e,t,o){o<<=t&7;var r=t/8|0;e[r]|=o,e[r+1]|=o>>8},Et=function(e,t,o){o<<=t&7;var r=t/8|0;e[r]|=o,e[r+1]|=o>>8,e[r+2]|=o>>16},Wn=function(e,t){for(var o=[],r=0;r<e.length;++r)e[r]&&o.push({s:r,f:e[r]});var i=o.length,s=o.slice();if(!i)return{t:hr,l:0};if(i==1){var a=new xe(o[0].s+1);return a[o[0].s]=1,{t:a,l:1}}o.sort(function(_,T){return _.f-T.f}),o.push({s:-1,f:25001});var l=o[0],p=o[1],d=0,u=1,c=2;for(o[0]={s:-1,f:l.f+p.f,l,r:p};u!=i-1;)l=o[o[d].f<o[c].f?d++:c++],p=o[d!=u&&o[d].f<o[c].f?d++:c++],o[u++]={s:-1,f:l.f+p.f,l,r:p};for(var m=s[0].s,r=1;r<i;++r)s[r].s>m&&(m=s[r].s);var h=new Ie(m+1),f=Vn(o[u-1],h,0);if(f>t){var r=0,g=0,w=f-t,k=1<<w;for(s.sort(function(T,x){return h[x.s]-h[T.s]||T.f-x.f});r<i;++r){var C=s[r].s;if(h[C]>t)g+=k-(1<<f-h[C]),h[C]=t;else break}for(g>>=w;g>0;){var S=s[r].s;h[S]<t?g-=1<<t-h[S]++-1:++r}for(;r>=0&&g;--r){var I=s[r].s;h[I]==t&&(--h[I],++g)}f=t}return{t:new xe(h),l:f}},Vn=function(e,t,o){return e.s==-1?Math.max(Vn(e.l,t,o+1),Vn(e.r,t,o+1)):t[e.s]=o},rr=function(e){for(var t=e.length;t&&!e[--t];);for(var o=new Ie(++t),r=0,i=e[0],s=1,a=function(p){o[r++]=p},l=1;l<=t;++l)if(e[l]==i&&l!=t)++s;else{if(!i&&s>2){for(;s>138;s-=138)a(32754);s>2&&(a(s>10?s-11<<5|28690:s-3<<5|12305),s=0)}else if(s>3){for(a(i),--s;s>6;s-=6)a(8304);s>2&&(a(s-3<<5|8208),s=0)}for(;s--;)a(i);s=1,i=e[l]}return{c:o.subarray(0,r),n:t}},It=function(e,t){for(var o=0,r=0;r<t.length;++r)o+=e[r]*t[r];return o},fr=function(e,t,o){var r=o.length,i=pr(t+2);e[i]=r&255,e[i+1]=r>>8,e[i+2]=e[i]^255,e[i+3]=e[i+1]^255;for(var s=0;s<r;++s)e[i+s+4]=o[s];return(i+4+r)*8},ir=function(e,t,o,r,i,s,a,l,p,d,u){Xe(t,u++,o),++i[256];for(var c=Wn(i,15),m=c.t,h=c.l,f=Wn(s,15),g=f.t,w=f.l,k=rr(m),C=k.c,S=k.n,I=rr(g),_=I.c,T=I.n,x=new Ie(19),v=0;v<C.length;++v)++x[C[v]&31];for(var v=0;v<_.length;++v)++x[_[v]&31];for(var y=Wn(x,7),A=y.t,R=y.l,O=19;O>4&&!A[nr[O-1]];--O);var N=d+5<<3,P=It(i,ct)+It(s,dn)+a,q=It(i,m)+It(s,g)+a+14+3*O+It(x,A)+2*x[16]+3*x[17]+7*x[18];if(p>=0&&N<=P&&N<=q)return fr(t,u,e.subarray(p,p+d));var Q,J,re,Re;if(Xe(t,u,1+(q<P)),u+=2,q<P){Q=Mt(m,h,0),J=m,re=Mt(g,w,0),Re=g;var ht=Mt(A,R,0);Xe(t,u,S-257),Xe(t,u+5,T-1),Xe(t,u+10,O-4),u+=14;for(var v=0;v<O;++v)Xe(t,u+3*v,A[nr[v]]);u+=3*O;for(var Ce=[C,_],et=0;et<2;++et)for(var qe=Ce[et],v=0;v<qe.length;++v){var Ae=qe[v]&31;Xe(t,u,ht[Ae]),u+=A[Ae],Ae>15&&(Xe(t,u,qe[v]>>5&127),u+=qe[v]>>12)}}else Q=qi,J=ct,re=Vi,Re=dn;for(var v=0;v<l;++v){var L=r[v];if(L>255){var Ae=L>>18&31;Et(t,u,Q[Ae+257]),u+=J[Ae+257],Ae>7&&(Xe(t,u,L>>23&31),u+=Kn[Ae]);var M=L&31;Et(t,u,re[M]),u+=Re[M],M>3&&(Et(t,u,L>>5&8191),u+=Yn[M])}else Et(t,u,Q[L]),u+=J[L]}return Et(t,u,Q[256]),u+J[256]},Gi=new Gn([65540,131080,131088,131104,262176,1048704,1048832,2114560,2117632]),hr=new xe(0),Ki=function(e,t,o,r,i,s){var a=s.z||e.length,l=new xe(r+a+5*(1+Math.ceil(a/7e3))+i),p=l.subarray(r,l.length-i),d=s.l,u=(s.r||0)&7;if(t){u&&(p[0]=s.r>>3);for(var c=Gi[t-1],m=c>>13,h=c&8191,f=(1<<o)-1,g=s.p||new Ie(32768),w=s.h||new Ie(f+1),k=Math.ceil(o/3),C=2*k,S=function(Ve){return(e[Ve]^e[Ve+1]<<k^e[Ve+2]<<C)&f},I=new Gn(25e3),_=new Ie(288),T=new Ie(32),x=0,v=0,y=s.i||0,A=0,R=s.w||0,O=0;y+2<a;++y){var N=S(y),P=y&32767,q=w[N];if(g[P]=q,w[N]=P,R<=y){var Q=a-y;if((x>7e3||A>24576)&&(Q>423||!d)){u=ir(e,p,0,I,_,T,v,A,O,y-O,u),A=x=v=0,O=y;for(var J=0;J<286;++J)_[J]=0;for(var J=0;J<30;++J)T[J]=0}var re=2,Re=0,ht=h,Ce=P-q&32767;if(Q>2&&N==S(y-Ce))for(var et=Math.min(m,Q)-1,qe=Math.min(32767,y),Ae=Math.min(258,Q);Ce<=qe&&--ht&&P!=q;){if(e[y+re]==e[y+re-Ce]){for(var L=0;L<Ae&&e[y+L]==e[y+L-Ce];++L);if(L>re){if(re=L,Re=Ce,L>et)break;for(var M=Math.min(Ce,L-2),b=0,J=0;J<M;++J){var $=y-Ce+J&32767,B=g[$],G=$-B&32767;G>b&&(b=G,q=$)}}}P=q,q=g[P],Ce+=P-q&32767}if(Re){I[A++]=268435456|$n[re]<<18|or[Re];var K=$n[re]&31,Z=or[Re]&31;v+=Kn[K]+Yn[Z],++_[257+K],++T[Z],R=y+re,++x}else I[A++]=e[y],++_[e[y]]}}for(y=Math.max(y,R);y<a;++y)I[A++]=e[y],++_[e[y]];u=ir(e,p,d,I,_,T,v,A,O,y-O,u),d||(s.r=u&7|p[u/8|0]<<3,u-=7,s.h=w,s.p=g,s.i=y,s.w=R)}else{for(var y=s.w||0;y<a+d;y+=65535){var ce=y+65535;ce>=a&&(p[u/8|0]=d,ce=a),u=fr(p,u+1,e.subarray(y,ce))}s.i=a}return ur(l,0,r+pr(u)+i)},Yi=(function(){for(var e=new Int32Array(256),t=0;t<256;++t){for(var o=t,r=9;--r;)o=(o&1&&-306674912)^o>>>1;e[t]=o}return e})(),Xi=function(){var e=-1;return{p:function(t){for(var o=e,r=0;r<t.length;++r)o=Yi[o&255^t[r]]^o>>>8;e=o},d:function(){return~e}}};var Ji=function(e,t,o,r,i){if(!i&&(i={l:1},t.dictionary)){var s=t.dictionary.subarray(-32768),a=new xe(s.length+e.length);a.set(s),a.set(e,s.length),e=a,i.w=s.length}return Ki(e,t.level==null?6:t.level,t.mem==null?i.l?Math.ceil(Math.max(8,Math.min(13,Math.log(e.length)))*1.5):20:12+t.mem,o,r,i)},gr=function(e,t){var o={};for(var r in e)o[r]=e[r];for(var r in t)o[r]=t[r];return o};var fe=function(e,t,o){for(;o;++t)e[t]=o,o>>>=8};function Zi(e,t){return Ji(e,t||{},0,0)}var mr=function(e,t,o,r){for(var i in e){var s=e[i],a=t+i,l=r;Array.isArray(s)&&(l=gr(r,s[1]),s=s[0]),ArrayBuffer.isView(s)?o[a]=[s,l]:(o[a+="/"]=[new xe(0),l],mr(s,a,o,r))}},sr=typeof TextEncoder<"u"&&new TextEncoder,Qi=typeof TextDecoder<"u"&&new TextDecoder,es=0;try{Qi.decode(hr,{stream:!0}),es=1}catch{}function pn(e,t){if(t){for(var o=new xe(e.length),r=0;r<e.length;++r)o[r]=e.charCodeAt(r);return o}if(sr)return sr.encode(e);for(var i=e.length,s=new xe(e.length+(e.length>>1)),a=0,l=function(u){s[a++]=u},r=0;r<i;++r){if(a+5>s.length){var p=new xe(a+8+(i-r<<1));p.set(s),s=p}var d=e.charCodeAt(r);d<128||t?l(d):d<2048?(l(192|d>>6),l(128|d&63)):d>55295&&d<57344?(d=65536+(d&1047552)|e.charCodeAt(++r)&1023,l(240|d>>18),l(128|d>>12&63),l(128|d>>6&63),l(128|d&63)):(l(224|d>>12),l(128|d>>6&63),l(128|d&63))}return ur(s,0,a)}var jn=function(e){var t=0;if(e)for(var o in e){var r=e[o].length;r>65535&&un(9),t+=r+4}return t},ar=function(e,t,o,r,i,s,a,l){var p=r.length,d=o.extra,u=l&&l.length,c=jn(d);fe(e,t,a!=null?33639248:67324752),t+=4,a!=null&&(e[t++]=20,e[t++]=o.os),e[t]=20,t+=2,e[t++]=o.flag<<1|(s<0&&8),e[t++]=i&&8,e[t++]=o.compression&255,e[t++]=o.compression>>8;var m=new Date(o.mtime==null?Date.now():o.mtime),h=m.getFullYear()-1980;if((h<0||h>119)&&un(10),fe(e,t,h<<25|m.getMonth()+1<<21|m.getDate()<<16|m.getHours()<<11|m.getMinutes()<<5|m.getSeconds()>>1),t+=4,s!=-1&&(fe(e,t,o.crc),fe(e,t+4,s<0?-s-2:s),fe(e,t+8,o.size)),fe(e,t+12,p),fe(e,t+14,c),t+=16,a!=null&&(fe(e,t,u),fe(e,t+6,o.attrs),fe(e,t+10,a),t+=14),e.set(r,t),t+=p,c)for(var f in d){var g=d[f],w=g.length;fe(e,t,+f),fe(e,t+2,w),e.set(g,t+4),t+=4+w}return u&&(e.set(l,t),t+=u),t},ts=function(e,t,o,r,i){fe(e,t,101010256),fe(e,t+8,o),fe(e,t+10,o),fe(e,t+12,r),fe(e,t+16,i)};function vr(e,t){t||(t={});var o={},r=[];mr(e,"",o,t);var i=0,s=0;for(var a in o){var l=o[a],p=l[0],d=l[1],u=d.level==0?0:8,c=pn(a),m=c.length,h=d.comment,f=h&&pn(h),g=f&&f.length,w=jn(d.extra);m>65535&&un(11);var k=u?Zi(p,d):p,C=k.length,S=Xi();S.p(p),r.push(gr(d,{size:p.length,crc:S.d(),c:k,f:c,m:f,u:m!=a.length||f&&h.length!=g,o:i,compression:u})),i+=30+m+w+C,s+=76+2*(m+w)+(g||0)+C}for(var I=new xe(s+22),_=i,T=s-i,x=0;x<r.length;++x){var c=r[x];ar(I,c.o,c,c.f,c.u,c.c.length);var v=30+c.f.length+jn(c.extra);I.set(c.c,c.o+v),ar(I,i,c,c.f,c.u,c.c.length,c.o,c.m),i+=16+v+(c.m?c.m.length:0)}return ts(I,i,r.length,T,_),I}function Rt(e){if(!e)return"";let t=document.createElement("div");return t.textContent=String(e),t.innerHTML}function Xn(e){return Rt(e).replace(/("(?:\\.|[^"\\])*")\s*:/g,'<span class="json-key">$1</span>:').replace(/:\s*("(?:\\.|[^"\\])*")/g,(t,o)=>': <span class="json-string">'+o+"</span>").replace(/:\s*(\d+(?:\.\d+)?)/g,': <span class="json-number">$1</span>').replace(/:\s*(true|false)/g,': <span class="json-bool">$1</span>').replace(/:\s*(null)/g,': <span class="json-null">$1</span>')}function Y(e){try{return Number(BigInt(e??0)/BigInt(1e6))}catch{return parseInt(String(e))/1e6||0}}function ns(e){if(e==null||e==="")return 0;if(typeof e=="number")return e;let t=String(e);if(/^\d+$/.test(t))return Y(t);let o=Date.parse(t);return Number.isFinite(o)?o:0}function Jn(e){return ns(e.startTime)}function H(e){return e<1?"<1ms":e<1e3?e.toFixed(0)+"ms":e<6e4?(e/1e3).toFixed(1)+"s":e<36e5?(e/6e4).toFixed(1)+"min":(e/36e5).toFixed(1)+"h"}function _e(e){return new Intl.NumberFormat("en",{notation:"compact",maximumFractionDigits:1}).format(e)}function te(e,t){let o=(e.attributes??[]).find(i=>i.key===t);if(!o)return null;let r=o.value;return r.stringValue??r.intValue??r.doubleValue??r.boolValue??null}function he(e,t){let o=e.find(r=>r.key===t);return o&&parseInt(String(o.value.intValue??o.value.stringValue??0))||0}function xr(e){let t=e.attributes??[],o=he(t,"gen_ai.usage.input_tokens"),r=he(t,"gen_ai.usage.cache_read.input_tokens")+he(t,"gen_ai.usage.cache_creation.input_tokens");return o>0||r>0?o+r:he(t,"input_tokens")+he(t,"prompt_tokens")+he(t,"cache_read_tokens")+he(t,"cache_creation_tokens")+he(t,"input_token_count")+he(t,"cached_token_count")+he(t,"codex.turn.token_usage.input_tokens")+he(t,"codex.turn.token_usage.cached_input_tokens")}function br(e){let t=e.attributes??[];return he(t,"gen_ai.usage.output_tokens")||he(t,"output_tokens")||he(t,"completion_tokens")||he(t,"output_token_count")+he(t,"reasoning_token_count")||he(t,"codex.turn.token_usage.output_tokens")}function Zn(e){let t=0,o=!1;for(let r of e.attributes??[])/total.?tokens/i.test(r.key)&&(t=parseInt(String(r.value.intValue??r.value.stringValue??r.value.doubleValue))||0,o=!0);return o?t:xr(e)+br(e)}function Je(e){return e.indexOf("invoke_agent")===0||e==="claude_code.interaction"||e==="codex.user_prompt"||e==="codex.prompt"||e==="codex.user_message"||e==="codex.session_start"}function os(e){return e.indexOf("chat")===0||e==="claude_code.llm_request"||e==="handle_responses"||e==="codex.stream_event"||e==="codex.api_request"||e==="codex.completion"||e==="codex.response"||e==="codex.sse_event"}function rs(e){return e.indexOf("execute_tool")===0||e==="claude_code.tool"||e==="exec_command"||e.indexOf("codex.tool")===0}function dt(e){let t=e?.name?String(e.name):"";return t.indexOf("claude_code.")===0?"claude_code":t.indexOf("codex.")===0||zt(e)?"codex":t.indexOf("invoke_agent")===0||t.indexOf("chat")===0||t.indexOf("execute_tool")===0?"copilot":null}function zt(e){let t=te(e,"codex.session.id");if(t)return String(t);let o=te(e,"thread.id")??te(e,"thread_id")??te(e,"conversation.id")??te(e,"conversation_id")??te(e,"codex.conversation.id"),r=te(e,"turn.id")??te(e,"turn_id")??te(e,"codex.turn.id");return o&&r?"codex:"+String(o)+":"+String(r):""}function yr(e){return String(te(e,"copilot_chat.user_request")??te(e,"user_prompt")??te(e,"prompt")??te(e,"codex.user_prompt")??te(e,"codex.prompt")??te(e,"codex.user_message")??te(e,"codex.input")??"")}function wr(e){if(!e)return"";let t=e.trim();if(t.indexOf("<userRequest>")!==-1){let i=t.match(/<userRequest>\s*([\s\S]*?)\s*<\/userRequest>/);return i?i[1].trim():t}let o=t.match(/(?:^|\n)##\s+My request(?:\s+for\s+[^\n:]+)?:\s*\n([\s\S]*)$/i);return o?.[1]?.trim()?o[1].trim():t.replace(/<ide_[^>]*>[\s\S]*?<\/ide_[^>]*>/gi,"").trim()||t}function fn(e){let t=(e.name??"").toLowerCase(),o=String(te(e,"otel.name")??"").toLowerCase();return xr(e)>0||br(e)>0||os(e.name??"")||t==="handle_responses"?{label:"LLM",color:"var(--accent)"}:t.includes("llm")||t.includes("chat")||t.includes("completion")?{label:"LLM",color:"var(--accent)"}:rs(e.name??"")||t.includes("tool")?{label:"TOOL",color:"#B8E986"}:t.includes("agent")||t.includes("session")||t.includes("turn")||o.includes("session_task")?{label:"AGENT",color:"#C49CFF"}:t.includes("embed")?{label:"EMBED",color:"#FF85A1"}:t.includes("search")||t.includes("retrieve")?{label:"RAG",color:"#85E0D0"}:{label:"SPAN",color:"var(--muted)"}}function Ne(e){return e==="claude_code"?"Claude":e==="codex"?"Codex":"Copilot"}function ke(e){return e==="claude_code"?"#FFB085":e==="codex"?"#F0FF42":e==="copilot"?"#00EAFF":"#90a4ae"}function is(){return ge.value?.sessions??[]}function le(e){let t=is();if(!e||t.length===0)return 0;let o=t.indexOf(e);if(o!==-1)return o+1;for(let r=0;r<t.length;r++){let i=t[r];if(e.sessionId&&i.sessionId===e.sessionId||e.traceId&&e.startTime&&i.traceId===e.traceId&&i.startTime===e.startTime||e.traceId&&e.userRequest&&i.traceId===e.traceId&&i.userRequest===e.userRequest)return r+1}return 0}function bt(){let e=F.value,t=0,o=0,r=0,i=0;return e.forEach(s=>{t+=s.inputTokens??0,o+=s.outputTokens??0,r+=s.totalLlmCalls??0,i+=s.cacheReadTokens??0}),{sessions:e,efficiency:{totalInputTokens:t,totalOutputTokens:o,totalLlmCalls:r,avgInputPerCall:r>0?Math.round(t/r):0,cacheHitRate:t>0?i/t:0,toolDefWaste:ge.value?.efficiency?.toolDefWaste??0}}}function nt(e){return e?`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${ke(e)};vertical-align:middle" title="${Ne(e)}"></span>`:""}function _r(e){let t=e.action??"";if(t.indexOf("called ")===0){let o=t.substring(7).split(/[,\s]+/).filter(Boolean),r={};return o.forEach(s=>{r[s]=(r[s]??0)+1}),"Decide \u2192 "+Object.keys(r).map(s=>{let a=s.replace(/^execute_tool\s*/,"");return r[s]>1?r[s]+"\xD7 "+a:a}).join(", ")}return t==="text response"?"Respond with answer":t||"LLM call"}function kr(e){let t=e.label??"",o=t.match(/^(\S+)\s*([\s\S]*)$/);if(!o)return t;let r=o[1],i=o[2]??"";switch(r){case"read_file":{let s=i.match(/^(\S+)\s*L(\d+)-(\d+)$/);return s?"Read "+s[1]+" :"+s[2]+"-"+s[3]:"Read "+i}case"file_search":{let s=i.replace(/^\*\*\//,"").split("/").pop()??i;return s.indexOf("*")!==-1?"Find files matching "+s:"Find "+s}case"grep_search":{let s=i.match(/^"([^"]*?)"\s+in\s+(.*)$/);if(s){let a=s[2].replace(/^\*\*\//,"").split("/").pop()??s[2];return'Grep "'+s[1]+'" in '+a}return"Grep "+i}case"list_dir":return"List "+i+"/";case"manage_todo_list":{let s=i.match(/(\d+)\s*items?\s*\(([^)]+)\)/);if(s)return"Update todos ("+s[2]+")";let a=i.match(/(\d+)\s*items?/);return a?"Update todos ("+a[1]+" items)":"Check todos"}case"semantic_search":return"Search codebase "+i;case"replace_string_in_file":case"multi_replace_string_in_file":return"Edit "+i;case"create_file":return"Create "+i;case"run_in_terminal":return"Run: "+(i.length>60?i.slice(0,57)+"\u2026":i);case"explore_subagent":case"runSubagent":return"Sub-agent: "+i;default:return r+" "+i}}function Qn(e){let t=e.resultSummary??"";return!t||t==="empty"?"":t==="No todo list found."?"none":t.match(/^Successfully/)?"ok":t==="no list"?"none":t}function Sr(e){let t={},o=[];e.forEach(a=>{t[a.spanId]={span:a,children:[],depth:0}}),e.forEach(a=>{let l=t[a.spanId];a.parentSpanId&&t[a.parentSpanId]?t[a.parentSpanId].children.push(l):o.push(l)});function r(a,l){a.depth=l,a.children.sort((p,d)=>Y(p.span.startTime)-Y(d.span.startTime)),a.children.forEach(p=>r(p,l+1))}o.sort((a,l)=>Y(a.span.startTime)-Y(l.span.startTime)),o.forEach(a=>r(a,0));let i=[];function s(a){i.push(a),a.children.forEach(s)}return o.forEach(s),i}function gn(){let e=se(new Set);return{get value(){return e.value},peek(){return e.peek()},has(t){return e.value.has(t)},add(t){let o=new Set(e.value);o.add(t),e.value=o},delete(t){let o=new Set(e.value);o.delete(t),e.value=o},toggle(t){let o=new Set(e.value);o.has(t)?o.delete(t):o.add(t),e.value=o},clear(){e.value=new Set},get size(){return e.value.size}}}var Te=se(window.__INITIAL_SPANS__??[]),ge=se(window.__INITIAL_SESSION_SUMMARY__??null),eo=se(window.__INITIAL_TOOL_CALLS__??{}),hn=se(10),Ot=se("all"),to=se("all"),pt=se("efficiency"),Cr=se(!0),Na=se(!0),Ue=se([]),Ar=se([]),Lr=se(0),yt=gn(),Pt=gn(),Er=gn(),mn=gn(),Me=null;function Ir(e){Me=e}var wt=["#4fc3f7","#81c784","#ffb74d","#e57373","#ba68c8","#4dd0e1","#fff176","#a1887f","#90a4ae","#f06292","#aed581","#7986cb"],Tr=Ke(()=>{let e=ge.value?.sessions??[],t=Ot.value;return t==="all"?e:e.filter(o=>o.source===t)}),F=Ke(()=>{let e=Tr.value,t=hn.value;return t>=e.length?e:e.slice(e.length-t)}),We=Ke(()=>{let e=F.value;if(!e.length){let o=Ot.value;return o==="all"?Te.value:Te.value.filter(r=>dt(r)===o)}let t=new Set(e.map(o=>o.traceId).filter(Boolean));if(t.size===0){let o=Ot.value;return o==="all"?Te.value:Te.value.filter(r=>dt(r)===o)}return Te.value.filter(o=>t.has(o.traceId))}),Mr=Ke(()=>{let e=F.value;return{claude:e.some(t=>t.source==="claude_code"),copilot:e.some(t=>t.source==="copilot"),codex:e.some(t=>t.source==="codex")}});var ss=0;function n(e,t,o,r,i,s){t||(t={});var a,l,p=t;if("ref"in p)for(l in p={},t)l=="ref"?a=t[l]:p[l]=t[l];var d={type:e,props:p,key:o,ref:a,__k:null,__:null,__b:0,__e:null,__c:null,constructor:void 0,__v:--ss,__i:-1,__u:0,__source:i,__self:s};if(typeof e=="function"&&(a=e.defaultProps))for(l in a)p[l]===void 0&&(p[l]=a[l]);return W.vnode&&W.vnode(d),d}function as({sessions:e}){let t=Pe(null);return ve(()=>{let o=t.current;if(!o)return;let r=[],i=0,s=1/0,a=0;if(e.forEach((v,y)=>{let A=(v.timeline??[]).filter(q=>q.type==="llm"&&(q.inputTokens??0)>0);if(A.length<1)return;let R=A.map(q=>q.inputTokens??0),O=Math.max(...R),N=Math.min(...R);O>i&&(i=O),N<s&&(s=N),R.length>a&&(a=R.length);let P=le(v)||y+1;r.push({label:""+P,points:R,color:ke(v.source)||wt[y%wt.length]})}),r.length===0){o.style.display="none";return}o.style.display="block";let l=i-s,d=(l===0?i*.1||1:l)*.1,u=Math.max(0,s-d),c=i+d,m=window.devicePixelRatio||1,h=o.getBoundingClientRect();if(h.width===0||h.height===0)return;o.width=h.width*m,o.height=h.height*m;let f=o.getContext("2d");f.setTransform(m,0,0,m,0,0);let g=h.width,w=h.height;f.clearRect(0,0,g,w);let k={top:8,right:40,bottom:24,left:64},C=g-k.left-k.right,S=w-k.top-k.bottom,I=getComputedStyle(document.body),_=I.getPropertyValue("--vscode-panel-border").trim()||"#333",T=I.getPropertyValue("--vscode-descriptionForeground").trim()||"#888",x="10px "+(I.getPropertyValue("--vscode-font-family").trim()||"sans-serif");f.strokeStyle=_,f.lineWidth=.5;for(let v=0;v<=4;v++){let y=k.top+S*v/4;f.beginPath(),f.moveTo(k.left,y),f.lineTo(k.left+C,y),f.stroke()}f.fillStyle=T,f.font=x,f.textAlign="right",f.textBaseline="middle";for(let v=0;v<=4;v++){let y=c-(c-u)*v/4;y>0&&f.fillText(_e(y),k.left-4,k.top+S*v/4)}f.save(),f.translate(10,k.top+S/2),f.rotate(-Math.PI/2),f.fillStyle=T,f.font=x,f.textAlign="center",f.textBaseline="middle",f.fillText("Input Tokens",0,0),f.restore(),f.fillStyle=T,f.textAlign="center",f.textBaseline="top",f.fillText("Turns (LLM Calls)",k.left+C/2,k.top+S+10),r.forEach(v=>{let y=v.points,A=k.left+(y.length-1)/Math.max(a-1,1)*C,R=k.top+S-(y[y.length-1]-u)/(c-u)*S;if(y.length>=2){f.beginPath();for(let O=0;O<y.length;O++){let N=k.left+O/Math.max(a-1,1)*C,P=k.top+S-(y[O]-u)/(c-u)*S;O===0?f.moveTo(N,P):f.lineTo(N,P)}f.strokeStyle=v.color,f.lineWidth=1.5,f.stroke()}f.beginPath(),f.arc(A,R,y.length===1?5:3,0,Math.PI*2),f.fillStyle=v.color,f.fill(),f.fillStyle=v.color,f.font="bold 10px sans-serif",f.textAlign="left",f.textBaseline="middle",f.fillText(v.label,A+(y.length===1?9:5),R)})}),n("canvas",{ref:t,id:"context-growth-chart",style:"width:100%;height:180px;display:block"})}var ls={"help-tool-failures":"Failures come from guessed file paths or unavailable commands. Provide exact paths and tell the agent which tools and runtimes are available.","help-high-turns":"Prompt describes the goal but not the location. Add explicit file paths, stopping conditions, and break multi-step tasks into separate prompts.","help-cache-rate":"Cache breaks when the prompt prefix changes between calls. Keep static instructions identical at the top; avoid timestamps in instruction files.","help-large-context":"Large instruction files make every session start expensive. Audit and trim instruction files; move reference docs out of instruction files.","help-context-bloat":"Tool results and instruction files expand context each turn. Keep instruction files under 4 KB; use line-ranged reads instead of full file reads."};function cs(e){if(!e.linkPhrase||!e.helpId)return n("span",{style:"color:var(--fg)",children:e.text});let t=e.text.indexOf(e.linkPhrase);if(t===-1)return n("span",{style:"color:var(--fg)",children:e.text});let o=e.text.slice(0,t),r=e.text.slice(t+e.linkPhrase.length),i=ls[e.helpId]||"";return n("span",{style:"color:var(--fg)",children:[o,n("span",{"data-tip":i,style:"border-bottom:1px dotted currentColor;cursor:help",children:e.linkPhrase}),r]})}function ds({reasons:e}){return n("tr",{children:n("td",{colSpan:11,style:"padding:0",children:n("div",{style:"padding:8px 16px 12px 32px;background:var(--vscode-editorWidget-background,var(--bg));border-top:1px solid var(--border);font-size:11px",children:[n("div",{style:"font-weight:600;color:var(--muted);margin-bottom:4px;font-size:10px;text-transform:uppercase",children:"What needs attention"}),e.map((t,o)=>n("div",{style:"display:flex;align-items:baseline;gap:6px;margin-bottom:3px",children:[n("span",{style:"color:var(--error);flex-shrink:0",children:"\u2022"}),cs(t)]},o))]})})})}function ps({sess:e,idx:t,heat:o,expanded:r,onToggle:i}){let s=le(e)||t+1,a=e.inputTokens>0?(e.cacheReadTokens/e.inputTokens*100).toFixed(0):"\u2014",l=ke(e.source),p="";return o.score>60?p="rgba(255,50,50,"+(.15+Math.min(o.score-60,40)/40*.25)+")":o.score>30?p="rgba(255,140,0,"+(.12+(o.score-30)/30*.18)+")":o.score>10&&(p="rgba(255,180,50,"+(.1+(o.score-10)/20*.15)+")"),n(z,{children:[n("tr",{style:"background:"+(p||"transparent")+";cursor:pointer",onClick:i,children:[n("td",{style:"text-align:center;font-weight:bold;white-space:nowrap",children:[n("span",{style:"font-size:9px;color:var(--muted);margin-right:3px",children:r?"\u25BC":"\u25B6"}),s," ",n("span",{style:"display:inline-block;width:8px;height:8px;border-radius:50%;background:"+l+";vertical-align:middle"})]}),n("td",{style:"text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap",title:e.userRequest,children:[(e.userRequest??"").slice(0,60),(e.userRequest??"").length>60?"\u2026":""]}),n("td",{style:"text-align:left;white-space:nowrap;color:var(--muted);font-size:10px",title:e.model,children:e.model?e.model.split("/").pop():"\u2014"}),n("td",{style:"text-align:left;white-space:nowrap;font-size:10px;font-family:monospace;color:var(--muted)",title:e.conversationId||"",children:e.conversationId?e.conversationId.slice(0,8):"\u2014"}),n("td",{class:"right",children:e.totalLlmCalls}),n("td",{class:"right",children:e.totalToolCalls}),n("td",{class:"right",children:e.inputTokens.toLocaleString()}),n("td",{class:"right",children:e.outputTokens.toLocaleString()}),n("td",{class:"right",children:[a,"%"]}),n("td",{class:"right",children:H(e.durationMs)}),n("td",{style:"text-align:right"+(e.errors>0?";color:var(--error)":""),children:e.errors})]}),r&&o.reasons.length>0&&n(ds,{reasons:o.reasons})]})}function Rr(){let e=ge.value,[t,o]=D(new Set([0]));if(!e?.sessions?.length)return n("div",{id:"efficiency-content",children:n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"})});let i=F.value.slice().reverse(),s=i.map(h=>{let f=0,g=[];h.errors>0&&(f+=Math.min(h.errors*25,40),g.push({text:h.errors+" error"+(h.errors>1?"s":"")+" \u2014 be explicit about file locations and command availability to avoid failed tool calls",linkPhrase:"be explicit about file locations and command availability",helpId:"help-tool-failures"})),h.totalLlmCalls>8&&(f+=Math.min((h.totalLlmCalls-8)*4,30),g.push({text:h.totalLlmCalls+" LLM calls \u2014 break the task into smaller pieces with explicit stopping conditions",linkPhrase:"break the task into smaller pieces with explicit stopping conditions",helpId:"help-high-turns"}));let w=h.inputTokens>0?h.cacheReadTokens/h.inputTokens*100:100;w<50&&h.inputTokens>5e3&&(f+=Math.min((50-w)*.5,20),g.push({text:"Cache hit rate "+w.toFixed(0)+"% \u2014 keep static content at the top of prompts so the cache prefix stays stable",linkPhrase:"keep static content at the top of prompts so the cache prefix stays stable",helpId:"help-cache-rate"})),h.inputTokens>1e5&&(f+=10,g.push({text:h.inputTokens.toLocaleString()+" input tokens \u2014 audit your instruction files and remove verbose examples",linkPhrase:"audit your instruction files and remove verbose examples",helpId:"help-large-context"}));let k=(h.timeline??[]).filter(C=>C.type==="llm"&&(C.inputTokens??0)>0);if(k.length>=3){let C=k[0].inputTokens??0,S=k[k.length-1].inputTokens??0,I=C>0?(S-C)/C*100:0;I>50&&(f+=Math.min(I/10,15),g.push({text:"Context grew "+I.toFixed(0)+"% \u2014 review instruction file sizes and use narrower tool reads",linkPhrase:"review instruction file sizes and use narrower tool reads",helpId:"help-context-bloat"}))}return{score:Math.min(f,100),reasons:g}}),a=0,l=0,p=0,d=0,u=0,c=0;i.forEach(h=>{a+=h.totalLlmCalls,l+=h.totalToolCalls,p+=h.inputTokens,d+=h.outputTokens,u+=h.durationMs,c+=h.errors});let m=i.filter(h=>(h.timeline??[]).filter(f=>f.type==="llm"&&(f.inputTokens??0)>0).length>=1);return n("div",{id:"efficiency-content",children:[m.length>0&&n(z,{children:[n("h3",{class:"has-metric-tip",style:"margin:24px 0 12px;font-size:13px;color:var(--muted)","data-tip":"Input tokens sent per LLM call within each session. Rising lines indicate context accumulation. A sharp drop mid-session indicates context compaction. A single dot marks an in-progress session with one LLM call so far.",children:"CONTEXT GROWTH PER SESSION"}),n(as,{sessions:i}),n("div",{style:"font-size:10px;color:var(--muted);opacity:0.7;margin:4px 0 12px 2px",children:"Suggestion: If the graph appears crowded, consider refining the view by selecting fewer sessions (such as \u201CLast 5\u201D) or filtering by a specific agent to enhance clarity."})]}),i.length>0&&n(z,{children:[n("h3",{class:"has-metric-tip",style:"margin:24px 0 12px;font-size:13px;color:var(--muted)","data-tip":"Per-session metrics with heat coloring. Warmer colors indicate higher token usage or more errors. Expand a row to see efficiency notes.",children:"SESSION BREAKDOWN"}),n("div",{style:"display:flex;gap:16px;margin-bottom:4px;font-size:10px;color:var(--muted);align-items:center",children:[n("span",{style:"font-weight:600",children:"Usage:"}),n("span",{class:"flex-4",children:[n("span",{style:"display:inline-block;width:12px;height:10px;border-radius:2px;background:var(--vscode-editorWidget-background,var(--bg));border:1px solid var(--border)"})," Minimal"]}),n("span",{class:"flex-4",children:[n("span",{style:"display:inline-block;width:12px;height:10px;border-radius:2px;background:rgba(255,180,50,0.25);border:1px solid rgba(255,180,50,0.4)"})," Light"]}),n("span",{class:"flex-4",children:[n("span",{style:"display:inline-block;width:12px;height:10px;border-radius:2px;background:rgba(255,140,0,0.30);border:1px solid rgba(255,140,0,0.5)"})," Moderate"]}),n("span",{class:"flex-4",children:[n("span",{style:"display:inline-block;width:12px;height:10px;border-radius:2px;background:rgba(255,50,50,0.35);border:1px solid rgba(255,50,50,0.5)"})," Heavy"]})]}),n("table",{class:"tool-insights-table",children:[n("thead",{children:n("tr",{children:[n("th",{style:"text-align:center","data-tip":"Session number",children:"#"}),n("th",{style:"text-align:left","data-tip":"The user prompt that started this session",children:"Prompt"}),n("th",{style:"text-align:left","data-tip":"LLM model used",children:"Model"}),n("th",{style:"text-align:left","data-tip":"Conversation thread ID \u2014 groups multiple sessions from the same chat thread. Copilot and Codex report this; Claude sessions are standalone with no conversation wrapper.",children:"Conv ID"}),n("th",{class:"right","data-tip":"LLM round-trips",children:"LLM Calls"}),n("th",{class:"right","data-tip":"Tool invocations",children:"Tool Calls"}),n("th",{class:"right","data-tip":"Total input tokens",children:"Input Tokens"}),n("th",{class:"right","data-tip":"Total output tokens",children:"Output Tokens"}),n("th",{class:"right","data-tip":"Cache hit rate",children:"Cache Hit"}),n("th",{class:"right","data-tip":"Wall-clock duration",children:"Duration"}),n("th",{class:"right","data-tip":"Error count",children:"Errors"})]})}),n("tbody",{children:i.map((h,f)=>n(ps,{sess:h,idx:f,heat:s[f],expanded:t.has(f),onToggle:()=>o(g=>{let w=new Set(g);return w.has(f)?w.delete(f):w.add(f),w})},h.traceId+f))}),n("tfoot",{children:n("tr",{children:[n("td",{}),n("td",{style:"text-align:left",children:n("strong",{children:"Total"})}),n("td",{}),n("td",{}),n("td",{class:"right",children:n("strong",{children:a})}),n("td",{class:"right",children:n("strong",{children:l})}),n("td",{class:"right",children:n("strong",{children:p.toLocaleString()})}),n("td",{class:"right",children:n("strong",{children:d.toLocaleString()})}),n("td",{}),n("td",{class:"right",children:n("strong",{children:H(u)})}),n("td",{style:"text-align:right"+(c>0?";color:var(--error)":""),children:n("strong",{children:c})})]})})]})]})]})}function zr(e){var t,o,r="";if(typeof e=="string"||typeof e=="number")r+=e;else if(typeof e=="object")if(Array.isArray(e)){var i=e.length;for(t=0;t<i;t++)e[t]&&(o=zr(e[t]))&&(r&&(r+=" "),r+=o)}else for(o in e)e[o]&&(r&&(r+=" "),r+=o);return r}function us(){for(var e,t,o=0,r="",i=arguments.length;o<i;o++)(e=arguments[o])&&(t=zr(e))&&(r&&(r+=" "),r+=t);return r}var Fe=us;function fs(e){return e==="loop"?"loop recommendations":e==="efficiency"?"efficiency recommendations":"recommendations"}function hs(e){return e==="loop"?"No active loop or malfunction signals in this view.":e==="efficiency"?"No active efficiency issues in this view.":"No significant inefficiencies detected. Token usage looks healthy."}function gs(e){let t={loopCount:0,hasContextBloat:!1,hasCacheIssue:!1,hasToolIssue:!1,hasRepeatedOperations:!1};for(let o of e){let r=o.title.toLowerCase();o.category==="loop"&&t.loopCount++,(r.includes("context grew")||r.includes("starts with"))&&(t.hasContextBloat=!0),r.includes("cache hit")&&(t.hasCacheIssue=!0),(r.includes("tool failure")||r.includes("tool definitions")||r.includes("large tool"))&&(t.hasToolIssue=!0),(r.includes("files read multiple")||r.includes("duplicate searches")||r.includes("files appear"))&&(t.hasRepeatedOperations=!0)}return t}var Or={"help-context-bloat":"Every LLM turn receives the full conversation so far. Each extra token in context multiplies cost across every remaining turn \u2014 a 10K growth in one session can mean 50K+ extra tokens billed.","help-large-context":"Instruction files are sent on every LLM call in every session. 10,000 extra tokens in CLAUDE.md = 10,000 extra tokens per call, forever, regardless of task size.","help-files-repeated":"Each re-read appends the full file to context again. Re-reading a 500-line file 4 times wastes ~2,000 tokens on every subsequent call in that session.","help-high-turns":"Each additional LLM call costs tokens and time. Iterative discovery is ~10\xD7 more expensive than providing the same context upfront in the initial prompt.","help-duplicate-searches":"Repeated searches append identical results to context without progress. The growing context also makes the model more likely to repeat the search again.","help-tool-failures":"Each failure adds error text to context and forces a recovery turn. A cascade of 3 failures can waste 30,000+ tokens before a single useful edit is made.","help-large-results":"Tool results are appended to context in full. A 50 KB file read adds ~12,500 tokens to every subsequent call in that session \u2014 not just the call that read it.","help-tool-overhead":"Every LLM call includes all tool JSON schemas. 70+ tools = 8,000\u201315,000 overhead tokens per call that cannot be reduced by shortening your prompt.","help-cache-rate":"Cached tokens cost roughly 10\xD7 less than fresh tokens. Going from 0% to 60% cache hit rate cuts session cost by 80\u201390% with no change to model behavior.","help-tool-deadlock":"The agent is burning tokens repeating identical calls with zero progress. This loop runs until the context limit is hit \u2014 entire session cost with nothing accomplished.","help-state-spiral":"Conflicting constraints cause the agent to undo its own work. Each oscillation adds both the edit and the revert to context, accelerating cost with each cycle.","help-hallucination":"Each failed fix attempt adds the error to context, which anchors the model further from the real solution \u2014 the longer it runs, the harder it self-corrects.","help-runaway-steps":"Scope creep compounds: each extra step the agent takes grows context for all future steps. 90-step sessions can cost 10\u201320\xD7 a well-scoped 5-step equivalent.","help-context-accumulation":"Input tokens are growing while output shrinks \u2014 cost per call is compounding with diminishing returns. Continuing will likely hit the context limit with nothing saved."};function ms(e,t){let o=[],{sessions:r,efficiency:i}=e;if(!r.length)return o;r.forEach((l,p)=>{let d=(l.timeline??[]).filter(_=>_.type==="llm"&&(_.inputTokens??0)>0),u=le(l)||p+1,c=(l.userRequest??"").slice(0,60);if(d.length>=3){let _=d[0].inputTokens??0,T=d[d.length-1].inputTokens??0,x=T-_,v=_>0?x/_*100:0;v>20&&x>2e3&&o.push({severity:"warning",category:"efficiency",sessionIdx:p,helpId:"help-context-bloat",title:"[Session "+u+"] Context grew "+v.toFixed(0)+"%",detail:"Input tokens grew from "+_.toLocaleString()+" to "+T.toLocaleString()+" (+"+x.toLocaleString()+" tokens) across "+d.length+" LLM calls"+(c?' for "'+c+'"':"")+".",action:"The first call used "+_.toLocaleString()+" tokens \u2014 audit your instruction files (CLAUDE.md, .agent.md, system prompt). Remove verbose examples and anything the agent can discover via tools. Target <5,000 tokens for combined static instructions."})}let m={};(l.timeline??[]).forEach(_=>{if(_.type!=="tool")return;let T=(_.label??"").match(/^read_file\s+(\S+)/);T&&(m[T[1]]=(m[T[1]]??0)+1)});let h=Object.keys(m).filter(_=>m[_]>1);if(h.length>0){let _=h.sort((T,x)=>m[x]-m[T])[0];o.push({severity:"info",category:"efficiency",sessionIdx:p,helpId:"help-files-repeated",title:"[Session "+u+"] Files read multiple times",detail:h.map(T=>T+" ("+m[T]+"\xD7)").join(", ")+".",action:h.length===1?"The agent read "+_+" "+m[_]+" times. Mention its path explicitly at the start of your prompt so the agent finds it without re-reading.":"The agent re-read "+h.length+" files, most often "+_+" ("+m[_]+'\xD7). Try opening with the key paths listed: e.g. "The main files are: '+h.slice(0,2).join(", ")+'".'})}if(l.totalLlmCalls>8&&(l.userRequest??"").length<80){let _=Object.entries(l.toolCounts??{}).sort((T,x)=>x[1]-T[1]).slice(0,3).map(([T,x])=>T+" \xD7"+x).join(", ");o.push({severity:"info",category:"efficiency",sessionIdx:p,helpId:"help-high-turns",title:"[Session "+u+"] "+l.totalLlmCalls+" LLM calls",detail:'"'+c+'" required '+l.totalLlmCalls+" LLM calls and "+l.totalToolCalls+" tool calls"+(_?" ("+_+")":"")+".",action:"For a "+l.totalLlmCalls+"-turn session, break the task into smaller pieces with explicit stopping conditions. Provide specific file paths and line numbers so the agent spends turns doing instead of exploring."})}let f=(l.timeline??[]).find(_=>_.type==="llm"&&(_.inputTokens??0)>0);f&&(f.inputTokens??0)>15e3&&o.push({severity:"warning",category:"efficiency",sessionIdx:p,helpId:"help-large-context",title:"[Session "+u+"] Starts with "+(f.inputTokens??0).toLocaleString()+" input tokens",detail:"The very first LLM call already has "+(f.inputTokens??0).toLocaleString()+" tokens before any tool results are added.",action:"Audit your instruction files \u2014 "+(f.inputTokens??0).toLocaleString()+" tokens before the first tool call is the baseline overhead. Remove verbose examples and information the agent can discover via tools. Target <5,000 tokens for combined instructions."});let g={};(l.timeline??[]).forEach(_=>{if(_.type!=="tool")return;let T=(_.label??"").match(/^(grep_search|file_search)\s+(.+)$/);if(T){let x=T[1]+":"+T[2].replace(/\s+/g," ").trim();g[x]=(g[x]??0)+1}});let w=Object.keys(g).filter(_=>g[_]>1);if(w.length>0){let _=w.slice(0,2).map(T=>{let[,x]=T.split(":");return'"'+x?.trim().slice(0,40)+'"'});o.push({severity:"info",category:"efficiency",sessionIdx:p,helpId:"help-duplicate-searches",title:"[Session "+u+"] Duplicate searches",detail:w.length+" search pattern(s) repeated: "+_.join(", ")+".",action:'These repeated searches suggest the agent was uncertain where to look. Include directory names or specific file paths in your prompt \u2014 e.g. "search in src/api/" instead of a broad pattern.'})}let k={};(l.timeline??[]).forEach(_=>{if(_.type==="tool"&&_.isError){let T=(_.label??"").split(" ")[0];k[T]=(k[T]??0)+1}});let C=Object.keys(k);if(C.length>0){let _=C.reduce((x,v)=>x+k[v],0),T=C.slice(0,3).map(x=>{let v=k[x];return x==="bash"||x==="run_command"?x+" \xD7"+v+" (check the command exists in your environment)":x==="read_file"||x==="view"?x+" \xD7"+v+" (verify file paths are correct)":x==="grep_search"||x==="search_files"?x+" \xD7"+v+" (use more specific patterns)":x+" \xD7"+v}).join("; ");o.push({severity:_>2?"warning":"info",category:"efficiency",sessionIdx:p,helpId:"help-tool-failures",title:"[Session "+u+"] "+_+" tool failure(s)",detail:"Failed: "+T+". Each failure forces an extra LLM call to recover.",action:"Tool failures happen when the agent guesses paths or uses incorrect arguments. Be explicit in your prompt about file locations and command availability."})}let S=[];if((l.timeline??[]).forEach(_=>{_.type==="tool"&&_.fullResult&&_.fullResult.length>1e4&&S.push({tool:(_.label??"").split(" ")[0],size:_.fullResult.length})}),S.length>0){S.sort((x,v)=>v.size-x.size);let _=S.reduce((x,v)=>x+v.size,0)/1024,T=S[0];o.push({severity:_>100?"warning":"info",category:"efficiency",sessionIdx:p,helpId:"help-large-results",title:"[Session "+u+"] Large tool results ("+_.toFixed(0)+"KB)",detail:S.length+" tool call(s) returned large results: "+S.slice(0,3).map(x=>x.tool+" ("+(x.size/1024).toFixed(1)+"KB)").join(", ")+".",action:T.tool.includes("read")?"Use narrower reads \u2014 specify line ranges (e.g. read_file src/app.ts L1-50) instead of reading whole files.":"The largest result came from "+T.tool+" ("+(T.size/1024).toFixed(0)+"KB). Use more targeted reads \u2014 specify line ranges with read_file, or tighter grep patterns."})}let I={exact_tool_repeat:"help-tool-deadlock",edit_revert_cycle:"help-state-spiral",error_recurrence:"help-hallucination",runaway_steps:"help-runaway-steps",token_runaway:"help-context-accumulation"};(l.loopSignals??[]).forEach(_=>{let T=_.examples?.length>0?`
+"use strict";
+(() => {
+  // node_modules/.pnpm/preact@10.29.1/node_modules/preact/dist/preact.module.js
+  var n;
+  var l;
+  var u;
+  var t;
+  var i;
+  var r;
+  var o;
+  var e;
+  var f;
+  var c;
+  var s;
+  var a;
+  var h;
+  var p;
+  var v;
+  var y;
+  var d = {};
+  var w = [];
+  var _ = /acit|ex(?:s|g|n|p|$)|rph|grid|ows|mnc|ntw|ine[ch]|zoo|^ord|itera/i;
+  var g = Array.isArray;
+  function m(n3, l5) {
+    for (var u5 in l5) n3[u5] = l5[u5];
+    return n3;
+  }
+  function b(n3) {
+    n3 && n3.parentNode && n3.parentNode.removeChild(n3);
+  }
+  function k(l5, u5, t4) {
+    var i4, r5, o4, e4 = {};
+    for (o4 in u5) "key" == o4 ? i4 = u5[o4] : "ref" == o4 ? r5 = u5[o4] : e4[o4] = u5[o4];
+    if (arguments.length > 2 && (e4.children = arguments.length > 3 ? n.call(arguments, 2) : t4), "function" == typeof l5 && null != l5.defaultProps) for (o4 in l5.defaultProps) void 0 === e4[o4] && (e4[o4] = l5.defaultProps[o4]);
+    return x(l5, e4, i4, r5, null);
+  }
+  function x(n3, t4, i4, r5, o4) {
+    var e4 = { type: n3, props: t4, key: i4, ref: r5, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: void 0, __v: null == o4 ? ++u : o4, __i: -1, __u: 0 };
+    return null == o4 && null != l.vnode && l.vnode(e4), e4;
+  }
+  function S(n3) {
+    return n3.children;
+  }
+  function C(n3, l5) {
+    this.props = n3, this.context = l5;
+  }
+  function $(n3, l5) {
+    if (null == l5) return n3.__ ? $(n3.__, n3.__i + 1) : null;
+    for (var u5; l5 < n3.__k.length; l5++) if (null != (u5 = n3.__k[l5]) && null != u5.__e) return u5.__e;
+    return "function" == typeof n3.type ? $(n3) : null;
+  }
+  function I(n3) {
+    if (n3.__P && n3.__d) {
+      var u5 = n3.__v, t4 = u5.__e, i4 = [], r5 = [], o4 = m({}, u5);
+      o4.__v = u5.__v + 1, l.vnode && l.vnode(o4), q(n3.__P, o4, u5, n3.__n, n3.__P.namespaceURI, 32 & u5.__u ? [t4] : null, i4, null == t4 ? $(u5) : t4, !!(32 & u5.__u), r5), o4.__v = u5.__v, o4.__.__k[o4.__i] = o4, D(i4, o4, r5), u5.__e = u5.__ = null, o4.__e != t4 && P(o4);
+    }
+  }
+  function P(n3) {
+    if (null != (n3 = n3.__) && null != n3.__c) return n3.__e = n3.__c.base = null, n3.__k.some(function(l5) {
+      if (null != l5 && null != l5.__e) return n3.__e = n3.__c.base = l5.__e;
+    }), P(n3);
+  }
+  function A(n3) {
+    (!n3.__d && (n3.__d = true) && i.push(n3) && !H.__r++ || r != l.debounceRendering) && ((r = l.debounceRendering) || o)(H);
+  }
+  function H() {
+    try {
+      for (var n3, l5 = 1; i.length; ) i.length > l5 && i.sort(e), n3 = i.shift(), l5 = i.length, I(n3);
+    } finally {
+      i.length = H.__r = 0;
+    }
+  }
+  function L(n3, l5, u5, t4, i4, r5, o4, e4, f5, c4, s4) {
+    var a4, h5, p5, v4, y5, _4, g4, m4 = t4 && t4.__k || w, b4 = l5.length;
+    for (f5 = T(u5, l5, m4, f5, b4), a4 = 0; a4 < b4; a4++) null != (p5 = u5.__k[a4]) && (h5 = -1 != p5.__i && m4[p5.__i] || d, p5.__i = a4, _4 = q(n3, p5, h5, i4, r5, o4, e4, f5, c4, s4), v4 = p5.__e, p5.ref && h5.ref != p5.ref && (h5.ref && J(h5.ref, null, p5), s4.push(p5.ref, p5.__c || v4, p5)), null == y5 && null != v4 && (y5 = v4), (g4 = !!(4 & p5.__u)) || h5.__k === p5.__k ? (f5 = j(p5, f5, n3, g4), g4 && h5.__e && (h5.__e = null)) : "function" == typeof p5.type && void 0 !== _4 ? f5 = _4 : v4 && (f5 = v4.nextSibling), p5.__u &= -7);
+    return u5.__e = y5, f5;
+  }
+  function T(n3, l5, u5, t4, i4) {
+    var r5, o4, e4, f5, c4, s4 = u5.length, a4 = s4, h5 = 0;
+    for (n3.__k = new Array(i4), r5 = 0; r5 < i4; r5++) null != (o4 = l5[r5]) && "boolean" != typeof o4 && "function" != typeof o4 ? ("string" == typeof o4 || "number" == typeof o4 || "bigint" == typeof o4 || o4.constructor == String ? o4 = n3.__k[r5] = x(null, o4, null, null, null) : g(o4) ? o4 = n3.__k[r5] = x(S, { children: o4 }, null, null, null) : void 0 === o4.constructor && o4.__b > 0 ? o4 = n3.__k[r5] = x(o4.type, o4.props, o4.key, o4.ref ? o4.ref : null, o4.__v) : n3.__k[r5] = o4, f5 = r5 + h5, o4.__ = n3, o4.__b = n3.__b + 1, e4 = null, -1 != (c4 = o4.__i = O(o4, u5, f5, a4)) && (a4--, (e4 = u5[c4]) && (e4.__u |= 2)), null == e4 || null == e4.__v ? (-1 == c4 && (i4 > s4 ? h5-- : i4 < s4 && h5++), "function" != typeof o4.type && (o4.__u |= 4)) : c4 != f5 && (c4 == f5 - 1 ? h5-- : c4 == f5 + 1 ? h5++ : (c4 > f5 ? h5-- : h5++, o4.__u |= 4))) : n3.__k[r5] = null;
+    if (a4) for (r5 = 0; r5 < s4; r5++) null != (e4 = u5[r5]) && 0 == (2 & e4.__u) && (e4.__e == t4 && (t4 = $(e4)), K(e4, e4));
+    return t4;
+  }
+  function j(n3, l5, u5, t4) {
+    var i4, r5;
+    if ("function" == typeof n3.type) {
+      for (i4 = n3.__k, r5 = 0; i4 && r5 < i4.length; r5++) i4[r5] && (i4[r5].__ = n3, l5 = j(i4[r5], l5, u5, t4));
+      return l5;
+    }
+    n3.__e != l5 && (t4 && (l5 && n3.type && !l5.parentNode && (l5 = $(n3)), u5.insertBefore(n3.__e, l5 || null)), l5 = n3.__e);
+    do {
+      l5 = l5 && l5.nextSibling;
+    } while (null != l5 && 8 == l5.nodeType);
+    return l5;
+  }
+  function O(n3, l5, u5, t4) {
+    var i4, r5, o4, e4 = n3.key, f5 = n3.type, c4 = l5[u5], s4 = null != c4 && 0 == (2 & c4.__u);
+    if (null === c4 && null == e4 || s4 && e4 == c4.key && f5 == c4.type) return u5;
+    if (t4 > (s4 ? 1 : 0)) {
+      for (i4 = u5 - 1, r5 = u5 + 1; i4 >= 0 || r5 < l5.length; ) if (null != (c4 = l5[o4 = i4 >= 0 ? i4-- : r5++]) && 0 == (2 & c4.__u) && e4 == c4.key && f5 == c4.type) return o4;
+    }
+    return -1;
+  }
+  function z(n3, l5, u5) {
+    "-" == l5[0] ? n3.setProperty(l5, null == u5 ? "" : u5) : n3[l5] = null == u5 ? "" : "number" != typeof u5 || _.test(l5) ? u5 : u5 + "px";
+  }
+  function N(n3, l5, u5, t4, i4) {
+    var r5, o4;
+    n: if ("style" == l5) if ("string" == typeof u5) n3.style.cssText = u5;
+    else {
+      if ("string" == typeof t4 && (n3.style.cssText = t4 = ""), t4) for (l5 in t4) u5 && l5 in u5 || z(n3.style, l5, "");
+      if (u5) for (l5 in u5) t4 && u5[l5] == t4[l5] || z(n3.style, l5, u5[l5]);
+    }
+    else if ("o" == l5[0] && "n" == l5[1]) r5 = l5 != (l5 = l5.replace(a, "$1")), o4 = l5.toLowerCase(), l5 = o4 in n3 || "onFocusOut" == l5 || "onFocusIn" == l5 ? o4.slice(2) : l5.slice(2), n3.l || (n3.l = {}), n3.l[l5 + r5] = u5, u5 ? t4 ? u5[s] = t4[s] : (u5[s] = h, n3.addEventListener(l5, r5 ? v : p, r5)) : n3.removeEventListener(l5, r5 ? v : p, r5);
+    else {
+      if ("http://www.w3.org/2000/svg" == i4) l5 = l5.replace(/xlink(H|:h)/, "h").replace(/sName$/, "s");
+      else if ("width" != l5 && "height" != l5 && "href" != l5 && "list" != l5 && "form" != l5 && "tabIndex" != l5 && "download" != l5 && "rowSpan" != l5 && "colSpan" != l5 && "role" != l5 && "popover" != l5 && l5 in n3) try {
+        n3[l5] = null == u5 ? "" : u5;
+        break n;
+      } catch (n4) {
+      }
+      "function" == typeof u5 || (null == u5 || false === u5 && "-" != l5[4] ? n3.removeAttribute(l5) : n3.setAttribute(l5, "popover" == l5 && 1 == u5 ? "" : u5));
+    }
+  }
+  function V(n3) {
+    return function(u5) {
+      if (this.l) {
+        var t4 = this.l[u5.type + n3];
+        if (null == u5[c]) u5[c] = h++;
+        else if (u5[c] < t4[s]) return;
+        return t4(l.event ? l.event(u5) : u5);
+      }
+    };
+  }
+  function q(n3, u5, t4, i4, r5, o4, e4, f5, c4, s4) {
+    var a4, h5, p5, v4, y5, d5, _4, k3, x4, M, $2, I2, P2, A3, H2, T4 = u5.type;
+    if (void 0 !== u5.constructor) return null;
+    128 & t4.__u && (c4 = !!(32 & t4.__u), o4 = [f5 = u5.__e = t4.__e]), (a4 = l.__b) && a4(u5);
+    n: if ("function" == typeof T4) try {
+      if (k3 = u5.props, x4 = T4.prototype && T4.prototype.render, M = (a4 = T4.contextType) && i4[a4.__c], $2 = a4 ? M ? M.props.value : a4.__ : i4, t4.__c ? _4 = (h5 = u5.__c = t4.__c).__ = h5.__E : (x4 ? u5.__c = h5 = new T4(k3, $2) : (u5.__c = h5 = new C(k3, $2), h5.constructor = T4, h5.render = Q), M && M.sub(h5), h5.state || (h5.state = {}), h5.__n = i4, p5 = h5.__d = true, h5.__h = [], h5._sb = []), x4 && null == h5.__s && (h5.__s = h5.state), x4 && null != T4.getDerivedStateFromProps && (h5.__s == h5.state && (h5.__s = m({}, h5.__s)), m(h5.__s, T4.getDerivedStateFromProps(k3, h5.__s))), v4 = h5.props, y5 = h5.state, h5.__v = u5, p5) x4 && null == T4.getDerivedStateFromProps && null != h5.componentWillMount && h5.componentWillMount(), x4 && null != h5.componentDidMount && h5.__h.push(h5.componentDidMount);
+      else {
+        if (x4 && null == T4.getDerivedStateFromProps && k3 !== v4 && null != h5.componentWillReceiveProps && h5.componentWillReceiveProps(k3, $2), u5.__v == t4.__v || !h5.__e && null != h5.shouldComponentUpdate && false === h5.shouldComponentUpdate(k3, h5.__s, $2)) {
+          u5.__v != t4.__v && (h5.props = k3, h5.state = h5.__s, h5.__d = false), u5.__e = t4.__e, u5.__k = t4.__k, u5.__k.some(function(n4) {
+            n4 && (n4.__ = u5);
+          }), w.push.apply(h5.__h, h5._sb), h5._sb = [], h5.__h.length && e4.push(h5);
+          break n;
+        }
+        null != h5.componentWillUpdate && h5.componentWillUpdate(k3, h5.__s, $2), x4 && null != h5.componentDidUpdate && h5.__h.push(function() {
+          h5.componentDidUpdate(v4, y5, d5);
+        });
+      }
+      if (h5.context = $2, h5.props = k3, h5.__P = n3, h5.__e = false, I2 = l.__r, P2 = 0, x4) h5.state = h5.__s, h5.__d = false, I2 && I2(u5), a4 = h5.render(h5.props, h5.state, h5.context), w.push.apply(h5.__h, h5._sb), h5._sb = [];
+      else do {
+        h5.__d = false, I2 && I2(u5), a4 = h5.render(h5.props, h5.state, h5.context), h5.state = h5.__s;
+      } while (h5.__d && ++P2 < 25);
+      h5.state = h5.__s, null != h5.getChildContext && (i4 = m(m({}, i4), h5.getChildContext())), x4 && !p5 && null != h5.getSnapshotBeforeUpdate && (d5 = h5.getSnapshotBeforeUpdate(v4, y5)), A3 = null != a4 && a4.type === S && null == a4.key ? E(a4.props.children) : a4, f5 = L(n3, g(A3) ? A3 : [A3], u5, t4, i4, r5, o4, e4, f5, c4, s4), h5.base = u5.__e, u5.__u &= -161, h5.__h.length && e4.push(h5), _4 && (h5.__E = h5.__ = null);
+    } catch (n4) {
+      if (u5.__v = null, c4 || null != o4) if (n4.then) {
+        for (u5.__u |= c4 ? 160 : 128; f5 && 8 == f5.nodeType && f5.nextSibling; ) f5 = f5.nextSibling;
+        o4[o4.indexOf(f5)] = null, u5.__e = f5;
+      } else {
+        for (H2 = o4.length; H2--; ) b(o4[H2]);
+        B(u5);
+      }
+      else u5.__e = t4.__e, u5.__k = t4.__k, n4.then || B(u5);
+      l.__e(n4, u5, t4);
+    }
+    else null == o4 && u5.__v == t4.__v ? (u5.__k = t4.__k, u5.__e = t4.__e) : f5 = u5.__e = G(t4.__e, u5, t4, i4, r5, o4, e4, c4, s4);
+    return (a4 = l.diffed) && a4(u5), 128 & u5.__u ? void 0 : f5;
+  }
+  function B(n3) {
+    n3 && (n3.__c && (n3.__c.__e = true), n3.__k && n3.__k.some(B));
+  }
+  function D(n3, u5, t4) {
+    for (var i4 = 0; i4 < t4.length; i4++) J(t4[i4], t4[++i4], t4[++i4]);
+    l.__c && l.__c(u5, n3), n3.some(function(u6) {
+      try {
+        n3 = u6.__h, u6.__h = [], n3.some(function(n4) {
+          n4.call(u6);
+        });
+      } catch (n4) {
+        l.__e(n4, u6.__v);
+      }
+    });
+  }
+  function E(n3) {
+    return "object" != typeof n3 || null == n3 || n3.__b > 0 ? n3 : g(n3) ? n3.map(E) : m({}, n3);
+  }
+  function G(u5, t4, i4, r5, o4, e4, f5, c4, s4) {
+    var a4, h5, p5, v4, y5, w5, _4, m4 = i4.props || d, k3 = t4.props, x4 = t4.type;
+    if ("svg" == x4 ? o4 = "http://www.w3.org/2000/svg" : "math" == x4 ? o4 = "http://www.w3.org/1998/Math/MathML" : o4 || (o4 = "http://www.w3.org/1999/xhtml"), null != e4) {
+      for (a4 = 0; a4 < e4.length; a4++) if ((y5 = e4[a4]) && "setAttribute" in y5 == !!x4 && (x4 ? y5.localName == x4 : 3 == y5.nodeType)) {
+        u5 = y5, e4[a4] = null;
+        break;
+      }
+    }
+    if (null == u5) {
+      if (null == x4) return document.createTextNode(k3);
+      u5 = document.createElementNS(o4, x4, k3.is && k3), c4 && (l.__m && l.__m(t4, e4), c4 = false), e4 = null;
+    }
+    if (null == x4) m4 === k3 || c4 && u5.data == k3 || (u5.data = k3);
+    else {
+      if (e4 = e4 && n.call(u5.childNodes), !c4 && null != e4) for (m4 = {}, a4 = 0; a4 < u5.attributes.length; a4++) m4[(y5 = u5.attributes[a4]).name] = y5.value;
+      for (a4 in m4) y5 = m4[a4], "dangerouslySetInnerHTML" == a4 ? p5 = y5 : "children" == a4 || a4 in k3 || "value" == a4 && "defaultValue" in k3 || "checked" == a4 && "defaultChecked" in k3 || N(u5, a4, null, y5, o4);
+      for (a4 in k3) y5 = k3[a4], "children" == a4 ? v4 = y5 : "dangerouslySetInnerHTML" == a4 ? h5 = y5 : "value" == a4 ? w5 = y5 : "checked" == a4 ? _4 = y5 : c4 && "function" != typeof y5 || m4[a4] === y5 || N(u5, a4, y5, m4[a4], o4);
+      if (h5) c4 || p5 && (h5.__html == p5.__html || h5.__html == u5.innerHTML) || (u5.innerHTML = h5.__html), t4.__k = [];
+      else if (p5 && (u5.innerHTML = ""), L("template" == t4.type ? u5.content : u5, g(v4) ? v4 : [v4], t4, i4, r5, "foreignObject" == x4 ? "http://www.w3.org/1999/xhtml" : o4, e4, f5, e4 ? e4[0] : i4.__k && $(i4, 0), c4, s4), null != e4) for (a4 = e4.length; a4--; ) b(e4[a4]);
+      c4 || (a4 = "value", "progress" == x4 && null == w5 ? u5.removeAttribute("value") : null != w5 && (w5 !== u5[a4] || "progress" == x4 && !w5 || "option" == x4 && w5 != m4[a4]) && N(u5, a4, w5, m4[a4], o4), a4 = "checked", null != _4 && _4 != u5[a4] && N(u5, a4, _4, m4[a4], o4));
+    }
+    return u5;
+  }
+  function J(n3, u5, t4) {
+    try {
+      if ("function" == typeof n3) {
+        var i4 = "function" == typeof n3.__u;
+        i4 && n3.__u(), i4 && null == u5 || (n3.__u = n3(u5));
+      } else n3.current = u5;
+    } catch (n4) {
+      l.__e(n4, t4);
+    }
+  }
+  function K(n3, u5, t4) {
+    var i4, r5;
+    if (l.unmount && l.unmount(n3), (i4 = n3.ref) && (i4.current && i4.current != n3.__e || J(i4, null, u5)), null != (i4 = n3.__c)) {
+      if (i4.componentWillUnmount) try {
+        i4.componentWillUnmount();
+      } catch (n4) {
+        l.__e(n4, u5);
+      }
+      i4.base = i4.__P = null;
+    }
+    if (i4 = n3.__k) for (r5 = 0; r5 < i4.length; r5++) i4[r5] && K(i4[r5], u5, t4 || "function" != typeof n3.type);
+    t4 || b(n3.__e), n3.__c = n3.__ = n3.__e = void 0;
+  }
+  function Q(n3, l5, u5) {
+    return this.constructor(n3, u5);
+  }
+  function R(u5, t4, i4) {
+    var r5, o4, e4, f5;
+    t4 == document && (t4 = document.documentElement), l.__ && l.__(u5, t4), o4 = (r5 = "function" == typeof i4) ? null : i4 && i4.__k || t4.__k, e4 = [], f5 = [], q(t4, u5 = (!r5 && i4 || t4).__k = k(S, null, [u5]), o4 || d, d, t4.namespaceURI, !r5 && i4 ? [i4] : o4 ? null : t4.firstChild ? n.call(t4.childNodes) : null, e4, !r5 && i4 ? i4 : o4 ? o4.__e : t4.firstChild, r5, f5), D(e4, u5, f5);
+  }
+  n = w.slice, l = { __e: function(n3, l5, u5, t4) {
+    for (var i4, r5, o4; l5 = l5.__; ) if ((i4 = l5.__c) && !i4.__) try {
+      if ((r5 = i4.constructor) && null != r5.getDerivedStateFromError && (i4.setState(r5.getDerivedStateFromError(n3)), o4 = i4.__d), null != i4.componentDidCatch && (i4.componentDidCatch(n3, t4 || {}), o4 = i4.__d), o4) return i4.__E = i4;
+    } catch (l6) {
+      n3 = l6;
+    }
+    throw n3;
+  } }, u = 0, t = function(n3) {
+    return null != n3 && void 0 === n3.constructor;
+  }, C.prototype.setState = function(n3, l5) {
+    var u5;
+    u5 = null != this.__s && this.__s != this.state ? this.__s : this.__s = m({}, this.state), "function" == typeof n3 && (n3 = n3(m({}, u5), this.props)), n3 && m(u5, n3), null != n3 && this.__v && (l5 && this._sb.push(l5), A(this));
+  }, C.prototype.forceUpdate = function(n3) {
+    this.__v && (this.__e = true, n3 && this.__h.push(n3), A(this));
+  }, C.prototype.render = S, i = [], o = "function" == typeof Promise ? Promise.prototype.then.bind(Promise.resolve()) : setTimeout, e = function(n3, l5) {
+    return n3.__v.__b - l5.__v.__b;
+  }, H.__r = 0, f = Math.random().toString(8), c = "__d" + f, s = "__a" + f, a = /(PointerCapture)$|Capture$/i, h = 0, p = V(false), v = V(true), y = 0;
 
-Examples: `+_.examples.join(" \xB7 "):"";o.push({severity:"loop-"+_.severity,category:"loop",sessionIdx:p,helpId:I[_.type],title:"[Session "+u+"] "+_.patternName+" \u2014 "+_.evidence,detail:T.trim(),action:_.action??_.evidence,_loopType:_.type})})});let s=t??r;if(s.length>=3){let l={};for(let m of s){let h=(m.errors??0)>0||(m.loopSignals?.length??0)>0,f=[...new Set([...m.filesRead,...m.filesChanged,...m.filesSearched])];for(let g of f)l[g]||(l[g]={total:0,problems:0}),l[g].total++,h&&l[g].problems++}let p=Object.entries(l).filter(([,m])=>m.total>=3&&m.problems/m.total>=.6).sort((m,h)=>h[1].problems-m[1].problems).slice(0,4);if(p.length>0){let m=p.map(([h])=>h.split("/").pop()||h);o.push({severity:"warning",category:"efficiency",helpId:"help-files-repeated",title:p.length+" file(s) appear in most sessions with errors or loops",detail:p.map(([h,f])=>(h.split("/").pop()||h)+": "+f.problems+"/"+f.total+" sessions had issues").join(`
-`),action:"These files appear frequently alongside agent difficulties: "+m.join(", ")+". They may have conflicting constraints, be poorly documented for the agent, or be referenced with inconsistent paths. Consider adding a brief description of their role to your instruction files so the agent has reliable context before touching them."})}let d=Math.min(s.length,8),u=s.slice(-d),c=s.slice(0,-d);if(c.length>=3){let m=u.reduce((g,w)=>g+w.cacheHitRate,0)/u.length,h=c.reduce((g,w)=>g+w.cacheHitRate,0)/c.length,f=h-m;f>.15&&h>.3&&o.push({severity:"warning",category:"efficiency",helpId:"help-cache-rate",title:"Cache hit rate declining \u2014 "+(h*100).toFixed(0)+"% \u2192 "+(m*100).toFixed(0)+"%",detail:"Average cache hit rate dropped "+(f*100).toFixed(0)+"% over your last "+d+" sessions.",action:"Cache hit rate drops when the stable prefix of your prompts changes. Recent changes to your instruction files (CLAUDE.md, .agent.md, system prompt) may be invalidating cached context. Keep static content at the top of prompts and avoid putting dynamic data (timestamps, file counts) in instructions."})}}i.toolDefWaste>.25&&o.push({severity:"warning",category:"efficiency",helpId:"help-tool-overhead",title:"Tool definitions consuming ~"+(i.toolDefWaste*100).toFixed(0)+"% of context",detail:"A significant portion of each prompt is spent describing available tool schemas to the model.",action:'Use tool restrictions in your .agent.md files with "tools:" to limit which tools are available.'}),i.totalLlmCalls>3&&i.cacheHitRate<.5&&o.push({severity:"warning",category:"efficiency",helpId:"help-cache-rate",title:"Low prompt cache hit rate ("+(i.cacheHitRate*100).toFixed(0)+"%)",detail:"Less than half of input tokens are being served from cache.",action:"Cache works best when the beginning of the prompt stays stable across turns. Keep static content at the top of your prompts."});let a={"loop-critical":0,"loop-warning":1,warning:2,info:3};return o.sort((l,p)=>{let d=l.sessionIdx??-1,u=p.sessionIdx??-1;return d!==u?u-d:(a[l.severity]??4)-(a[p.severity]??4)}),o}function Pr({ins:e,isIgnored:t,sessions:o}){let r=e.severity.startsWith("loop")?"\u21BA":e.severity==="warning"?"\u26A0":"\u2139",i=e.sessionIdx!==void 0?o[e.sessionIdx]:void 0,s=i?le(i):0,a=i&&s>0?e.title.match(/^\[Session\s+\d+\]\s*(.*)$/):null,l=i?.model||"",p=i?Ne(i.source):"",d=i?ke(i.source):"";function u(){let c=[e.title,""];if(i?.userRequest&&i.userRequest!=="[session in progress]"&&c.push('Task: "'+i.userRequest+'"',""),e.detail&&c.push(e.detail,""),i){let m=Object.entries(i.toolCounts??{}).sort((f,g)=>g[1]-f[1]).slice(0,5).map(([f,g])=>"  "+f+" \xD7"+g).join(`
-`);m&&c.push(`Top tools used:
-`+m,""),i.filesChanged.length>0&&c.push("Files changed: "+i.filesChanged.slice(0,5).join(", "),"");let h=i.timeline.filter(f=>f.isError&&f.errorMessage).slice(0,3);h.length>0&&c.push(`Error messages:
-`+h.map(f=>"  - "+(f.errorMessage??"").slice(0,120)).join(`
-`),""),c.push("Session stats: "+i.totalLlmCalls+" LLM calls, "+i.totalToolCalls+" tool calls, "+(i.cacheHitRate*100).toFixed(0)+"% cache hit rate","")}return c.push("Recommendation: "+e.action),c.join(`
-`)}return n("div",{class:Fe("insight-card","insight-"+e.severity),style:t?"opacity:0.55":"",children:[n("div",{class:"insight-header",children:[n("span",{class:"insight-icon",children:r}),n("span",{class:"insight-title",style:"flex:1",children:a?n(z,{children:[n("span",{children:["[Session ",s,l?` \u2013 ${l}`:"","]"]})," ",n("span",{title:p,"aria-label":p,style:"display:inline-block;width:8px;height:8px;border-radius:50%;background:"+d+";vertical-align:middle"})," ",n("span",{children:a[1]})]}):e.title}),t?n("button",{class:"insight-restore-btn",title:"Restore",onClick:()=>mn.delete(e.title),children:"Restore"}):n("button",{class:"insight-ignore-btn",title:"Ignore",onClick:()=>mn.add(e.title),children:"Ignore"})]}),e.detail&&n("div",{class:"insight-detail",style:"white-space:pre-wrap",children:e.detail}),n("div",{class:"insight-action",children:[n("span",{class:"insight-action-label",children:["Recommendation",e.helpId&&Or[e.helpId]&&n("span",{"data-tip":Or[e.helpId],style:"margin-left:4px;cursor:help;opacity:0.55;font-size:11px",children:"\u24D8"}),":"]})," ",n("span",{style:"white-space:pre-wrap",children:e.action})]}),!t&&(()=>{let c=f=>{let g=Ne(f);return{agent:f,label:"Copy for "+g,color:ke(f)}},m;if(i)m=[c(i.source)];else{let f=Mr.value;m=[f.copilot&&c("copilot"),f.claude&&c("claude_code"),f.codex&&c("codex")].filter(Boolean)}m.length===0&&m.push({agent:"generic",label:"Copy to Clipboard",color:"var(--accent)"});let h=u();return n("div",{class:"insight-ask-ai-group",children:m.map(f=>n("button",{class:"insight-ask-ai",onClick:()=>Me?.postMessage({type:"askAI",prompt:h,agent:f.agent,label:e.title}),children:[n("span",{style:"color:"+f.color+";font-size:8px",children:"\u25CF"})," ",f.label]},f.agent))})})()]})}function vs({insights:e,sessions:t}){let[o,r]=D(!1);return n("div",{style:"margin-top:12px",children:[n("h3",{style:"margin:28px 0 12px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;cursor:pointer",onClick:()=>r(i=>!i),children:[n("span",{children:o?"\u25BC":"\u25B6"}),"IGNORED (",e.length,")"]}),o&&e.map(i=>n(Pr,{ins:i,isIgnored:!0,sessions:t},i.title))]})}function Nr(){let e=to.value,t=mn.value,o=F.value;if(!o.length)return n("div",{id:"recommendations-content",children:n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"})});let r=bt(),i=ms(r,o),s=0,a=0,l=[],p=[];for(let m of i){let h=t.has(m.title);h||(m.category==="loop"&&s++,m.category==="efficiency"&&a++),(e==="all"||m.category===e)&&(h?p.push(m):l.push(m))}let d=r.sessions,u=gs(l),c=fs(e);return n("div",{id:"recommendations-content",children:[n("div",{style:"font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)",children:n("strong",{children:"Recommendations are based on general heuristics and may include false positives. Review suggestions carefully and consider your specific context before making changes."})}),n("div",{style:"padding:12px 16px;margin:0 0 16px;border-radius:6px;border:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));font-size:12px",children:[n("div",{class:"section-label",children:"Key Takeaways"}),l.length>0?n("ul",{style:"margin:0;padding:0 0 0 16px;list-style:disc",children:[u.loopCount>0&&n("li",{style:"margin-bottom:2px",children:[u.loopCount," agent loop or malfunction signal",u.loopCount>1?"s":""," detected"]}),u.hasContextBloat&&n("li",{style:"margin-bottom:2px",children:"Context bloat detected \u2014 input tokens growing significantly across turns"}),u.hasCacheIssue&&n("li",{style:"margin-bottom:2px",children:"Low prompt cache hit rate \u2014 tokens are being re-processed instead of cached"}),u.hasToolIssue&&n("li",{style:"margin-bottom:2px",children:"Tool inefficiency detected"}),u.hasRepeatedOperations&&n("li",{style:"margin-bottom:2px",children:"Repeated file or search operations detected"})]}):n("div",{style:"color:var(--vscode-testing-iconPassed,#4caf50)",children:["\u2713 ",hs(e)]})]}),n("div",{class:"insight-filter-bar",children:[{key:"all",label:"All",badge:s+a},{key:"loop",label:"Loops",badge:s},{key:"efficiency",label:"Inefficiencies",badge:a}].map(m=>n("button",{class:Fe("insight-filter-pill",{active:e===m.key}),onClick:()=>{to.value=m.key},children:[m.label,m.badge>0&&n("span",{class:"insight-filter-badge",children:m.badge})]},m.key))}),l.length>0?n(z,{children:[n("div",{style:"font-size:11px;color:var(--muted);margin-bottom:12px",children:[l.length," recommendation",l.length!==1?"s":"",", newest sessions first"]}),l.map(m=>n(Pr,{ins:m,isIgnored:!1,sessions:d},m.title))]}):p.length>0?n("div",{class:"insight-card insight-success",children:[n("div",{class:"insight-header",children:[n("span",{class:"insight-icon",children:"\u2713"}),n("span",{class:"insight-title",children:["All ",c," addressed or ignored"]})]}),n("div",{class:"insight-detail",children:"New ones will appear as your session data changes."})]}):n("div",{class:"insight-card insight-success",children:[n("div",{class:"insight-header",children:[n("span",{class:"insight-icon",children:"\u2713"}),n("span",{class:"insight-title",children:["No ",c," detected"]})]}),n("div",{class:"insight-detail",children:"Token usage, cache rates, and session patterns look reasonable."})]}),p.length>0&&n(vs,{insights:p,sessions:d})]})}var ot=["copilot","claude_code","codex"],no={claude_code:{source:"claude_code",label:"Claude",shortLabel:"CL",color:"#FFB085",contextWindowTokens:2e5,turnNudge:80,turnAlert:150,identicalRepeatNudge:3,identicalRepeatAlert:4,consecutiveErrorNudge:3,consecutiveErrorAlert:4,activeMinutesAlert:30},copilot:{source:"copilot",label:"Copilot",shortLabel:"CP",color:"#00EAFF",contextWindowTokens:128e3,turnNudge:150,turnAlert:275,identicalRepeatNudge:3,identicalRepeatAlert:5,consecutiveErrorNudge:3,consecutiveErrorAlert:5,activeMinutesAlert:45},codex:{source:"codex",label:"Codex",shortLabel:"CX",color:"#F0FF42",contextWindowTokens:4e5,turnNudge:250,turnAlert:450,identicalRepeatNudge:4,identicalRepeatAlert:6,consecutiveErrorNudge:4,consecutiveErrorAlert:6,activeMinutesAlert:60}},Nt={contextWindowTokens:{label:"Window",unit:"tokens",min:16e3,max:1e6,step:1e3},turnNudge:{label:"Turn nudge",unit:"turns",min:10,max:1e3,step:5},turnAlert:{label:"Turn alert",unit:"turns",min:10,max:1e3,step:5},identicalRepeatNudge:{label:"Repeat nudge",unit:"calls",min:2,max:8,step:1},identicalRepeatAlert:{label:"Repeat alert",unit:"calls",min:2,max:20,step:1},consecutiveErrorNudge:{label:"Error nudge",unit:"errors",min:2,max:8,step:1},consecutiveErrorAlert:{label:"Error alert",unit:"errors",min:2,max:20,step:1},activeMinutesAlert:{label:"Active alert",unit:"min",min:5,max:240,step:5}};function Fr(){return{claude_code:{...no.claude_code},copilot:{...no.copilot},codex:{...no.codex}}}function xs(e,t){let o=Number(t),r=Nt[e];return!Number.isFinite(o)||o<r.min||o>r.max?null:o}function De(){let e=Fr();try{let t=localStorage.getItem("agentLens.agentProfiles");if(!t)return e;let o=JSON.parse(t);for(let r of ot){let i=o[r];if(i)for(let s of Object.keys(Nt)){let a=xs(s,i[s]);a!==null&&(e[r][s]=a)}}}catch{}return e}function vn(e){try{let t={};for(let o of ot){t[o]={};for(let r of Object.keys(Nt))t[o][r]=e[o][r]}localStorage.setItem("agentLens.agentProfiles",JSON.stringify(t))}catch{}}function xn(){try{localStorage.removeItem("agentLens.agentProfiles")}catch{}return Fr()}function He(e,t=De()){return e&&t[e]?t[e]:t.copilot}function rt(e){let t=(e.userRequest??"").trim();return!t||t==="[session in progress]"?"[session in progress]":t.length>70?t.slice(0,70)+"...":t}function Ft(e,t=De()){let o=(e.timeline??[]).filter(a=>a.type==="llm").map(a=>a.inputTokens??0).filter(a=>a>0),r=e.totalLlmCalls>0?Math.round((e.inputTokens??0)/e.totalLlmCalls):0,i=o.length>0?Math.max(...o):r,s=He(e.source,t).contextWindowTokens;return{peakTokens:i,contextWindowTokens:s,percent:s>0?i/s*100:0}}function oo(e){if(Array.isArray(e))return"["+e.map(oo).join(",")+"]";if(e&&typeof e=="object"){let t=e;return"{"+Object.keys(t).sort().map(o=>JSON.stringify(o)+":"+oo(t[o])).join(",")+"}"}return JSON.stringify(e)}function bs(e){let t=(e??"").trim();if(!t)return"";try{return oo(JSON.parse(t))}catch{return t.replace(/\s+/g," ")}}function ys(e){return(e.label??"").trim().split(/\s+/)[0]||"tool"}function ws(e){if((e.editDetails??[]).length>0)return!0;let t=(e.label??"").toLowerCase();if(/(apply_patch|replace_string|create_file|edit_notebook|write_file|str_replace|multi_edit)/.test(t))return!0;if(!/(exec|shell|bash|command)/.test(t))return!1;let o=(e.toolInput??"").toLowerCase();return/(apply_patch|sed\s+-i|perl\s+-i|>\s*[\w./~-]|>>\s*[\w./~-]|\btee\b|\btouch\b|\bmv\b|\bcp\b|\brm\b|\bmkdir\b)/.test(o)}function Dt(e){let t=new Map,o=null,r=0;for(let i of e.timeline??[]){if(i.type==="tool"){let s=ys(i),a=bs(i.toolInput),l=s+`
-`+(a||(i.label??"").trim()),p=t.get(l),d=p&&p.fileChangeGeneration===r?p.count+1:1;t.set(l,{key:l,tool:s,count:d,display:a?s+" "+a.slice(0,90):i.label??s,fileChangeGeneration:r}),d>1&&(!o||d>o.count)&&(o={key:l,tool:s,count:d,display:a?s+" "+a.slice(0,90):i.label??s})}ws(i)&&r++}return o}function Ht(e){let t=(e.timeline??[]).filter(p=>p.type==="llm"||p.type==="tool"),o=0,r=0,i=0,s=[];for(let p of t)if(p.isError){i++,r++,o=Math.max(o,r);let d=p.errorMessage||p.label;d&&s.push(d.slice(0,140))}else r=0;let a=Math.max(i,e.errors??0),l=t.length||(e.totalLlmCalls??0)+(e.totalToolCalls??0);return{errorCount:a,measuredSteps:l,maxConsecutive:o,trailingConsecutive:r,failureRate:l>0?a/l:0,recentErrors:s.slice(-3)}}function Dr(e){return(e.timeline??[]).filter(t=>t.type==="llm"||t.type==="tool").reduce((t,o)=>t+Math.max(o.durationMs??0,0),0)}var Hr=["copilot","claude_code","codex"];function Br({label:e,children:t}){return n("div",{style:"display:grid;gap:6px;font-size:12px;margin:8px 0",children:[n("div",{class:"muted",style:"font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700",children:e}),t]})}function Ur(){return"Agent Thresholds"}function ro(e,t,o){if(!/^\d+$/.test(e))return null;let r=Number(e);return!Number.isSafeInteger(r)||r<t||r>o?null:r}function _s(e,t){return"width:"+e+"px;background:var(--bg);color:var(--fg,inherit);border:1px solid "+(t?"var(--error)":"var(--border)")+";border-radius:3px;padding:2px 6px;font-size:12px"}function Wr({value:e,min:t,max:o,width:r,ariaLabel:i,onChange:s}){let[a,l]=D(String(e));ve(()=>{l(String(e))},[e]);let p=a!==""&&ro(a,t,o)===null;return n("input",{type:"text",inputMode:"numeric",pattern:"[0-9]*",value:a,"aria-label":i,"aria-invalid":p?"true":"false",title:"Enter a number from "+t.toLocaleString()+" to "+o.toLocaleString(),onChange:d=>{let u=d.target.value;if(!/^\d*$/.test(u))return;l(u);let c=ro(u,t,o);c!==null&&s(c)},onBlur:()=>{ro(a,t,o)===null&&l(String(e))},style:_s(r,p)})}function $r({source:e,profiles:t}){let o=t[e];return n("span",{style:"display:flex;align-items:center;gap:5px;white-space:nowrap",children:[n("span",{style:"display:inline-block;width:7px;height:7px;border-radius:50%;background:"+o.color}),n("span",{children:o.label})]})}function bn({profiles:e,metrics:t,onChange:o}){return n(z,{children:t.map(r=>{let i=Nt[r];return n(Br,{label:Ur(),children:n("div",{style:"display:flex;align-items:center;gap:8px;flex-wrap:wrap",children:Hr.map(s=>n("label",{style:"display:flex;align-items:center;gap:6px;background:var(--panel-bg);border:1px solid var(--border);border-radius:4px;padding:4px 6px",children:[n($r,{source:s,profiles:e}),n(Wr,{value:e[s][r],min:i.min,max:i.max,width:50,ariaLabel:e[s].label+" "+i.label,onChange:a=>o(s,r,a)}),n("span",{class:"muted",children:i.unit})]},s))})},r)})})}function yn({profiles:e,metricName:t,unit:o,values:r,min:i,max:s,onChange:a}){return n(Br,{label:Ur(),children:n("div",{style:"display:flex;align-items:center;gap:8px;flex-wrap:wrap",children:Hr.map(l=>n("label",{style:"display:flex;align-items:center;gap:6px;background:var(--panel-bg);border:1px solid var(--border);border-radius:4px;padding:4px 6px",children:[n($r,{source:l,profiles:e}),n(Wr,{value:r[l],min:i,max:s,width:62,ariaLabel:e[l].label+" "+t,onChange:p=>a(l,p)}),n("span",{class:"muted",children:o})]},l))})})}var qr={context_window:"Peak context use is the largest single LLM input in a session, not the average. Cache hits can make high input cheap, but they still occupy the context window.",high_turns:"High turn counts often mean the task has become too broad. Ask for a wrap-up, split the task, or provide more exact files and stopping conditions.",error_spike:"Counts errors in the session. Stop retries and diagnose the root cause once the threshold is crossed.",long_session:"Uses active LLM/tool compute time, not wall-clock waiting time.",no_cache:"Only checks sessions above the input-token gate. Cache can be low for small sessions without being a problem.",tool_loop:"Counts identical tool plus argument repeats, not just the same tool name."},_n=[{id:"context_window",label:"Context Window Filling Up",severity:"warning",description:"Fires when any session reaches the configured peak input-token threshold for that agent.",enabled:!0,threshold:17e4,unit:"tokens",min:1e4,max:1e6,step:1e3,agentThresholds:{claude_code:17e4,copilot:108800,codex:34e4}},{id:"high_turns",label:"Too Many Turns Per Session",severity:"warning",description:"Fires when any session reaches its agent-specific LLM turn alert threshold. High turn counts often indicate scope creep or a task that should be split.",enabled:!0,threshold:200,unit:"agent profile",min:20,max:500,step:10},{id:"error_spike",label:"Error Spike",severity:"error",description:"Fires when any session reaches its agent-specific error count threshold.",enabled:!0,threshold:5,unit:"agent profile",min:2,max:20,step:1},{id:"long_session",label:"Long Active Session",severity:"info",description:"Fires when active LLM/tool compute time exceeds the agent-specific threshold. Wall-clock idle time does not count.",enabled:!0,threshold:60,unit:"agent profile",min:10,max:240,step:10},{id:"no_cache",label:"Zero Cache Utilization",severity:"info",description:"Fires when any session above that agent's input-token gate has 0% cache hit rate.",enabled:!0,threshold:3e4,unit:"tokens",min:5e3,max:2e5,step:5e3,agentThresholds:{claude_code:3e4,copilot:3e4,codex:3e4}},{id:"tool_loop",label:"Identical Tool Repeat",severity:"warning",description:"Fires when the same tool with identical arguments repeats beyond the agent-specific threshold without a file change between repeats.",enabled:!0,threshold:5,unit:"agent profile",min:3,max:20,step:1}];function so(e){if(e)return{claude_code:e.claude_code,copilot:e.copilot,codex:e.codex}}function ut(e){return{...e,agentThresholds:so(e.agentThresholds)}}function ks(e){return{claude_code:e,copilot:e,codex:e}}function Ss(e,t){let o=so(e.agentThresholds);if(!o)return;let r=Number(t?.threshold);if(!t?.agentThresholds&&Number.isFinite(r)&&r>=e.min&&r<=e.max)for(let i of ot)o[i]=r;for(let i of ot){let s=Number(t?.agentThresholds?.[i]);Number.isFinite(s)&&s>=e.min&&s<=e.max&&(o[i]=s)}return o}function Vr(e){return so(e.agentThresholds)??ks(e.threshold)}function jr(e,t){return e.agentThresholds?.[t]??e.threshold}function ao(){try{let e=localStorage.getItem("agentLens.alertConfigs");if(!e)return _n.map(ut);let t=JSON.parse(e);return _n.map(o=>{let r=t.find(a=>a.id===o.id);if(!r)return ut(o);let i=Number(r.threshold),s=i>=o.min&&i<=o.max?i:o.threshold;return{...ut(o),enabled:typeof r.enabled=="boolean"?r.enabled:o.enabled,threshold:s,agentThresholds:Ss(o,r)}})}catch{return _n.map(ut)}}function io(e){try{localStorage.setItem("agentLens.alertConfigs",JSON.stringify(e.map(t=>({id:t.id,enabled:t.enabled,threshold:t.threshold,agentThresholds:t.agentThresholds}))))}catch{}}function Ts(e){return e.id==="context_window"||e.id==="no_cache"}function Cs(e){switch(e.id){case"high_turns":return["turnAlert"];case"error_spike":return["consecutiveErrorAlert"];case"long_session":return["activeMinutesAlert"];case"tool_loop":return["identicalRepeatAlert"];default:return[]}}function As(e){return e.id==="context_window"?"Context window tokens":"Input tokens"}function lo(e,t,o,r=De()){if(!t?.length)return{triggered:!1};switch(e.id){case"context_window":{let i=t.map(a=>({session:a,usage:Ft(a,r),profile:He(a.source,r),threshold:jr(e,a.source)})).filter(a=>a.usage.peakTokens>0);if(!i.length)return{triggered:!1};let s=i.reduce((a,l)=>{let p=a.usage.peakTokens/Math.max(a.threshold,1);return l.usage.peakTokens/Math.max(l.threshold,1)>p?l:a},i[0]);return s.usage.peakTokens<s.threshold?{triggered:!1}:{triggered:!0,key:s.session.traceId||s.session.sessionId,detail:"Peak context "+s.usage.peakTokens.toLocaleString()+" tokens vs "+s.profile.label+" threshold "+s.threshold.toLocaleString()+' \u2014 "'+rt(s.session)+'"'}}case"high_turns":{let i=t.map(a=>({session:a,profile:He(a.source,r)})).filter(a=>(a.session.totalLlmCalls??0)>=a.profile.turnAlert);if(!i.length)return{triggered:!1};let s=i.reduce((a,l)=>(l.session.totalLlmCalls??0)>(a.session.totalLlmCalls??0)?l:a,i[0]);return{triggered:!0,key:s.session.traceId||s.session.sessionId,detail:i.length+" session(s) reached threshold. Worst: "+s.session.totalLlmCalls+" turns vs "+s.profile.label+" alert "+s.profile.turnAlert+' \u2014 "'+rt(s.session)+'"'}}case"error_spike":{let s=t.map(l=>({session:l,health:Ht(l),profile:He(l.source,r)})).filter(l=>l.health.errorCount>=l.profile.consecutiveErrorAlert);if(!s.length)return{triggered:!1};let a=s.reduce((l,p)=>p.health.errorCount>l.health.errorCount?p:l,s[0]);return{triggered:!0,key:a.session.traceId||a.session.sessionId,detail:"Worst: "+a.health.errorCount+" error(s) vs "+a.profile.label+" threshold "+a.profile.consecutiveErrorAlert+' \u2014 "'+rt(a.session)+'"'}}case"long_session":{let i=t.map(a=>({session:a,activeMs:Dr(a),profile:He(a.source,r)})).filter(a=>a.activeMs>=a.profile.activeMinutesAlert*60*1e3);if(!i.length)return{triggered:!1};let s=i.reduce((a,l)=>l.activeMs>a.activeMs?l:a,i[0]);return{triggered:!0,key:s.session.traceId||s.session.sessionId,detail:i.length+" session(s) exceeded threshold. Longest active compute: "+H(s.activeMs)+" vs "+s.profile.label+" alert "+s.profile.activeMinutesAlert+"min"}}case"no_cache":{let i=t.map(a=>({session:a,profile:He(a.source,r),threshold:jr(e,a.source)})).filter(a=>(a.session.inputTokens??0)>=a.threshold&&(a.session.cacheHitRate??0)===0);if(!i.length)return{triggered:!1};let s=i.reduce((a,l)=>(l.session.inputTokens??0)>(a.session.inputTokens??0)?l:a,i[0]);return{triggered:!0,key:s.session.traceId||s.session.sessionId,detail:"0% cache hit rate on "+s.session.inputTokens.toLocaleString()+" input tokens vs "+s.profile.label+" gate "+s.threshold.toLocaleString()+' \u2014 "'+rt(s.session)+'"'}}case"tool_loop":{let s=t.map(l=>({session:l,repeat:Dt(l),profile:He(l.source,r)})).filter(l=>!!l.repeat).filter(l=>l.repeat.count>=l.profile.identicalRepeatAlert);if(!s.length)return{triggered:!1};let a=s.reduce((l,p)=>p.repeat.count>l.repeat.count?p:l,s[0]);return{triggered:!0,key:(a.session.traceId||a.session.sessionId)+":"+a.repeat.key,detail:'"'+a.repeat.display+'" repeated '+a.repeat.count+" times without intervening file changes vs "+a.profile.label+" alert "+a.profile.identicalRepeatAlert+' \u2014 "'+rt(a.session)+'"'}}default:return{triggered:!1}}}function Gr(){let e=ao(),t=De(),{sessions:o,efficiency:r}=bt();return e.filter(i=>i.enabled&&lo(i,o,r,t).triggered).length}var wn=new Set;function co(){let e=ao(),t=De(),{sessions:o,efficiency:r}=bt(),i=Date.now(),s=30*1e3,a=o.filter(d=>{let u=d.timeline&&d.timeline.length>0?d.timeline[d.timeline.length-1].timestamp:d.startTime;if(!u)return!1;let c=typeof u=="number"?u:Date.parse(u);return i-c<s}),l=[],p=new Set;for(let d of e){if(!d.enabled)continue;let u=lo(d,a,r,t);if(u.triggered){let c=d.id+":"+(u.key??"global");if(p.add(c),wn.has(c))continue;wn.add(c),l.push({label:d.label,detail:u.detail,severity:d.severity})}}for(let d of Array.from(wn))p.has(d)||wn.delete(d);return l}function Kr(){let e=F.value,[t,o]=D(ao),[r,i]=D(De),s=e.length>0,{sessions:a,efficiency:l}=bt(),p=t.map(h=>({config:h,...h.enabled?lo(h,a,l,r):{triggered:!1}})),d=p.filter(h=>h.triggered).length;function u(h,f,g){let w={...r,[h]:{...r[h],[f]:g}};vn(w),i(w)}function c(h,f){o(g=>{let w=g.map(k=>k.id===h?{...k,...f}:k);return io(w),w})}function m(h,f,g){c(h.id,{agentThresholds:{...Vr(h),[f]:g}})}return n("div",{id:"alerts-content",children:[n("div",{style:"font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)",children:n("strong",{children:"Settings below are adjustable per agent. Reminder: your choice of LLM model significantly affects efficiency and may require threshold adjustments."})}),s?d>0?n("div",{style:"background:rgba(239,83,80,0.12);border:1px solid var(--error);border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px",children:[n("span",{style:"font-size:18px",children:"\u26A0"}),n("div",{children:[n("strong",{class:"err",children:[d," alert",d>1?"s":""," triggered"]}),n("span",{style:"color:var(--muted);font-size:12px;margin-left:8px",children:"based on your displayed sessions"})]})]}):n("div",{style:"background:rgba(129,199,132,0.1);border:1px solid #81c784;border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px",children:[n("span",{style:"font-size:18px;color:#81c784",children:"\u2713"}),n("div",{children:[n("strong",{style:"color:#81c784",children:"All clear"}),n("span",{style:"color:var(--muted);font-size:12px;margin-left:8px",children:"no alerts triggered for current sessions"})]})]}):n("div",{style:"background:var(--panel-bg);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:14px",children:[n("strong",{children:"No agent sessions recorded"}),n("span",{style:"color:var(--muted);font-size:12px;margin-left:8px",children:"alert configuration is available below"})]}),p.map(({config:h,triggered:f,detail:g})=>{let w=h.severity,k=w==="error"?"var(--error)":w==="info"?"#4fc3f7":"#f6a623",C=f?k:"var(--border)",S=h.enabled?f?w==="error"?"\u26D4":w==="info"?"\u2139":"\u26A0":"\u2713":"\u25CB",I=h.enabled?f?k:"#81c784":"var(--muted)",_=Cs(h);return n("div",{style:`border:1px solid ${C};border-left:4px solid ${C};border-radius:6px;padding:12px 14px;margin-bottom:10px`,children:[n("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:6px",children:[n("div",{class:"flex-8",children:[n("span",{style:`font-size:15px;color:${I};line-height:1`,children:S}),n("strong",{style:"font-size:13px",children:h.label}),f&&n("span",{style:`font-size:10px;background:${k};color:#000;padding:1px 7px;border-radius:3px;font-weight:700;letter-spacing:.4px`,children:"TRIGGERED"})]}),n("label",{class:"toggle-switch",children:[n("input",{type:"checkbox",checked:h.enabled,onChange:T=>c(h.id,{enabled:T.target.checked})}),n("span",{class:"toggle-track",children:n("span",{class:"toggle-thumb"})}),n("span",{class:"toggle-label"+(h.enabled?" on":""),children:h.enabled?"Enabled":"Disabled"})]})]}),n("div",{style:"font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5",children:[h.description,qr[h.id]&&n(z,{children:[" "," ",n("span",{"data-tip":qr[h.id],style:"font-size:11px;color:var(--vscode-textLink-foreground,#4fc3f7);border-bottom:1px dotted currentColor;cursor:help;white-space:nowrap",children:"Why?"})]})]}),f&&g&&n("div",{style:`font-size:12px;padding:7px 10px;background:var(--panel-bg);border-radius:4px;border-left:3px solid ${k};margin-bottom:8px;line-height:1.4`,children:g}),Ts(h)?n(yn,{profiles:r,metricName:As(h),unit:"tokens",values:Vr(h),min:h.min,max:h.max,onChange:(T,x)=>m(h,T,x)}):_.length>0&&n(bn,{profiles:r,metrics:_,onChange:u})]},h.id)}),n("div",{style:"margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px",children:[n("div",{style:"display:flex;gap:6px",children:[n("button",{onClick:()=>{let h=t.map(f=>({...ut(f),enabled:!0}));io(h),o(h)},style:"font-size:11px;background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer;color:var(--fg)",children:"Enable All"}),n("button",{onClick:()=>{let h=t.map(f=>({...ut(f),enabled:!1}));io(h),o(h)},style:"font-size:11px;background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer;color:var(--muted)",children:"Disable All"})]}),n("button",{onClick:()=>{try{localStorage.removeItem("agentLens.alertConfigs")}catch{}o(_n.map(ut))},style:"font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer",children:"Reset to Defaults"}),n("button",{onClick:()=>i(xn()),style:"font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer",children:"Reset Agent Thresholds"})]})]})}function Ls(e){let t=0;return(e.attributes??[]).forEach(o=>{/output.?tokens|completion.?tokens/i.test(o.key)&&(t=parseInt(String(o.value.intValue??o.value.stringValue??o.value.doubleValue))||0)}),t}function Es({sessions:e}){let t=Pe(null);return ve(()=>{let o=t.current;if(!o)return;let r=o.getBoundingClientRect();if(r.width===0||r.height===0)return;let i=e.map((A,R)=>{let O=A.inputTokens??0,N=A.outputTokens??0,P=[],q=[];(A.timeline??[]).forEach(J=>{J.type==="llm"&&((J.inputTokens??0)>0||(J.outputTokens??0)>0)&&(P.push(J.inputTokens??0),q.push(J.outputTokens??0))}),P.length===0&&(O>0||N>0)&&(P.push(O),q.push(N));let Q=le(A)||R+1;return O+N>0?{session:Q,tokens:O+N,inputTokens:P,outputTokens:q,source:A.source}:null}).filter(Boolean).reverse();if(i.length===0){o.style.display="none";return}o.style.display="block";let s=window.devicePixelRatio||1,a=o.getBoundingClientRect();o.width=a.width*s,o.height=a.height*s;let l=o.getContext("2d");l.scale(s,s);let p=a.width,d=a.height;l.clearRect(0,0,p,d);let u={top:8,right:44,bottom:34,left:44},c=p-u.left-u.right,m=d-u.top-u.bottom,h=i.map(A=>{let R=A.inputTokens.reduce((N,P)=>N+P,0),O=A.outputTokens.reduce((N,P)=>N+P,0);return{input:R,output:O,session:A.session,source:A.source}}),f=Math.max(...h.map(A=>A.input))||1,g=Math.max(...h.map(A=>A.output))||1,w=getComputedStyle(document.body),k=w.getPropertyValue("--vscode-panel-border").trim()||"#333",C=w.getPropertyValue("--vscode-descriptionForeground").trim()||"#888",S="10px "+(w.getPropertyValue("--vscode-font-family").trim()||"sans-serif");l.strokeStyle=k,l.lineWidth=.5;for(let A=0;A<=4;A++){let R=u.top+m*A/4;l.beginPath(),l.moveTo(u.left,R),l.lineTo(u.left+c,R),l.stroke()}l.fillStyle="#FFB74D",l.font=S,l.textAlign="right",l.textBaseline="middle";for(let A=0;A<=4;A++){let R=f*(4-A)/4;R>0&&l.fillText(_e(R),u.left-4,u.top+m*A/4)}l.fillStyle="#81C784",l.textAlign="left";for(let A=0;A<=4;A++){let R=g*(4-A)/4;R>0&&l.fillText(_e(R),u.left+c+4,u.top+m*A/4)}let I=8,_=i.length,T=Math.max(12,(c-I*(_+1))/_),x=T/2,v=_*T+(_+1)*I,y=u.left+(c-v)/2+I;l.textAlign="center",l.textBaseline="top",h.forEach((A,R)=>{let O=y+R*(T+I),N=A.input/f*m,P=u.top+m-N;l.fillStyle="#FFB74D",l.fillRect(O,P,x,N);let q=A.output/g*m,Q=u.top+m-q;l.fillStyle="#81C784",l.fillRect(O+x,Q,x,q),l.fillStyle=C,l.fillText(""+A.session,O+T/2,u.top+m+4),l.beginPath(),l.arc(O+T/2,u.top+m+18,3,0,Math.PI*2),l.fillStyle=ke(A.source),l.fill()})}),n(z,{children:[n("canvas",{ref:t,id:"dashboard-session-chart",style:"width:100%;height:200px;display:block"}),n("div",{class:"heatmap-axis-label",children:"\u2190 Session (latest to earliest) \u2192"})]})}function Yr(e){return e==="claude_code"?"Claude":e==="copilot"?"Copilot":e==="codex"?"Codex":"Agent"}function Xr(){let e=We.value,t=F.value,o={};if(t.length>0?t.forEach(a=>{(a.timeline??[]).forEach(l=>{let p=(l.inputTokens??0)+(l.outputTokens??0);if(p<=0)return;let d=l.type==="llm"?l.model||`${Yr(a.source)} LLM`:`${Yr(a.source)} ${l.label}`;o[d]||(o[d]={tokens:0,count:0}),o[d].tokens+=p,o[d].count++})}):e.filter(l=>Zn(l)>0&&!Je(l.name)).forEach(l=>{o[l.name]||(o[l.name]={tokens:0,count:0}),o[l.name].tokens+=Zn(l),o[l.name].count++}),Object.keys(o).length===0)return n("div",{id:"tokens-content",children:n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"})});let r=e.reduce((a,l)=>a+Ls(l),0),i=Object.entries(o).map(([a,l])=>({name:a,...l})).sort((a,l)=>l.tokens-a.tokens),s=i.length>0?i[0].tokens:1;return n("div",{id:"tokens-content",children:[n("div",{style:"margin-bottom:24px",children:[n("h3",{style:"margin:0 0 8px;font-size:13px;color:var(--muted)",children:"TOKEN USAGE PER SESSION"}),n("div",{style:"display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)",children:[n("span",{children:[n("span",{style:"display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle"})," Input"]}),n("span",{children:[n("span",{style:"display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle"})," Output"]})]}),n(Es,{sessions:t})]}),n("h3",{style:"margin:32px 0 12px;font-size:13px;color:var(--muted)",children:"TOKENS BY SPAN TYPE"}),n("div",{class:"bar-chart-container",style:"margin-top:32px",children:[n("div",{class:"bar-chart",children:i.slice(0,20).map(a=>{let l=Math.max(a.tokens/s*180,2),p=a.name.split("/").pop()??a.name,d=a.count>1?` (${a.count}\xD7)`:"";return n("div",{class:"bar-col",children:[n("div",{class:"bar-value",children:a.tokens.toLocaleString()}),n("div",{class:"bar-rect",style:"height:"+l+"px",title:`${a.name}: ${a.tokens.toLocaleString()} tokens${d}`}),n("div",{class:"bar-label",children:[p,d]})]},a.name)})}),n("div",{class:"axis-label",children:"Token consumption by operation type (top 20, aggregated)"})]})]})}function Is({sessions:e}){let t=Pe(null);return ve(()=>{let o=t.current;if(!o)return;let r=o.getBoundingClientRect();if(r.width===0||r.height===0)return;let i=e.map((T,x)=>{let v=(T.timeline??[]).filter(A=>A.type==="llm"&&(A.ttft??0)>0);if(v.length===0)return null;let y=Math.round(v.reduce((A,R)=>A+(R.ttft??0),0)/v.length);return y>0?{session:le(T)||x+1,ttft:y,source:T.source}:null}).filter(Boolean).reverse();if(i.length===0){o.style.display="none";return}o.style.display="block";let s=window.devicePixelRatio||1;o.width=r.width*s,o.height=r.height*s;let a=o.getContext("2d");a.scale(s,s);let l=r.width,p=r.height;a.clearRect(0,0,l,p);let d={top:8,right:44,bottom:34,left:44},u=l-d.left-d.right,c=p-d.top-d.bottom,m=Math.max(...i.map(T=>T.ttft))||1,h=getComputedStyle(document.body),f=h.getPropertyValue("--vscode-panel-border").trim()||"#333",g=h.getPropertyValue("--vscode-descriptionForeground").trim()||"#888",w="10px "+(h.getPropertyValue("--vscode-font-family").trim()||"sans-serif");a.strokeStyle=f,a.lineWidth=.5;for(let T=0;T<=4;T++){let x=d.top+c*T/4;a.beginPath(),a.moveTo(d.left,x),a.lineTo(d.left+u,x),a.stroke()}a.fillStyle=g,a.font=w,a.textAlign="right",a.textBaseline="middle";for(let T=0;T<=4;T++){let x=m*(4-T)/4;x>0&&a.fillText(_e(x),d.left-4,d.top+c*T/4)}let k=8,C=i.length,S=Math.max(12,(u-k*(C+1))/C),I=C*S+(C+1)*k,_=d.left+(u-I)/2+k;a.textAlign="center",a.textBaseline="top",i.forEach((T,x)=>{let v=_+x*(S+k),y=T.ttft/m*c,A=d.top+c-y;a.fillStyle=ke(T.source),a.fillRect(v,A,S,y),a.fillStyle=g,a.font=w,a.fillText(""+T.session,v+S/2,d.top+c+4)})}),n(z,{children:[n("canvas",{ref:t,style:"width:100%;height:200px;display:block"}),n("div",{class:"heatmap-axis-label",children:"\u2190 Session (latest to earliest) \u2192"})]})}function Jr(){let e=We.value,t=F.value;if(e.length===0)return n("div",{id:"latency-content",children:n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"})});let o;t.length===0?o=[{label:"1",spans:e}]:o=t.map((u,c)=>({label:""+(le(u)||c+1),source:u.source,spans:e.filter(m=>m.traceId===u.traceId)})),o.reverse(),o.length>20&&(o=o.slice(0,20));let r=new Set;e.forEach(u=>r.add(u.name.split("/")[0]??u.name));let i=Array.from(r);i.sort((u,c)=>{let m=Je(u)?0:1,h=Je(c)?0:1;return m!==h?m-h:u.localeCompare(c)}),i=i.filter(u=>o.some(c=>c.spans.some(m=>(m.name.split("/")[0]??m.name)!==u?!1:Y(m.endTime)-Y(m.startTime)>0)));let s={},a=0;i.forEach(u=>{s[u]=o.map(c=>{let m=0;return c.spans.forEach(h=>{if((h.name.split("/")[0]??h.name)===u){let g=Y(h.endTime)-Y(h.startTime);g>m&&(m=g)}}),m>a&&(a=m),m})}),a=a||1;let p=i.map(u=>({name:u,dur:Math.max(...s[u])})).filter(u=>u.dur>0).sort((u,c)=>c.dur-u.dur).filter(u=>{let c=s[u.name].filter(h=>h>0);return c.length<2?!1:c.reduce((h,f)=>h+f,0)/c.length>a*.5}),d=t.filter(u=>(u.timeline??[]).some(c=>c.type==="llm"&&(c.ttft??0)>0));return n("div",{id:"latency-content",children:[d.length>0&&n(z,{children:[n("h3",{class:"has-metric-tip",style:"margin:0 0 12px;font-size:13px;color:var(--muted)","data-tip":"Time to first token per session, broken out by agent. Each dot is one session. A rising trend indicates model load or growing context is increasing response start latency.",children:"TIME TO FIRST TOKEN"}),n(Is,{sessions:t})]}),n("h3",{style:"margin:24px 0 12px;font-size:13px;color:var(--muted)",children:"SPAN DURATION HEATMAP"}),n("div",{class:"heatmap",children:[n("table",{style:"border-collapse:collapse",children:[n("thead",{children:n("tr",{children:[n("td",{}),o.map((u,c)=>n("td",{style:"text-align:center;width:32px;min-width:32px;padding:2px 4px;vertical-align:bottom",children:n("div",{style:"font-size:10px;white-space:nowrap;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px",children:[n("span",{style:"opacity:0.6",children:u.label}),u.source&&n("span",{dangerouslySetInnerHTML:{__html:nt(u.source)}})]})},c))]})}),n("tbody",{children:i.map(u=>n("tr",{children:[n("td",{class:"heatmap-row-label",children:u}),s[u].map((c,m)=>{let h=c/a,f=Math.round(79+h*176),g=Math.round(195-h*130),w=Math.round(247-h*180),k=c>0?`rgb(${f},${g},${w})`:"transparent";return n("td",{style:"text-align:center;width:32px;min-width:32px;padding:2px 4px",children:n("div",{class:"heatmap-cell",style:"background:"+k,children:c>0&&n("span",{class:"htip",children:[u," session ",o[m].label,": ",H(c)]})})},m)})]},u))})]}),n("div",{class:"heatmap-axis-label",children:"\u2190 Session (latest to earliest) \u2192"}),n("div",{class:"heatmap-legend",children:[n("span",{children:"Duration:"}),n("span",{children:"Low"}),n("div",{class:"heatmap-legend-bar",children:Array.from({length:6},(u,c)=>{let m=c/5,h=Math.round(79+m*176),f=Math.round(195-m*130),g=Math.round(247-m*180);return n("span",{style:`background:rgb(${h},${f},${g})`},c)})}),n("span",{children:["High (",H(a),")"]})]})]})]})}function Ms({bgSpans:e}){let[t,o]=D(!1);if(!e?.length)return null;let r={},i=0;e.forEach(l=>{let p=l.purpose||l.name||"Unknown";r[p]||(r[p]={count:0,tokens:0,model:l.model||""}),r[p].count++;let d=(l.inputTokens??0)+(l.outputTokens??0);r[p].tokens+=d,i+=d});let s={"Generate chat title":"Creates the title shown in the chat history sidebar.","Generate progress messages":"Produces the status messages shown while the agent works.","Extension language model call":"LLM call made by a VS Code extension \u2014 often used for completions or inline suggestions."},a=Object.keys(r).sort((l,p)=>r[p].tokens-r[l].tokens);return n("div",{class:"sw-bg-group",children:[n("div",{class:"sw-bg-header",onClick:()=>o(l=>!l),children:[n("span",{class:"sw-bg-chevron",children:t?"\u25BC":"\u25B6"})," ",n("span",{children:"Background Overhead"}),n("span",{class:"sw-bg-summary",children:[e.length," calls \xB7 ",i.toLocaleString()," tokens"]})]}),t&&n("div",{class:"sw-bg-body",children:[n("div",{class:"sw-bg-note",children:"Automatic LLM calls that ran alongside this prompt. These are not part of your agent session but still consume tokens."}),a.map(l=>n("div",{class:"sw-bg-item",children:[n("div",{class:"sw-bg-item-header",children:[n("span",{class:"sw-bg-item-name",children:l}),n("span",{class:"sw-bg-item-stats",children:[r[l].count,"\xD7 \xB7 ",r[l].tokens.toLocaleString()," tok \xB7 ",r[l].model]})]}),s[l]&&n("div",{class:"sw-bg-item-desc",children:s[l]})]},l))]})]})}function Rs({step:e,idx:t,sessIdx:o}){let[r,i]=D(!1),s=e.entry;if(s.type==="llm")return n(z,{children:[n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Model"}),n("div",{class:"sw-detail-value",children:s.model||"unknown"})]}),((s.inputTokens??0)>0||(s.outputTokens??0)>0)&&n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Token Usage"}),n("div",{class:"sw-detail-value",children:[n("span",{class:"sw-token-in",children:[(s.inputTokens??0).toLocaleString()," input"]}),n("span",{class:"sw-token-arrow",children:" \u2192 "}),n("span",{class:"sw-token-out",children:[(s.outputTokens??0).toLocaleString()," output"]}),s.responseText&&n("button",{class:"sw-show-full-btn",style:"margin-left:8px",onClick:()=>i(a=>!a),children:r?"hide output":"view output"})]})]}),r&&s.responseText&&n(Zr,{heading:"Output",text:s.responseText,id:"sw-output-"+o+"-"+t}),(s.ttft??0)>0&&n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Time to First Token"}),n("div",{class:"sw-detail-value",children:H(s.ttft)})]}),n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Duration"}),n("div",{class:"sw-detail-value",children:H(e.durationMs)})]}),s.action&&n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Decision"}),n("div",{class:"sw-detail-value",children:s.action})]}),s.thinking&&n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Reasoning"}),n("div",{class:"sw-detail-thinking",style:"white-space:pre-wrap",children:s.thinking})]}),s.timestamp&&n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Timestamp"}),n("div",{class:"sw-detail-value sw-detail-muted",children:s.timestamp})]})]});if(s.type==="tool"){let a=(s.label??"").match(/^(\S+)\s*([\s\S]*)$/),l=a?a[1]:s.label,p=a?a[2]:"",d=s.fullResult||s.resultSummary||"";return n(z,{children:[n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Tool"}),n("div",{class:"sw-detail-value",children:n("code",{children:l})})]}),p&&n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Arguments"}),n("div",{class:"sw-detail-value",children:n("code",{children:p})})]}),n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Duration"}),n("div",{class:"sw-detail-value",children:H(e.durationMs)})]}),d&&n(Zr,{heading:"Result",text:d,id:"sw-result-"+o+"-"+t,isJson:!0}),s.isError&&n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading err",children:"Error"}),n("div",{class:"sw-detail-value err",children:"This step failed"})]}),s.timestamp&&n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Timestamp"}),n("div",{class:"sw-detail-value sw-detail-muted",children:s.timestamp})]})]})}return n(z,{children:[n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Background Task"}),n("div",{class:"sw-detail-value",children:s.label||""})]}),n("div",{class:"sw-detail-section",children:[n("div",{class:"sw-detail-heading",children:"Duration"}),n("div",{class:"sw-detail-value",children:H(e.durationMs)})]})]})}function Zr({heading:e,text:t,id:o,isJson:r}){let[i,s]=D(!1),a=600,l=t.length>a,p=t.length>6e3?t.slice(0,6e3)+`
-... [truncated `+(t.length-6e3).toLocaleString()+" chars]":t;if(p.length<=2e3)try{p=JSON.stringify(JSON.parse(p),null,2)}catch{}return n(z,{children:[n("div",{class:"sw-detail-section",children:n("div",{class:"sw-detail-heading",children:[e,l&&n("button",{class:"sw-show-full-btn",style:"margin-left:8px",onClick:()=>s(d=>!d),children:i?"Collapse":"Show full"})]})}),!l||!i?n("pre",{class:"sw-full-result-pre",style:"margin:0 0 8px",children:r&&p.length<=2e3?n("span",{dangerouslySetInnerHTML:{__html:Xn(l?t.slice(0,a):p)}}):l?t.slice(0,a)+"\u2026":p}):n("pre",{class:"sw-full-result-pre",style:"margin:0 0 8px",children:r&&p.length<=2e3?n("span",{dangerouslySetInnerHTML:{__html:Xn(p)}}):p})]})}function zs({step:e,idx:t,sessIdx:o,sessionDur:r}){let[i,s]=D(!1),a=e.entry,l,p;a.type==="llm"?(l="LLM",p="var(--accent)"):a.type==="tool"?(l="TOOL",p="#B8E986"):(l="BG",p="var(--muted)"),a.isError&&(p="var(--error)");let d=a.type==="llm"?_r(a):a.type==="tool"?kr(a)+(Qn(a)?" \u2192 "+Qn(a):""):a.label||"",u=r>0?e.offsetMs/r*100:0,c=r>0?Math.max(e.durationMs/r*100,.5):100;return n(z,{children:[n("div",{class:"wf-row",onClick:()=>s(m=>!m),children:[n("div",{class:"wf-label",title:d,children:[n("span",{class:"wf-indent"}),n("span",{class:"sw-chevron",children:i?"\u25BC":"\u25B6"}),n("span",{class:"wf-type-badge",style:"background:"+p+";color:#000",children:l}),n("span",{class:"wf-name",children:d})]}),n("div",{class:"wf-bar-area",children:n("div",{class:"wf-bar",style:`left:${u.toFixed(2)}%;width:${c.toFixed(2)}%`,children:n("div",{class:"wf-bar-inner",style:"background:"+p+";opacity:"+(a.isError?"1":"0.7")})})}),n("div",{class:"wf-info",children:[H(e.durationMs),a.type==="llm"&&((a.inputTokens??0)>0||(a.outputTokens??0)>0)&&n("div",{style:"font-size:9px;color:var(--muted);white-space:nowrap;margin-top:2px",children:["\u2191",_e(a.inputTokens??0)," \u2193",_e(a.outputTokens??0)]})]})]}),i&&n("div",{class:"sw-detail open",children:n(Rs,{step:e,idx:t,sessIdx:o})})]})}function Os({sess:e,sessIdx:t,totalCount:o,isFirst:r}){let[i,s]=D(!r),[a,l]=D(!1),p=(e.userRequest?.length??0)>100,d=le(e)||o-t,u=e.startTime?new Date(e.startTime).getTime():0,c=e.durationMs||1,m=(e.timeline??[]).map(g=>{let w=g.timestamp?new Date(g.timestamp).getTime():0,k=u>0&&w>0?w-u:0;return{entry:g,offsetMs:Math.max(k,0),durationMs:g.durationMs||0}});if(m.length>0){let g=Math.max(...m.map(w=>w.offsetMs+w.durationMs));g>c&&(c=g)}c<=0&&(c=1);let h=e.errors||0,f=e.outcome==="text_response"?"Responded":e.outcome==="tool_calls"?"Tool calls":null;return n("div",{class:"wf-trace-group",children:[n("div",{class:"wf-trace-header",onClick:()=>s(g=>!g),children:[n("span",{children:[n("span",{class:"wf-header-chevron",children:i?"\u25B6":"\u25BC"}),n("strong",{children:d})," ",n("span",{dangerouslySetInnerHTML:{__html:nt(e.source)}})," ",'"',e.userRequest.slice(0,100),p?"\u2026":"",'"',p&&n("button",{class:"sw-show-full-btn",style:"margin-left:8px",onClick:g=>{g.stopPropagation(),l(w=>!w)},children:a?"Collapse":"Show full prompt"})]}),n("span",{class:"wf-trace-stats",children:[m.length," steps \xB7 ",H(c)," \xB7 ",e.model,h>0&&n("span",{class:"err",children:[" \xB7 ",h," errors"]}),f&&n(z,{children:[" \xB7 ",f]})]})]}),a&&n("div",{style:"padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word",children:e.userRequest}),!i&&n("div",{class:"wf-trace-body",children:[n("div",{class:"wf-time-ruler",children:Array.from({length:6},(g,w)=>n("span",{children:H(c*w/5)},w))}),m.map((g,w)=>n(zs,{step:g,idx:w,sessIdx:t,sessionDur:c},g.entry.spanId+w))]})]})}function Qr(){let e=F.value,t=ge.value;if(!t?.sessions?.length)return n("div",{id:"summary-traces-content",children:n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"})});let o=[...e].reverse(),r=o.reduce((a,l)=>a+l.totalLlmCalls,0),i=o.reduce((a,l)=>a+l.totalToolCalls,0),s=o.reduce((a,l)=>a+l.inputTokens+l.outputTokens,0);return n("div",{id:"summary-traces-content",children:[n("div",{class:"tab-stats",children:[n("div",{children:[n("strong",{class:"tab-stat-val",children:o.length})," sessions"]}),n("div",{children:[n("strong",{class:"tab-stat-val",children:r})," LLM calls"]}),n("div",{children:[n("strong",{class:"tab-stat-val",children:i})," tool calls"]}),n("div",{children:[n("strong",{class:"tab-stat-val",children:_e(s)})," tokens"]})]}),n("div",{style:"font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)",children:"Each agent exposes different OTEL data \u2014 some fields may be missing or estimated. See the Traces tab for raw span-level detail."}),n("div",{class:"waterfall",children:[o.map((a,l)=>n(Os,{sess:a,sessIdx:l,totalCount:o.length,isFirst:l===0},a.traceId+l)),o.length===0&&n("div",{class:"empty-state",children:"No sessions to display"})]}),t.backgroundSpans?.length>0&&n(Ms,{bgSpans:t.backgroundSpans})]})}function Ps(e){let t=(e.name??"").toLowerCase();if(!t.includes("websocket"))return!1;let o=String(te(e,"event.name")??"").toLowerCase();return t.startsWith("codex.")||o.startsWith("codex.")||!!zt(e)}function Ns({span:e,minStart:t,traceRange:o,depth:r}){let i=yt.has(e.spanId),[s,a]=D(i),l=Y(e.startTime),d=Y(e.endTime)-l,u=t>0&&l>0?(l-t)/o*100:0,c=o>0?Math.max(d/o*100,.5):100,m=fn(e),h=e.status?.code===2,f=h?"var(--error)":m.color,g=e.attributes??[],w=[e.name,"Duration: "+H(d),"Span: "+e.spanId,...e.parentSpanId?["Parent: "+e.parentSpanId]:[],...g.slice(0,8).map(S=>{let I=S.value,_=I.stringValue??I.intValue??I.doubleValue??I.boolValue;return S.key+": "+String(_??JSON.stringify(I))}),...g.length>8?["... +"+(g.length-8)+" more attributes"]:[]],k=[{k:"Span ID",v:e.spanId??"\u2014"},{k:"Trace ID",v:e.traceId??"\u2014"},...e.parentSpanId?[{k:"Parent Span ID",v:e.parentSpanId}]:[],{k:"Status",v:e.status?(e.status.code===0?"OK":e.status.code===2?"ERROR":"UNSET")+(e.status.message?" \u2014 "+e.status.message:""):"UNSET"},...g.map(S=>{let I=S.value,_=I.stringValue??I.intValue??I.doubleValue??I.boolValue;return{k:S.key,v:String(_??JSON.stringify(I))}})];function C(){let S=!s;a(S),S?yt.add(e.spanId):yt.delete(e.spanId)}return n(z,{children:[n("div",{class:Fe("wf-row",{selected:s}),onClick:C,children:[n("div",{class:"wf-label",title:e.name,children:[Array.from({length:r},(S,I)=>n("span",{class:"wf-indent"},I)),n("span",{class:"wf-chevron",children:s?"\u25BC":"\u25B6"}),n("span",{class:"wf-type-badge",style:"background:"+f+";color:#000",children:m.label}),n("span",{class:"wf-name",children:e.name})]}),n("div",{class:"wf-bar-area",children:n("div",{class:"wf-bar",style:`left:${u.toFixed(2)}%;width:${c.toFixed(2)}%`,children:[n("div",{class:"wf-bar-inner",style:"background:"+f+";opacity:"+(h?"1":"0.7")}),c<15&&n("span",{class:"wf-dur",children:H(d)}),n("div",{class:"wf-tip",dangerouslySetInnerHTML:{__html:w.map(S=>Rt(S)).join("<br>")}})]})}),n("div",{class:"wf-info",children:H(d)})]}),n("div",{class:Fe("wf-detail",{open:s}),id:"detail-"+e.spanId,children:k.map(S=>n("div",{class:"wf-detail-row",children:[n("span",{class:"wf-detail-key",children:S.k}),n("span",{class:"wf-detail-val",children:S.v})]},S.k))})]})}function ei({traceId:e,traceSpans:t,sessionNum:o,source:r,sessionPrompt:i,model:s,isFirst:a}){let[l,p]=D(!a),[d,u]=D(!1),c=Math.min(...t.map(x=>Y(x.startTime)).filter(x=>x>0))||0,h=Math.max(...t.map(x=>Y(x.endTime)))-c||1,f=H(h),g=t.filter(x=>x.status?.code===2).length,w=Sr(t),k=o?n(z,{children:[n("strong",{children:o})," ",r&&n("span",{dangerouslySetInnerHTML:{__html:nt(r)}})," "]}):null,C=o?i||"[session in progress]":i,S=(C?.length??0)>120,I=C?` ${S?C.slice(0,120)+"\u2026":C}`:"",_=e.startsWith("codex:")?"Session":"Trace",T=Array.from({length:6},(x,v)=>H(h*v/5));return n("div",{class:"wf-trace-group",children:[n("div",{class:"wf-trace-header",onClick:()=>p(x=>!x),children:[n("span",{children:[n("span",{class:"wf-header-chevron",children:l?"\u25B6":"\u25BC"}),k,I,S&&n("button",{class:"sw-show-full-btn",style:"margin-left:8px",onClick:x=>{x.stopPropagation(),u(v=>!v)},children:d?"Collapse":"Show full prompt"})]}),n("span",{class:"wf-trace-stats",children:[n("span",{class:"wf-trace-id",children:[_," ",e.substring(0,16),"..."]})," \xB7 ",t.length," spans"," \xB7 ",f,s&&n(z,{children:[" \xB7 ",s]}),g>0&&n("span",{class:"err",children:[" \xB7 ",g," errors"]})]})]}),d&&C&&n("div",{style:"padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word",children:C}),n("div",{class:Fe("wf-trace-body",{collapsed:l}),children:[n("div",{class:"wf-time-ruler",children:T.map((x,v)=>n("span",{children:x},v))}),w.map(x=>n(Ns,{span:x.span,minStart:c,traceRange:h,depth:x.depth},x.span.spanId))]})]})}function ti(){let e=Ue.value,t=F.value,o=new Map;e.forEach(x=>{let v=zt(x),y=te(x,"otel.trace_id");v&&y&&o.set(String(y),v)});let r=new Map;t.forEach(x=>{if(!(x.source!=="codex"||!x.traceId)){x.sessionId&&r.set(x.sessionId,x.traceId);for(let v of x.timeline??[])v.spanId&&r.set(v.spanId,x.traceId)}});let i=x=>r.get(x.spanId)||zt(x)||o.get(x.traceId)||x.traceId,s=t.length>0?new Set(t.map(x=>x.traceId).filter(Boolean)):null,a=new Set((ge.value?.sessions??[]).map(x=>x.traceId).filter(Boolean)),l=e.filter(x=>{if(Ps(x))return!1;let v=i(x);return!s||s.has(v)||!a.has(v)}),p={},d=[];l.forEach(x=>{let v=i(x);p[v]||(p[v]=[],d.push(v)),p[v].push(x)});let u=l.length,c=new Set(l.map(x=>i(x))).size,m=l.filter(x=>x.status?.code===2).length,h={},f={},g={},w={};t.forEach(x=>{x.traceId&&(h[x.traceId]=le(x),f[x.traceId]=x.userRequest??"",g[x.traceId]=x.source??"",w[x.traceId]=x.model??"")});let k=[...d].reverse(),C=t.map(x=>x.traceId).filter(x=>!!(x&&p[x])),S=new Set(C),I=[...C.reverse(),...k.filter(x=>h[x]&&!S.has(x))],_=k.filter(x=>!h[x]),T=I.length>0?I:k;return n("div",{id:"traces-content",children:[n("div",{class:"tab-stats",children:[n("div",{children:[n("strong",{class:"tab-stat-val",children:u})," spans"]}),n("div",{children:[n("strong",{class:"tab-stat-val",children:c})," traces"]}),m>0&&n("div",{children:[n("strong",{class:"tab-stat-val err",children:m})," errors"]})]}),n("div",{id:"traces-content-inner",children:l.length===0?n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"}):n(z,{children:n("div",{class:"waterfall",children:[T.map((x,v)=>{let y=f[x]||(()=>{let A=p[x]??[];for(let R of A)if(Je(R.name))return wr(yr(R));return""})();return n(ei,{traceId:x,traceSpans:p[x],sessionNum:h[x],source:g[x],sessionPrompt:y,model:w[x],isFirst:v===0},x)}),_.length>0&&I.length>0&&n(Fs,{bgTraceIds:_,traceMap:p})]})})})]})}function Fs({bgTraceIds:e,traceMap:t}){let[o,r]=D(!0),i=e.reduce((s,a)=>s+(t[a]?.length??0),0);return n("div",{class:"sw-bg-group",style:"margin-top:16px",children:[n("div",{class:"sw-bg-header",onClick:()=>r(s=>!s),children:[n("span",{class:"sw-bg-chevron",children:o?"\u25B6":"\u25BC"}),n("strong",{children:"Background Overhead"}),n("span",{class:"sw-bg-summary",children:[e.length," trace",e.length!==1?"s":""," \xB7 ",i," spans"]})]}),n("div",{class:Fe("sw-bg-body",{collapsed:o}),children:e.map((s,a)=>n(ei,{traceId:s,traceSpans:t[s],isFirst:!1},s))})]})}function _t(e){return e?e.split(`
-`).length:0}function Ds(e){let t=0,o=0;for(let r of e)r.content?t+=_t(r.content):(t+=_t(r.newString),o+=_t(r.oldString));return{added:t,removed:o}}function po({lines:e,type:t}){let o=t==="added"?"rgba(76,175,80,0.12)":"rgba(244,67,54,0.12)",r=t==="added"?"rgba(76,175,80,0.3)":"rgba(244,67,54,0.3)",i=t==="added"?"+ ":"- ";return n("div",{style:"font-family:var(--vscode-editor-font-family,monospace);font-size:11px;line-height:1.5;overflow-x:auto;white-space:pre",children:e.map((s,a)=>n("div",{style:`padding:0 10px;background:${o};border-left:3px solid ${r}`,children:[i,s]},a))})}function Hs({edit:e,ei:t}){return n("div",{children:[n("div",{style:"padding:4px 10px;font-size:10px;color:var(--muted);background:var(--vscode-editorWidget-background,var(--bg));border-top:"+(t>0?"1px solid var(--border)":"none")+";font-weight:600;display:flex;align-items:center;gap:8px",children:[n("span",{children:["Change ",t+1]}),n("span",{style:"text-transform:uppercase;opacity:0.7",children:e.tool})]}),e.content&&n(po,{lines:e.content.split(`
-`),type:"added"}),!e.content&&n(z,{children:[e.oldString&&n(z,{children:[n("div",{style:"padding:4px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;border-bottom:1px solid var(--border)",children:"Removed"}),n(po,{lines:e.oldString.split(`
-`),type:"removed"})]}),e.oldString&&e.newString&&n("div",{style:"padding:2px 10px;color:var(--muted);font-size:10px;background:var(--border);text-align:center;user-select:none",children:"\u2192"}),e.newString&&n(z,{children:[n("div",{style:"padding:4px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;border-bottom:1px solid var(--border)",children:"Added"}),n(po,{lines:e.newString.split(`
-`),type:"added"})]})]})]})}function Bs({fp:e,edits:t,ridx:o}){let[r,i]=D(!1),s=e.split("/"),a=s.pop()??e,l=s.join("/"),p=t.some(f=>f.tool==="create_file"),d=t.length,u=t.some(f=>f.oldString||f.newString||f.content),{added:c,removed:m}=u?Ds(t):{added:0,removed:0};function h(){Me?.postMessage({type:"openFile",filePath:e})}return n(z,{children:[n("div",{class:"files-file-item",onClick:h,style:"display:flex;align-items:center;gap:10px;padding:8px 16px 8px 42px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer",children:[!window.__STANDALONE__&&n("span",{style:"font-size:14px;width:18px;text-align:center;color:"+(p?"var(--vscode-testing-iconPassed,#4c4)":"var(--accent)"),children:p?"\uFF0B":"\u270E"}),n("span",{style:"flex:1;min-width:0;font-family:var(--vscode-editor-font-family,monospace);font-size:12px",children:[n("span",{style:"color:var(--fg);font-weight:500",children:a}),l&&n("span",{class:"muted",children:[" ",l]})]}),n("span",{style:"font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;text-transform:uppercase;"+(p?"background:rgba(76,175,80,0.15);color:var(--vscode-testing-iconPassed,#4c4)":"background:rgba(79,195,247,0.15);color:var(--accent)"),children:p?"Created":"Edited"}),d>1&&n("span",{style:"font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;background:rgba(79,195,247,0.15);color:var(--accent)",children:[d," edits"]}),c>0&&n("span",{style:"font-size:10px;font-weight:600;color:#4caf50",children:["+",c]}),m>0&&n("span",{style:"font-size:10px;font-weight:600;color:#f44336",children:["-",m]})]}),u&&n("div",{style:"border:1px solid var(--border);border-radius:4px;margin:0 16px 12px 42px;background:var(--bg);overflow:hidden",children:[n("div",{class:"files-edit-header",onClick:f=>{f.stopPropagation(),i(g=>!g)},style:"display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;user-select:none;font-size:11px",children:[n("span",{class:"files-edit-chevron",style:"font-size:9px;color:var(--muted);width:12px",children:r?"\u25BC":"\u25B6"}),n("span",{style:"color:var(--muted);font-size:11px",children:[d," change",d!==1?"s":""," \u2014 click to ",r?"collapse":"expand"]})]}),r&&n("div",{style:"border-top:1px solid var(--border)",children:t.map((f,g)=>n(Hs,{edit:f,ei:g},f.editKey))})]})]})}function Us({sess:e,ridx:t,allCount:o,isOpen:r}){let[i,s]=D(r),a=le(e)||o-t,l=e.filesChanged??[],p=e.filesChangedNote??"",d={},u=0;(e.timeline??[]).forEach(h=>{if(!h.editDetails?.length)return;let f=(h.label??"").split(" ")[0];h.editDetails.forEach(g=>{let w=g.filePath;w&&(d[w]||(d[w]=[]),d[w].push({tool:g.toolName||f,oldString:g.oldString,newString:g.newString,content:g.content,editKey:t+"-"+u}),u++)})});let c=l.length,m=c===0&&p?"paths unavailable":c+" file"+(c!==1?"s":"");return n("div",{style:"background:var(--vscode-editorWidget-background,var(--bg));border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden",children:[n("div",{class:"files-session-header",onClick:()=>s(h=>!h),style:"display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none",children:[n("span",{style:"font-size:10px;color:var(--muted);width:14px;text-align:center",children:i?"\u25BC":"\u25B6"}),n("span",{style:"font-weight:700;font-size:12px;color:var(--fg)",children:a}),n("span",{dangerouslySetInnerHTML:{__html:nt(e.source)}}),n("span",{style:"flex:1;min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis",title:e.userRequest??"",children:e.userRequest}),n("span",{style:"font-size:11px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:4px",children:m})]}),i&&n("div",{style:"border-top:1px solid var(--border)",children:l.length===0?n("div",{style:"padding:16px 42px;color:var(--muted);font-style:italic;font-size:12px",children:[p?"Changed files could not be recovered for this session":"No files were modified in this session",p&&n("div",{style:"margin-top:8px;padding:10px 12px;border-radius:6px;border:1px solid rgba(217,119,87,0.35);background:rgba(217,119,87,0.08);color:var(--fg);font-style:normal;line-height:1.45",children:p})]}):l.map(h=>n(Bs,{fp:h,edits:d[h]??[],ridx:t},h))})]})}function ni(){let e=F.value;if(!e.length)return n("div",{id:"files-content",children:n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"})});let t=e.slice().reverse(),o=new Set,r=0,i=0,s=0;return t.forEach(a=>{(a.filesChanged??[]).forEach(l=>o.add(l)),(a.timeline??[]).forEach(l=>{r+=l.editDetails?.length??0;for(let p of l.editDetails??[])p.content?i+=_t(p.content):(i+=_t(p.newString),s+=_t(p.oldString))})}),n("div",{id:"files-content",children:[n("div",{class:"tab-stats",children:[n("div",{children:[n("strong",{class:"tab-stat-val",children:o.size})," files changed"]}),n("div",{children:[n("strong",{class:"tab-stat-val",children:r})," edit operations"]}),i>0&&n("div",{children:[n("strong",{class:"tab-stat-val",style:"color:#4caf50",children:["+",i]})," lines added"]}),s>0&&n("div",{children:[n("strong",{class:"tab-stat-val",style:"color:#f44336",children:["-",s]})," lines removed"]}),n("div",{children:[n("strong",{class:"tab-stat-val",children:t.length})," sessions"]})]}),t.map((a,l)=>n(Us,{sess:a,ridx:l,allCount:e.length,isOpen:l===0},a.traceId+l))]})}var $e="#3794FF",oi="#B8E986",kt="#f44747",uo=130,ri=380,Bt=26,ii=22;function Ws(e,t,o){let r=Ne(e.source);return{type:"llm",spanId:"flow-inferred-turn-"+o,label:r+" tool phase",model:e.model||r,durationMs:0,action:"Inferred turn for tool events emitted before a response",isError:t.some(i=>i.isError),timestamp:t[0]?.timestamp||e.startTime}}function $s(e,t){let o=[],r=[],i=()=>{r.length!==0&&(o.push({entry:Ws(e,r,o.length),tools:r}),r=[])};for(let s of t)s.type==="llm"?(o.length===0?i():(o[o.length-1].tools=r,r=[]),o.push({entry:s,tools:[]})):s.type==="tool"&&r.push(s);return r.length>0&&(o.length>0?o[o.length-1].tools=r:i()),o}function qs(e){return e.spanId.startsWith("flow-inferred-turn-")}function si(){let e=F.value,[t,o]=D(-1),[r,i]=D(!1),s=Pe(i);s.current=i;let a=Pe(null),l=Pe({zoom:1,panX:0,panY:0,dragging:!1,didDrag:!1,lastMX:0,lastMY:0,hoverNodeId:null,clickedNodeId:null,nodes:[],edges:[],playbackTurns:[],playbackIdx:0,playbackPlaying:!1,playbackTimer:null});if(e.length===0)return n("div",{id:"flow-content",children:n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"})});let p=e.map((f,g)=>{let w=le(f)||g+1,k=Ne(f.source),C=f.totalLlmCalls??0,S=f.totalToolCalls??0;return{label:`${w} \xB7 ${k} \xB7 ${C} turns \xB7 ${S} tool calls`,sess:f}}),d=Math.max(0,Math.min(t<0?p.length-1:t,p.length-1));ve(()=>{let f=a.current;if(!f)return;let g=l.current;g.playbackTimer&&(clearInterval(g.playbackTimer),g.playbackTimer=null),g.playbackPlaying=!1,g.playbackIdx=0,g.clickedNodeId=null,s.current(!1);let w=p[d]?.sess,k=(w?.timeline??[]).filter(L=>L.type!=="background"),C=w?$s(w,k):[],S=new Map;C.forEach((L,M)=>{let b=new Set;L.tools.forEach($=>{let B=$.label||"tool";S.has(B)||S.set(B,{count:0,totalMs:0,errors:0,turns:[]});let G=S.get(B);G.count++,G.totalMs+=$.durationMs||0,$.isError&&G.errors++,b.has(B)||(G.turns.push(M),b.add(B))})});let I=C.length,_=I<=1?100:Math.max(65,Math.min(100,Math.floor(480/Math.max(I-1,1)))),T=68,x=70,v=[],y=[],A={};C.forEach((L,M)=>{let b=qs(L.entry),$={id:"llm-"+M,x:uo,y:x+M*_,color:L.entry.isError?kt:$e,type:"llm",label:"T"+(M+1),subLabel:b?L.tools.length+"\xD7":(L.entry.inputTokens??0)>0?Math.round((L.entry.inputTokens??0)/1e3)+"K":"",turnNum:M+1,totalTurns:C.length,inputTokens:L.entry.inputTokens??0,outputTokens:L.entry.outputTokens??0,model:L.entry.model??L.entry.label??"",durationMs:L.entry.durationMs??0,action:L.entry.action??"",note:b?"Tool events arrived before a response event, so Flow anchors them to this inferred turn.":void 0,toolsUsed:[...new Set(L.tools.map(B=>B.label||"tool"))],isError:L.entry.isError};A[$.id]=v.length,v.push($)});for(let L=0;L<C.length-1;L++)y.push({from:A["llm-"+L],to:A["llm-"+(L+1)],count:1,kind:"seq"});let R=Array.from(S.keys()),O=L=>{let M=S.get(L),b=M.turns.reduce(($,B)=>$+B,0)/M.turns.length;return x+b*_},N=[...R].sort((L,M)=>O(L)-O(M)),P=-1/0,q={};for(let L of N){let M=Math.max(O(L),P+T);q[L]=M,P=M}if(N.length>0){let L=x+(I-1)*_/2,M=q[N[0]],b=q[N[N.length-1]],$=(M+b)/2,B=L-$;N.forEach(G=>{q[G]+=B})}N.forEach(L=>{let M=S.get(L),b={id:"tool-"+L,x:ri,y:q[L],color:M.errors>0?kt:oi,type:"tool",label:L.length>14?L.slice(0,13)+"\u2026":L,fullLabel:L,subLabel:M.count+"\xD7",callCount:M.count,totalDurationMs:M.totalMs,avgDurationMs:M.count>0?Math.round(M.totalMs/M.count):0,errorCount:M.errors,usedInTurns:M.turns};A[b.id]=v.length,v.push(b)}),C.forEach((L,M)=>{let b={};L.tools.forEach($=>{let B=$.label||"tool";b[B]=(b[B]||0)+1}),Object.entries(b).forEach(([$,B])=>{let G=A["llm-"+M],K=A["tool-"+$];G!==void 0&&K!==void 0&&y.push({from:G,to:K,count:B,kind:"use"})})}),g.nodes=v,g.edges=y,g.playbackTurns=C.map((L,M)=>A["llm-"+M]).filter(L=>L!==void 0);function Q(L){return L.type==="llm"?Bt:ii}function J(){if(!f||v.length===0)return;let L=1/0,M=1/0,b=-1/0,$=-1/0;v.forEach(Z=>{let ce=Q(Z)+34;Z.x-ce<L&&(L=Z.x-ce),Z.y-ce<M&&(M=Z.y-ce),Z.x+ce>b&&(b=Z.x+ce),Z.y+ce>$&&($=Z.y+ce)});let B=b-L+40,G=$-M+40,K=f.getBoundingClientRect();!K.width||!K.height||(g.zoom=Math.max(.15,Math.min(K.width/B,K.height/G,1.4)),g.panX=K.width/2-(L+b)/2*g.zoom,g.panY=K.height/2-(M+$)/2*g.zoom)}function re(){if(!f)return;let L=window.devicePixelRatio||1,M=f.getBoundingClientRect();if(!M.width||!M.height)return;f.width=M.width*L,f.height=M.height*L;let b=f.getContext("2d");b.setTransform(L,0,0,L,0,0),b.clearRect(0,0,M.width,M.height),b.save(),b.translate(g.panX,g.panY),b.scale(g.zoom,g.zoom);let $=getComputedStyle(document.body),B=$.getPropertyValue("--fg").trim()||"#ccc",G=$.getPropertyValue("--muted").trim()||"#666";if(C.length===0){b.restore(),b.font="13px sans-serif",b.fillStyle=G,b.textAlign="center",b.textBaseline="middle",b.fillText("No timeline data for this session",M.width/2,M.height/2);return}let K=g.clickedNodeId||g.hoverNodeId,Z=new Set,ce=new Set;K&&(Z.add(K),y.forEach((E,be)=>{let U=v[E.from],Le=v[E.to];(U.id===K||Le.id===K)&&(ce.add(be),Z.add(U.id),Z.add(Le.id))}));let Ve=v.filter(E=>E.type==="llm");if(Ve.length>=2){let E=uo-44;b.save(),b.setLineDash([4,5]),b.strokeStyle=$e+"40",b.lineWidth=1.5,b.beginPath(),b.moveTo(E,Ve[0].y),b.lineTo(E,Ve[Ve.length-1].y),b.stroke(),b.setLineDash([]),Ve.forEach(be=>{b.strokeStyle=$e+"38",b.lineWidth=1,b.beginPath(),b.moveTo(E,be.y),b.lineTo(be.x-Bt,be.y),b.stroke()}),b.restore()}y.forEach((E,be)=>{let U=v[E.from],Le=v[E.to],pe=K?ce.has(be):!1,st=K&&!pe;if(E.kind==="seq"){let ze=U.x+8,Oe=U.y+Bt,me=Le.x+8,ye=Le.y-Bt;b.beginPath(),b.moveTo(ze,Oe),b.lineTo(me,ye),b.strokeStyle=st?$e+"18":pe?$e:$e+"50",b.lineWidth=pe?2.5:1.5,b.stroke();let ue=Math.atan2(ye-Oe,me-ze),we=7;b.beginPath(),b.moveTo(me,ye),b.lineTo(me-we*Math.cos(ue-.4),ye-we*Math.sin(ue-.4)),b.lineTo(me-we*Math.cos(ue+.4),ye-we*Math.sin(ue+.4)),b.closePath(),b.fillStyle=st?$e+"18":pe?$e:$e+"60",b.fill()}else{let ze=U.x+Bt,Oe=U.y,me=Le.x-ii,ye=Le.y,ue=ri-uo,we=ze+ue*.45,ee=Oe,de=me-ue*.45,Se=ye,$t=st?.08:pe?1:Math.min(.75,.28+E.count*.1),ne=pe?2.5:Math.min(4,1+E.count*.5),Be=Math.round($t*255).toString(16).padStart(2,"0");b.beginPath(),b.moveTo(ze,Oe),b.bezierCurveTo(we,ee,de,Se,me,ye),b.strokeStyle=U.color+Be,b.lineWidth=ne,b.stroke();let Ee=Math.atan2(ye-Se,me-de),qt=7;if(b.beginPath(),b.moveTo(me,ye),b.lineTo(me-qt*Math.cos(Ee-.4),ye-qt*Math.sin(Ee-.4)),b.lineTo(me-qt*Math.cos(Ee+.4),ye-qt*Math.sin(Ee+.4)),b.closePath(),b.fillStyle=U.color+Be,b.fill(),E.count>1&&!st){let _i=(ze+me)/2,ki=(Oe+ye)/2-9;b.font="bold 9px sans-serif",b.fillStyle=U.color+"cc",b.textAlign="center",b.textBaseline="middle",b.fillText(E.count+"\xD7",_i,ki)}}}),v.forEach(E=>{let be=Q(E),U=E.id===K,Le=K?Z.has(E.id):!1,pe=K&&!Le;U&&(b.save(),b.shadowColor=E.color,b.shadowBlur=20,b.beginPath(),b.arc(E.x,E.y,be+4,0,Math.PI*2),b.strokeStyle=E.color,b.lineWidth=2,b.stroke(),b.restore()),b.beginPath(),b.arc(E.x,E.y,be,0,Math.PI*2),b.fillStyle=U?E.color+"aa":pe?E.color+"10":E.color+"28",b.fill(),b.strokeStyle=pe?E.color+"30":E.color,b.lineWidth=U?3:Le?2.5:2,b.stroke(),b.font=(U?"bold ":"")+"10px sans-serif",b.textAlign="center",b.textBaseline="middle",b.fillStyle=pe?G+"40":B,b.fillText(E.label,E.x,E.y-(E.subLabel?4:0)),E.subLabel&&(b.font="8px sans-serif",b.fillStyle=pe?G+"30":E.type==="llm"?"#7bb3ff":E.color===kt?"#f99":"#8ec96b",b.fillText(E.subLabel,E.x,E.y+7)),b.font="9px sans-serif",b.fillStyle=pe?G+"30":G,b.fillText(E.type==="llm"?"Turn "+E.turnNum:"",E.x,E.y+be+11)});let bo=g.clickedNodeId||g.hoverNodeId;if(bo){let E=v.find(be=>be.id===bo);if(E){let be=(ne,Be)=>ne&&ne.length>Be?ne.slice(0,Be)+"\u2026":ne||"",U=[];E.type==="llm"?(U.push({value:"Turn "+E.turnNum+" of "+E.totalTurns,bold:!0,color:E.color}),E.model&&U.push({label:"Model",value:be(E.model,42)}),E.note&&U.push({label:"Note",value:E.note}),((E.inputTokens??0)>0||(E.outputTokens??0)>0)&&U.push({label:"Tokens",value:(E.inputTokens??0).toLocaleString()+" in \u2192 "+(E.outputTokens??0).toLocaleString()+" out"}),E.durationMs&&U.push({label:"Duration",value:H(E.durationMs)}),E.action&&U.push({label:"Outcome",value:E.action}),E.toolsUsed?.length&&U.push({label:"Tools used",value:E.toolsUsed.slice(0,5).join(", ")+(E.toolsUsed.length>5?" +"+(E.toolsUsed.length-5)+" more":"")}),E.isError&&U.push({label:"Error",value:"This LLM call failed",color:kt})):(U.push({value:E.fullLabel||E.label,bold:!0,color:E.color}),U.push({label:"Total calls",value:String(E.callCount)}),(E.usedInTurns?.length??0)>0&&U.push({label:"Used in turns",value:"T"+(E.usedInTurns??[]).map(ne=>ne+1).join(", T")}),E.avgDurationMs&&U.push({label:"Avg duration",value:H(E.avgDurationMs)}),E.totalDurationMs&&U.push({label:"Total time",value:H(E.totalDurationMs)}),E.errorCount&&U.push({label:"Errors",value:E.errorCount+" failed call(s)",color:kt})),b.font="11px sans-serif";let Le=19,pe=12,st=10,ze=0,Oe=0;U.forEach(ne=>{if(ne.label){b.font="bold 10px sans-serif";let Ee=b.measureText(ne.label+":").width;Ee>ze&&(ze=Ee)}b.font=ne.bold?"bold 12px sans-serif":"11px sans-serif";let Be=b.measureText(ne.value).width;Be>Oe&&(Oe=Be)});let me=10,ye=Math.max(ze+me+Oe,Oe),ue=Math.min(ye+pe*2,390),we=U.length*Le+st*2+4,ee=E.x+Q(E)+14,de=E.y-we/2;E.x+Q(E)+14+ue>M.width/g.zoom-g.panX/g.zoom-20&&(ee=E.x-Q(E)-14-ue);let Se=7;b.fillStyle="rgba(22,22,26,0.97)",b.strokeStyle=E.color,b.lineWidth=1.5,b.beginPath(),b.moveTo(ee+Se,de),b.lineTo(ee+ue-Se,de),b.quadraticCurveTo(ee+ue,de,ee+ue,de+Se),b.lineTo(ee+ue,de+we-Se),b.quadraticCurveTo(ee+ue,de+we,ee+ue-Se,de+we),b.lineTo(ee+Se,de+we),b.quadraticCurveTo(ee,de+we,ee,de+we-Se),b.lineTo(ee,de+Se),b.quadraticCurveTo(ee,de,ee+Se,de),b.closePath(),b.fill(),b.stroke(),b.fillStyle=E.color+"cc",b.fillRect(ee,de+Se,3,we-Se*2),b.textAlign="left",b.textBaseline="top";let $t=!1;U.forEach((ne,Be)=>{let Ee=de+st+Be*Le+2;ne.label?($t||($t=!0,b.strokeStyle="rgba(255,255,255,0.08)",b.lineWidth=.5,b.beginPath(),b.moveTo(ee+10,Ee-4),b.lineTo(ee+ue-10,Ee-4),b.stroke()),b.font="bold 10px sans-serif",b.fillStyle="#777",b.fillText(ne.label+":",ee+pe+4,Ee+1),b.font="11px sans-serif",b.fillStyle=ne.color||"#ddd",b.fillText(ne.value,ee+pe+4+ze+me,Ee)):(b.font=ne.bold?"bold 12px sans-serif":"11px sans-serif",b.fillStyle=ne.color||"#fff",b.fillText(ne.value,ee+pe+4,Ee))})}}b.restore()}requestAnimationFrame(()=>{J(),re()});let Re=L=>{L.preventDefault();let M=L.deltaY<0?1.1:.9,b=(L.offsetX-g.panX)/g.zoom,$=(L.offsetY-g.panY)/g.zoom;g.zoom=Math.max(.1,Math.min(5,g.zoom*M)),g.panX=L.offsetX-b*g.zoom,g.panY=L.offsetY-$*g.zoom,re()},ht=L=>{g.dragging=!0,g.didDrag=!1,g.lastMX=L.offsetX,g.lastMY=L.offsetY,f.style.cursor="grabbing"},Ce=L=>{if(g.dragging){g.didDrag=!0,g.panX+=L.offsetX-g.lastMX,g.panY+=L.offsetY-g.lastMY,g.lastMX=L.offsetX,g.lastMY=L.offsetY,re();return}if(!g.playbackPlaying){let M=f.getBoundingClientRect(),b=(L.clientX-M.left-g.panX)/g.zoom,$=(L.clientY-M.top-g.panY)/g.zoom,B=null;for(let G of v){let K=Q(G),Z=b-G.x,ce=$-G.y;if(Z*Z+ce*ce<=K*K){B=G.id;break}}B!==g.hoverNodeId&&(g.hoverNodeId=B,f.style.cursor=B?"pointer":"grab",re())}},et=()=>{g.dragging=!1,f.style.cursor="grab"},qe=()=>{g.dragging=!1,g.hoverNodeId=null,f.style.cursor="grab",re()},Ae=L=>{if(g.didDrag)return;let M=f.getBoundingClientRect(),b=(L.clientX-M.left-g.panX)/g.zoom,$=(L.clientY-M.top-g.panY)/g.zoom;for(let B of v){let G=Q(B),K=b-B.x,Z=$-B.y;if(K*K+Z*Z<=G*G){g.clickedNodeId=g.clickedNodeId===B.id?null:B.id,re();return}}g.clickedNodeId=null,re()};return f.addEventListener("wheel",Re,{passive:!1}),f.addEventListener("mousedown",ht),f.addEventListener("mousemove",Ce),f.addEventListener("mouseup",et),f.addEventListener("mouseleave",qe),f.addEventListener("click",Ae),f.__flowDraw=re,f.__flowCenter=J,()=>{g.playbackTimer&&clearInterval(g.playbackTimer),f.removeEventListener("wheel",Re),f.removeEventListener("mousedown",ht),f.removeEventListener("mousemove",Ce),f.removeEventListener("mouseup",et),f.removeEventListener("mouseleave",qe),f.removeEventListener("click",Ae)}},[e,d]);function u(){let f=a.current;f&&(l.current.zoom=Math.min(5,l.current.zoom*1.3),f.__flowDraw?.())}function c(){let f=a.current;f&&(l.current.zoom=Math.max(.1,l.current.zoom/1.3),f.__flowDraw?.())}function m(){let f=a.current;f&&(f.__flowCenter?.(),f.__flowDraw?.())}function h(){let f=a.current;if(!f)return;let g=l.current,w=f.__flowDraw;if(!w)return;let k=f.closest("#flow-content")?.querySelector("#flow-speed"),C=f.closest("#flow-content")?.querySelector("#flow-progress");if(g.playbackPlaying){g.playbackTimer&&clearInterval(g.playbackTimer),g.playbackTimer=null,g.playbackPlaying=!1,g.clickedNodeId=null,i(!1),C&&(C.textContent=""),w();return}if(g.playbackTurns.length===0)return;g.playbackPlaying=!0,i(!0);let S=parseInt(k?.value??"800")||800;g.playbackIdx=0,g.clickedNodeId=g.nodes[g.playbackTurns[0]]?.id??null,C&&(C.textContent="1 / "+g.playbackTurns.length),w(),g.playbackTimer=setInterval(()=>{if(g.playbackIdx>=g.playbackTurns.length-1){clearInterval(g.playbackTimer),g.playbackTimer=null,g.playbackPlaying=!1,g.clickedNodeId=null,s.current(!1),C&&(C.textContent=""),w();return}g.playbackIdx++,g.clickedNodeId=g.nodes[g.playbackTurns[g.playbackIdx]]?.id??null,C&&(C.textContent=g.playbackIdx+1+" / "+g.playbackTurns.length),w()},S)}return n("div",{id:"flow-content",children:[n("div",{class:"flow-controls",style:"margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap",children:[n("select",{id:"flow-session-select",class:"toolbar-select",value:d,onChange:f=>o(parseInt(f.target.value)||0),children:p.map((f,g)=>n("option",{value:g,children:f.label},g))}),n("button",{class:"flow-btn",onClick:u,children:"+"}),n("button",{class:"flow-btn",onClick:c,children:"\u2212"}),n("button",{class:"flow-btn",onClick:m,children:"Reset"}),n("span",{style:"width:1px;height:16px;background:var(--border);margin:0 4px"}),n("button",{class:"flow-btn",title:"Animate turn sequence",onClick:h,children:r?"\u23F8":"\u25B6"}),n("span",{class:"toolbar-control-label",children:"Speed"}),n("select",{id:"flow-speed",class:"toolbar-select",children:[n("option",{value:"2000",children:"Slow"}),n("option",{value:"800",selected:!0,children:"Normal"}),n("option",{value:"300",children:"Fast"})]})]}),n("div",{style:"display:flex;gap:12px;margin-bottom:8px;font-size:10px;color:var(--muted);flex-wrap:wrap;align-items:center",children:[[{color:$e,label:"LLM turn"},{color:oi,label:"Tool"},{color:kt,label:"Error"}].map(({color:f,label:g})=>n("span",{style:"display:flex;align-items:center;gap:4px",children:[n("span",{style:"display:inline-block;width:9px;height:9px;border-radius:50%;background:"+f+"30;border:1.5px solid "+f}),g]},g)),n("span",{style:"color:var(--muted)",children:"Edge thickness = call freq"})]}),n("canvas",{ref:a,id:"flow-canvas",style:"width:100%;height:520px;display:block;border:1px solid var(--border);border-radius:4px;cursor:grab"})]})}function fo(e){let t=0,o=0,r=0,i=0,s=0,a=0,l=0,p=0,d={};return e.forEach(u=>{t+=u.inputTokens??0,o+=u.outputTokens??0,r+=(u.cacheReadTokens??0)+(u.cacheCreateTokens??0),i+=u.totalLlmCalls??0,s+=u.totalToolCalls??0,p+=u.durationMs??0,Object.keys(u.toolCounts??{}).forEach(c=>{d[c]=(d[c]??0)+u.toolCounts[c]}),(u.timeline??[]).forEach(c=>{c.type==="llm"&&c.ttft&&(a+=c.ttft,l++)})}),{sessions:e.length,totalInput:t,totalOutput:o,totalCache:r,totalLlm:i,totalTools:s,avgTtft:l>0?Math.round(a/l):0,avgDuration:e.length>0?Math.round(p/e.length):0,cacheHitRate:t>0?r/t:0,toolCounts:d}}function Ze({k:e,v:t,accent:o}){return n("div",{style:"padding:5px 8px;background:var(--panel-bg);border-radius:4px",children:[n("div",{style:"font-size:18px;font-weight:bold;color:"+o,children:t}),n("div",{style:"font-size:10px;color:var(--muted)",children:e})]})}function ho({label:e,accent:t,stats:o}){let r=Object.keys(o.toolCounts).sort((i,s)=>o.toolCounts[s]-o.toolCounts[i]).slice(0,8);return n("div",{style:"border:1px solid var(--border);border-radius:6px;padding:12px",children:[n("div",{style:"display:flex;align-items:center;gap:8px;margin-bottom:10px",children:[n("span",{style:"width:10px;height:10px;border-radius:50%;background:"+t+";display:inline-block"}),n("strong",{style:"font-size:13px",children:e})]}),o.sessions===0?n("div",{class:"empty-state",style:"font-size:12px;padding:12px 0",children:["No agent sessions recorded \u2014 start a ",e," session"]}):n(z,{children:[n("div",{style:"display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px",children:[n(Ze,{k:"Sessions",v:o.sessions,accent:t}),n(Ze,{k:"LLM Calls",v:o.totalLlm,accent:t}),n(Ze,{k:"Input Tokens",v:_e(o.totalInput),accent:t}),n(Ze,{k:"Output Tokens",v:_e(o.totalOutput),accent:t}),o.totalCache>0&&n(Ze,{k:"Cache Tokens",v:_e(o.totalCache),accent:t}),o.totalCache>0&&n(Ze,{k:"Cache Hit Rate",v:(o.cacheHitRate*100).toFixed(0)+"%",accent:t}),o.avgTtft>0&&n(Ze,{k:"Avg TTFT",v:H(o.avgTtft),accent:t}),n(Ze,{k:"Avg Duration",v:H(o.avgDuration),accent:t}),n(Ze,{k:"Total Tools",v:o.totalTools,accent:t})]}),r.length>0&&n(z,{children:[n("div",{style:"font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px;text-transform:uppercase",children:"Top Tools"}),n("div",{style:"display:flex;flex-wrap:wrap;gap:4px",children:r.map(i=>n("span",{style:"padding:2px 7px;background:var(--panel-bg);border-radius:3px;font-size:11px",children:[i," ",n("span",{style:"color:"+t,children:o.toolCounts[i]})]},i))})]})]})]})}function ai(){let e=F.value;if(!e.length)return n("div",{id:"agents-content",children:n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"})});let t=fo(e.filter(i=>i.source==="copilot")),o=fo(e.filter(i=>i.source==="claude_code")),r=fo(e.filter(i=>i.source==="codex"));return n("div",{id:"agents-content",children:n("div",{style:"display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px",children:[n(ho,{label:"GitHub Copilot",accent:"#00EAFF",stats:t}),n(ho,{label:"Claude",accent:"#FFB085",stats:o}),n(ho,{label:"OpenAI Codex",accent:"#F0FF42",stats:r})]})})}function Vs(e){let t=0;return(e?.attributes??[]).forEach(o=>{/input.?tokens|prompt.?tokens/i.test(o.key)&&(t=parseInt(String(o.value.intValue??o.value.stringValue??o.value.doubleValue))||0)}),t}function js(e){let t=0;return(e?.attributes??[]).forEach(o=>{/output.?tokens|completion.?tokens/i.test(o.key)&&(t=parseInt(String(o.value.intValue??o.value.stringValue??o.value.doubleValue))||0)}),t}function li(){let e=We.value,t=F.value,o={};t.forEach(v=>{v.traceId&&v.source&&(o[v.traceId]=v.source)});let r={},i={},s={},a={},l={};e.forEach(v=>{if(v.name?.includes("tool")){let y=v.name;r[y]=(r[y]??0)+1,i[y]||(i[y]={input:0,output:0}),i[y].input+=Vs(v),i[y].output+=js(v),s[y]||(s[y]=[]);let A=Y(v.endTime)-Y(v.startTime);A>0&&s[y].push(A),v.status?.code===2&&(a[y]=(a[y]??0)+1);let R=v.traceId&&o[v.traceId]||dt(v)||null;R&&(l[y]||(l[y]={}),l[y][R]=!0)}});let p=Object.entries(r).sort((v,y)=>y[1]-v[1]);if(p.length===0)return n("div",{id:"tools-content",children:n("div",{class:"empty-state",children:"No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session"})});let d=p.reduce((v,y)=>v+y[1],0),u=p.reduce((v,y)=>v+(a[y[0]]??0),0),c=p.filter(v=>(a[v[0]]??0)>0),m=p[0],h=p.slice().sort((v,y)=>{let A=i[v[0]]?i[v[0]].input+i[v[0]].output:0;return(i[y[0]]?i[y[0]].input+i[y[0]].output:0)-A})[0],f=h&&i[h[0]]?i[h[0]].input+i[h[0]].output:0,g=80,w=100,k=100,C=30,I=-Math.PI/2;function _(v,y){let A=w+g*Math.cos(v),R=k+g*Math.sin(v),O=w+g*Math.cos(y),N=k+g*Math.sin(y),P=y-v>Math.PI?1:0;return`M ${A} ${R} A ${g} ${g} 0 ${P} 1 ${O} ${N}`}let T=p.map((v,y)=>{let A=v[1]/d,R=A*2*Math.PI,O=wt[y%wt.length],N=I;return I+=R,{name:v[0],count:v[1],pct:A,color:O,startA:N,endA:I}}),x=0;return n("div",{id:"tools-content",children:[n("h3",{style:"margin:0 0 16px;font-size:13px;color:var(--muted)",children:"TOOL CALL DISTRIBUTION"}),n("div",{class:"donut-container",children:[n("svg",{width:"200",height:"200",viewBox:"0 0 200 200",children:[T.map(v=>v.pct>=1?n("circle",{cx:w,cy:k,r:g,fill:"none",stroke:v.color,"stroke-width":C},v.name):n("path",{d:_(v.startA,v.endA),fill:"none",stroke:v.color,"stroke-width":C,"stroke-linecap":"butt"},v.name)),n("text",{x:w,y:k,"text-anchor":"middle",dy:"4","font-size":"18","font-weight":"bold",fill:"var(--fg)",children:d}),n("text",{x:w,y:k+16,"text-anchor":"middle","font-size":"10",fill:"var(--muted)",opacity:"0.7",children:"total"})]}),n("div",{class:"donut-legend",children:T.map(v=>n("div",{class:"donut-legend-item",children:[n("div",{class:"donut-legend-color",style:"background:"+v.color}),n("span",{children:[v.name," (",v.count,", ",(v.pct*100).toFixed(1),"%)"]})]},v.name))})]}),n("h3",{style:"margin:24px 0 12px;font-size:13px;color:var(--muted)",children:"TOOL TOKEN USAGE & PERFORMANCE"}),n("table",{class:"tool-insights-table",children:[n("thead",{children:n("tr",{children:[n("th",{children:"Tool"}),n("th",{children:"Calls"}),n("th",{children:"Errors"}),n("th",{children:"Avg Duration"})]})}),n("tbody",{children:p.map(([v,y])=>{let A=s[v]??[],R=a[v]??0;x+=R;let O=A.length>0?A.reduce((P,q)=>P+q,0)/A.length:0,N=l[v]?Object.keys(l[v]):[];return n("tr",{children:[n("td",{children:[N.map(P=>n("span",{style:"display:inline-block;width:8px;height:8px;border-radius:50%;background:"+ke(P)+";vertical-align:middle;margin-right:4px",title:Ne(P)},P)),v]}),n("td",{class:"right",children:y}),n("td",{style:"text-align:right"+(R>0?";color:var(--error)":""),children:R}),n("td",{class:"right",children:O>0?H(O):"\u2014"})]},v)})}),n("tfoot",{children:n("tr",{children:[n("td",{children:n("strong",{children:"Total"})}),n("td",{class:"right",children:n("strong",{children:d})}),n("td",{style:"text-align:right"+(x>0?";color:var(--error)":""),children:n("strong",{children:x})}),n("td",{})]})})]})]})}function Gs({span:e,source:t}){let[o,r]=D(!1),i=Y(e.startTime),s=Y(e.endTime),a=s-i,l=fn(e),p=e.status?.message??"",d=t?ke(t):null,u=[{k:"Span Name",v:e.name??"\u2014"},{k:"Span ID",v:e.spanId??"\u2014"},{k:"Trace ID",v:e.traceId??"\u2014"},...e.parentSpanId?[{k:"Parent Span ID",v:e.parentSpanId}]:[],{k:"Start Time",v:i>0?new Date(i).toISOString():"\u2014"},{k:"End Time",v:s>0?new Date(s).toISOString():"\u2014"},{k:"Duration",v:a>0?H(a):"\u2014"},...(e.attributes??[]).map(c=>{let m=c.value,h=m.stringValue??m.intValue??m.doubleValue??m.boolValue;return{k:c.key,v:String(h??JSON.stringify(m))}})];return n("div",{class:Fe("error-item",{open:o}),children:[n("div",{class:"error-item-header",onClick:()=>r(c=>!c),"data-error-id":e.spanId,children:[n("span",{class:"error-chevron",children:o?"\u25BC":"\u25B6"}),n("span",{class:"wf-type-badge",style:"background:"+l.color+";color:#000",children:l.label}),n("span",{class:"error-name",children:[d&&n("span",{style:"display:inline-block;width:8px;height:8px;border-radius:50%;background:"+d+";vertical-align:middle;margin-right:4px",title:t?Ne(t):""}),e.name]}),n("span",{class:"error-dur",children:H(a)}),i>0&&n("span",{class:"error-time",children:new Date(i).toLocaleTimeString()})]}),n("div",{class:Fe("error-detail",{open:o}),children:[p&&n("div",{class:"error-message",children:p}),u.map(c=>n("div",{class:"wf-detail-row",children:[n("span",{class:"wf-detail-key",children:c.k}),n("span",{class:"wf-detail-val",children:c.v})]},c.k))]})]})}function ci(){let e=We.value,t=F.value,o={};t.forEach(i=>{i.traceId&&i.source&&(o[i.traceId]=i.source)});let r=e.filter(i=>i.status?.code===2).sort((i,s)=>Y(s.startTime)-Y(i.startTime));return r.length===0?n("div",{id:"errors-content",children:n("div",{class:"empty-state",children:"No errors recorded"})}):n("div",{id:"errors-content",children:n("div",{class:"error-list",children:r.map(i=>{let s=i.traceId&&o[i.traceId]||dt(i)||null;return n(Gs,{span:i,source:s},i.spanId)})})})}function di(e){Me?Me.postMessage({type:e}):window.dispatchEvent(new MessageEvent("message",{data:{type:e}}))}function pi(){let[e,t]=D(!1),[o,r]=D(!1),i=!!window.__STANDALONE__,s=We.value.length,a=F.value.length,l=()=>{di("exportSessionData"),t(!0),setTimeout(()=>t(!1),3e3)},p=()=>{di("exportSessionDataRedacted"),r(!0),setTimeout(()=>r(!1),3e3)},d=s===0;return n("div",{id:"export-content",children:[n("div",{class:"export-meta",children:[a," session",a!==1?"s":""," \xB7 ",s," span",s!==1?"s":"",i&&n("span",{class:"export-meta-mode",children:" \xB7 browser download"}),!i&&n("span",{class:"export-meta-mode",children:" \xB7 written to workspace root"})]}),n("div",{class:"export-cards",children:[n("div",{class:"export-card",children:[n("div",{class:"export-card-header",children:[n("span",{class:"export-card-title",children:"Export OTEL Data"}),n("span",{class:"export-card-badge export-badge-raw",children:"Raw"})]}),n("p",{class:"export-card-desc",children:"All span attributes exported as-is \u2014 includes prompt text, tool inputs, tool outputs, and any other captured telemetry."}),n("ul",{class:"export-card-includes",children:[n("li",{children:"Prompt text and LLM responses"}),n("li",{children:"Tool call inputs and outputs"}),n("li",{children:"Token counts, timing, model names"}),n("li",{children:"File paths and diffs"})]}),n("div",{class:"export-card-warning",children:"Keep private \u2014 may contain sensitive content."}),n("button",{class:"export-btn"+(e?" export-btn-done":""),onClick:l,disabled:d,children:e?"\u2713 Exported":"Export OTEL Data"})]}),n("div",{class:"export-card export-card-redacted",children:[n("div",{class:"export-card-header",children:[n("span",{class:"export-card-title",children:"Export Redacted"}),n("span",{class:"export-card-badge export-badge-redacted",children:"Safer to share"})]}),n("p",{class:"export-card-desc",children:["Same export with all sensitive values replaced by ",n("code",{children:"[redacted]"}),"before the file is written. Safe to attach to bug reports or share with teammates."]}),n("ul",{class:"export-card-includes",children:[n("li",{children:[n("span",{class:"export-redacted-label",children:"[redacted]"})," Prompt text and LLM responses"]}),n("li",{children:[n("span",{class:"export-redacted-label",children:"[redacted]"})," Tool call inputs and outputs"]}),n("li",{children:"\u2713 Token counts, timing, model names"}),n("li",{children:"\u2713 Span structure and trace IDs"}),n("li",{children:[n("span",{class:"export-redacted-label",children:"[redacted]"})," user.id, user.email, org.*"]})]}),n("div",{class:"export-card-safe",children:"Safer to share \u2014 review before sending, as file paths and custom attributes are not redacted."}),n("button",{class:"export-btn export-btn-secondary"+(o?" export-btn-done":""),onClick:p,disabled:d,children:o?"\u2713 Exported":"Export Redacted"})]})]}),n("div",{class:"export-replay-box",children:[n("div",{class:"export-replay-title",children:"Replay an export in the dashboard"}),n("p",{class:"export-replay-desc",children:["Replay any exported file to re-examine a past session without running an agent. Works with both the VS Code extension and the standalone server \u2014 whichever is on port ",n("code",{children:"4318"}),"."]}),n("pre",{class:"export-replay-cmd",children:"pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json"}),n("p",{class:"export-replay-note",children:["Each replay assigns fresh trace IDs so the session appears as a new entry. Pass ",n("code",{children:"--speed 4"})," to pace the replay instead of sending all spans at once."]})]})]})}var Ks=[["Efficiency","The default tab. Per-session metrics (turns, cache hit rate, error rate), a heat-scored session breakdown table, and a context growth chart showing input token accumulation across LLM calls within each session."],["Recommendations","Actionable insights for improving prompt efficiency, plus loop and malfunction detection. Two signal categories: efficiency insights (token waste, cache, tool failures) and loop signals (tool deadlock, state spirals, error recurrence, runaway steps, context accumulation)."],["Alerts","Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts."],["Automation","Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay."],["Summaries","A human-readable session waterfall with LLM decisions, tool arguments and results, token usage per step, and background overhead breakdown."],["Files","Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed."],["Agents","Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],["Traces","Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."],["Tokens","Token consumption aggregated by span name and per session, sorted from highest to lowest."],["Tools","Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],["Timeline","All spans in chronological order as a vertical event list. Click any item to expand its attributes as formatted JSON."],["Latency","Span durations as a color-coded grid, helping identify which operations are consistently slow."],["Errors","All spans that completed with an error status. Click any item to expand its full details and attributes."],["Flow","LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency. Supports zoom, pan, and playback animation."],["Help","This tab \u2014 an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Recommendations and malfunction detection."]],Ys=[["Agent Loop / Malfunction","A behavioral pattern in which an AI agent is stuck, oscillating, or spiraling into unproductive work. AgentLens detects five patterns: Tool Call Deadlock, State Corruption Spiral, Hallucination Amplification Loop, Ambiguous Success / Escalating Scope, and Infinite Loop \u2014 Context Accumulation."],["Agent","The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that processes your prompts, reasons about tasks, and invokes tools to accomplish work."],["Avg Input/Call","Average number of input tokens sent to the language model per LLM call. Lower means leaner prompts. Under 10K is lean; 10-30K is normal; 30K+ suggests large instruction files, verbose tool definitions, or accumulated context bloat."],["Avg Turns/Session","Average number of LLM round-trips per session. Lower is more efficient. 1-3 turns is typical for simple tasks; 5+ may indicate the agent is struggling or the prompt needs more specifics."],["Background Span","A span that runs outside the main request/response cycle \u2014 e.g., telemetry uploads, extension lifecycle events, or periodic health checks."],["Cache Create Tokens","Tokens written into the prompt cache on the server during this request. These tokens become available for cache hits on subsequent requests."],["Cache Hit Rate","The percentage of input tokens served from a server-side prompt cache instead of being reprocessed. Higher rates reduce latency and cost."],["Cache Read Tokens","Input tokens served from the server-side prompt cache, avoiding reprocessing. Shown in efficiency metrics."],["Context Bloat","An efficiency insight triggered when input tokens grow significantly across turns within a session."],["Files Changed","Unique files that were created or modified by the agent during the current data collection period."],["Input Tokens","The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt."],["Loop Signal","A behavioral signal in the Recommendations tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a \u21BA icon."],["LLM","Large Language Model \u2014 the AI model (e.g., GPT-4, Claude) that the agent calls to reason, generate text, or decide which tools to use."],["LLM Call","A single request-response cycle to the language model. One session typically includes multiple LLM calls as the agent iterates."],["OTLP","OpenTelemetry Protocol \u2014 the standard format used to collect and transmit telemetry from AI agents to this extension. AgentLens accepts trace spans and log-derived events."],["Outcome",'How a session concluded: "text" means the agent responded with a text answer; "tool" means the last action was a tool call.'],["Output Tokens","The number of tokens generated by the language model in its response, including reasoning, tool call instructions, and final answers."],["Output Ratio","Percentage of total tokens that are output (generated by the model). In cached agentic coding sessions this can be naturally tiny, so AgentLens no longer uses it as a standalone alert."],["Prompt","The text you type into the AI chat to request work. Each prompt initiates a new session."],["Request","The user-visible message sent to the agent in a single prompt. In OTEL terms, the request anchor differs by agent: Copilot uses invoke_agent, Claude uses claude_code.interaction, and Codex is normalized from prompt log events."],["Retain Spans","A waterfall checkbox option. When checked, spans from previous prompts are kept visible alongside new ones."],["Session","A single prompt-to-response cycle. Starts when you send a prompt and ends when the agent delivers its final response. AgentLens normalizes different Copilot, Claude, and Codex OTEL shapes into this shared model."],["Span","A single timed operation recorded by OpenTelemetry. AgentLens displays true trace spans and normalized log events with a span-like name, duration, and attributes."],["Span ID","A unique identifier for a single span within a trace. Used to establish parent-child relationships between operations."],["Sparkline","A small inline chart shown below summary cards, depicting the trend of a metric over recent time buckets."],["Tokens","The fundamental unit language models use to process text. Roughly 1 token \u2248 4 characters or \xBE of a word."],["Tool Call","A single invocation of a tool by the agent \u2014 e.g., reading a file, running a search, or executing a terminal command."],["Tool Definition Overhead","An efficiency insight triggered when a large fraction of input tokens is consumed by tool definition schemas rather than actual content."],["Trace","A group of related spans sharing a Trace ID. Copilot and Claude usually map a trace to a session; Codex log events can require AgentLens to group records by conversation, session, thread, or turn attributes."],["Trace ID","A unique identifier linking all spans belonging to the same session/request."],["Turn","One LLM call within a session. A multi-turn session involves the agent calling the LLM, executing tools, then calling the LLM again."],["TTFT","Time to First Token \u2014 the latency between sending a prompt and receiving the first token of the response."],["Waterfall","A visualization where spans are displayed as horizontal bars on a time axis, with nesting depth shown by indentation."]],it={overview:{href:"#help-overview",heading:"Overview"},config:{href:"#help-config",heading:"Setup"},otel:{href:"#help-otel",heading:"OTEL Data"},insights:{href:"#help-insights",heading:"Insights"},loops:{href:"#help-loops",heading:"Loops"},views:{href:"#help-views",heading:"Views"},glossary:{href:"#help-glossary",heading:"Glossary"}},Xs=Object.values(it),Js=[{agent:"Copilot",format:"OpenTelemetry trace spans with a clean single-trace hierarchy. Each conversation is one trace; LLM calls and tool calls are child spans nested under a session root. No extra configuration needed.",coverage:"Prompt text, token counts (input, output), model name, TTFT, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.",gaps:"Cache token data (read/create) is not part of Copilot's telemetry. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available."},{agent:"Claude Code",format:"OpenTelemetry trace spans. The session root span closes when the interaction ends, with LLM calls and tool calls as children. Optional supplemental log records are emitted when enhanced telemetry env vars are set.",coverage:"With the recommended configuration (all three OTEL_LOG_* vars set): prompt text, token counts, model, tool names, tool arguments, file paths, and full file diff content are all available.",gaps:"The three OTEL_LOG_* env vars are not enabled by default \u2014 without them, tool arguments are absent, prompt text is omitted, and file diff content is unavailable. Cache token data is only present when using a model that supports prompt caching."},{agent:"Codex CLI",format:"Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to config also emits timing spans to /v1/traces.",coverage:"With the recommended configuration (log_user_prompt = true and both exporters set): prompt text, token counts, model name, TTFT, tool names, tool arguments, tool results, and span timing are all present.",gaps:"Trace and Timeline tabs have less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without trace_exporter, span waterfall data is limited."}],j="font-size:11px;background:var(--panel-bg);padding:1px 4px;border-radius:3px",kn="background:var(--panel-bg);border:1px solid var(--border);border-radius:5px;padding:10px 14px;font-size:11.5px;line-height:1.6;overflow-x:auto;white-space:pre",St="font-size:13px;font-weight:600;margin:0 0 6px;color:var(--fg,inherit)",Tt="font-size:12px;color:var(--muted);margin:0 0 8px";function Qe({id:e,title:t,why:o,steps:r,impact:i}){return n("div",{class:"glossary-item",id:e,style:"scroll-margin-top:12px;flex-direction:column;gap:0",children:[n("dt",{class:"glossary-term",style:"margin-bottom:6px",children:t}),n("dd",{class:"glossary-def",style:"display:block",children:[n("p",{style:"margin:0 0 8px",children:[n("strong",{style:"color:var(--fg)",children:"Why it happens: "}),n("span",{dangerouslySetInnerHTML:{__html:o}})]}),n("p",{style:"margin:0 0 4px",children:n("strong",{style:"color:var(--fg)",children:"How to fix:"})}),n("ol",{style:"margin:0 0 8px;padding-left:20px;font-size:12px;line-height:1.7",dangerouslySetInnerHTML:{__html:r}}),n("p",{style:"margin:0;font-size:11px;color:var(--muted)",children:[n("strong",{style:"color:var(--fg);font-size:11px",children:"Expected impact: "}),n("span",{dangerouslySetInnerHTML:{__html:i}})]})]})]})}function Ut({id:e,title:t,why:o,example:r,steps:i,impact:s}){return n("div",{class:"glossary-item",id:e,style:"scroll-margin-top:12px;flex-direction:column;gap:6px",children:[n("div",{style:"display:flex;gap:12px;align-items:flex-start",children:[n("dt",{class:"glossary-term",style:"min-width:200px",children:t}),n("dd",{class:"glossary-def",dangerouslySetInnerHTML:{__html:o}})]}),n("div",{style:"padding-left:8px;font-size:11px;color:var(--muted);line-height:1.5",children:[n("strong",{style:"color:var(--fg)",children:"Example: "}),n("span",{dangerouslySetInnerHTML:{__html:r}})]}),n("div",{style:"padding-left:8px;font-size:11px;line-height:1.6",children:[n("p",{style:"margin:0 0 3px",children:n("strong",{style:"color:var(--fg);font-size:11px",children:"How to fix:"})}),n("ol",{style:"margin:0 0 6px;padding-left:18px;font-size:11px;line-height:1.7;color:var(--muted)",dangerouslySetInnerHTML:{__html:i}}),n("p",{style:"margin:0;font-size:10px;color:var(--muted)",children:[n("strong",{style:"color:var(--fg);font-size:10px",children:"Expected impact: "}),n("span",{dangerouslySetInnerHTML:{__html:s}})]})]})]})}function Zs(){return n(z,{children:[n("style",{dangerouslySetInnerHTML:{__html:"html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc a{display:inline-block;padding:3px 11px;border-radius:12px;font-size:11px;font-weight:500;color:var(--muted);text-decoration:none;border:1px solid var(--border);transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover);border-color:var(--fg)}"}}),n("nav",{class:"help-toc","aria-label":"Help sections",style:"position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 0 8px;margin:0 -16px 20px -12px;padding-left:12px;display:flex;gap:4px;flex-wrap:wrap",children:Xs.map(e=>n("a",{href:e.href,children:e.heading}))})]})}function Qs(){let e=window.__MASCOT_URI__??"";return n("div",{class:"help-section",id:"help-overview",children:[e&&n("div",{style:{textAlign:"center",marginBottom:16},children:[n("img",{src:Rt(e),alt:"AgentLens mascot",style:{maxWidth:"65%",height:"auto",display:"block",margin:"0 auto"}}),n("p",{style:{textAlign:"center",fontStyle:"italic",color:"var(--muted)",marginTop:8,marginBottom:0},children:"Watching your agents so you don't have to."})]}),n("h3",{class:"help-heading",children:it.overview.heading}),n("div",{class:"help-overview-body",children:[n("div",{style:{background:"var(--panel-bg)",border:"1px solid var(--border)",borderRadius:6,padding:"10px 16px",marginBottom:18},children:[n("h4",{style:{fontSize:14,fontWeight:600,margin:"0 0 6px",color:"var(--fg,inherit)"},children:"Agent vs LLM Model"}),n("p",{style:{fontSize:13,margin:0},children:[n("strong",{children:"Agent:"})," The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that receives your prompt, reasons about the task, and decides which tools to use. The agent manages the workflow, breaks down tasks, and may call the LLM multiple times per session."]}),n("p",{style:{fontSize:13,margin:0,marginTop:6},children:[n("strong",{children:"LLM Model:"})," The underlying Large Language Model (e.g. GPT-4, Claude 3) that generates text, answers questions, or provides code. The agent sends requests to the LLM model as needed, but the model itself does not manage tools or workflow."]}),n("p",{style:{fontSize:12,color:"var(--muted)",margin:"8px 0 0"},children:n("em",{children:["In short: The ",n("strong",{children:"agent"})," is the smart assistant orchestrating your work; the ",n("strong",{children:"LLM model"})," is the engine that generates language and code for the agent."]})})]}),n("p",{children:[n("strong",{children:"AgentLens"})," is a VS Code extension that captures and visualizes the OpenTelemetry (OTLP) traces emitted by AI coding agents like GitHub Copilot, Claude, and Codex. It runs a lightweight local collector that receives trace data in real time, then presents it through an interactive dashboard so you can understand exactly what happens behind the scenes when you use an AI agent."]}),n("p",{children:"Use AgentLens to:"}),n("ul",{children:[n("li",{children:[n("strong",{children:"Monitor efficiency"})," \u2014 see token usage, cache hit rates, time-to-first-token, and actionable insights about prompt waste."]}),n("li",{children:[n("strong",{children:"Debug sessions"})," \u2014 inspect every LLM call, tool invocation, and their arguments/results in a human-readable timeline."]}),n("li",{children:[n("strong",{children:"Trace performance"})," \u2014 view raw OTLP spans as waterfalls with full parent-child nesting and exact timing."]}),n("li",{children:[n("strong",{children:"Analyze tool usage"})," \u2014 see which tools the agent calls most and how tokens are distributed across operations."]})]}),n("p",{children:["Data is collected locally and never leaves your machine. Clear it at any time with the ",n("em",{children:"Clear All Data"})," button."]})]})]})}function ea(){let e="font-size:11px;background:var(--panel-bg);padding:1px 5px;border-radius:3px;border:1px solid var(--border)",t=(o,r)=>n("p",{style:"font-size:11px;color:var(--muted);margin:0 0 6px",children:["macOS/Linux: ",n("code",{style:j,children:o})," \xA0\xB7\xA0 Windows: ",n("code",{style:j,children:r})]});return n("div",{class:"help-section",id:"help-config",children:[n("h3",{class:"help-heading",children:it.config.heading}),n("p",{style:Tt,children:["AgentLens auto-configures supported agents on activation. If auto-config fails, or you prefer to configure manually, use the instructions below. Replace ",n("code",{style:j,children:"4318"})," with your custom port if you changed ",n("em",{children:"agentLens.otlpPort"}),"."]}),n("div",{style:"margin-bottom:20px",children:[n("h4",{style:St,children:"Auto-configuration"}),n("p",{style:Tt,children:"On activation, AgentLens automatically writes the required telemetry config for each supported agent. This happens both when running as a VS Code extension and when running as the standalone server."}),n("table",{style:"font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px",children:[n("thead",{children:n("tr",{style:"border-bottom:1px solid var(--border)",children:[n("th",{style:"text-align:left;padding:4px 10px 4px 0;color:var(--fg)",children:"Agent"}),n("th",{style:"text-align:left;padding:4px 10px 4px 0;color:var(--fg)",children:"Config location"})]})}),n("tbody",{style:"color:var(--muted)",children:[n("tr",{children:[n("td",{style:"padding:4px 10px 4px 0;vertical-align:top",children:"GitHub Copilot"}),n("td",{children:"VS Code User Settings (via VS Code API \u2014 same on all platforms)"})]}),n("tr",{children:[n("td",{style:"padding:4px 10px 4px 0;vertical-align:top",children:"Claude Code"}),n("td",{children:[n("code",{style:j,children:"~/.claude/settings.json"})," (macOS/Linux)",n("br",{}),n("code",{style:j,children:"%USERPROFILE%\\.claude\\settings.json"})," (Windows)"]})]}),n("tr",{children:[n("td",{style:"padding:4px 10px 4px 0;vertical-align:top",children:"OpenAI Codex CLI"}),n("td",{children:[n("code",{style:j,children:"~/.codex/config.toml"})," (macOS/Linux)",n("br",{}),n("code",{style:j,children:"%USERPROFILE%\\.codex\\config.toml"})," (Windows)"]})]})]})]}),n("p",{style:"font-size:11px;color:var(--muted);margin:0",children:["After first install, ",n("strong",{children:"restart any running agent sessions"})," to pick up the new config."]})]}),n("div",{style:"margin-bottom:20px",children:[n("h4",{style:St,children:"GitHub Copilot \u2014 VS Code Extension"}),n("p",{style:Tt,children:["Add the following to VS Code ",n("strong",{children:"User Settings"})," (",n("kbd",{style:e,children:"Cmd+Shift+P"})," / ",n("kbd",{style:e,children:"Ctrl+Shift+P"})," \u2192 ",n("em",{children:"Preferences: Open User Settings (JSON)"}),"). These settings work the same on macOS, Linux, and Windows."]}),n("pre",{style:kn,children:`{
+  // node_modules/.pnpm/preact@10.29.1/node_modules/preact/hooks/dist/hooks.module.js
+  var t2;
+  var r2;
+  var u2;
+  var i2;
+  var o2 = 0;
+  var f2 = [];
+  var c2 = l;
+  var e2 = c2.__b;
+  var a2 = c2.__r;
+  var v2 = c2.diffed;
+  var l2 = c2.__c;
+  var m2 = c2.unmount;
+  var s2 = c2.__;
+  function p2(n3, t4) {
+    c2.__h && c2.__h(r2, n3, o2 || t4), o2 = 0;
+    var u5 = r2.__H || (r2.__H = { __: [], __h: [] });
+    return n3 >= u5.__.length && u5.__.push({}), u5.__[n3];
+  }
+  function d2(n3) {
+    return o2 = 1, h2(D2, n3);
+  }
+  function h2(n3, u5, i4) {
+    var o4 = p2(t2++, 2);
+    if (o4.t = n3, !o4.__c && (o4.__ = [i4 ? i4(u5) : D2(void 0, u5), function(n4) {
+      var t4 = o4.__N ? o4.__N[0] : o4.__[0], r5 = o4.t(t4, n4);
+      t4 !== r5 && (o4.__N = [r5, o4.__[1]], o4.__c.setState({}));
+    }], o4.__c = r2, !r2.__f)) {
+      var f5 = function(n4, t4, r5) {
+        if (!o4.__c.__H) return true;
+        var u6 = o4.__c.__H.__.filter(function(n5) {
+          return n5.__c;
+        });
+        if (u6.every(function(n5) {
+          return !n5.__N;
+        })) return !c4 || c4.call(this, n4, t4, r5);
+        var i5 = o4.__c.props !== n4;
+        return u6.some(function(n5) {
+          if (n5.__N) {
+            var t5 = n5.__[0];
+            n5.__ = n5.__N, n5.__N = void 0, t5 !== n5.__[0] && (i5 = true);
+          }
+        }), c4 && c4.call(this, n4, t4, r5) || i5;
+      };
+      r2.__f = true;
+      var c4 = r2.shouldComponentUpdate, e4 = r2.componentWillUpdate;
+      r2.componentWillUpdate = function(n4, t4, r5) {
+        if (this.__e) {
+          var u6 = c4;
+          c4 = void 0, f5(n4, t4, r5), c4 = u6;
+        }
+        e4 && e4.call(this, n4, t4, r5);
+      }, r2.shouldComponentUpdate = f5;
+    }
+    return o4.__N || o4.__;
+  }
+  function y2(n3, u5) {
+    var i4 = p2(t2++, 3);
+    !c2.__s && C2(i4.__H, u5) && (i4.__ = n3, i4.u = u5, r2.__H.__h.push(i4));
+  }
+  function A2(n3) {
+    return o2 = 5, T2(function() {
+      return { current: n3 };
+    }, []);
+  }
+  function T2(n3, r5) {
+    var u5 = p2(t2++, 7);
+    return C2(u5.__H, r5) && (u5.__ = n3(), u5.__H = r5, u5.__h = n3), u5.__;
+  }
+  function j2() {
+    for (var n3; n3 = f2.shift(); ) {
+      var t4 = n3.__H;
+      if (n3.__P && t4) try {
+        t4.__h.some(z2), t4.__h.some(B2), t4.__h = [];
+      } catch (r5) {
+        t4.__h = [], c2.__e(r5, n3.__v);
+      }
+    }
+  }
+  c2.__b = function(n3) {
+    r2 = null, e2 && e2(n3);
+  }, c2.__ = function(n3, t4) {
+    n3 && t4.__k && t4.__k.__m && (n3.__m = t4.__k.__m), s2 && s2(n3, t4);
+  }, c2.__r = function(n3) {
+    a2 && a2(n3), t2 = 0;
+    var i4 = (r2 = n3.__c).__H;
+    i4 && (u2 === r2 ? (i4.__h = [], r2.__h = [], i4.__.some(function(n4) {
+      n4.__N && (n4.__ = n4.__N), n4.u = n4.__N = void 0;
+    })) : (i4.__h.some(z2), i4.__h.some(B2), i4.__h = [], t2 = 0)), u2 = r2;
+  }, c2.diffed = function(n3) {
+    v2 && v2(n3);
+    var t4 = n3.__c;
+    t4 && t4.__H && (t4.__H.__h.length && (1 !== f2.push(t4) && i2 === c2.requestAnimationFrame || ((i2 = c2.requestAnimationFrame) || w2)(j2)), t4.__H.__.some(function(n4) {
+      n4.u && (n4.__H = n4.u), n4.u = void 0;
+    })), u2 = r2 = null;
+  }, c2.__c = function(n3, t4) {
+    t4.some(function(n4) {
+      try {
+        n4.__h.some(z2), n4.__h = n4.__h.filter(function(n5) {
+          return !n5.__ || B2(n5);
+        });
+      } catch (r5) {
+        t4.some(function(n5) {
+          n5.__h && (n5.__h = []);
+        }), t4 = [], c2.__e(r5, n4.__v);
+      }
+    }), l2 && l2(n3, t4);
+  }, c2.unmount = function(n3) {
+    m2 && m2(n3);
+    var t4, r5 = n3.__c;
+    r5 && r5.__H && (r5.__H.__.some(function(n4) {
+      try {
+        z2(n4);
+      } catch (n5) {
+        t4 = n5;
+      }
+    }), r5.__H = void 0, t4 && c2.__e(t4, r5.__v));
+  };
+  var k2 = "function" == typeof requestAnimationFrame;
+  function w2(n3) {
+    var t4, r5 = function() {
+      clearTimeout(u5), k2 && cancelAnimationFrame(t4), setTimeout(n3);
+    }, u5 = setTimeout(r5, 35);
+    k2 && (t4 = requestAnimationFrame(r5));
+  }
+  function z2(n3) {
+    var t4 = r2, u5 = n3.__c;
+    "function" == typeof u5 && (n3.__c = void 0, u5()), r2 = t4;
+  }
+  function B2(n3) {
+    var t4 = r2;
+    n3.__c = n3.__(), r2 = t4;
+  }
+  function C2(n3, t4) {
+    return !n3 || n3.length !== t4.length || t4.some(function(t5, r5) {
+      return t5 !== n3[r5];
+    });
+  }
+  function D2(n3, t4) {
+    return "function" == typeof t4 ? t4(n3) : t4;
+  }
+
+  // node_modules/.pnpm/@preact+signals-core@1.14.2/node_modules/@preact/signals-core/dist/signals-core.module.js
+  var i3 = /* @__PURE__ */ Symbol.for("preact-signals");
+  function t3() {
+    if (!(s3 > 1)) {
+      var i4, t4 = false;
+      !(function() {
+        var i5 = c3;
+        c3 = void 0;
+        while (void 0 !== i5) {
+          if (i5.S.v === i5.v) i5.S.i = i5.i;
+          i5 = i5.o;
+        }
+      })();
+      while (void 0 !== h3) {
+        var n3 = h3;
+        h3 = void 0;
+        v3++;
+        while (void 0 !== n3) {
+          var r5 = n3.u;
+          n3.u = void 0;
+          n3.f &= -3;
+          if (!(8 & n3.f) && w3(n3)) try {
+            n3.c();
+          } catch (n4) {
+            if (!t4) {
+              i4 = n4;
+              t4 = true;
+            }
+          }
+          n3 = r5;
+        }
+      }
+      v3 = 0;
+      s3--;
+      if (t4) throw i4;
+    } else s3--;
+  }
+  function n2(i4) {
+    if (s3 > 0) return i4();
+    e3 = ++u3;
+    s3++;
+    try {
+      return i4();
+    } finally {
+      t3();
+    }
+  }
+  var r3 = void 0;
+  function o3(i4) {
+    var t4 = r3;
+    r3 = void 0;
+    try {
+      return i4();
+    } finally {
+      r3 = t4;
+    }
+  }
+  var f3;
+  var h3 = void 0;
+  var s3 = 0;
+  var v3 = 0;
+  var u3 = 0;
+  var e3 = 0;
+  var c3 = void 0;
+  var d3 = 0;
+  function a3(i4) {
+    if (void 0 !== r3) {
+      var t4 = i4.n;
+      if (void 0 === t4 || t4.t !== r3) {
+        t4 = { i: 0, S: i4, p: r3.s, n: void 0, t: r3, e: void 0, x: void 0, r: t4 };
+        if (void 0 !== r3.s) r3.s.n = t4;
+        r3.s = t4;
+        i4.n = t4;
+        if (32 & r3.f) i4.S(t4);
+        return t4;
+      } else if (-1 === t4.i) {
+        t4.i = 0;
+        if (void 0 !== t4.n) {
+          t4.n.p = t4.p;
+          if (void 0 !== t4.p) t4.p.n = t4.n;
+          t4.p = r3.s;
+          t4.n = void 0;
+          r3.s.n = t4;
+          r3.s = t4;
+        }
+        return t4;
+      }
+    }
+  }
+  function l3(i4, t4) {
+    this.v = i4;
+    this.i = 0;
+    this.n = void 0;
+    this.t = void 0;
+    this.l = 0;
+    this.W = null == t4 ? void 0 : t4.watched;
+    this.Z = null == t4 ? void 0 : t4.unwatched;
+    this.name = null == t4 ? void 0 : t4.name;
+  }
+  l3.prototype.brand = i3;
+  l3.prototype.h = function() {
+    return true;
+  };
+  l3.prototype.S = function(i4) {
+    var t4 = this, n3 = this.t;
+    if (n3 !== i4 && void 0 === i4.e) {
+      i4.x = n3;
+      this.t = i4;
+      if (void 0 !== n3) n3.e = i4;
+      else o3(function() {
+        var i5;
+        null == (i5 = t4.W) || i5.call(t4);
+      });
+    }
+  };
+  l3.prototype.U = function(i4) {
+    var t4 = this;
+    if (void 0 !== this.t) {
+      var n3 = i4.e, r5 = i4.x;
+      if (void 0 !== n3) {
+        n3.x = r5;
+        i4.e = void 0;
+      }
+      if (void 0 !== r5) {
+        r5.e = n3;
+        i4.x = void 0;
+      }
+      if (i4 === this.t) {
+        this.t = r5;
+        if (void 0 === r5) o3(function() {
+          var i5;
+          null == (i5 = t4.Z) || i5.call(t4);
+        });
+      }
+    }
+  };
+  l3.prototype.subscribe = function(i4) {
+    var t4 = this;
+    return j3(function() {
+      var n3 = t4.value, o4 = r3;
+      r3 = void 0;
+      try {
+        i4(n3);
+      } finally {
+        r3 = o4;
+      }
+    }, { name: "sub" });
+  };
+  l3.prototype.valueOf = function() {
+    return this.value;
+  };
+  l3.prototype.toString = function() {
+    return this.value + "";
+  };
+  l3.prototype.toJSON = function() {
+    return this.value;
+  };
+  l3.prototype.peek = function() {
+    var i4 = this;
+    return o3(function() {
+      return i4.value;
+    });
+  };
+  Object.defineProperty(l3.prototype, "value", { get: function() {
+    var i4 = a3(this);
+    if (void 0 !== i4) i4.i = this.i;
+    return this.v;
+  }, set: function(i4) {
+    if (i4 !== this.v) {
+      if (v3 > 100) throw new Error("Cycle detected");
+      !(function(i5) {
+        if (0 !== s3 && 0 === v3) {
+          if (i5.l !== e3) {
+            i5.l = e3;
+            c3 = { S: i5, v: i5.v, i: i5.i, o: c3 };
+          }
+        }
+      })(this);
+      this.v = i4;
+      this.i++;
+      d3++;
+      s3++;
+      try {
+        for (var n3 = this.t; void 0 !== n3; n3 = n3.x) n3.t.N();
+      } finally {
+        t3();
+      }
+    }
+  } });
+  function y3(i4, t4) {
+    return new l3(i4, t4);
+  }
+  function w3(i4) {
+    for (var t4 = i4.s; void 0 !== t4; t4 = t4.n) if (t4.S.i !== t4.i || !t4.S.h() || t4.S.i !== t4.i) return true;
+    return false;
+  }
+  function _2(i4) {
+    for (var t4 = i4.s; void 0 !== t4; t4 = t4.n) {
+      var n3 = t4.S.n;
+      if (void 0 !== n3) t4.r = n3;
+      t4.S.n = t4;
+      t4.i = -1;
+      if (void 0 === t4.n) {
+        i4.s = t4;
+        break;
+      }
+    }
+  }
+  function b2(i4) {
+    var t4 = i4.s, n3 = void 0;
+    while (void 0 !== t4) {
+      var r5 = t4.p;
+      if (-1 === t4.i) {
+        t4.S.U(t4);
+        if (void 0 !== r5) r5.n = t4.n;
+        if (void 0 !== t4.n) t4.n.p = r5;
+      } else n3 = t4;
+      t4.S.n = t4.r;
+      if (void 0 !== t4.r) t4.r = void 0;
+      t4 = r5;
+    }
+    i4.s = n3;
+  }
+  function p3(i4, t4) {
+    l3.call(this, void 0);
+    this.x = i4;
+    this.s = void 0;
+    this.g = d3 - 1;
+    this.f = 4;
+    this.W = null == t4 ? void 0 : t4.watched;
+    this.Z = null == t4 ? void 0 : t4.unwatched;
+    this.name = null == t4 ? void 0 : t4.name;
+  }
+  p3.prototype = new l3();
+  p3.prototype.h = function() {
+    this.f &= -3;
+    if (1 & this.f) return false;
+    if (32 == (36 & this.f)) return true;
+    this.f &= -5;
+    if (this.g === d3) return true;
+    this.g = d3;
+    this.f |= 1;
+    if (this.i > 0 && !w3(this)) {
+      this.f &= -2;
+      return true;
+    }
+    var i4 = r3;
+    try {
+      _2(this);
+      r3 = this;
+      var t4 = this.x();
+      if (16 & this.f || this.v !== t4 || 0 === this.i) {
+        this.v = t4;
+        this.f &= -17;
+        this.i++;
+      }
+    } catch (i5) {
+      this.v = i5;
+      this.f |= 16;
+      this.i++;
+    }
+    r3 = i4;
+    b2(this);
+    this.f &= -2;
+    return true;
+  };
+  p3.prototype.S = function(i4) {
+    if (void 0 === this.t) {
+      this.f |= 36;
+      for (var t4 = this.s; void 0 !== t4; t4 = t4.n) t4.S.S(t4);
+    }
+    l3.prototype.S.call(this, i4);
+  };
+  p3.prototype.U = function(i4) {
+    if (void 0 !== this.t) {
+      l3.prototype.U.call(this, i4);
+      if (void 0 === this.t) {
+        this.f &= -33;
+        for (var t4 = this.s; void 0 !== t4; t4 = t4.n) t4.S.U(t4);
+      }
+    }
+  };
+  p3.prototype.N = function() {
+    if (!(2 & this.f)) {
+      this.f |= 6;
+      for (var i4 = this.t; void 0 !== i4; i4 = i4.x) i4.t.N();
+    }
+  };
+  Object.defineProperty(p3.prototype, "value", { get: function() {
+    if (1 & this.f) throw new Error("Cycle detected");
+    var i4 = a3(this);
+    this.h();
+    if (void 0 !== i4) i4.i = this.i;
+    if (16 & this.f) throw this.v;
+    return this.v;
+  } });
+  function g2(i4, t4) {
+    return new p3(i4, t4);
+  }
+  function S2(i4) {
+    var n3 = i4.m;
+    i4.m = void 0;
+    if ("function" == typeof n3) {
+      s3++;
+      var o4 = r3;
+      r3 = void 0;
+      try {
+        n3();
+      } catch (t4) {
+        i4.f &= -2;
+        i4.f |= 8;
+        m3(i4);
+        throw t4;
+      } finally {
+        r3 = o4;
+        t3();
+      }
+    }
+  }
+  function m3(i4) {
+    for (var t4 = i4.s; void 0 !== t4; t4 = t4.n) t4.S.U(t4);
+    i4.x = void 0;
+    i4.s = void 0;
+    S2(i4);
+  }
+  function x2(i4) {
+    if (r3 !== this) throw new Error("Out-of-order effect");
+    b2(this);
+    r3 = i4;
+    this.f &= -2;
+    if (8 & this.f) m3(this);
+    t3();
+  }
+  function E2(i4, t4) {
+    this.x = i4;
+    this.m = void 0;
+    this.s = void 0;
+    this.u = void 0;
+    this.f = 32;
+    this.name = null == t4 ? void 0 : t4.name;
+    if (f3) f3.push(this);
+  }
+  E2.prototype.c = function() {
+    var i4 = this.S();
+    try {
+      if (8 & this.f) return;
+      if (void 0 === this.x) return;
+      var t4 = this.x();
+      if ("function" == typeof t4) this.m = t4;
+    } finally {
+      i4();
+    }
+  };
+  E2.prototype.S = function() {
+    if (1 & this.f) throw new Error("Cycle detected");
+    this.f |= 1;
+    this.f &= -9;
+    S2(this);
+    _2(this);
+    s3++;
+    var i4 = r3;
+    r3 = this;
+    return x2.bind(this, i4);
+  };
+  E2.prototype.N = function() {
+    if (!(2 & this.f)) {
+      this.f |= 2;
+      this.u = h3;
+      h3 = this;
+    }
+  };
+  E2.prototype.d = function() {
+    this.f |= 8;
+    if (!(1 & this.f)) m3(this);
+  };
+  E2.prototype.dispose = function() {
+    this.d();
+  };
+  function j3(i4, t4) {
+    var n3 = new E2(i4, t4);
+    try {
+      n3.c();
+    } catch (i5) {
+      n3.d();
+      throw i5;
+    }
+    var r5 = n3.d.bind(n3);
+    r5[Symbol.dispose] = r5;
+    return r5;
+  }
+
+  // node_modules/.pnpm/@preact+signals@2.9.0_preact@10.29.1/node_modules/@preact/signals/dist/signals.module.js
+  var l4;
+  var d4;
+  var h4;
+  var p4 = "undefined" != typeof window && !!window.__PREACT_SIGNALS_DEVTOOLS__;
+  var _3 = [];
+  j3(function() {
+    l4 = this.N;
+  })();
+  function g3(i4, r5) {
+    l[i4] = r5.bind(null, l[i4] || function() {
+    });
+  }
+  function b3(i4) {
+    if (h4) {
+      var n3 = h4;
+      h4 = void 0;
+      n3();
+    }
+    h4 = i4 && i4.S();
+  }
+  function y4(i4) {
+    var n3 = this, t4 = i4.data, e4 = useSignal(t4);
+    e4.value = t4;
+    var f5 = T2(function() {
+      var i5 = n3, t5 = n3.__v;
+      while (t5 = t5.__) if (t5.__c) {
+        t5.__c.__$f |= 4;
+        break;
+      }
+      var o4 = g2(function() {
+        var i6 = e4.value.value;
+        return 0 === i6 ? 0 : true === i6 ? "" : i6 || "";
+      }), f6 = g2(function() {
+        return !Array.isArray(o4.value) && !t(o4.value);
+      }), a5 = j3(function() {
+        this.N = F;
+        if (f6.value) {
+          var n4 = o4.value;
+          if (i5.__v && i5.__v.__e && 3 === i5.__v.__e.nodeType) i5.__v.__e.data = n4;
+        }
+      }), v5 = n3.__$u.d;
+      n3.__$u.d = function() {
+        a5();
+        v5.call(this);
+      };
+      return [f6, o4];
+    }, []), a4 = f5[0], v4 = f5[1];
+    return a4.value ? v4.peek() : v4.value;
+  }
+  y4.displayName = "ReactiveTextNode";
+  Object.defineProperties(l3.prototype, { constructor: { configurable: true, value: void 0 }, type: { configurable: true, value: y4 }, props: { configurable: true, get: function() {
+    var i4 = this;
+    return { data: { get value() {
+      return i4.value;
+    } } };
+  } }, __b: { configurable: true, value: 1 } });
+  g3("__b", function(i4, n3) {
+    if ("string" == typeof n3.type) {
+      var r5, t4 = n3.props;
+      for (var o4 in t4) if ("children" !== o4) {
+        var e4 = t4[o4];
+        if (e4 instanceof l3) {
+          if (!r5) n3.__np = r5 = {};
+          r5[o4] = e4;
+          t4[o4] = e4.peek();
+        }
+      }
+    }
+    i4(n3);
+  });
+  g3("__r", function(i4, n3) {
+    i4(n3);
+    if (n3.type !== S) {
+      b3();
+      var r5, o4 = n3.__c;
+      if (o4) {
+        o4.__$f &= -2;
+        if (void 0 === (r5 = o4.__$u)) o4.__$u = r5 = (function(i5, n4) {
+          var r6;
+          j3(function() {
+            r6 = this;
+          }, { name: n4 });
+          r6.c = i5;
+          return r6;
+        })(function() {
+          var i5;
+          if (p4) null == (i5 = r5.y) || i5.call(r5);
+          o4.__$f |= 1;
+          o4.setState({});
+        }, "function" == typeof n3.type ? n3.type.displayName || n3.type.name : "");
+      }
+      d4 = o4;
+      b3(r5);
+    }
+  });
+  g3("__e", function(i4, n3, r5, t4) {
+    b3();
+    d4 = void 0;
+    i4(n3, r5, t4);
+  });
+  g3("diffed", function(i4, n3) {
+    b3();
+    d4 = void 0;
+    var r5;
+    if ("string" == typeof n3.type && (r5 = n3.__e)) {
+      var t4 = n3.__np, o4 = n3.props;
+      if (t4) {
+        var e4 = r5.U;
+        if (e4) for (var f5 in e4) {
+          var u5 = e4[f5];
+          if (void 0 !== u5 && !(f5 in t4)) {
+            u5.d();
+            e4[f5] = void 0;
+          }
+        }
+        else {
+          e4 = {};
+          r5.U = e4;
+        }
+        for (var a4 in t4) {
+          var c4 = e4[a4], v4 = t4[a4];
+          if (void 0 === c4) {
+            c4 = w4(r5, a4, v4);
+            e4[a4] = c4;
+          } else c4.o(v4, o4);
+        }
+        for (var s4 in t4) o4[s4] = t4[s4];
+      }
+    }
+    i4(n3);
+  });
+  function w4(i4, n3, r5, t4) {
+    var o4 = n3 in i4 && void 0 === i4.ownerSVGElement, e4 = y3(r5), f5 = r5.peek();
+    return { o: function(i5, n4) {
+      e4.value = i5;
+      f5 = i5.peek();
+    }, d: j3(function() {
+      this.N = F;
+      var r6 = e4.value.value;
+      if (f5 !== r6) {
+        f5 = void 0;
+        if (o4) i4[n3] = r6;
+        else if (null != r6 && (false !== r6 || "-" === n3[4])) i4.setAttribute(n3, r6);
+        else i4.removeAttribute(n3);
+      } else f5 = void 0;
+    }) };
+  }
+  g3("unmount", function(i4, n3) {
+    if ("string" == typeof n3.type) {
+      var r5 = n3.__e;
+      if (r5) {
+        var t4 = r5.U;
+        if (t4) {
+          r5.U = void 0;
+          for (var o4 in t4) {
+            var e4 = t4[o4];
+            if (e4) e4.d();
+          }
+        }
+      }
+      n3.__np = void 0;
+    } else {
+      var f5 = n3.__c;
+      if (f5) {
+        var u5 = f5.__$u;
+        if (u5) {
+          f5.__$u = void 0;
+          u5.d();
+        }
+      }
+    }
+    i4(n3);
+  });
+  g3("__h", function(i4, n3, r5, t4) {
+    if (t4 < 3 || 9 === t4) n3.__$f |= 2;
+    i4(n3, r5, t4);
+  });
+  C.prototype.shouldComponentUpdate = function(i4, n3) {
+    if (this.__R) return true;
+    var r5 = this.__$u, t4 = r5 && void 0 !== r5.s;
+    for (var o4 in n3) return true;
+    if (this.__f || "boolean" == typeof this.u && true === this.u) {
+      var e4 = 2 & this.__$f;
+      if (!(t4 || e4 || 4 & this.__$f)) return true;
+      if (1 & this.__$f) return true;
+    } else {
+      if (!(t4 || 4 & this.__$f)) return true;
+      if (3 & this.__$f) return true;
+    }
+    for (var f5 in i4) if ("__source" !== f5 && i4[f5] !== this.props[f5]) return true;
+    for (var u5 in this.props) if (!(u5 in i4)) return true;
+    return false;
+  };
+  function useSignal(i4, n3) {
+    return T2(function() {
+      return y3(i4, n3);
+    }, []);
+  }
+  var q2 = function(i4) {
+    queueMicrotask(function() {
+      queueMicrotask(i4);
+    });
+  };
+  function x3() {
+    n2(function() {
+      var i4;
+      while (i4 = _3.shift()) l4.call(i4);
+    });
+  }
+  function F() {
+    if (1 === _3.push(this)) (l.requestAnimationFrame || q2)(x3);
+  }
+
+  // node_modules/.pnpm/fflate@0.8.3/node_modules/fflate/esm/browser.js
+  var u8 = Uint8Array;
+  var u16 = Uint16Array;
+  var i32 = Int32Array;
+  var fleb = new u8([
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4,
+    4,
+    5,
+    5,
+    5,
+    5,
+    0,
+    /* unused */
+    0,
+    0,
+    /* impossible */
+    0
+  ]);
+  var fdeb = new u8([
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    2,
+    2,
+    3,
+    3,
+    4,
+    4,
+    5,
+    5,
+    6,
+    6,
+    7,
+    7,
+    8,
+    8,
+    9,
+    9,
+    10,
+    10,
+    11,
+    11,
+    12,
+    12,
+    13,
+    13,
+    /* unused */
+    0,
+    0
+  ]);
+  var clim = new u8([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
+  var freb = function(eb, start) {
+    var b4 = new u16(31);
+    for (var i4 = 0; i4 < 31; ++i4) {
+      b4[i4] = start += 1 << eb[i4 - 1];
+    }
+    var r5 = new i32(b4[30]);
+    for (var i4 = 1; i4 < 30; ++i4) {
+      for (var j4 = b4[i4]; j4 < b4[i4 + 1]; ++j4) {
+        r5[j4] = j4 - b4[i4] << 5 | i4;
+      }
+    }
+    return { b: b4, r: r5 };
+  };
+  var _a = freb(fleb, 2);
+  var fl = _a.b;
+  var revfl = _a.r;
+  fl[28] = 258, revfl[258] = 28;
+  var _b = freb(fdeb, 0);
+  var fd = _b.b;
+  var revfd = _b.r;
+  var rev = new u16(32768);
+  for (i4 = 0; i4 < 32768; ++i4) {
+    x4 = (i4 & 43690) >> 1 | (i4 & 21845) << 1;
+    x4 = (x4 & 52428) >> 2 | (x4 & 13107) << 2;
+    x4 = (x4 & 61680) >> 4 | (x4 & 3855) << 4;
+    rev[i4] = ((x4 & 65280) >> 8 | (x4 & 255) << 8) >> 1;
+  }
+  var x4;
+  var i4;
+  var hMap = (function(cd, mb, r5) {
+    var s4 = cd.length;
+    var i4 = 0;
+    var l5 = new u16(mb);
+    for (; i4 < s4; ++i4) {
+      if (cd[i4])
+        ++l5[cd[i4] - 1];
+    }
+    var le = new u16(mb);
+    for (i4 = 1; i4 < mb; ++i4) {
+      le[i4] = le[i4 - 1] + l5[i4 - 1] << 1;
+    }
+    var co;
+    if (r5) {
+      co = new u16(1 << mb);
+      var rvb = 15 - mb;
+      for (i4 = 0; i4 < s4; ++i4) {
+        if (cd[i4]) {
+          var sv = i4 << 4 | cd[i4];
+          var r_1 = mb - cd[i4];
+          var v4 = le[cd[i4] - 1]++ << r_1;
+          for (var m4 = v4 | (1 << r_1) - 1; v4 <= m4; ++v4) {
+            co[rev[v4] >> rvb] = sv;
+          }
+        }
+      }
+    } else {
+      co = new u16(s4);
+      for (i4 = 0; i4 < s4; ++i4) {
+        if (cd[i4]) {
+          co[i4] = rev[le[cd[i4] - 1]++] >> 15 - cd[i4];
+        }
+      }
+    }
+    return co;
+  });
+  var flt = new u8(288);
+  for (i4 = 0; i4 < 144; ++i4)
+    flt[i4] = 8;
+  var i4;
+  for (i4 = 144; i4 < 256; ++i4)
+    flt[i4] = 9;
+  var i4;
+  for (i4 = 256; i4 < 280; ++i4)
+    flt[i4] = 7;
+  var i4;
+  for (i4 = 280; i4 < 288; ++i4)
+    flt[i4] = 8;
+  var i4;
+  var fdt = new u8(32);
+  for (i4 = 0; i4 < 32; ++i4)
+    fdt[i4] = 5;
+  var i4;
+  var flm = /* @__PURE__ */ hMap(flt, 9, 0);
+  var fdm = /* @__PURE__ */ hMap(fdt, 5, 0);
+  var shft = function(p5) {
+    return (p5 + 7) / 8 | 0;
+  };
+  var slc = function(v4, s4, e4) {
+    if (s4 == null || s4 < 0)
+      s4 = 0;
+    if (e4 == null || e4 > v4.length)
+      e4 = v4.length;
+    return new u8(v4.subarray(s4, e4));
+  };
+  var ec = [
+    "unexpected EOF",
+    "invalid block type",
+    "invalid length/literal",
+    "invalid distance",
+    "stream finished",
+    "no stream handler",
+    ,
+    // determined by compression function
+    "no callback",
+    "invalid UTF-8 data",
+    "extra field too long",
+    "date not in range 1980-2099",
+    "filename too long",
+    "stream finishing",
+    "invalid zip data"
+    // determined by unknown compression method
+  ];
+  var err = function(ind, msg, nt) {
+    var e4 = new Error(msg || ec[ind]);
+    e4.code = ind;
+    if (Error.captureStackTrace)
+      Error.captureStackTrace(e4, err);
+    if (!nt)
+      throw e4;
+    return e4;
+  };
+  var wbits = function(d5, p5, v4) {
+    v4 <<= p5 & 7;
+    var o4 = p5 / 8 | 0;
+    d5[o4] |= v4;
+    d5[o4 + 1] |= v4 >> 8;
+  };
+  var wbits16 = function(d5, p5, v4) {
+    v4 <<= p5 & 7;
+    var o4 = p5 / 8 | 0;
+    d5[o4] |= v4;
+    d5[o4 + 1] |= v4 >> 8;
+    d5[o4 + 2] |= v4 >> 16;
+  };
+  var hTree = function(d5, mb) {
+    var t4 = [];
+    for (var i4 = 0; i4 < d5.length; ++i4) {
+      if (d5[i4])
+        t4.push({ s: i4, f: d5[i4] });
+    }
+    var s4 = t4.length;
+    var t22 = t4.slice();
+    if (!s4)
+      return { t: et, l: 0 };
+    if (s4 == 1) {
+      var v4 = new u8(t4[0].s + 1);
+      v4[t4[0].s] = 1;
+      return { t: v4, l: 1 };
+    }
+    t4.sort(function(a4, b4) {
+      return a4.f - b4.f;
+    });
+    t4.push({ s: -1, f: 25001 });
+    var l5 = t4[0], r5 = t4[1], i0 = 0, i1 = 1, i22 = 2;
+    t4[0] = { s: -1, f: l5.f + r5.f, l: l5, r: r5 };
+    while (i1 != s4 - 1) {
+      l5 = t4[t4[i0].f < t4[i22].f ? i0++ : i22++];
+      r5 = t4[i0 != i1 && t4[i0].f < t4[i22].f ? i0++ : i22++];
+      t4[i1++] = { s: -1, f: l5.f + r5.f, l: l5, r: r5 };
+    }
+    var maxSym = t22[0].s;
+    for (var i4 = 1; i4 < s4; ++i4) {
+      if (t22[i4].s > maxSym)
+        maxSym = t22[i4].s;
+    }
+    var tr = new u16(maxSym + 1);
+    var mbt = ln(t4[i1 - 1], tr, 0);
+    if (mbt > mb) {
+      var i4 = 0, dt = 0;
+      var lft = mbt - mb, cst = 1 << lft;
+      t22.sort(function(a4, b4) {
+        return tr[b4.s] - tr[a4.s] || a4.f - b4.f;
+      });
+      for (; i4 < s4; ++i4) {
+        var i2_1 = t22[i4].s;
+        if (tr[i2_1] > mb) {
+          dt += cst - (1 << mbt - tr[i2_1]);
+          tr[i2_1] = mb;
+        } else
+          break;
+      }
+      dt >>= lft;
+      while (dt > 0) {
+        var i2_2 = t22[i4].s;
+        if (tr[i2_2] < mb)
+          dt -= 1 << mb - tr[i2_2]++ - 1;
+        else
+          ++i4;
+      }
+      for (; i4 >= 0 && dt; --i4) {
+        var i2_3 = t22[i4].s;
+        if (tr[i2_3] == mb) {
+          --tr[i2_3];
+          ++dt;
+        }
+      }
+      mbt = mb;
+    }
+    return { t: new u8(tr), l: mbt };
+  };
+  var ln = function(n3, l5, d5) {
+    return n3.s == -1 ? Math.max(ln(n3.l, l5, d5 + 1), ln(n3.r, l5, d5 + 1)) : l5[n3.s] = d5;
+  };
+  var lc = function(c4) {
+    var s4 = c4.length;
+    while (s4 && !c4[--s4])
+      ;
+    var cl = new u16(++s4);
+    var cli = 0, cln = c4[0], cls = 1;
+    var w5 = function(v4) {
+      cl[cli++] = v4;
+    };
+    for (var i4 = 1; i4 <= s4; ++i4) {
+      if (c4[i4] == cln && i4 != s4)
+        ++cls;
+      else {
+        if (!cln && cls > 2) {
+          for (; cls > 138; cls -= 138)
+            w5(32754);
+          if (cls > 2) {
+            w5(cls > 10 ? cls - 11 << 5 | 28690 : cls - 3 << 5 | 12305);
+            cls = 0;
+          }
+        } else if (cls > 3) {
+          w5(cln), --cls;
+          for (; cls > 6; cls -= 6)
+            w5(8304);
+          if (cls > 2)
+            w5(cls - 3 << 5 | 8208), cls = 0;
+        }
+        while (cls--)
+          w5(cln);
+        cls = 1;
+        cln = c4[i4];
+      }
+    }
+    return { c: cl.subarray(0, cli), n: s4 };
+  };
+  var clen = function(cf, cl) {
+    var l5 = 0;
+    for (var i4 = 0; i4 < cl.length; ++i4)
+      l5 += cf[i4] * cl[i4];
+    return l5;
+  };
+  var wfblk = function(out, pos, dat) {
+    var s4 = dat.length;
+    var o4 = shft(pos + 2);
+    out[o4] = s4 & 255;
+    out[o4 + 1] = s4 >> 8;
+    out[o4 + 2] = out[o4] ^ 255;
+    out[o4 + 3] = out[o4 + 1] ^ 255;
+    for (var i4 = 0; i4 < s4; ++i4)
+      out[o4 + i4 + 4] = dat[i4];
+    return (o4 + 4 + s4) * 8;
+  };
+  var wblk = function(dat, out, final, syms, lf, df, eb, li, bs, bl, p5) {
+    wbits(out, p5++, final);
+    ++lf[256];
+    var _a2 = hTree(lf, 15), dlt = _a2.t, mlb = _a2.l;
+    var _b2 = hTree(df, 15), ddt = _b2.t, mdb = _b2.l;
+    var _c = lc(dlt), lclt = _c.c, nlc = _c.n;
+    var _d = lc(ddt), lcdt = _d.c, ndc = _d.n;
+    var lcfreq = new u16(19);
+    for (var i4 = 0; i4 < lclt.length; ++i4)
+      ++lcfreq[lclt[i4] & 31];
+    for (var i4 = 0; i4 < lcdt.length; ++i4)
+      ++lcfreq[lcdt[i4] & 31];
+    var _e = hTree(lcfreq, 7), lct = _e.t, mlcb = _e.l;
+    var nlcc = 19;
+    for (; nlcc > 4 && !lct[clim[nlcc - 1]]; --nlcc)
+      ;
+    var flen = bl + 5 << 3;
+    var ftlen = clen(lf, flt) + clen(df, fdt) + eb;
+    var dtlen = clen(lf, dlt) + clen(df, ddt) + eb + 14 + 3 * nlcc + clen(lcfreq, lct) + 2 * lcfreq[16] + 3 * lcfreq[17] + 7 * lcfreq[18];
+    if (bs >= 0 && flen <= ftlen && flen <= dtlen)
+      return wfblk(out, p5, dat.subarray(bs, bs + bl));
+    var lm, ll, dm, dl;
+    wbits(out, p5, 1 + (dtlen < ftlen)), p5 += 2;
+    if (dtlen < ftlen) {
+      lm = hMap(dlt, mlb, 0), ll = dlt, dm = hMap(ddt, mdb, 0), dl = ddt;
+      var llm = hMap(lct, mlcb, 0);
+      wbits(out, p5, nlc - 257);
+      wbits(out, p5 + 5, ndc - 1);
+      wbits(out, p5 + 10, nlcc - 4);
+      p5 += 14;
+      for (var i4 = 0; i4 < nlcc; ++i4)
+        wbits(out, p5 + 3 * i4, lct[clim[i4]]);
+      p5 += 3 * nlcc;
+      var lcts = [lclt, lcdt];
+      for (var it = 0; it < 2; ++it) {
+        var clct = lcts[it];
+        for (var i4 = 0; i4 < clct.length; ++i4) {
+          var len = clct[i4] & 31;
+          wbits(out, p5, llm[len]), p5 += lct[len];
+          if (len > 15)
+            wbits(out, p5, clct[i4] >> 5 & 127), p5 += clct[i4] >> 12;
+        }
+      }
+    } else {
+      lm = flm, ll = flt, dm = fdm, dl = fdt;
+    }
+    for (var i4 = 0; i4 < li; ++i4) {
+      var sym = syms[i4];
+      if (sym > 255) {
+        var len = sym >> 18 & 31;
+        wbits16(out, p5, lm[len + 257]), p5 += ll[len + 257];
+        if (len > 7)
+          wbits(out, p5, sym >> 23 & 31), p5 += fleb[len];
+        var dst = sym & 31;
+        wbits16(out, p5, dm[dst]), p5 += dl[dst];
+        if (dst > 3)
+          wbits16(out, p5, sym >> 5 & 8191), p5 += fdeb[dst];
+      } else {
+        wbits16(out, p5, lm[sym]), p5 += ll[sym];
+      }
+    }
+    wbits16(out, p5, lm[256]);
+    return p5 + ll[256];
+  };
+  var deo = /* @__PURE__ */ new i32([65540, 131080, 131088, 131104, 262176, 1048704, 1048832, 2114560, 2117632]);
+  var et = /* @__PURE__ */ new u8(0);
+  var dflt = function(dat, lvl, plvl, pre, post, st) {
+    var s4 = st.z || dat.length;
+    var o4 = new u8(pre + s4 + 5 * (1 + Math.ceil(s4 / 7e3)) + post);
+    var w5 = o4.subarray(pre, o4.length - post);
+    var lst = st.l;
+    var pos = (st.r || 0) & 7;
+    if (lvl) {
+      if (pos)
+        w5[0] = st.r >> 3;
+      var opt = deo[lvl - 1];
+      var n3 = opt >> 13, c4 = opt & 8191;
+      var msk_1 = (1 << plvl) - 1;
+      var prev = st.p || new u16(32768), head = st.h || new u16(msk_1 + 1);
+      var bs1_1 = Math.ceil(plvl / 3), bs2_1 = 2 * bs1_1;
+      var hsh = function(i5) {
+        return (dat[i5] ^ dat[i5 + 1] << bs1_1 ^ dat[i5 + 2] << bs2_1) & msk_1;
+      };
+      var syms = new i32(25e3);
+      var lf = new u16(288), df = new u16(32);
+      var lc_1 = 0, eb = 0, i4 = st.i || 0, li = 0, wi = st.w || 0, bs = 0;
+      for (; i4 + 2 < s4; ++i4) {
+        var hv = hsh(i4);
+        var imod = i4 & 32767, pimod = head[hv];
+        prev[imod] = pimod;
+        head[hv] = imod;
+        if (wi <= i4) {
+          var rem = s4 - i4;
+          if ((lc_1 > 7e3 || li > 24576) && (rem > 423 || !lst)) {
+            pos = wblk(dat, w5, 0, syms, lf, df, eb, li, bs, i4 - bs, pos);
+            li = lc_1 = eb = 0, bs = i4;
+            for (var j4 = 0; j4 < 286; ++j4)
+              lf[j4] = 0;
+            for (var j4 = 0; j4 < 30; ++j4)
+              df[j4] = 0;
+          }
+          var l5 = 2, d5 = 0, ch_1 = c4, dif = imod - pimod & 32767;
+          if (rem > 2 && hv == hsh(i4 - dif)) {
+            var maxn = Math.min(n3, rem) - 1;
+            var maxd = Math.min(32767, i4);
+            var ml = Math.min(258, rem);
+            while (dif <= maxd && --ch_1 && imod != pimod) {
+              if (dat[i4 + l5] == dat[i4 + l5 - dif]) {
+                var nl = 0;
+                for (; nl < ml && dat[i4 + nl] == dat[i4 + nl - dif]; ++nl)
+                  ;
+                if (nl > l5) {
+                  l5 = nl, d5 = dif;
+                  if (nl > maxn)
+                    break;
+                  var mmd = Math.min(dif, nl - 2);
+                  var md = 0;
+                  for (var j4 = 0; j4 < mmd; ++j4) {
+                    var ti = i4 - dif + j4 & 32767;
+                    var pti = prev[ti];
+                    var cd = ti - pti & 32767;
+                    if (cd > md)
+                      md = cd, pimod = ti;
+                  }
+                }
+              }
+              imod = pimod, pimod = prev[imod];
+              dif += imod - pimod & 32767;
+            }
+          }
+          if (d5) {
+            syms[li++] = 268435456 | revfl[l5] << 18 | revfd[d5];
+            var lin = revfl[l5] & 31, din = revfd[d5] & 31;
+            eb += fleb[lin] + fdeb[din];
+            ++lf[257 + lin];
+            ++df[din];
+            wi = i4 + l5;
+            ++lc_1;
+          } else {
+            syms[li++] = dat[i4];
+            ++lf[dat[i4]];
+          }
+        }
+      }
+      for (i4 = Math.max(i4, wi); i4 < s4; ++i4) {
+        syms[li++] = dat[i4];
+        ++lf[dat[i4]];
+      }
+      pos = wblk(dat, w5, lst, syms, lf, df, eb, li, bs, i4 - bs, pos);
+      if (!lst) {
+        st.r = pos & 7 | w5[pos / 8 | 0] << 3;
+        pos -= 7;
+        st.h = head, st.p = prev, st.i = i4, st.w = wi;
+      }
+    } else {
+      for (var i4 = st.w || 0; i4 < s4 + lst; i4 += 65535) {
+        var e4 = i4 + 65535;
+        if (e4 >= s4) {
+          w5[pos / 8 | 0] = lst;
+          e4 = s4;
+        }
+        pos = wfblk(w5, pos + 1, dat.subarray(i4, e4));
+      }
+      st.i = s4;
+    }
+    return slc(o4, 0, pre + shft(pos) + post);
+  };
+  var crct = /* @__PURE__ */ (function() {
+    var t4 = new Int32Array(256);
+    for (var i4 = 0; i4 < 256; ++i4) {
+      var c4 = i4, k3 = 9;
+      while (--k3)
+        c4 = (c4 & 1 && -306674912) ^ c4 >>> 1;
+      t4[i4] = c4;
+    }
+    return t4;
+  })();
+  var crc = function() {
+    var c4 = -1;
+    return {
+      p: function(d5) {
+        var cr = c4;
+        for (var i4 = 0; i4 < d5.length; ++i4)
+          cr = crct[cr & 255 ^ d5[i4]] ^ cr >>> 8;
+        c4 = cr;
+      },
+      d: function() {
+        return ~c4;
+      }
+    };
+  };
+  var dopt = function(dat, opt, pre, post, st) {
+    if (!st) {
+      st = { l: 1 };
+      if (opt.dictionary) {
+        var dict = opt.dictionary.subarray(-32768);
+        var newDat = new u8(dict.length + dat.length);
+        newDat.set(dict);
+        newDat.set(dat, dict.length);
+        dat = newDat;
+        st.w = dict.length;
+      }
+    }
+    return dflt(dat, opt.level == null ? 6 : opt.level, opt.mem == null ? st.l ? Math.ceil(Math.max(8, Math.min(13, Math.log(dat.length))) * 1.5) : 20 : 12 + opt.mem, pre, post, st);
+  };
+  var mrg = function(a4, b4) {
+    var o4 = {};
+    for (var k3 in a4)
+      o4[k3] = a4[k3];
+    for (var k3 in b4)
+      o4[k3] = b4[k3];
+    return o4;
+  };
+  var wbytes = function(d5, b4, v4) {
+    for (; v4; ++b4)
+      d5[b4] = v4, v4 >>>= 8;
+  };
+  function deflateSync(data, opts) {
+    return dopt(data, opts || {}, 0, 0);
+  }
+  var fltn = function(d5, p5, t4, o4) {
+    for (var k3 in d5) {
+      var val = d5[k3], n3 = p5 + k3, op = o4;
+      if (Array.isArray(val))
+        op = mrg(o4, val[1]), val = val[0];
+      if (ArrayBuffer.isView(val))
+        t4[n3] = [val, op];
+      else {
+        t4[n3 += "/"] = [new u8(0), op];
+        fltn(val, n3, t4, o4);
+      }
+    }
+  };
+  var te = typeof TextEncoder != "undefined" && /* @__PURE__ */ new TextEncoder();
+  var td = typeof TextDecoder != "undefined" && /* @__PURE__ */ new TextDecoder();
+  var tds = 0;
+  try {
+    td.decode(et, { stream: true });
+    tds = 1;
+  } catch (e4) {
+  }
+  function strToU8(str, latin1) {
+    if (latin1) {
+      var ar_1 = new u8(str.length);
+      for (var i4 = 0; i4 < str.length; ++i4)
+        ar_1[i4] = str.charCodeAt(i4);
+      return ar_1;
+    }
+    if (te)
+      return te.encode(str);
+    var l5 = str.length;
+    var ar = new u8(str.length + (str.length >> 1));
+    var ai = 0;
+    var w5 = function(v4) {
+      ar[ai++] = v4;
+    };
+    for (var i4 = 0; i4 < l5; ++i4) {
+      if (ai + 5 > ar.length) {
+        var n3 = new u8(ai + 8 + (l5 - i4 << 1));
+        n3.set(ar);
+        ar = n3;
+      }
+      var c4 = str.charCodeAt(i4);
+      if (c4 < 128 || latin1)
+        w5(c4);
+      else if (c4 < 2048)
+        w5(192 | c4 >> 6), w5(128 | c4 & 63);
+      else if (c4 > 55295 && c4 < 57344)
+        c4 = 65536 + (c4 & 1023 << 10) | str.charCodeAt(++i4) & 1023, w5(240 | c4 >> 18), w5(128 | c4 >> 12 & 63), w5(128 | c4 >> 6 & 63), w5(128 | c4 & 63);
+      else
+        w5(224 | c4 >> 12), w5(128 | c4 >> 6 & 63), w5(128 | c4 & 63);
+    }
+    return slc(ar, 0, ai);
+  }
+  var exfl = function(ex) {
+    var le = 0;
+    if (ex) {
+      for (var k3 in ex) {
+        var l5 = ex[k3].length;
+        if (l5 > 65535)
+          err(9);
+        le += l5 + 4;
+      }
+    }
+    return le;
+  };
+  var wzh = function(d5, b4, f5, fn, u5, c4, ce, co) {
+    var fl2 = fn.length, ex = f5.extra, col = co && co.length;
+    var exl = exfl(ex);
+    wbytes(d5, b4, ce != null ? 33639248 : 67324752), b4 += 4;
+    if (ce != null)
+      d5[b4++] = 20, d5[b4++] = f5.os;
+    d5[b4] = 20, b4 += 2;
+    d5[b4++] = f5.flag << 1 | (c4 < 0 && 8), d5[b4++] = u5 && 8;
+    d5[b4++] = f5.compression & 255, d5[b4++] = f5.compression >> 8;
+    var dt = new Date(f5.mtime == null ? Date.now() : f5.mtime), y5 = dt.getFullYear() - 1980;
+    if (y5 < 0 || y5 > 119)
+      err(10);
+    wbytes(d5, b4, y5 << 25 | dt.getMonth() + 1 << 21 | dt.getDate() << 16 | dt.getHours() << 11 | dt.getMinutes() << 5 | dt.getSeconds() >> 1), b4 += 4;
+    if (c4 != -1) {
+      wbytes(d5, b4, f5.crc);
+      wbytes(d5, b4 + 4, c4 < 0 ? -c4 - 2 : c4);
+      wbytes(d5, b4 + 8, f5.size);
+    }
+    wbytes(d5, b4 + 12, fl2);
+    wbytes(d5, b4 + 14, exl), b4 += 16;
+    if (ce != null) {
+      wbytes(d5, b4, col);
+      wbytes(d5, b4 + 6, f5.attrs);
+      wbytes(d5, b4 + 10, ce), b4 += 14;
+    }
+    d5.set(fn, b4);
+    b4 += fl2;
+    if (exl) {
+      for (var k3 in ex) {
+        var exf = ex[k3], l5 = exf.length;
+        wbytes(d5, b4, +k3);
+        wbytes(d5, b4 + 2, l5);
+        d5.set(exf, b4 + 4), b4 += 4 + l5;
+      }
+    }
+    if (col)
+      d5.set(co, b4), b4 += col;
+    return b4;
+  };
+  var wzf = function(o4, b4, c4, d5, e4) {
+    wbytes(o4, b4, 101010256);
+    wbytes(o4, b4 + 8, c4);
+    wbytes(o4, b4 + 10, c4);
+    wbytes(o4, b4 + 12, d5);
+    wbytes(o4, b4 + 16, e4);
+  };
+  function zipSync(data, opts) {
+    if (!opts)
+      opts = {};
+    var r5 = {};
+    var files = [];
+    fltn(data, "", r5, opts);
+    var o4 = 0;
+    var tot = 0;
+    for (var fn in r5) {
+      var _a2 = r5[fn], file = _a2[0], p5 = _a2[1];
+      var compression = p5.level == 0 ? 0 : 8;
+      var f5 = strToU8(fn), s4 = f5.length;
+      var com = p5.comment, m4 = com && strToU8(com), ms = m4 && m4.length;
+      var exl = exfl(p5.extra);
+      if (s4 > 65535)
+        err(11);
+      var d5 = compression ? deflateSync(file, p5) : file, l5 = d5.length;
+      var c4 = crc();
+      c4.p(file);
+      files.push(mrg(p5, {
+        size: file.length,
+        crc: c4.d(),
+        c: d5,
+        f: f5,
+        m: m4,
+        u: s4 != fn.length || m4 && com.length != ms,
+        o: o4,
+        compression
+      }));
+      o4 += 30 + s4 + exl + l5;
+      tot += 76 + 2 * (s4 + exl) + (ms || 0) + l5;
+    }
+    var out = new u8(tot + 22), oe = o4, cdl = tot - o4;
+    for (var i4 = 0; i4 < files.length; ++i4) {
+      var f5 = files[i4];
+      wzh(out, f5.o, f5, f5.f, f5.u, f5.c.length);
+      var badd = 30 + f5.f.length + exfl(f5.extra);
+      out.set(f5.c, f5.o + badd);
+      wzh(out, o4, f5, f5.f, f5.u, f5.c.length, f5.o, f5.m), o4 += 16 + badd + (f5.m ? f5.m.length : 0);
+    }
+    wzf(out, o4, files.length, cdl, oe);
+    return out;
+  }
+
+  // media/src/utils.ts
+  function esc(s4) {
+    if (!s4) return "";
+    const d5 = document.createElement("div");
+    d5.textContent = String(s4);
+    return d5.innerHTML;
+  }
+  function syntaxHighlightJson(jsonStr) {
+    return esc(jsonStr).replace(/("(?:\\.|[^"\\])*")\s*:/g, '<span class="json-key">$1</span>:').replace(/:\s*("(?:\\.|[^"\\])*")/g, (_m, val) => ': <span class="json-string">' + val + "</span>").replace(/:\s*(\d+(?:\.\d+)?)/g, ': <span class="json-number">$1</span>').replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>').replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
+  }
+  function nanoToMs(n3) {
+    try {
+      return Number(BigInt(n3 ?? 0) / BigInt(1e6));
+    } catch {
+      return parseInt(String(n3)) / 1e6 || 0;
+    }
+  }
+  function timestampToMs(value) {
+    if (value === void 0 || value === null || value === "") return 0;
+    if (typeof value === "number") return value;
+    const raw = String(value);
+    if (/^\d+$/.test(raw)) return nanoToMs(raw);
+    const parsed = Date.parse(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  function sessionStartMs(session) {
+    return timestampToMs(session.startTime);
+  }
+  function formatMs(ms) {
+    if (ms < 1) return "<1ms";
+    if (ms < 1e3) return ms.toFixed(0) + "ms";
+    if (ms < 6e4) return (ms / 1e3).toFixed(1) + "s";
+    if (ms < 36e5) return (ms / 6e4).toFixed(1) + "min";
+    return (ms / 36e5).toFixed(1) + "h";
+  }
+  function formatCompact(n3) {
+    return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(n3);
+  }
+  function getAttr(span, key) {
+    const a4 = (span.attributes ?? []).find((x4) => x4.key === key);
+    if (!a4) return null;
+    const v4 = a4.value;
+    return v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue ?? null;
+  }
+  function intAttr(attrs, key) {
+    const a4 = attrs.find((x4) => x4.key === key);
+    if (!a4) return 0;
+    return parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? 0)) || 0;
+  }
+  function getInputTokens(span) {
+    const attrs = span.attributes ?? [];
+    const genAiBase = intAttr(attrs, "gen_ai.usage.input_tokens");
+    const genAiCache = intAttr(attrs, "gen_ai.usage.cache_read.input_tokens") + intAttr(attrs, "gen_ai.usage.cache_creation.input_tokens");
+    if (genAiBase > 0 || genAiCache > 0) return genAiBase + genAiCache;
+    return intAttr(attrs, "input_tokens") + intAttr(attrs, "prompt_tokens") + intAttr(attrs, "cache_read_tokens") + intAttr(attrs, "cache_creation_tokens") + intAttr(attrs, "input_token_count") + intAttr(attrs, "cached_token_count") + intAttr(attrs, "codex.turn.token_usage.input_tokens") + intAttr(attrs, "codex.turn.token_usage.cached_input_tokens");
+  }
+  function getOutputTokens(span) {
+    const attrs = span.attributes ?? [];
+    return intAttr(attrs, "gen_ai.usage.output_tokens") || intAttr(attrs, "output_tokens") || intAttr(attrs, "completion_tokens") || intAttr(attrs, "output_token_count") + intAttr(attrs, "reasoning_token_count") || intAttr(attrs, "codex.turn.token_usage.output_tokens");
+  }
+  function getTokenCount(span) {
+    let total = 0;
+    let foundTotal = false;
+    for (const a4 of span.attributes ?? []) {
+      if (/total.?tokens/i.test(a4.key)) {
+        total = parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? a4.value.doubleValue)) || 0;
+        foundTotal = true;
+      }
+    }
+    if (foundTotal) return total;
+    return getInputTokens(span) + getOutputTokens(span);
+  }
+  function isSessionSpan(name) {
+    return name.indexOf("invoke_agent") === 0 || name === "claude_code.interaction" || name === "codex.user_prompt" || name === "codex.prompt" || name === "codex.user_message" || name === "codex.session_start";
+  }
+  function isLlmSpanName(name) {
+    return name.indexOf("chat") === 0 || name === "claude_code.llm_request" || name === "handle_responses" || name === "codex.stream_event" || name === "codex.api_request" || name === "codex.completion" || name === "codex.response" || name === "codex.sse_event";
+  }
+  function isToolSpanName(name) {
+    return name.indexOf("execute_tool") === 0 || name === "claude_code.tool" || name === "exec_command" || name.indexOf("codex.tool") === 0;
+  }
+  function inferSpanSource(span) {
+    const name = span?.name ? String(span.name) : "";
+    if (name.indexOf("claude_code.") === 0) return "claude_code";
+    if (name.indexOf("codex.") === 0) return "codex";
+    if (getCodexSessionId(span)) return "codex";
+    if (name.indexOf("invoke_agent") === 0 || name.indexOf("chat") === 0 || name.indexOf("execute_tool") === 0) return "copilot";
+    return null;
+  }
+  function getCodexSessionId(span) {
+    const explicit = getAttr(span, "codex.session.id");
+    if (explicit) return String(explicit);
+    const conversationId = getAttr(span, "thread.id") ?? getAttr(span, "thread_id") ?? getAttr(span, "conversation.id") ?? getAttr(span, "conversation_id") ?? getAttr(span, "codex.conversation.id");
+    const turnId = getAttr(span, "turn.id") ?? getAttr(span, "turn_id") ?? getAttr(span, "codex.turn.id");
+    if (conversationId && turnId) {
+      return "codex:" + String(conversationId) + ":" + String(turnId);
+    }
+    return "";
+  }
+  function getSessionUserRequest(span) {
+    return String(
+      getAttr(span, "copilot_chat.user_request") ?? getAttr(span, "user_prompt") ?? getAttr(span, "prompt") ?? getAttr(span, "codex.user_prompt") ?? getAttr(span, "codex.prompt") ?? getAttr(span, "codex.user_message") ?? getAttr(span, "codex.input") ?? ""
+    );
+  }
+  function extractUserRequest(raw) {
+    if (!raw) return "";
+    const trimmed = raw.trim();
+    if (trimmed.indexOf("<userRequest>") !== -1) {
+      const match = trimmed.match(/<userRequest>\s*([\s\S]*?)\s*<\/userRequest>/);
+      return match ? match[1].trim() : trimmed;
+    }
+    const codexMatch = trimmed.match(/(?:^|\n)##\s+My request(?:\s+for\s+[^\n:]+)?:\s*\n([\s\S]*)$/i);
+    if (codexMatch?.[1]?.trim()) return codexMatch[1].trim();
+    const stripped = trimmed.replace(/<ide_[^>]*>[\s\S]*?<\/ide_[^>]*>/gi, "").trim();
+    return stripped || trimmed;
+  }
+  function spanTypeBadge(span) {
+    const n3 = (span.name ?? "").toLowerCase();
+    const otelName = String(getAttr(span, "otel.name") ?? "").toLowerCase();
+    if (getInputTokens(span) > 0 || getOutputTokens(span) > 0 || isLlmSpanName(span.name ?? "") || n3 === "handle_responses") return { label: "LLM", color: "var(--accent)" };
+    if (n3.includes("llm") || n3.includes("chat") || n3.includes("completion")) return { label: "LLM", color: "var(--accent)" };
+    if (isToolSpanName(span.name ?? "") || n3.includes("tool")) return { label: "TOOL", color: "#B8E986" };
+    if (n3.includes("agent") || n3.includes("session") || n3.includes("turn") || otelName.includes("session_task")) return { label: "AGENT", color: "#C49CFF" };
+    if (n3.includes("embed")) return { label: "EMBED", color: "#FF85A1" };
+    if (n3.includes("search") || n3.includes("retrieve")) return { label: "RAG", color: "#85E0D0" };
+    return { label: "SPAN", color: "var(--muted)" };
+  }
+  function getAgentSourceLabel(source) {
+    if (source === "claude_code") return "Claude";
+    if (source === "codex") return "Codex";
+    return "Copilot";
+  }
+  function getAgentColor(source) {
+    if (source === "claude_code") return "#FFB085";
+    if (source === "codex") return "#F0FF42";
+    if (source === "copilot") return "#00EAFF";
+    return "#90a4ae";
+  }
+  function getAllSessionsChronological() {
+    return sessionSummary.value?.sessions ?? [];
+  }
+  function getSessionGlobalNumber(sess) {
+    const all = getAllSessionsChronological();
+    if (!sess || all.length === 0) return 0;
+    const idx = all.indexOf(sess);
+    if (idx !== -1) return idx + 1;
+    for (let i4 = 0; i4 < all.length; i4++) {
+      const s4 = all[i4];
+      if (sess.sessionId && s4.sessionId === sess.sessionId) return i4 + 1;
+      if (sess.traceId && sess.startTime && s4.traceId === sess.traceId && s4.startTime === sess.startTime) return i4 + 1;
+      if (sess.traceId && sess.userRequest && s4.traceId === sess.traceId && s4.userRequest === sess.userRequest) return i4 + 1;
+    }
+    return 0;
+  }
+  function buildDisplaySummary() {
+    const sessions = displaySessions.value;
+    let totalInputTokens = 0, totalOutputTokens = 0, totalLlmCalls = 0, cacheRead = 0;
+    sessions.forEach((s4) => {
+      totalInputTokens += s4.inputTokens ?? 0;
+      totalOutputTokens += s4.outputTokens ?? 0;
+      totalLlmCalls += s4.totalLlmCalls ?? 0;
+      cacheRead += s4.cacheReadTokens ?? 0;
+    });
+    return {
+      sessions,
+      efficiency: {
+        totalInputTokens,
+        totalOutputTokens,
+        totalLlmCalls,
+        avgInputPerCall: totalLlmCalls > 0 ? Math.round(totalInputTokens / totalLlmCalls) : 0,
+        cacheHitRate: totalInputTokens > 0 ? cacheRead / totalInputTokens : 0,
+        toolDefWaste: sessionSummary.value?.efficiency?.toolDefWaste ?? 0
+      }
+    };
+  }
+  function getAgentDotHtml(source) {
+    if (!source) return "";
+    return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getAgentColor(source)};vertical-align:middle" title="${getAgentSourceLabel(source)}"></span>`;
+  }
+  function formatLlmLabel(entry) {
+    const action = entry.action ?? "";
+    if (action.indexOf("called ") === 0) {
+      const tools = action.substring(7).split(/[,\s]+/).filter(Boolean);
+      const counts = {};
+      tools.forEach((t4) => {
+        counts[t4] = (counts[t4] ?? 0) + 1;
+      });
+      const parts = Object.keys(counts).map((t4) => {
+        const shortName = t4.replace(/^execute_tool\s*/, "");
+        return counts[t4] > 1 ? counts[t4] + "\xD7 " + shortName : shortName;
+      });
+      return "Decide \u2192 " + parts.join(", ");
+    }
+    if (action === "text response") return "Respond with answer";
+    return action || "LLM call";
+  }
+  function formatToolLabel(entry) {
+    const label = entry.label ?? "";
+    const parts = label.match(/^(\S+)\s*([\s\S]*)$/);
+    if (!parts) return label;
+    const toolName2 = parts[1];
+    const args = parts[2] ?? "";
+    switch (toolName2) {
+      case "read_file": {
+        const m4 = args.match(/^(\S+)\s*L(\d+)-(\d+)$/);
+        if (m4) return "Read " + m4[1] + " :" + m4[2] + "-" + m4[3];
+        return "Read " + args;
+      }
+      case "file_search": {
+        const file = args.replace(/^\*\*\//, "").split("/").pop() ?? args;
+        if (file.indexOf("*") !== -1) return "Find files matching " + file;
+        return "Find " + file;
+      }
+      case "grep_search": {
+        const gm = args.match(/^"([^"]*?)"\s+in\s+(.*)$/);
+        if (gm) {
+          const inFile = gm[2].replace(/^\*\*\//, "").split("/").pop() ?? gm[2];
+          return 'Grep "' + gm[1] + '" in ' + inFile;
+        }
+        return "Grep " + args;
+      }
+      case "list_dir":
+        return "List " + args + "/";
+      case "manage_todo_list": {
+        const tm = args.match(/(\d+)\s*items?\s*\(([^)]+)\)/);
+        if (tm) return "Update todos (" + tm[2] + ")";
+        const nm = args.match(/(\d+)\s*items?/);
+        if (nm) return "Update todos (" + nm[1] + " items)";
+        return "Check todos";
+      }
+      case "semantic_search":
+        return "Search codebase " + args;
+      case "replace_string_in_file":
+      case "multi_replace_string_in_file":
+        return "Edit " + args;
+      case "create_file":
+        return "Create " + args;
+      case "run_in_terminal":
+        return "Run: " + (args.length > 60 ? args.slice(0, 57) + "\u2026" : args);
+      case "explore_subagent":
+      case "runSubagent":
+        return "Sub-agent: " + args;
+      default:
+        return toolName2 + " " + args;
+    }
+  }
+  function formatToolResult(entry) {
+    const rs = entry.resultSummary ?? "";
+    if (!rs || rs === "empty") return "";
+    if (rs === "No todo list found.") return "none";
+    if (rs.match(/^Successfully/)) return "ok";
+    if (rs === "no list") return "none";
+    return rs;
+  }
+  function buildSpanTree(traceSpans) {
+    const byId = {};
+    const roots = [];
+    traceSpans.forEach((s4) => {
+      byId[s4.spanId] = { span: s4, children: [], depth: 0 };
+    });
+    traceSpans.forEach((s4) => {
+      const node = byId[s4.spanId];
+      if (s4.parentSpanId && byId[s4.parentSpanId]) {
+        byId[s4.parentSpanId].children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+    function setDepth(node, d5) {
+      node.depth = d5;
+      node.children.sort((a4, b4) => nanoToMs(a4.span.startTime) - nanoToMs(b4.span.startTime));
+      node.children.forEach((c4) => setDepth(c4, d5 + 1));
+    }
+    roots.sort((a4, b4) => nanoToMs(a4.span.startTime) - nanoToMs(b4.span.startTime));
+    roots.forEach((r5) => setDepth(r5, 0));
+    const flat = [];
+    function flatten(node) {
+      flat.push(node);
+      node.children.forEach(flatten);
+    }
+    roots.forEach(flatten);
+    return flat;
+  }
+
+  // media/src/state.ts
+  function makeSetSignal() {
+    const s4 = y3(/* @__PURE__ */ new Set());
+    return {
+      get value() {
+        return s4.value;
+      },
+      peek() {
+        return s4.peek();
+      },
+      has(item) {
+        return s4.value.has(item);
+      },
+      add(item) {
+        const n3 = new Set(s4.value);
+        n3.add(item);
+        s4.value = n3;
+      },
+      delete(item) {
+        const n3 = new Set(s4.value);
+        n3.delete(item);
+        s4.value = n3;
+      },
+      toggle(item) {
+        const n3 = new Set(s4.value);
+        n3.has(item) ? n3.delete(item) : n3.add(item);
+        s4.value = n3;
+      },
+      clear() {
+        s4.value = /* @__PURE__ */ new Set();
+      },
+      get size() {
+        return s4.value.size;
+      }
+    };
+  }
+  var spans = y3(window.__INITIAL_SPANS__ ?? []);
+  var sessionSummary = y3(window.__INITIAL_SESSION_SUMMARY__ ?? null);
+  var toolCalls = y3(window.__INITIAL_TOOL_CALLS__ ?? {});
+  var sessionLimit = y3(10);
+  var selectedAgentFilter = y3("all");
+  var insightFilter = y3("all");
+  var activeTab = y3("efficiency");
+  var retainWaterfall = y3(true);
+  var retainSummaryWaterfall = y3(true);
+  var waterfallSpans = y3([]);
+  var swRetainedSessions = y3([]);
+  var swLastSessionCount = y3(0);
+  var expandedSpanIds = makeSetSignal();
+  var dismissedSpanIds = makeSetSignal();
+  var lastSeenTraceIds = makeSetSignal();
+  var ignoredInsightKeys = makeSetSignal();
+  var vscode = null;
+  function setVscode(api) {
+    vscode = api;
+  }
+  var COLORS = [
+    "#4fc3f7",
+    "#81c784",
+    "#ffb74d",
+    "#e57373",
+    "#ba68c8",
+    "#4dd0e1",
+    "#fff176",
+    "#a1887f",
+    "#90a4ae",
+    "#f06292",
+    "#aed581",
+    "#7986cb"
+  ];
+  var agentFilteredSessions = g2(() => {
+    const all = sessionSummary.value?.sessions ?? [];
+    const filter = selectedAgentFilter.value;
+    if (filter === "all") return all;
+    return all.filter((s4) => s4.source === filter);
+  });
+  var displaySessions = g2(() => {
+    const all = agentFilteredSessions.value;
+    const limit = sessionLimit.value;
+    if (limit >= all.length) return all;
+    return all.slice(all.length - limit);
+  });
+  var displaySpans = g2(() => {
+    const ds = displaySessions.value;
+    if (!ds.length) {
+      const filter = selectedAgentFilter.value;
+      if (filter === "all") return spans.value;
+      return spans.value.filter((s4) => inferSpanSource(s4) === filter);
+    }
+    const traceIds = new Set(ds.map((s4) => s4.traceId).filter(Boolean));
+    if (traceIds.size === 0) {
+      const filter = selectedAgentFilter.value;
+      if (filter === "all") return spans.value;
+      return spans.value.filter((s4) => inferSpanSource(s4) === filter);
+    }
+    return spans.value.filter((s4) => traceIds.has(s4.traceId));
+  });
+  var agentPresence = g2(() => {
+    const sessions = displaySessions.value;
+    return {
+      claude: sessions.some((s4) => s4.source === "claude_code"),
+      copilot: sessions.some((s4) => s4.source === "copilot"),
+      codex: sessions.some((s4) => s4.source === "codex")
+    };
+  });
+
+  // node_modules/.pnpm/preact@10.29.1/node_modules/preact/jsx-runtime/dist/jsxRuntime.module.js
+  var f4 = 0;
+  function u4(e4, t4, n3, o4, i4, u5) {
+    t4 || (t4 = {});
+    var a4, c4, p5 = t4;
+    if ("ref" in p5) for (c4 in p5 = {}, t4) "ref" == c4 ? a4 = t4[c4] : p5[c4] = t4[c4];
+    var l5 = { type: e4, props: p5, key: n3, ref: a4, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: void 0, __v: --f4, __i: -1, __u: 0, __source: i4, __self: u5 };
+    if ("function" == typeof e4 && (a4 = e4.defaultProps)) for (c4 in a4) void 0 === p5[c4] && (p5[c4] = a4[c4]);
+    return l.vnode && l.vnode(l5), l5;
+  }
+
+  // media/src/tabs/Efficiency.tsx
+  function ContextGrowthChart({ sessions }) {
+    const canvasRef = A2(null);
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const seriesData = [];
+      let globalMax = 0, globalMin = Infinity, globalMaxPoints = 0;
+      sessions.forEach((sess, idx) => {
+        const llmEntries = (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+        if (llmEntries.length < 1) return;
+        const points = llmEntries.map((e4) => e4.inputTokens ?? 0);
+        const max = Math.max(...points), min = Math.min(...points);
+        if (max > globalMax) globalMax = max;
+        if (min < globalMin) globalMin = min;
+        if (points.length > globalMaxPoints) globalMaxPoints = points.length;
+        const sessionNum = getSessionGlobalNumber(sess) || idx + 1;
+        seriesData.push({ label: "" + sessionNum, points, color: getAgentColor(sess.source) || COLORS[idx % COLORS.length] });
+      });
+      if (seriesData.length === 0) {
+        canvas.style.display = "none";
+        return;
+      }
+      canvas.style.display = "block";
+      const dataRange = globalMax - globalMin;
+      const adjRange = dataRange === 0 ? globalMax * 0.1 || 1 : dataRange;
+      const yPad = adjRange * 0.1;
+      const yMin = Math.max(0, globalMin - yPad), yMax = globalMax + yPad;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w5 = rect.width, h5 = rect.height;
+      ctx.clearRect(0, 0, w5, h5);
+      const pad = { top: 8, right: 40, bottom: 24, left: 64 };
+      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
+      const cs = getComputedStyle(document.body);
+      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
+      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
+      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 0.5;
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const y5 = pad.top + chartH * i4 / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y5);
+        ctx.lineTo(pad.left + chartW, y5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = textColor;
+      ctx.font = fontStr;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = yMax - (yMax - yMin) * i4 / 4;
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
+      }
+      ctx.save();
+      ctx.translate(10, pad.top + chartH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = textColor;
+      ctx.font = fontStr;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Input Tokens", 0, 0);
+      ctx.restore();
+      ctx.fillStyle = textColor;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText("Turns (LLM Calls)", pad.left + chartW / 2, pad.top + chartH + 10);
+      seriesData.forEach((series) => {
+        const pts = series.points;
+        const lastX = pad.left + (pts.length - 1) / Math.max(globalMaxPoints - 1, 1) * chartW;
+        const lastY = pad.top + chartH - (pts[pts.length - 1] - yMin) / (yMax - yMin) * chartH;
+        if (pts.length >= 2) {
+          ctx.beginPath();
+          for (let j4 = 0; j4 < pts.length; j4++) {
+            const x4 = pad.left + j4 / Math.max(globalMaxPoints - 1, 1) * chartW;
+            const y5 = pad.top + chartH - (pts[j4] - yMin) / (yMax - yMin) * chartH;
+            j4 === 0 ? ctx.moveTo(x4, y5) : ctx.lineTo(x4, y5);
+          }
+          ctx.strokeStyle = series.color;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, pts.length === 1 ? 5 : 3, 0, Math.PI * 2);
+        ctx.fillStyle = series.color;
+        ctx.fill();
+        ctx.fillStyle = series.color;
+        ctx.font = "bold 10px sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText(series.label, lastX + (pts.length === 1 ? 9 : 5), lastY);
+      });
+    });
+    return /* @__PURE__ */ u4("canvas", { ref: canvasRef, id: "context-growth-chart", style: "width:100%;height:180px;display:block" });
+  }
+  var HELP_TOOLTIPS = {
+    "help-tool-failures": "Failures come from guessed file paths or unavailable commands. Provide exact paths and tell the agent which tools and runtimes are available.",
+    "help-high-turns": "Prompt describes the goal but not the location. Add explicit file paths, stopping conditions, and break multi-step tasks into separate prompts.",
+    "help-cache-rate": "Cache breaks when the prompt prefix changes between calls. Keep static instructions identical at the top; avoid timestamps in instruction files.",
+    "help-large-context": "Large instruction files make every session start expensive. Audit and trim instruction files; move reference docs out of instruction files.",
+    "help-context-bloat": "Tool results and instruction files expand context each turn. Keep instruction files under 4 KB; use line-ranged reads instead of full file reads."
+  };
+  function renderHeatReason(r5) {
+    if (!r5.linkPhrase || !r5.helpId) return /* @__PURE__ */ u4("span", { style: "color:var(--fg)", children: r5.text });
+    const idx = r5.text.indexOf(r5.linkPhrase);
+    if (idx === -1) return /* @__PURE__ */ u4("span", { style: "color:var(--fg)", children: r5.text });
+    const before = r5.text.slice(0, idx);
+    const after = r5.text.slice(idx + r5.linkPhrase.length);
+    const tip = HELP_TOOLTIPS[r5.helpId] || "";
+    return /* @__PURE__ */ u4("span", { style: "color:var(--fg)", children: [
+      before,
+      /* @__PURE__ */ u4("span", { "data-tip": tip, style: "border-bottom:1px dotted currentColor;cursor:help", children: r5.linkPhrase }),
+      after
+    ] });
+  }
+  function SessionDiagRow({ reasons }) {
+    return /* @__PURE__ */ u4("tr", { children: /* @__PURE__ */ u4("td", { colSpan: 11, style: "padding:0", children: /* @__PURE__ */ u4("div", { style: "padding:8px 16px 12px 32px;background:var(--vscode-editorWidget-background,var(--bg));border-top:1px solid var(--border);font-size:11px", children: [
+      /* @__PURE__ */ u4("div", { style: "font-weight:600;color:var(--muted);margin-bottom:4px;font-size:10px;text-transform:uppercase", children: "What needs attention" }),
+      reasons.map((r5, i4) => /* @__PURE__ */ u4("div", { style: "display:flex;align-items:baseline;gap:6px;margin-bottom:3px", children: [
+        /* @__PURE__ */ u4("span", { style: "color:var(--error);flex-shrink:0", children: "\u2022" }),
+        renderHeatReason(r5)
+      ] }, i4))
+    ] }) }) });
+  }
+  function SessionRow({ sess, idx, heat, expanded, onToggle }) {
+    const realIdx = getSessionGlobalNumber(sess) || idx + 1;
+    const cacheRate = sess.inputTokens > 0 ? (sess.cacheReadTokens / sess.inputTokens * 100).toFixed(0) : "\u2014";
+    const agentDotColor = getAgentColor(sess.source);
+    let rowBg = "";
+    if (heat.score > 60) rowBg = "rgba(255,50,50," + (0.15 + Math.min(heat.score - 60, 40) / 40 * 0.25) + ")";
+    else if (heat.score > 30) rowBg = "rgba(255,140,0," + (0.12 + (heat.score - 30) / 30 * 0.18) + ")";
+    else if (heat.score > 10) rowBg = "rgba(255,180,50," + (0.1 + (heat.score - 10) / 20 * 0.15) + ")";
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("tr", { style: "background:" + (rowBg || "transparent") + ";cursor:pointer", onClick: onToggle, children: [
+        /* @__PURE__ */ u4("td", { style: "text-align:center;font-weight:bold;white-space:nowrap", children: [
+          /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);margin-right:3px", children: expanded ? "\u25BC" : "\u25B6" }),
+          realIdx,
+          " ",
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + agentDotColor + ";vertical-align:middle" })
+        ] }),
+        /* @__PURE__ */ u4("td", { style: "text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: sess.userRequest, children: [
+          (sess.userRequest ?? "").slice(0, 60),
+          (sess.userRequest ?? "").length > 60 ? "\u2026" : ""
+        ] }),
+        /* @__PURE__ */ u4("td", { style: "text-align:left;white-space:nowrap;color:var(--muted);font-size:10px", title: sess.model, children: sess.model ? sess.model.split("/").pop() : "\u2014" }),
+        /* @__PURE__ */ u4("td", { style: "text-align:left;white-space:nowrap;font-size:10px;font-family:monospace;color:var(--muted)", title: sess.conversationId || "", children: sess.conversationId ? sess.conversationId.slice(0, 8) : "\u2014" }),
+        /* @__PURE__ */ u4("td", { class: "right", children: sess.totalLlmCalls }),
+        /* @__PURE__ */ u4("td", { class: "right", children: sess.totalToolCalls }),
+        /* @__PURE__ */ u4("td", { class: "right", children: sess.inputTokens.toLocaleString() }),
+        /* @__PURE__ */ u4("td", { class: "right", children: sess.outputTokens.toLocaleString() }),
+        /* @__PURE__ */ u4("td", { class: "right", children: [
+          cacheRate,
+          "%"
+        ] }),
+        /* @__PURE__ */ u4("td", { class: "right", children: formatMs(sess.durationMs) }),
+        /* @__PURE__ */ u4("td", { style: "text-align:right" + (sess.errors > 0 ? ";color:var(--error)" : ""), children: sess.errors })
+      ] }),
+      expanded && heat.reasons.length > 0 && /* @__PURE__ */ u4(SessionDiagRow, { reasons: heat.reasons })
+    ] });
+  }
+  function Efficiency() {
+    const summary = sessionSummary.value;
+    const [expandedRows, setExpandedRows] = d2(/* @__PURE__ */ new Set([0]));
+    if (!summary?.sessions?.length) {
+      return /* @__PURE__ */ u4("div", { id: "efficiency-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
+    const displaySess = displaySessions.value;
+    const breakdownSessions = displaySess.slice().reverse();
+    const sessionHeats = breakdownSessions.map((sess) => {
+      let score = 0;
+      const reasons = [];
+      if (sess.errors > 0) {
+        score += Math.min(sess.errors * 25, 40);
+        reasons.push({ text: sess.errors + " error" + (sess.errors > 1 ? "s" : "") + " \u2014 be explicit about file locations and command availability to avoid failed tool calls", linkPhrase: "be explicit about file locations and command availability", helpId: "help-tool-failures" });
+      }
+      if (sess.totalLlmCalls > 8) {
+        score += Math.min((sess.totalLlmCalls - 8) * 4, 30);
+        reasons.push({ text: sess.totalLlmCalls + " LLM calls \u2014 break the task into smaller pieces with explicit stopping conditions", linkPhrase: "break the task into smaller pieces with explicit stopping conditions", helpId: "help-high-turns" });
+      }
+      const cacheRateNum = sess.inputTokens > 0 ? sess.cacheReadTokens / sess.inputTokens * 100 : 100;
+      if (cacheRateNum < 50 && sess.inputTokens > 5e3) {
+        score += Math.min((50 - cacheRateNum) * 0.5, 20);
+        reasons.push({ text: "Cache hit rate " + cacheRateNum.toFixed(0) + "% \u2014 keep static content at the top of prompts so the cache prefix stays stable", linkPhrase: "keep static content at the top of prompts so the cache prefix stays stable", helpId: "help-cache-rate" });
+      }
+      if (sess.inputTokens > 1e5) {
+        score += 10;
+        reasons.push({ text: sess.inputTokens.toLocaleString() + " input tokens \u2014 audit your instruction files and remove verbose examples", linkPhrase: "audit your instruction files and remove verbose examples", helpId: "help-large-context" });
+      }
+      const llmEntries = (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+      if (llmEntries.length >= 3) {
+        const first = llmEntries[0].inputTokens ?? 0, last = llmEntries[llmEntries.length - 1].inputTokens ?? 0;
+        const growthPct = first > 0 ? (last - first) / first * 100 : 0;
+        if (growthPct > 50) {
+          score += Math.min(growthPct / 10, 15);
+          reasons.push({ text: "Context grew " + growthPct.toFixed(0) + "% \u2014 review instruction file sizes and use narrower tool reads", linkPhrase: "review instruction file sizes and use narrower tool reads", helpId: "help-context-bloat" });
+        }
+      }
+      return { score: Math.min(score, 100), reasons };
+    });
+    let totLlm = 0, totTool = 0, totIn = 0, totOut = 0, totDur = 0, totErr = 0;
+    breakdownSessions.forEach((s4) => {
+      totLlm += s4.totalLlmCalls;
+      totTool += s4.totalToolCalls;
+      totIn += s4.inputTokens;
+      totOut += s4.outputTokens;
+      totDur += s4.durationMs;
+      totErr += s4.errors;
+    });
+    const sessionsWithGrowth = breakdownSessions.filter(
+      (sess) => (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0).length >= 1
+    );
+    return /* @__PURE__ */ u4("div", { id: "efficiency-content", children: [
+      sessionsWithGrowth.length > 0 && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Input tokens sent per LLM call within each session. Rising lines indicate context accumulation. A sharp drop mid-session indicates context compaction. A single dot marks an in-progress session with one LLM call so far.", children: "CONTEXT GROWTH PER SESSION" }),
+        /* @__PURE__ */ u4(ContextGrowthChart, { sessions: breakdownSessions }),
+        /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);opacity:0.7;margin:4px 0 12px 2px", children: "Suggestion: If the graph appears crowded, consider refining the view by selecting fewer sessions (such as \u201CLast 5\u201D) or filtering by a specific agent to enhance clarity." })
+      ] }),
+      breakdownSessions.length > 0 && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Per-session metrics with heat coloring. Warmer colors indicate higher token usage or more errors. Expand a row to see efficiency notes.", children: "SESSION BREAKDOWN" }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:16px;margin-bottom:4px;font-size:10px;color:var(--muted);align-items:center", children: [
+          /* @__PURE__ */ u4("span", { style: "font-weight:600", children: "Usage:" }),
+          /* @__PURE__ */ u4("span", { class: "flex-4", children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:12px;height:10px;border-radius:2px;background:var(--vscode-editorWidget-background,var(--bg));border:1px solid var(--border)" }),
+            " Minimal"
+          ] }),
+          /* @__PURE__ */ u4("span", { class: "flex-4", children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:12px;height:10px;border-radius:2px;background:rgba(255,180,50,0.25);border:1px solid rgba(255,180,50,0.4)" }),
+            " Light"
+          ] }),
+          /* @__PURE__ */ u4("span", { class: "flex-4", children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:12px;height:10px;border-radius:2px;background:rgba(255,140,0,0.30);border:1px solid rgba(255,140,0,0.5)" }),
+            " Moderate"
+          ] }),
+          /* @__PURE__ */ u4("span", { class: "flex-4", children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:12px;height:10px;border-radius:2px;background:rgba(255,50,50,0.35);border:1px solid rgba(255,50,50,0.5)" }),
+            " Heavy"
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("table", { class: "tool-insights-table", children: [
+          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
+            /* @__PURE__ */ u4("th", { style: "text-align:center", "data-tip": "Session number", children: "#" }),
+            /* @__PURE__ */ u4("th", { style: "text-align:left", "data-tip": "The user prompt that started this session", children: "Prompt" }),
+            /* @__PURE__ */ u4("th", { style: "text-align:left", "data-tip": "LLM model used", children: "Model" }),
+            /* @__PURE__ */ u4("th", { style: "text-align:left", "data-tip": "Conversation thread ID \u2014 groups multiple sessions from the same chat thread. Copilot and Codex report this; Claude sessions are standalone with no conversation wrapper.", children: "Conv ID" }),
+            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "LLM round-trips", children: "LLM Calls" }),
+            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Tool invocations", children: "Tool Calls" }),
+            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Total input tokens", children: "Input Tokens" }),
+            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Total output tokens", children: "Output Tokens" }),
+            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Cache hit rate", children: "Cache Hit" }),
+            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Wall-clock duration", children: "Duration" }),
+            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Error count", children: "Errors" })
+          ] }) }),
+          /* @__PURE__ */ u4("tbody", { children: breakdownSessions.map((sess, idx) => /* @__PURE__ */ u4(
+            SessionRow,
+            {
+              sess,
+              idx,
+              heat: sessionHeats[idx],
+              expanded: expandedRows.has(idx),
+              onToggle: () => setExpandedRows((prev) => {
+                const next = new Set(prev);
+                next.has(idx) ? next.delete(idx) : next.add(idx);
+                return next;
+              })
+            },
+            sess.traceId + idx
+          )) }),
+          /* @__PURE__ */ u4("tfoot", { children: /* @__PURE__ */ u4("tr", { children: [
+            /* @__PURE__ */ u4("td", {}),
+            /* @__PURE__ */ u4("td", { style: "text-align:left", children: /* @__PURE__ */ u4("strong", { children: "Total" }) }),
+            /* @__PURE__ */ u4("td", {}),
+            /* @__PURE__ */ u4("td", {}),
+            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: totLlm }) }),
+            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: totTool }) }),
+            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: totIn.toLocaleString() }) }),
+            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: totOut.toLocaleString() }) }),
+            /* @__PURE__ */ u4("td", {}),
+            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: formatMs(totDur) }) }),
+            /* @__PURE__ */ u4("td", { style: "text-align:right" + (totErr > 0 ? ";color:var(--error)" : ""), children: /* @__PURE__ */ u4("strong", { children: totErr }) })
+          ] }) })
+        ] })
+      ] })
+    ] });
+  }
+
+  // node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
+  function r4(e4) {
+    var t4, f5, n3 = "";
+    if ("string" == typeof e4 || "number" == typeof e4) n3 += e4;
+    else if ("object" == typeof e4) if (Array.isArray(e4)) {
+      var o4 = e4.length;
+      for (t4 = 0; t4 < o4; t4++) e4[t4] && (f5 = r4(e4[t4])) && (n3 && (n3 += " "), n3 += f5);
+    } else for (f5 in e4) e4[f5] && (n3 && (n3 += " "), n3 += f5);
+    return n3;
+  }
+  function clsx() {
+    for (var e4, t4, f5 = 0, n3 = "", o4 = arguments.length; f5 < o4; f5++) (e4 = arguments[f5]) && (t4 = r4(e4)) && (n3 && (n3 += " "), n3 += t4);
+    return n3;
+  }
+  var clsx_default = clsx;
+
+  // media/src/tabs/Recommendations.tsx
+  function recommendationScopeLabel(filter) {
+    if (filter === "loop") return "loop recommendations";
+    if (filter === "efficiency") return "efficiency recommendations";
+    return "recommendations";
+  }
+  function noActiveTakeawayText(filter) {
+    if (filter === "loop") return "No active loop or malfunction signals in this view.";
+    if (filter === "efficiency") return "No active efficiency issues in this view.";
+    return "No significant inefficiencies detected. Token usage looks healthy.";
+  }
+  function summarizeTakeaways(insights) {
+    const summary = {
+      loopCount: 0,
+      hasContextBloat: false,
+      hasCacheIssue: false,
+      hasToolIssue: false,
+      hasRepeatedOperations: false
+    };
+    for (const insight of insights) {
+      const title = insight.title.toLowerCase();
+      if (insight.category === "loop") summary.loopCount++;
+      if (title.includes("context grew") || title.includes("starts with")) summary.hasContextBloat = true;
+      if (title.includes("cache hit")) summary.hasCacheIssue = true;
+      if (title.includes("tool failure") || title.includes("tool definitions") || title.includes("large tool")) summary.hasToolIssue = true;
+      if (title.includes("files read multiple") || title.includes("duplicate searches") || title.includes("files appear")) summary.hasRepeatedOperations = true;
+    }
+    return summary;
+  }
+  var HELP_WHY = {
+    "help-context-bloat": "Every LLM turn receives the full conversation so far. Each extra token in context multiplies cost across every remaining turn \u2014 a 10K growth in one session can mean 50K+ extra tokens billed.",
+    "help-large-context": "Instruction files are sent on every LLM call in every session. 10,000 extra tokens in CLAUDE.md = 10,000 extra tokens per call, forever, regardless of task size.",
+    "help-files-repeated": "Each re-read appends the full file to context again. Re-reading a 500-line file 4 times wastes ~2,000 tokens on every subsequent call in that session.",
+    "help-high-turns": "Each additional LLM call costs tokens and time. Iterative discovery is ~10\xD7 more expensive than providing the same context upfront in the initial prompt.",
+    "help-duplicate-searches": "Repeated searches append identical results to context without progress. The growing context also makes the model more likely to repeat the search again.",
+    "help-tool-failures": "Each failure adds error text to context and forces a recovery turn. A cascade of 3 failures can waste 30,000+ tokens before a single useful edit is made.",
+    "help-large-results": "Tool results are appended to context in full. A 50 KB file read adds ~12,500 tokens to every subsequent call in that session \u2014 not just the call that read it.",
+    "help-tool-overhead": "Every LLM call includes all tool JSON schemas. 70+ tools = 8,000\u201315,000 overhead tokens per call that cannot be reduced by shortening your prompt.",
+    "help-cache-rate": "Cached tokens cost roughly 10\xD7 less than fresh tokens. Going from 0% to 60% cache hit rate cuts session cost by 80\u201390% with no change to model behavior.",
+    "help-tool-deadlock": "The agent is burning tokens repeating identical calls with zero progress. This loop runs until the context limit is hit \u2014 entire session cost with nothing accomplished.",
+    "help-state-spiral": "Conflicting constraints cause the agent to undo its own work. Each oscillation adds both the edit and the revert to context, accelerating cost with each cycle.",
+    "help-hallucination": "Each failed fix attempt adds the error to context, which anchors the model further from the real solution \u2014 the longer it runs, the harder it self-corrects.",
+    "help-runaway-steps": "Scope creep compounds: each extra step the agent takes grows context for all future steps. 90-step sessions can cost 10\u201320\xD7 a well-scoped 5-step equivalent.",
+    "help-context-accumulation": "Input tokens are growing while output shrinks \u2014 cost per call is compounding with diminishing returns. Continuing will likely hit the context limit with nothing saved."
+  };
+  function generateInsights(summary, allSessions) {
+    const insights = [];
+    const { sessions, efficiency: eff } = summary;
+    if (!sessions.length) return insights;
+    sessions.forEach((sess, idx) => {
+      const llmEntries = (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+      const globalNum = getSessionGlobalNumber(sess) || idx + 1;
+      const reqSnippet = (sess.userRequest ?? "").slice(0, 60);
+      if (llmEntries.length >= 3) {
+        const first = llmEntries[0].inputTokens ?? 0;
+        const last = llmEntries[llmEntries.length - 1].inputTokens ?? 0;
+        const growth = last - first;
+        const growthPct = first > 0 ? growth / first * 100 : 0;
+        if (growthPct > 20 && growth > 2e3) {
+          insights.push({
+            severity: "warning",
+            category: "efficiency",
+            sessionIdx: idx,
+            helpId: "help-context-bloat",
+            title: "[Session " + globalNum + "] Context grew " + growthPct.toFixed(0) + "%",
+            detail: "Input tokens grew from " + first.toLocaleString() + " to " + last.toLocaleString() + " (+" + growth.toLocaleString() + " tokens) across " + llmEntries.length + " LLM calls" + (reqSnippet ? ' for "' + reqSnippet + '"' : "") + ".",
+            action: "The first call used " + first.toLocaleString() + " tokens \u2014 audit your instruction files (CLAUDE.md, .agent.md, system prompt). Remove verbose examples and anything the agent can discover via tools. Target <5,000 tokens for combined static instructions."
+          });
+        }
+      }
+      const fileReads = {};
+      (sess.timeline ?? []).forEach((e4) => {
+        if (e4.type !== "tool") return;
+        const m4 = (e4.label ?? "").match(/^read_file\s+(\S+)/);
+        if (m4) fileReads[m4[1]] = (fileReads[m4[1]] ?? 0) + 1;
+      });
+      const repeats = Object.keys(fileReads).filter((f5) => fileReads[f5] > 1);
+      if (repeats.length > 0) {
+        const topFile = repeats.sort((a4, b4) => fileReads[b4] - fileReads[a4])[0];
+        insights.push({
+          severity: "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-files-repeated",
+          title: "[Session " + globalNum + "] Files read multiple times",
+          detail: repeats.map((f5) => f5 + " (" + fileReads[f5] + "\xD7)").join(", ") + ".",
+          action: repeats.length === 1 ? "The agent read " + topFile + " " + fileReads[topFile] + " times. Mention its path explicitly at the start of your prompt so the agent finds it without re-reading." : "The agent re-read " + repeats.length + " files, most often " + topFile + " (" + fileReads[topFile] + '\xD7). Try opening with the key paths listed: e.g. "The main files are: ' + repeats.slice(0, 2).join(", ") + '".'
+        });
+      }
+      if (sess.totalLlmCalls > 8 && (sess.userRequest ?? "").length < 80) {
+        const topTools = Object.entries(sess.toolCounts ?? {}).sort((a4, b4) => b4[1] - a4[1]).slice(0, 3).map(([t4, n3]) => t4 + " \xD7" + n3).join(", ");
+        insights.push({
+          severity: "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-high-turns",
+          title: "[Session " + globalNum + "] " + sess.totalLlmCalls + " LLM calls",
+          detail: '"' + reqSnippet + '" required ' + sess.totalLlmCalls + " LLM calls and " + sess.totalToolCalls + " tool calls" + (topTools ? " (" + topTools + ")" : "") + ".",
+          action: "For a " + sess.totalLlmCalls + "-turn session, break the task into smaller pieces with explicit stopping conditions. Provide specific file paths and line numbers so the agent spends turns doing instead of exploring."
+        });
+      }
+      const firstLlm = (sess.timeline ?? []).find((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+      if (firstLlm && (firstLlm.inputTokens ?? 0) > 15e3) {
+        insights.push({
+          severity: "warning",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-large-context",
+          title: "[Session " + globalNum + "] Starts with " + (firstLlm.inputTokens ?? 0).toLocaleString() + " input tokens",
+          detail: "The very first LLM call already has " + (firstLlm.inputTokens ?? 0).toLocaleString() + " tokens before any tool results are added.",
+          action: "Audit your instruction files \u2014 " + (firstLlm.inputTokens ?? 0).toLocaleString() + " tokens before the first tool call is the baseline overhead. Remove verbose examples and information the agent can discover via tools. Target <5,000 tokens for combined instructions."
+        });
+      }
+      const searches = {};
+      (sess.timeline ?? []).forEach((e4) => {
+        if (e4.type !== "tool") return;
+        const m4 = (e4.label ?? "").match(/^(grep_search|file_search)\s+(.+)$/);
+        if (m4) {
+          const key = m4[1] + ":" + m4[2].replace(/\s+/g, " ").trim();
+          searches[key] = (searches[key] ?? 0) + 1;
+        }
+      });
+      const dupes = Object.keys(searches).filter((k3) => searches[k3] > 1);
+      if (dupes.length > 0) {
+        const examples = dupes.slice(0, 2).map((d5) => {
+          const [, pattern] = d5.split(":");
+          return '"' + pattern?.trim().slice(0, 40) + '"';
+        });
+        insights.push({
+          severity: "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-duplicate-searches",
+          title: "[Session " + globalNum + "] Duplicate searches",
+          detail: dupes.length + " search pattern(s) repeated: " + examples.join(", ") + ".",
+          action: 'These repeated searches suggest the agent was uncertain where to look. Include directory names or specific file paths in your prompt \u2014 e.g. "search in src/api/" instead of a broad pattern.'
+        });
+      }
+      const failedTools = {};
+      (sess.timeline ?? []).forEach((e4) => {
+        if (e4.type === "tool" && e4.isError) {
+          const t4 = (e4.label ?? "").split(" ")[0];
+          failedTools[t4] = (failedTools[t4] ?? 0) + 1;
+        }
+      });
+      const failedEntries = Object.keys(failedTools);
+      if (failedEntries.length > 0) {
+        const totalFails = failedEntries.reduce((s4, t4) => s4 + failedTools[t4], 0);
+        const toolAdvice = failedEntries.slice(0, 3).map((t4) => {
+          const n3 = failedTools[t4];
+          if (t4 === "bash" || t4 === "run_command") return t4 + " \xD7" + n3 + " (check the command exists in your environment)";
+          if (t4 === "read_file" || t4 === "view") return t4 + " \xD7" + n3 + " (verify file paths are correct)";
+          if (t4 === "grep_search" || t4 === "search_files") return t4 + " \xD7" + n3 + " (use more specific patterns)";
+          return t4 + " \xD7" + n3;
+        }).join("; ");
+        insights.push({
+          severity: totalFails > 2 ? "warning" : "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-tool-failures",
+          title: "[Session " + globalNum + "] " + totalFails + " tool failure(s)",
+          detail: "Failed: " + toolAdvice + ". Each failure forces an extra LLM call to recover.",
+          action: "Tool failures happen when the agent guesses paths or uses incorrect arguments. Be explicit in your prompt about file locations and command availability."
+        });
+      }
+      const largeResults = [];
+      (sess.timeline ?? []).forEach((e4) => {
+        if (e4.type === "tool" && e4.fullResult && e4.fullResult.length > 1e4) {
+          largeResults.push({ tool: (e4.label ?? "").split(" ")[0], size: e4.fullResult.length });
+        }
+      });
+      if (largeResults.length > 0) {
+        largeResults.sort((a4, b4) => b4.size - a4.size);
+        const totalKb = largeResults.reduce((s4, r5) => s4 + r5.size, 0) / 1024;
+        const topResult = largeResults[0];
+        insights.push({
+          severity: totalKb > 100 ? "warning" : "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-large-results",
+          title: "[Session " + globalNum + "] Large tool results (" + totalKb.toFixed(0) + "KB)",
+          detail: largeResults.length + " tool call(s) returned large results: " + largeResults.slice(0, 3).map((r5) => r5.tool + " (" + (r5.size / 1024).toFixed(1) + "KB)").join(", ") + ".",
+          action: topResult.tool.includes("read") ? "Use narrower reads \u2014 specify line ranges (e.g. read_file src/app.ts L1-50) instead of reading whole files." : "The largest result came from " + topResult.tool + " (" + (topResult.size / 1024).toFixed(0) + "KB). Use more targeted reads \u2014 specify line ranges with read_file, or tighter grep patterns."
+        });
+      }
+      const loopHelpIds = {
+        exact_tool_repeat: "help-tool-deadlock",
+        edit_revert_cycle: "help-state-spiral",
+        error_recurrence: "help-hallucination",
+        runaway_steps: "help-runaway-steps",
+        token_runaway: "help-context-accumulation"
+      };
+      (sess.loopSignals ?? []).forEach((sig) => {
+        const examplesText = sig.examples?.length > 0 ? "\n\nExamples: " + sig.examples.join(" \xB7 ") : "";
+        insights.push({
+          severity: "loop-" + sig.severity,
+          category: "loop",
+          sessionIdx: idx,
+          helpId: loopHelpIds[sig.type],
+          title: "[Session " + globalNum + "] " + sig.patternName + " \u2014 " + sig.evidence,
+          detail: examplesText.trim(),
+          action: sig.action ?? sig.evidence,
+          _loopType: sig.type
+        });
+      });
+    });
+    const crossSessions = allSessions ?? sessions;
+    if (crossSessions.length >= 3) {
+      const fileStats = {};
+      for (const sess of crossSessions) {
+        const hasProblems = (sess.errors ?? 0) > 0 || (sess.loopSignals?.length ?? 0) > 0;
+        const files = [.../* @__PURE__ */ new Set([...sess.filesRead, ...sess.filesChanged, ...sess.filesSearched])];
+        for (const f5 of files) {
+          if (!fileStats[f5]) fileStats[f5] = { total: 0, problems: 0 };
+          fileStats[f5].total++;
+          if (hasProblems) fileStats[f5].problems++;
+        }
+      }
+      const troubleFiles = Object.entries(fileStats).filter(([, v4]) => v4.total >= 3 && v4.problems / v4.total >= 0.6).sort((a4, b4) => b4[1].problems - a4[1].problems).slice(0, 4);
+      if (troubleFiles.length > 0) {
+        const names = troubleFiles.map(([f5]) => f5.split("/").pop() || f5);
+        insights.push({
+          severity: "warning",
+          category: "efficiency",
+          helpId: "help-files-repeated",
+          title: troubleFiles.length + " file(s) appear in most sessions with errors or loops",
+          detail: troubleFiles.map(
+            ([f5, v4]) => (f5.split("/").pop() || f5) + ": " + v4.problems + "/" + v4.total + " sessions had issues"
+          ).join("\n"),
+          action: "These files appear frequently alongside agent difficulties: " + names.join(", ") + ". They may have conflicting constraints, be poorly documented for the agent, or be referenced with inconsistent paths. Consider adding a brief description of their role to your instruction files so the agent has reliable context before touching them."
+        });
+      }
+      const recentN = Math.min(crossSessions.length, 8);
+      const recent = crossSessions.slice(-recentN);
+      const older = crossSessions.slice(0, -recentN);
+      if (older.length >= 3) {
+        const avgRecent = recent.reduce((s4, sess) => s4 + sess.cacheHitRate, 0) / recent.length;
+        const avgOlder = older.reduce((s4, sess) => s4 + sess.cacheHitRate, 0) / older.length;
+        const drop = avgOlder - avgRecent;
+        if (drop > 0.15 && avgOlder > 0.3) {
+          insights.push({
+            severity: "warning",
+            category: "efficiency",
+            helpId: "help-cache-rate",
+            title: "Cache hit rate declining \u2014 " + (avgOlder * 100).toFixed(0) + "% \u2192 " + (avgRecent * 100).toFixed(0) + "%",
+            detail: "Average cache hit rate dropped " + (drop * 100).toFixed(0) + "% over your last " + recentN + " sessions.",
+            action: "Cache hit rate drops when the stable prefix of your prompts changes. Recent changes to your instruction files (CLAUDE.md, .agent.md, system prompt) may be invalidating cached context. Keep static content at the top of prompts and avoid putting dynamic data (timestamps, file counts) in instructions."
+          });
+        }
+      }
+    }
+    if (eff.toolDefWaste > 0.25) {
+      insights.push({
+        severity: "warning",
+        category: "efficiency",
+        helpId: "help-tool-overhead",
+        title: "Tool definitions consuming ~" + (eff.toolDefWaste * 100).toFixed(0) + "% of context",
+        detail: "A significant portion of each prompt is spent describing available tool schemas to the model.",
+        action: 'Use tool restrictions in your .agent.md files with "tools:" to limit which tools are available.'
+      });
+    }
+    if (eff.totalLlmCalls > 3 && eff.cacheHitRate < 0.5) {
+      insights.push({
+        severity: "warning",
+        category: "efficiency",
+        helpId: "help-cache-rate",
+        title: "Low prompt cache hit rate (" + (eff.cacheHitRate * 100).toFixed(0) + "%)",
+        detail: "Less than half of input tokens are being served from cache.",
+        action: "Cache works best when the beginning of the prompt stays stable across turns. Keep static content at the top of your prompts."
+      });
+    }
+    const severityOrder = { "loop-critical": 0, "loop-warning": 1, "warning": 2, "info": 3 };
+    insights.sort((a4, b4) => {
+      const aIdx = a4.sessionIdx ?? -1, bIdx = b4.sessionIdx ?? -1;
+      if (aIdx !== bIdx) return bIdx - aIdx;
+      return (severityOrder[a4.severity] ?? 4) - (severityOrder[b4.severity] ?? 4);
+    });
+    return insights;
+  }
+  function InsightCard({ ins, isIgnored, sessions }) {
+    const icon = ins.severity.startsWith("loop") ? "\u21BA" : ins.severity === "warning" ? "\u26A0" : "\u2139";
+    const session = ins.sessionIdx !== void 0 ? sessions[ins.sessionIdx] : void 0;
+    const sessionNum = session ? getSessionGlobalNumber(session) : 0;
+    const titleSessionMatch = session && sessionNum > 0 ? ins.title.match(/^\[Session\s+\d+\]\s*(.*)$/) : null;
+    const sessionModel = session?.model || "";
+    const sessionAgentLabel = session ? getAgentSourceLabel(session.source) : "";
+    const sessionAgentColor = session ? getAgentColor(session.source) : "";
+    function buildAiPrompt() {
+      const lines = [ins.title, ""];
+      if (session?.userRequest && session.userRequest !== "[session in progress]") {
+        lines.push('Task: "' + session.userRequest + '"', "");
+      }
+      if (ins.detail) lines.push(ins.detail, "");
+      if (session) {
+        const topTools = Object.entries(session.toolCounts ?? {}).sort((a4, b4) => b4[1] - a4[1]).slice(0, 5).map(([t4, n3]) => "  " + t4 + " \xD7" + n3).join("\n");
+        if (topTools) lines.push("Top tools used:\n" + topTools, "");
+        if (session.filesChanged.length > 0)
+          lines.push("Files changed: " + session.filesChanged.slice(0, 5).join(", "), "");
+        const errors = session.timeline.filter((e4) => e4.isError && e4.errorMessage).slice(0, 3);
+        if (errors.length > 0)
+          lines.push("Error messages:\n" + errors.map((e4) => "  - " + (e4.errorMessage ?? "").slice(0, 120)).join("\n"), "");
+        lines.push("Session stats: " + session.totalLlmCalls + " LLM calls, " + session.totalToolCalls + " tool calls, " + (session.cacheHitRate * 100).toFixed(0) + "% cache hit rate", "");
+      }
+      lines.push("Recommendation: " + ins.action);
+      return lines.join("\n");
+    }
+    return /* @__PURE__ */ u4("div", { class: clsx_default("insight-card", "insight-" + ins.severity), style: isIgnored ? "opacity:0.55" : "", children: [
+      /* @__PURE__ */ u4("div", { class: "insight-header", children: [
+        /* @__PURE__ */ u4("span", { class: "insight-icon", children: icon }),
+        /* @__PURE__ */ u4("span", { class: "insight-title", style: "flex:1", children: titleSessionMatch ? /* @__PURE__ */ u4(S, { children: [
+          /* @__PURE__ */ u4("span", { children: [
+            "[Session ",
+            sessionNum,
+            sessionModel ? ` \u2013 ${sessionModel}` : "",
+            "]"
+          ] }),
+          " ",
+          /* @__PURE__ */ u4(
+            "span",
+            {
+              title: sessionAgentLabel,
+              "aria-label": sessionAgentLabel,
+              style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + sessionAgentColor + ";vertical-align:middle"
+            }
+          ),
+          " ",
+          /* @__PURE__ */ u4("span", { children: titleSessionMatch[1] })
+        ] }) : ins.title }),
+        isIgnored ? /* @__PURE__ */ u4("button", { class: "insight-restore-btn", title: "Restore", onClick: () => ignoredInsightKeys.delete(ins.title), children: "Restore" }) : /* @__PURE__ */ u4("button", { class: "insight-ignore-btn", title: "Ignore", onClick: () => ignoredInsightKeys.add(ins.title), children: "Ignore" })
+      ] }),
+      ins.detail && /* @__PURE__ */ u4("div", { class: "insight-detail", style: "white-space:pre-wrap", children: ins.detail }),
+      /* @__PURE__ */ u4("div", { class: "insight-action", children: [
+        /* @__PURE__ */ u4("span", { class: "insight-action-label", children: [
+          "Recommendation",
+          ins.helpId && HELP_WHY[ins.helpId] && /* @__PURE__ */ u4("span", { "data-tip": HELP_WHY[ins.helpId], style: "margin-left:4px;cursor:help;opacity:0.55;font-size:11px", children: "\u24D8" }),
+          ":"
+        ] }),
+        " ",
+        /* @__PURE__ */ u4("span", { style: "white-space:pre-wrap", children: ins.action })
+      ] }),
+      !isIgnored && (() => {
+        const buttonForAgent = (agent) => {
+          const label = getAgentSourceLabel(agent);
+          return {
+            agent,
+            label: "Copy for " + label,
+            color: getAgentColor(agent)
+          };
+        };
+        let buttons;
+        if (session) {
+          buttons = [buttonForAgent(session.source)];
+        } else {
+          const presence = agentPresence.value;
+          buttons = [
+            presence.copilot && buttonForAgent("copilot"),
+            presence.claude && buttonForAgent("claude_code"),
+            presence.codex && buttonForAgent("codex")
+          ].filter(Boolean);
+        }
+        if (buttons.length === 0) buttons.push({ agent: "generic", label: "Copy to Clipboard", color: "var(--accent)" });
+        const prompt = buildAiPrompt();
+        return /* @__PURE__ */ u4("div", { class: "insight-ask-ai-group", children: buttons.map((b4) => /* @__PURE__ */ u4(
+          "button",
+          {
+            class: "insight-ask-ai",
+            onClick: () => vscode?.postMessage({ type: "askAI", prompt, agent: b4.agent, label: ins.title }),
+            children: [
+              /* @__PURE__ */ u4("span", { style: "color:" + b4.color + ";font-size:8px", children: "\u25CF" }),
+              " ",
+              b4.label
+            ]
+          },
+          b4.agent
+        )) });
+      })()
+    ] });
+  }
+  function IgnoredSection({ insights, sessions }) {
+    const [open, setOpen] = d2(false);
+    return /* @__PURE__ */ u4("div", { style: "margin-top:12px", children: [
+      /* @__PURE__ */ u4(
+        "h3",
+        {
+          style: "margin:28px 0 12px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;cursor:pointer",
+          onClick: () => setOpen((v4) => !v4),
+          children: [
+            /* @__PURE__ */ u4("span", { children: open ? "\u25BC" : "\u25B6" }),
+            "IGNORED (",
+            insights.length,
+            ")"
+          ]
+        }
+      ),
+      open && insights.map((ins) => /* @__PURE__ */ u4(InsightCard, { ins, isIgnored: true, sessions }, ins.title))
+    ] });
+  }
+  function Recommendations() {
+    const filter = insightFilter.value;
+    const ignored = ignoredInsightKeys.value;
+    const allSessions = displaySessions.value;
+    if (!allSessions.length) {
+      return /* @__PURE__ */ u4("div", { id: "recommendations-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
+    const displaySummary = buildDisplaySummary();
+    const allInsights = generateInsights(displaySummary, allSessions);
+    let loopCount = 0;
+    let effCount = 0;
+    const active = [];
+    const ignoredList = [];
+    for (const insight of allInsights) {
+      const isIgnored = ignored.has(insight.title);
+      if (!isIgnored) {
+        if (insight.category === "loop") loopCount++;
+        if (insight.category === "efficiency") effCount++;
+      }
+      if (filter === "all" || insight.category === filter) {
+        if (isIgnored) ignoredList.push(insight);
+        else active.push(insight);
+      }
+    }
+    const sessions = displaySummary.sessions;
+    const takeaways = summarizeTakeaways(active);
+    const scopeLabel = recommendationScopeLabel(filter);
+    return /* @__PURE__ */ u4("div", { id: "recommendations-content", children: [
+      /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)", children: /* @__PURE__ */ u4("strong", { children: "Recommendations are based on general heuristics and may include false positives. Review suggestions carefully and consider your specific context before making changes." }) }),
+      /* @__PURE__ */ u4("div", { style: "padding:12px 16px;margin:0 0 16px;border-radius:6px;border:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));font-size:12px", children: [
+        /* @__PURE__ */ u4("div", { class: "section-label", children: "Key Takeaways" }),
+        active.length > 0 ? /* @__PURE__ */ u4("ul", { style: "margin:0;padding:0 0 0 16px;list-style:disc", children: [
+          takeaways.loopCount > 0 && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: [
+            takeaways.loopCount,
+            " agent loop or malfunction signal",
+            takeaways.loopCount > 1 ? "s" : "",
+            " detected"
+          ] }),
+          takeaways.hasContextBloat && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: "Context bloat detected \u2014 input tokens growing significantly across turns" }),
+          takeaways.hasCacheIssue && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: "Low prompt cache hit rate \u2014 tokens are being re-processed instead of cached" }),
+          takeaways.hasToolIssue && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: "Tool inefficiency detected" }),
+          takeaways.hasRepeatedOperations && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: "Repeated file or search operations detected" })
+        ] }) : /* @__PURE__ */ u4("div", { style: "color:var(--vscode-testing-iconPassed,#4caf50)", children: [
+          "\u2713 ",
+          noActiveTakeawayText(filter)
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: "insight-filter-bar", children: [
+        { key: "all", label: "All", badge: loopCount + effCount },
+        { key: "loop", label: "Loops", badge: loopCount },
+        { key: "efficiency", label: "Inefficiencies", badge: effCount }
+      ].map((p5) => /* @__PURE__ */ u4(
+        "button",
+        {
+          class: clsx_default("insight-filter-pill", { active: filter === p5.key }),
+          onClick: () => {
+            insightFilter.value = p5.key;
+          },
+          children: [
+            p5.label,
+            p5.badge > 0 && /* @__PURE__ */ u4("span", { class: "insight-filter-badge", children: p5.badge })
+          ]
+        },
+        p5.key
+      )) }),
+      active.length > 0 ? /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);margin-bottom:12px", children: [
+          active.length,
+          " recommendation",
+          active.length !== 1 ? "s" : "",
+          ", newest sessions first"
+        ] }),
+        active.map((ins) => /* @__PURE__ */ u4(InsightCard, { ins, isIgnored: false, sessions }, ins.title))
+      ] }) : ignoredList.length > 0 ? /* @__PURE__ */ u4("div", { class: "insight-card insight-success", children: [
+        /* @__PURE__ */ u4("div", { class: "insight-header", children: [
+          /* @__PURE__ */ u4("span", { class: "insight-icon", children: "\u2713" }),
+          /* @__PURE__ */ u4("span", { class: "insight-title", children: [
+            "All ",
+            scopeLabel,
+            " addressed or ignored"
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "insight-detail", children: "New ones will appear as your session data changes." })
+      ] }) : /* @__PURE__ */ u4("div", { class: "insight-card insight-success", children: [
+        /* @__PURE__ */ u4("div", { class: "insight-header", children: [
+          /* @__PURE__ */ u4("span", { class: "insight-icon", children: "\u2713" }),
+          /* @__PURE__ */ u4("span", { class: "insight-title", children: [
+            "No ",
+            scopeLabel,
+            " detected"
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "insight-detail", children: "Token usage, cache rates, and session patterns look reasonable." })
+      ] }),
+      ignoredList.length > 0 && /* @__PURE__ */ u4(IgnoredSection, { insights: ignoredList, sessions })
+    ] });
+  }
+
+  // media/src/agentProfiles.ts
+  var AGENT_ORDER = ["copilot", "claude_code", "codex"];
+  var DEFAULT_AGENT_PROFILES = {
+    claude_code: {
+      source: "claude_code",
+      label: "Claude",
+      shortLabel: "CL",
+      color: "#FFB085",
+      contextWindowTokens: 2e5,
+      turnNudge: 80,
+      turnAlert: 150,
+      identicalRepeatNudge: 3,
+      identicalRepeatAlert: 4,
+      consecutiveErrorNudge: 3,
+      consecutiveErrorAlert: 4,
+      activeMinutesAlert: 30
+    },
+    copilot: {
+      source: "copilot",
+      label: "Copilot",
+      shortLabel: "CP",
+      color: "#00EAFF",
+      contextWindowTokens: 128e3,
+      turnNudge: 150,
+      turnAlert: 275,
+      identicalRepeatNudge: 3,
+      identicalRepeatAlert: 5,
+      consecutiveErrorNudge: 3,
+      consecutiveErrorAlert: 5,
+      activeMinutesAlert: 45
+    },
+    codex: {
+      source: "codex",
+      label: "Codex",
+      shortLabel: "CX",
+      color: "#F0FF42",
+      contextWindowTokens: 4e5,
+      turnNudge: 250,
+      turnAlert: 450,
+      identicalRepeatNudge: 4,
+      identicalRepeatAlert: 6,
+      consecutiveErrorNudge: 4,
+      consecutiveErrorAlert: 6,
+      activeMinutesAlert: 60
+    }
+  };
+  var AGENT_PROFILE_FIELD_META = {
+    contextWindowTokens: { label: "Window", unit: "tokens", min: 16e3, max: 1e6, step: 1e3 },
+    turnNudge: { label: "Turn nudge", unit: "turns", min: 10, max: 1e3, step: 5 },
+    turnAlert: { label: "Turn alert", unit: "turns", min: 10, max: 1e3, step: 5 },
+    identicalRepeatNudge: { label: "Repeat nudge", unit: "calls", min: 2, max: 8, step: 1 },
+    identicalRepeatAlert: { label: "Repeat alert", unit: "calls", min: 2, max: 20, step: 1 },
+    consecutiveErrorNudge: { label: "Error nudge", unit: "errors", min: 2, max: 8, step: 1 },
+    consecutiveErrorAlert: { label: "Error alert", unit: "errors", min: 2, max: 20, step: 1 },
+    activeMinutesAlert: { label: "Active alert", unit: "min", min: 5, max: 240, step: 5 }
+  };
+  function cloneDefaultProfiles() {
+    return {
+      claude_code: { ...DEFAULT_AGENT_PROFILES.claude_code },
+      copilot: { ...DEFAULT_AGENT_PROFILES.copilot },
+      codex: { ...DEFAULT_AGENT_PROFILES.codex }
+    };
+  }
+  function validMetricValue(metric, value) {
+    const n3 = Number(value);
+    const meta = AGENT_PROFILE_FIELD_META[metric];
+    if (!Number.isFinite(n3) || n3 < meta.min || n3 > meta.max) return null;
+    return n3;
+  }
+  function getAgentProfiles() {
+    const defaults = cloneDefaultProfiles();
+    try {
+      const stored = localStorage.getItem("agentLens.agentProfiles");
+      if (!stored) return defaults;
+      const saved = JSON.parse(stored);
+      for (const source of AGENT_ORDER) {
+        const profile = saved[source];
+        if (!profile) continue;
+        for (const metric of Object.keys(AGENT_PROFILE_FIELD_META)) {
+          const value = validMetricValue(metric, profile[metric]);
+          if (value !== null) {
+            defaults[source][metric] = value;
+          }
+        }
+      }
+    } catch {
+    }
+    return defaults;
+  }
+  function saveAgentProfiles(profiles) {
+    try {
+      const payload = {};
+      for (const source of AGENT_ORDER) {
+        payload[source] = {};
+        for (const metric of Object.keys(AGENT_PROFILE_FIELD_META)) {
+          payload[source][metric] = profiles[source][metric];
+        }
+      }
+      localStorage.setItem("agentLens.agentProfiles", JSON.stringify(payload));
+    } catch {
+    }
+  }
+  function resetAgentProfiles() {
+    try {
+      localStorage.removeItem("agentLens.agentProfiles");
+    } catch {
+    }
+    return cloneDefaultProfiles();
+  }
+  function resolveAgentProfile(source, profiles = getAgentProfiles()) {
+    if (source && profiles[source]) return profiles[source];
+    return profiles.copilot;
+  }
+
+  // media/src/pricing.ts
+  var PRICING_LAST_UPDATED = "2026-05-27";
+  var RATES = {
+    // ── OpenAI ─────────────────────────────────────────────────────────────────────────────────────
+    //                                                                     token rates ──────────────────────────────────── │ pre-Jun1  │ annual post-Jun1
+    // included models: 0× pre-Jun1 AND $0 in token mode (included in Copilot subscription per footnote 1)
+    "gpt-4.1": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 1 },
+    "gpt-5-mini": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    "gpt-5 mini": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    // older included models kept for historical sessions
+    "gpt-4o": { inputPerMTok: 2.5, cacheReadPerMTok: 1.25, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    "gpt-4o-mini": { inputPerMTok: 0.15, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 0.6, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    // GPT-5.1 family — in annual-plan table but not in new token pricing (request-only models)
+    "gpt-5.1": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    "gpt-5.1-codex": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    "gpt-5.1-codex-mini": { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 4.5, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
+    "gpt-5.1-codex-max": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    // premium models
+    "gpt-5.2": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    "gpt-5.2-codex": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    "gpt-5.3-codex": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    "gpt-5.4": { inputPerMTok: 2.5, cacheReadPerMTok: 0.25, cacheWritePerMTok: 0, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    // long-context surcharge (>272K tokens) not implemented
+    "gpt-5.4-mini": { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 4.5, multiplier: 0.33, multiplierAnnualPostJun1: 6 },
+    "gpt-5.4-nano": { inputPerMTok: 0.2, cacheReadPerMTok: 0.02, cacheWritePerMTok: 0, outputPerMTok: 1.25, multiplier: 0.25, multiplierAnnualPostJun1: 0.25 },
+    "gpt-5.5": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 0, outputPerMTok: 30, multiplier: 7.5, multiplierAnnualPostJun1: 7.5 },
+    // TBD per docs
+    // ── Anthropic ──────────────────────────────────────────────────────────────────────────────────
+    "claude-haiku-4-5": { inputPerMTok: 1, cacheReadPerMTok: 0.1, cacheWritePerMTok: 1.25, outputPerMTok: 5, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
+    "claude-sonnet-4": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 1 },
+    "claude-sonnet-4-5": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    "claude-sonnet-4-6": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 9 },
+    "claude-opus-4-5": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 3, multiplierAnnualPostJun1: 15 },
+    "claude-opus-4-6": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 3, multiplierAnnualPostJun1: 27 },
+    "claude-opus-4-6-fast": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 30, multiplierAnnualPostJun1: 30 },
+    "claude-opus-4-7": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 15, multiplierAnnualPostJun1: 27 },
+    // ── Google ─────────────────────────────────────────────────────────────────────────────────────
+    "gemini-2.5-pro": { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 1, multiplierAnnualPostJun1: 1 },
+    // long-context surcharge (>200K tokens) not implemented
+    "gemini-3-flash": { inputPerMTok: 0.5, cacheReadPerMTok: 0.05, cacheWritePerMTok: 0, outputPerMTok: 3, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
+    "gemini-3-pro": { inputPerMTok: 2, cacheReadPerMTok: 0.2, cacheWritePerMTok: 0, outputPerMTok: 12, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    "gemini-3.1-pro": { inputPerMTok: 2, cacheReadPerMTok: 0.2, cacheWritePerMTok: 0, outputPerMTok: 12, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    // long-context surcharge (>200K tokens) not implemented
+    "gemini-3.5-flash": { inputPerMTok: 1.5, cacheReadPerMTok: 0.15, cacheWritePerMTok: 0, outputPerMTok: 9, multiplier: 14, multiplierAnnualPostJun1: 14 },
+    // ── Fine-tuned ─────────────────────────────────────────────────────────────────────────────────
+    // raptor-mini uses GPT-5 mini pricing per footnote 5 — included ($0) in token mode, same annual multiplier
+    "raptor-mini": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    "goldeneye": { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 0, multiplierAnnualPostJun1: 0 }
+  };
+  function normalizeModelId(modelId) {
+    return modelId.toLowerCase().replace(/-\d{4}-\d{2}-\d{2}$/, "").replace(/-\d{8}$/, "").trim();
+  }
+  function lookupRates(modelId) {
+    if (!modelId) return null;
+    const normalized = normalizeModelId(modelId);
+    if (RATES[normalized]) return RATES[normalized];
+    for (const key of Object.keys(RATES)) {
+      if (normalized.startsWith(key) || key.startsWith(normalized)) return RATES[key];
+    }
+    return null;
+  }
+  function calcTokenCost(inputTokens, cacheReadTokens, cacheWriteTokens, outputTokens, rates) {
+    return inputTokens / 1e6 * rates.inputPerMTok + cacheReadTokens / 1e6 * rates.cacheReadPerMTok + cacheWriteTokens / 1e6 * rates.cacheWritePerMTok + outputTokens / 1e6 * rates.outputPerMTok;
+  }
+
+  // media/src/sessionMetrics.ts
+  function calcSessionCost(session, mode) {
+    const modelId = session.model || "";
+    const rates = lookupRates(modelId);
+    const llmEntries = (session.timeline ?? []).filter((e4) => e4.type === "llm");
+    if (mode === "request" || mode === "request-annual") {
+      const mult = mode === "request-annual" ? rates?.multiplierAnnualPostJun1 ?? 0 : rates?.multiplier ?? 0;
+      if (!rates || mult === 0) {
+        return { totalUsd: 0, aiCredits: 0, byTurn: llmEntries.map(() => 0), modelUnknown: !rates, pricingMode: mode };
+      }
+      const promptCount = session.turns || 1;
+      const totalUsd2 = promptCount * mult * 0.04;
+      const perPrompt = totalUsd2 / promptCount;
+      let cum2 = 0;
+      const byTurn2 = llmEntries.map(() => {
+        cum2 = Math.min(cum2 + perPrompt, totalUsd2);
+        return cum2;
+      });
+      return { totalUsd: totalUsd2, aiCredits: totalUsd2 / 0.01, byTurn: byTurn2, modelUnknown: false, pricingMode: mode };
+    }
+    const rawInput = Math.max(0, session.inputTokens - session.cacheReadTokens - session.cacheCreateTokens);
+    const totalUsd = rates ? calcTokenCost(rawInput, session.cacheReadTokens, session.cacheCreateTokens, session.outputTokens, rates) : 0;
+    let cum = 0;
+    const byTurn = llmEntries.map((entry) => {
+      const entryRates = lookupRates(entry.model || modelId) || rates;
+      if (!entryRates) return cum;
+      cum += calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, entryRates);
+      return cum;
+    });
+    return { totalUsd, aiCredits: totalUsd / 0.01, byTurn, modelUnknown: !rates, pricingMode: mode };
+  }
+  function sessionDisplayName(session) {
+    const req = (session.userRequest ?? "").trim();
+    if (!req || req === "[session in progress]") return "[session in progress]";
+    return req.length > 70 ? req.slice(0, 70) + "..." : req;
+  }
+  function getPeakContextUsage(session, profiles = getAgentProfiles()) {
+    const llmInputs = (session.timeline ?? []).filter((e4) => e4.type === "llm").map((e4) => e4.inputTokens ?? 0).filter((n3) => n3 > 0);
+    const fallback = session.totalLlmCalls > 0 ? Math.round((session.inputTokens ?? 0) / session.totalLlmCalls) : 0;
+    const peakTokens = llmInputs.length > 0 ? Math.max(...llmInputs) : fallback;
+    const contextWindowTokens = resolveAgentProfile(session.source, profiles).contextWindowTokens;
+    return {
+      peakTokens,
+      contextWindowTokens,
+      percent: contextWindowTokens > 0 ? peakTokens / contextWindowTokens * 100 : 0
+    };
+  }
+  function stableJson(value) {
+    if (Array.isArray(value)) return "[" + value.map(stableJson).join(",") + "]";
+    if (value && typeof value === "object") {
+      const obj = value;
+      return "{" + Object.keys(obj).sort().map((k3) => JSON.stringify(k3) + ":" + stableJson(obj[k3])).join(",") + "}";
+    }
+    return JSON.stringify(value);
+  }
+  function normalizeToolInput(input) {
+    const raw = (input ?? "").trim();
+    if (!raw) return "";
+    try {
+      return stableJson(JSON.parse(raw));
+    } catch {
+      return raw.replace(/\s+/g, " ");
+    }
+  }
+  function toolName(entry) {
+    return (entry.label ?? "").trim().split(/\s+/)[0] || "tool";
+  }
+  function changesFiles(entry) {
+    if ((entry.editDetails ?? []).length > 0) return true;
+    const label = (entry.label ?? "").toLowerCase();
+    if (/(apply_patch|replace_string|create_file|edit_notebook|write_file|str_replace|multi_edit)/.test(label)) return true;
+    if (!/(exec|shell|bash|command)/.test(label)) return false;
+    const input = (entry.toolInput ?? "").toLowerCase();
+    return /(apply_patch|sed\s+-i|perl\s+-i|>\s*[\w./~-]|>>\s*[\w./~-]|\btee\b|\btouch\b|\bmv\b|\bcp\b|\brm\b|\bmkdir\b)/.test(input);
+  }
+  function getIdenticalToolRepeat(session) {
+    const counts = /* @__PURE__ */ new Map();
+    let best = null;
+    let fileChangeGeneration = 0;
+    for (const entry of session.timeline ?? []) {
+      if (entry.type === "tool") {
+        const tool = toolName(entry);
+        const normalizedInput = normalizeToolInput(entry.toolInput);
+        const key = tool + "\n" + (normalizedInput || (entry.label ?? "").trim());
+        const current = counts.get(key);
+        const count = current && current.fileChangeGeneration === fileChangeGeneration ? current.count + 1 : 1;
+        counts.set(key, {
+          key,
+          tool,
+          count,
+          display: normalizedInput ? tool + " " + normalizedInput.slice(0, 90) : entry.label ?? tool,
+          fileChangeGeneration
+        });
+        if (count > 1 && (!best || count > best.count)) {
+          best = { key, tool, count, display: normalizedInput ? tool + " " + normalizedInput.slice(0, 90) : entry.label ?? tool };
+        }
+      }
+      if (changesFiles(entry)) {
+        fileChangeGeneration++;
+      }
+    }
+    return best;
+  }
+  function getErrorHealth(session) {
+    const measured = (session.timeline ?? []).filter((e4) => e4.type === "llm" || e4.type === "tool");
+    let maxConsecutive = 0;
+    let current = 0;
+    let errorCount = 0;
+    const recentErrors = [];
+    for (const entry of measured) {
+      if (entry.isError) {
+        errorCount++;
+        current++;
+        maxConsecutive = Math.max(maxConsecutive, current);
+        const msg = entry.errorMessage || entry.label;
+        if (msg) recentErrors.push(msg.slice(0, 140));
+      } else {
+        current = 0;
+      }
+    }
+    const fallbackErrors = Math.max(errorCount, session.errors ?? 0);
+    const measuredSteps = measured.length || (session.totalLlmCalls ?? 0) + (session.totalToolCalls ?? 0);
+    return {
+      errorCount: fallbackErrors,
+      measuredSteps,
+      maxConsecutive,
+      trailingConsecutive: current,
+      failureRate: measuredSteps > 0 ? fallbackErrors / measuredSteps : 0,
+      recentErrors: recentErrors.slice(-3)
+    };
+  }
+  function getActiveComputeMs(session) {
+    return (session.timeline ?? []).filter((e4) => e4.type === "llm" || e4.type === "tool").reduce((sum, entry) => sum + Math.max(entry.durationMs ?? 0, 0), 0);
+  }
+
+  // media/src/AgentThresholdValues.tsx
+  var DISPLAY_AGENT_ORDER = ["copilot", "claude_code", "codex"];
+  function ThresholdShell({ label, children }) {
+    return /* @__PURE__ */ u4("div", { style: "display:grid;gap:6px;font-size:12px;margin:8px 0", children: [
+      /* @__PURE__ */ u4("div", { class: "muted", style: "font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700", children: label }),
+      children
+    ] });
+  }
+  function thresholdLabel() {
+    return "Agent Thresholds";
+  }
+  function parseThresholdDraft(value, min, max) {
+    if (!/^\d+$/.test(value)) return null;
+    const next = Number(value);
+    if (!Number.isSafeInteger(next) || next < min || next > max) return null;
+    return next;
+  }
+  function thresholdInputStyle(width, invalid) {
+    return "width:" + width + "px;background:var(--bg);color:var(--fg,inherit);border:1px solid " + (invalid ? "var(--error)" : "var(--border)") + ";border-radius:3px;padding:2px 6px;font-size:12px";
+  }
+  function ThresholdNumberTextInput({ value, min, max, width, ariaLabel, onChange }) {
+    const [draft, setDraft] = d2(String(value));
+    y2(() => {
+      setDraft(String(value));
+    }, [value]);
+    const invalid = draft !== "" && parseThresholdDraft(draft, min, max) === null;
+    return /* @__PURE__ */ u4(
+      "input",
+      {
+        type: "text",
+        inputMode: "numeric",
+        pattern: "[0-9]*",
+        value: draft,
+        "aria-label": ariaLabel,
+        "aria-invalid": invalid ? "true" : "false",
+        title: "Enter a number from " + min.toLocaleString() + " to " + max.toLocaleString(),
+        onChange: (e4) => {
+          const nextDraft = e4.target.value;
+          if (!/^\d*$/.test(nextDraft)) return;
+          setDraft(nextDraft);
+          const next = parseThresholdDraft(nextDraft, min, max);
+          if (next !== null) {
+            onChange(next);
+          }
+        },
+        onBlur: () => {
+          if (parseThresholdDraft(draft, min, max) === null) {
+            setDraft(String(value));
+          }
+        },
+        style: thresholdInputStyle(width, invalid)
+      }
+    );
+  }
+  function AgentName({ source, profiles }) {
+    const profile = profiles[source];
+    return /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:5px;white-space:nowrap", children: [
+      /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + profile.color }),
+      /* @__PURE__ */ u4("span", { children: profile.label })
+    ] });
+  }
+  function AgentThresholdInputs({ profiles, metrics, onChange }) {
+    return /* @__PURE__ */ u4(S, { children: metrics.map((metric) => {
+      const meta = AGENT_PROFILE_FIELD_META[metric];
+      return /* @__PURE__ */ u4(ThresholdShell, { label: thresholdLabel(), children: /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;flex-wrap:wrap", children: DISPLAY_AGENT_ORDER.map((source) => /* @__PURE__ */ u4("label", { style: "display:flex;align-items:center;gap:6px;background:var(--panel-bg);border:1px solid var(--border);border-radius:4px;padding:4px 6px", children: [
+        /* @__PURE__ */ u4(AgentName, { source, profiles }),
+        /* @__PURE__ */ u4(
+          ThresholdNumberTextInput,
+          {
+            value: profiles[source][metric],
+            min: meta.min,
+            max: meta.max,
+            width: 50,
+            ariaLabel: profiles[source].label + " " + meta.label,
+            onChange: (next) => onChange(source, metric, next)
+          }
+        ),
+        /* @__PURE__ */ u4("span", { class: "muted", children: meta.unit })
+      ] }, source)) }) }, metric);
+    }) });
+  }
+  function AgentThresholdNumberInputs({
+    profiles,
+    metricName,
+    unit,
+    values,
+    min,
+    max,
+    onChange
+  }) {
+    return /* @__PURE__ */ u4(ThresholdShell, { label: thresholdLabel(), children: /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;flex-wrap:wrap", children: DISPLAY_AGENT_ORDER.map((source) => /* @__PURE__ */ u4("label", { style: "display:flex;align-items:center;gap:6px;background:var(--panel-bg);border:1px solid var(--border);border-radius:4px;padding:4px 6px", children: [
+      /* @__PURE__ */ u4(AgentName, { source, profiles }),
+      /* @__PURE__ */ u4(
+        ThresholdNumberTextInput,
+        {
+          value: values[source],
+          min,
+          max,
+          width: 62,
+          ariaLabel: profiles[source].label + " " + metricName,
+          onChange: (next) => onChange(source, next)
+        }
+      ),
+      /* @__PURE__ */ u4("span", { class: "muted", children: unit })
+    ] }, source)) }) });
+  }
+
+  // media/src/tabs/Alerts.tsx
+  var ALERT_TOOLTIPS = {
+    context_window: "Peak context use is the largest single LLM input in a session, not the average. Cache hits can make high input cheap, but they still occupy the context window.",
+    high_turns: "High turn counts often mean the task has become too broad. Ask for a wrap-up, split the task, or provide more exact files and stopping conditions.",
+    error_spike: "Counts errors in the session. Stop retries and diagnose the root cause once the threshold is crossed.",
+    long_session: "Uses active LLM/tool compute time, not wall-clock waiting time.",
+    no_cache: "Only checks sessions above the input-token gate. Cache can be low for small sessions without being a problem.",
+    tool_loop: "Counts identical tool plus argument repeats, not just the same tool name."
+  };
+  var DEFAULT_CONFIGS = [
+    { id: "context_window", label: "Context Window Filling Up", severity: "warning", description: "Fires when any session reaches the configured peak input-token threshold for that agent.", enabled: true, threshold: 17e4, unit: "tokens", min: 1e4, max: 1e6, step: 1e3, agentThresholds: { claude_code: 17e4, copilot: 108800, codex: 34e4 } },
+    { id: "high_turns", label: "Too Many Turns Per Session", severity: "warning", description: "Fires when any session reaches its agent-specific LLM turn alert threshold. High turn counts often indicate scope creep or a task that should be split.", enabled: true, threshold: 200, unit: "agent profile", min: 20, max: 500, step: 10 },
+    { id: "error_spike", label: "Error Spike", severity: "error", description: "Fires when any session reaches its agent-specific error count threshold.", enabled: true, threshold: 5, unit: "agent profile", min: 2, max: 20, step: 1 },
+    { id: "long_session", label: "Long Active Session", severity: "info", description: "Fires when active LLM/tool compute time exceeds the agent-specific threshold. Wall-clock idle time does not count.", enabled: true, threshold: 60, unit: "agent profile", min: 10, max: 240, step: 10 },
+    { id: "no_cache", label: "Zero Cache Utilization", severity: "info", description: "Fires when any session above that agent's input-token gate has 0% cache hit rate.", enabled: true, threshold: 3e4, unit: "tokens", min: 5e3, max: 2e5, step: 5e3, agentThresholds: { claude_code: 3e4, copilot: 3e4, codex: 3e4 } },
+    { id: "tool_loop", label: "Identical Tool Repeat", severity: "warning", description: "Fires when the same tool with identical arguments repeats beyond the agent-specific threshold without a file change between repeats.", enabled: true, threshold: 5, unit: "agent profile", min: 3, max: 20, step: 1 }
+  ];
+  function cloneAgentThresholds(thresholds) {
+    if (!thresholds) return void 0;
+    return {
+      claude_code: thresholds.claude_code,
+      copilot: thresholds.copilot,
+      codex: thresholds.codex
+    };
+  }
+  function cloneAlertConfig(config) {
+    return {
+      ...config,
+      agentThresholds: cloneAgentThresholds(config.agentThresholds)
+    };
+  }
+  function fallbackAgentThresholds(threshold) {
+    return {
+      claude_code: threshold,
+      copilot: threshold,
+      codex: threshold
+    };
+  }
+  function normalizeAgentThresholds(def, saved) {
+    const thresholds = cloneAgentThresholds(def.agentThresholds);
+    if (!thresholds) return void 0;
+    const legacyThreshold = Number(saved?.threshold);
+    if (!saved?.agentThresholds && Number.isFinite(legacyThreshold) && legacyThreshold >= def.min && legacyThreshold <= def.max) {
+      for (const source of AGENT_ORDER) {
+        thresholds[source] = legacyThreshold;
+      }
+    }
+    for (const source of AGENT_ORDER) {
+      const value = Number(saved?.agentThresholds?.[source]);
+      if (Number.isFinite(value) && value >= def.min && value <= def.max) {
+        thresholds[source] = value;
+      }
+    }
+    return thresholds;
+  }
+  function getConfigAgentThresholds(cfg) {
+    return cloneAgentThresholds(cfg.agentThresholds) ?? fallbackAgentThresholds(cfg.threshold);
+  }
+  function getAlertAgentThreshold(cfg, source) {
+    return cfg.agentThresholds?.[source] ?? cfg.threshold;
+  }
+  function getAlertConfigs() {
+    try {
+      const stored = localStorage.getItem("agentLens.alertConfigs");
+      if (!stored) return DEFAULT_CONFIGS.map(cloneAlertConfig);
+      const saved = JSON.parse(stored);
+      return DEFAULT_CONFIGS.map((def) => {
+        const s4 = saved.find((x4) => x4.id === def.id);
+        if (!s4) return cloneAlertConfig(def);
+        const savedThreshold = Number(s4.threshold);
+        const threshold = savedThreshold >= def.min && savedThreshold <= def.max ? savedThreshold : def.threshold;
+        return {
+          ...cloneAlertConfig(def),
+          enabled: typeof s4.enabled === "boolean" ? s4.enabled : def.enabled,
+          threshold,
+          agentThresholds: normalizeAgentThresholds(def, s4)
+        };
+      });
+    } catch {
+      return DEFAULT_CONFIGS.map(cloneAlertConfig);
+    }
+  }
+  function saveAlertConfigs(configs) {
+    try {
+      localStorage.setItem("agentLens.alertConfigs", JSON.stringify(
+        configs.map((c4) => ({ id: c4.id, enabled: c4.enabled, threshold: c4.threshold, agentThresholds: c4.agentThresholds }))
+      ));
+    } catch {
+    }
+  }
+  function hasSharedThreshold(cfg) {
+    return cfg.id === "context_window" || cfg.id === "no_cache";
+  }
+  function alertProfileMetrics(cfg) {
+    switch (cfg.id) {
+      case "high_turns":
+        return ["turnAlert"];
+      case "error_spike":
+        return ["consecutiveErrorAlert"];
+      case "long_session":
+        return ["activeMinutesAlert"];
+      case "tool_loop":
+        return ["identicalRepeatAlert"];
+      default:
+        return [];
+    }
+  }
+  function sharedAlertMetricName(cfg) {
+    return cfg.id === "context_window" ? "Context window tokens" : "Input tokens";
+  }
+  function evaluateAlert(cfg, sessions, _eff, profiles = getAgentProfiles()) {
+    if (!sessions?.length) return { triggered: false };
+    switch (cfg.id) {
+      case "context_window": {
+        const rows = sessions.map((session) => ({
+          session,
+          usage: getPeakContextUsage(session, profiles),
+          profile: resolveAgentProfile(session.source, profiles),
+          threshold: getAlertAgentThreshold(cfg, session.source)
+        })).filter((row) => row.usage.peakTokens > 0);
+        if (!rows.length) return { triggered: false };
+        const worst = rows.reduce((a4, b4) => {
+          const aRatio = a4.usage.peakTokens / Math.max(a4.threshold, 1);
+          const bRatio = b4.usage.peakTokens / Math.max(b4.threshold, 1);
+          return bRatio > aRatio ? b4 : a4;
+        }, rows[0]);
+        if (worst.usage.peakTokens < worst.threshold) return { triggered: false };
+        return {
+          triggered: true,
+          key: worst.session.traceId || worst.session.sessionId,
+          detail: "Peak context " + worst.usage.peakTokens.toLocaleString() + " tokens vs " + worst.profile.label + " threshold " + worst.threshold.toLocaleString() + ' \u2014 "' + sessionDisplayName(worst.session) + '"'
+        };
+      }
+      case "high_turns": {
+        const over = sessions.map((session) => ({ session, profile: resolveAgentProfile(session.source, profiles) })).filter((row) => (row.session.totalLlmCalls ?? 0) >= row.profile.turnAlert);
+        if (!over.length) return { triggered: false };
+        const worst = over.reduce((a4, b4) => (b4.session.totalLlmCalls ?? 0) > (a4.session.totalLlmCalls ?? 0) ? b4 : a4, over[0]);
+        return {
+          triggered: true,
+          key: worst.session.traceId || worst.session.sessionId,
+          detail: over.length + " session(s) reached threshold. Worst: " + worst.session.totalLlmCalls + " turns vs " + worst.profile.label + " alert " + worst.profile.turnAlert + ' \u2014 "' + sessionDisplayName(worst.session) + '"'
+        };
+      }
+      case "error_spike": {
+        const rows = sessions.map((session) => ({ session, health: getErrorHealth(session), profile: resolveAgentProfile(session.source, profiles) }));
+        const errSess = rows.filter((row) => row.health.errorCount >= row.profile.consecutiveErrorAlert);
+        if (!errSess.length) return { triggered: false };
+        const worst = errSess.reduce((a4, b4) => b4.health.errorCount > a4.health.errorCount ? b4 : a4, errSess[0]);
+        return {
+          triggered: true,
+          key: worst.session.traceId || worst.session.sessionId,
+          detail: "Worst: " + worst.health.errorCount + " error(s) vs " + worst.profile.label + " threshold " + worst.profile.consecutiveErrorAlert + ' \u2014 "' + sessionDisplayName(worst.session) + '"'
+        };
+      }
+      case "long_session": {
+        const long = sessions.map((session) => ({ session, activeMs: getActiveComputeMs(session), profile: resolveAgentProfile(session.source, profiles) })).filter((row) => row.activeMs >= row.profile.activeMinutesAlert * 60 * 1e3);
+        if (!long.length) return { triggered: false };
+        const longest = long.reduce((a4, b4) => b4.activeMs > a4.activeMs ? b4 : a4, long[0]);
+        return {
+          triggered: true,
+          key: longest.session.traceId || longest.session.sessionId,
+          detail: long.length + " session(s) exceeded threshold. Longest active compute: " + formatMs(longest.activeMs) + " vs " + longest.profile.label + " alert " + longest.profile.activeMinutesAlert + "min"
+        };
+      }
+      case "no_cache": {
+        const noCache = sessions.map((session) => ({
+          session,
+          profile: resolveAgentProfile(session.source, profiles),
+          threshold: getAlertAgentThreshold(cfg, session.source)
+        })).filter((row) => (row.session.inputTokens ?? 0) >= row.threshold && (row.session.cacheHitRate ?? 0) === 0);
+        if (!noCache.length) return { triggered: false };
+        const worst = noCache.reduce((a4, b4) => (b4.session.inputTokens ?? 0) > (a4.session.inputTokens ?? 0) ? b4 : a4, noCache[0]);
+        return {
+          triggered: true,
+          key: worst.session.traceId || worst.session.sessionId,
+          detail: "0% cache hit rate on " + worst.session.inputTokens.toLocaleString() + " input tokens vs " + worst.profile.label + " gate " + worst.threshold.toLocaleString() + ' \u2014 "' + sessionDisplayName(worst.session) + '"'
+        };
+      }
+      case "tool_loop": {
+        const rows = sessions.map((session) => ({ session, repeat: getIdenticalToolRepeat(session), profile: resolveAgentProfile(session.source, profiles) })).filter((row) => Boolean(row.repeat));
+        const over = rows.filter((row) => row.repeat.count >= row.profile.identicalRepeatAlert);
+        if (!over.length) return { triggered: false };
+        const worst = over.reduce((a4, b4) => b4.repeat.count > a4.repeat.count ? b4 : a4, over[0]);
+        return {
+          triggered: true,
+          key: (worst.session.traceId || worst.session.sessionId) + ":" + worst.repeat.key,
+          detail: '"' + worst.repeat.display + '" repeated ' + worst.repeat.count + " times without intervening file changes vs " + worst.profile.label + " alert " + worst.profile.identicalRepeatAlert + ' \u2014 "' + sessionDisplayName(worst.session) + '"'
+        };
+      }
+      default:
+        return { triggered: false };
+    }
+  }
+  function computeAlertCount() {
+    const configs = getAlertConfigs();
+    const profiles = getAgentProfiles();
+    const { sessions, efficiency } = buildDisplaySummary();
+    return configs.filter((cfg) => cfg.enabled && evaluateAlert(cfg, sessions, efficiency, profiles).triggered).length;
+  }
+  var firedAlertKeys = /* @__PURE__ */ new Set();
+  function checkAlerts() {
+    const configs = getAlertConfigs();
+    const profiles = getAgentProfiles();
+    const { sessions, efficiency } = buildDisplaySummary();
+    const now = Date.now();
+    const RECENT_WINDOW_MS = 30 * 1e3;
+    const recentSessions = sessions.filter((s4) => {
+      const lastTs = s4.timeline && s4.timeline.length > 0 ? s4.timeline[s4.timeline.length - 1].timestamp : s4.startTime;
+      if (!lastTs) return false;
+      const tsNum = typeof lastTs === "number" ? lastTs : Date.parse(lastTs);
+      return now - tsNum < RECENT_WINDOW_MS;
+    });
+    const notifications = [];
+    const activeKeys = /* @__PURE__ */ new Set();
+    for (const cfg of configs) {
+      if (!cfg.enabled) {
+        continue;
+      }
+      const result = evaluateAlert(cfg, recentSessions, efficiency, profiles);
+      if (result.triggered) {
+        const key = cfg.id + ":" + (result.key ?? "global");
+        activeKeys.add(key);
+        if (firedAlertKeys.has(key)) {
+          continue;
+        }
+        firedAlertKeys.add(key);
+        notifications.push({ label: cfg.label, detail: result.detail, severity: cfg.severity });
+      }
+    }
+    for (const key of Array.from(firedAlertKeys)) {
+      if (!activeKeys.has(key)) {
+        firedAlertKeys.delete(key);
+      }
+    }
+    return notifications;
+  }
+  function Alerts() {
+    const sessions = displaySessions.value;
+    const [configs, setConfigs] = d2(getAlertConfigs);
+    const [profiles, setProfiles] = d2(getAgentProfiles);
+    const hasSessions = sessions.length > 0;
+    const { sessions: displayed, efficiency } = buildDisplaySummary();
+    const results = configs.map((cfg) => ({
+      config: cfg,
+      ...cfg.enabled ? evaluateAlert(cfg, displayed, efficiency, profiles) : { triggered: false }
+    }));
+    const triggeredCount = results.filter((r5) => r5.triggered).length;
+    function updateAgentThreshold(source, metric, value) {
+      const next = {
+        ...profiles,
+        [source]: {
+          ...profiles[source],
+          [metric]: value
+        }
+      };
+      saveAgentProfiles(next);
+      setProfiles(next);
+    }
+    function updateConfig(id, changes) {
+      setConfigs((prev) => {
+        const next = prev.map((c4) => c4.id === id ? { ...c4, ...changes } : c4);
+        saveAlertConfigs(next);
+        return next;
+      });
+    }
+    function updateConfigAgentThreshold(cfg, source, value) {
+      updateConfig(cfg.id, {
+        agentThresholds: {
+          ...getConfigAgentThresholds(cfg),
+          [source]: value
+        }
+      });
+    }
+    return /* @__PURE__ */ u4("div", { id: "alerts-content", children: [
+      /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)", children: /* @__PURE__ */ u4("strong", { children: "Settings below are adjustable per agent. Reminder: your choice of LLM model significantly affects efficiency and may require threshold adjustments." }) }),
+      !hasSessions ? /* @__PURE__ */ u4("div", { style: "background:var(--panel-bg);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:14px", children: [
+        /* @__PURE__ */ u4("strong", { children: "No agent sessions recorded" }),
+        /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:12px;margin-left:8px", children: "alert configuration is available below" })
+      ] }) : triggeredCount > 0 ? /* @__PURE__ */ u4("div", { style: "background:rgba(239,83,80,0.12);border:1px solid var(--error);border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px", children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:18px", children: "\u26A0" }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "err", children: [
+            triggeredCount,
+            " alert",
+            triggeredCount > 1 ? "s" : "",
+            " triggered"
+          ] }),
+          /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:12px;margin-left:8px", children: "based on your displayed sessions" })
+        ] })
+      ] }) : /* @__PURE__ */ u4("div", { style: "background:rgba(129,199,132,0.1);border:1px solid #81c784;border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px", children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:18px;color:#81c784", children: "\u2713" }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { style: "color:#81c784", children: "All clear" }),
+          /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:12px;margin-left:8px", children: "no alerts triggered for current sessions" })
+        ] })
+      ] }),
+      results.map(({ config: cfg, triggered, detail }) => {
+        const sev = cfg.severity;
+        const trigColor = sev === "error" ? "var(--error)" : sev === "info" ? "#4fc3f7" : "#f6a623";
+        const borderColor = triggered ? trigColor : "var(--border)";
+        const statusIcon = !cfg.enabled ? "\u25CB" : triggered ? sev === "error" ? "\u26D4" : sev === "info" ? "\u2139" : "\u26A0" : "\u2713";
+        const statusColor = !cfg.enabled ? "var(--muted)" : triggered ? trigColor : "#81c784";
+        const profileMetrics = alertProfileMetrics(cfg);
+        return /* @__PURE__ */ u4("div", { style: `border:1px solid ${borderColor};border-left:4px solid ${borderColor};border-radius:6px;padding:12px 14px;margin-bottom:10px`, children: [
+          /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px", children: [
+            /* @__PURE__ */ u4("div", { class: "flex-8", children: [
+              /* @__PURE__ */ u4("span", { style: `font-size:15px;color:${statusColor};line-height:1`, children: statusIcon }),
+              /* @__PURE__ */ u4("strong", { style: "font-size:13px", children: cfg.label }),
+              triggered && /* @__PURE__ */ u4("span", { style: `font-size:10px;background:${trigColor};color:#000;padding:1px 7px;border-radius:3px;font-weight:700;letter-spacing:.4px`, children: "TRIGGERED" })
+            ] }),
+            /* @__PURE__ */ u4("label", { class: "toggle-switch", children: [
+              /* @__PURE__ */ u4(
+                "input",
+                {
+                  type: "checkbox",
+                  checked: cfg.enabled,
+                  onChange: (e4) => updateConfig(cfg.id, { enabled: e4.target.checked })
+                }
+              ),
+              /* @__PURE__ */ u4("span", { class: "toggle-track", children: /* @__PURE__ */ u4("span", { class: "toggle-thumb" }) }),
+              /* @__PURE__ */ u4("span", { class: "toggle-label" + (cfg.enabled ? " on" : ""), children: cfg.enabled ? "Enabled" : "Disabled" })
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { style: "font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5", children: [
+            cfg.description,
+            ALERT_TOOLTIPS[cfg.id] && /* @__PURE__ */ u4(S, { children: [
+              " ",
+              " ",
+              /* @__PURE__ */ u4("span", { "data-tip": ALERT_TOOLTIPS[cfg.id], style: "font-size:11px;color:var(--vscode-textLink-foreground,#4fc3f7);border-bottom:1px dotted currentColor;cursor:help;white-space:nowrap", children: "Why?" })
+            ] })
+          ] }),
+          triggered && detail && /* @__PURE__ */ u4("div", { style: `font-size:12px;padding:7px 10px;background:var(--panel-bg);border-radius:4px;border-left:3px solid ${trigColor};margin-bottom:8px;line-height:1.4`, children: detail }),
+          hasSharedThreshold(cfg) ? /* @__PURE__ */ u4(
+            AgentThresholdNumberInputs,
+            {
+              profiles,
+              metricName: sharedAlertMetricName(cfg),
+              unit: "tokens",
+              values: getConfigAgentThresholds(cfg),
+              min: cfg.min,
+              max: cfg.max,
+              onChange: (source, value) => updateConfigAgentThreshold(cfg, source, value)
+            }
+          ) : profileMetrics.length > 0 && /* @__PURE__ */ u4(
+            AgentThresholdInputs,
+            {
+              profiles,
+              metrics: profileMetrics,
+              onChange: updateAgentThreshold
+            }
+          )
+        ] }, cfg.id);
+      }),
+      /* @__PURE__ */ u4("div", { style: "margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px", children: [
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:6px", children: [
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => {
+                const next = configs.map((c4) => ({ ...cloneAlertConfig(c4), enabled: true }));
+                saveAlertConfigs(next);
+                setConfigs(next);
+              },
+              style: "font-size:11px;background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer;color:var(--fg)",
+              children: "Enable All"
+            }
+          ),
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => {
+                const next = configs.map((c4) => ({ ...cloneAlertConfig(c4), enabled: false }));
+                saveAlertConfigs(next);
+                setConfigs(next);
+              },
+              style: "font-size:11px;background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer;color:var(--muted)",
+              children: "Disable All"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            onClick: () => {
+              try {
+                localStorage.removeItem("agentLens.alertConfigs");
+              } catch {
+              }
+              setConfigs(DEFAULT_CONFIGS.map(cloneAlertConfig));
+            },
+            style: "font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer",
+            children: "Reset to Defaults"
+          }
+        ),
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            onClick: () => setProfiles(resetAgentProfiles()),
+            style: "font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer",
+            children: "Reset Agent Thresholds"
+          }
+        )
+      ] })
+    ] });
+  }
+
+  // media/src/tabs/Tokens.tsx
+  function getOutputTokenCount(span) {
+    let output = 0;
+    (span.attributes ?? []).forEach((a4) => {
+      if (/output.?tokens|completion.?tokens/i.test(a4.key))
+        output = parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? a4.value.doubleValue)) || 0;
+    });
+    return output;
+  }
+  function SessionChart({ sessions }) {
+    const canvasRef = A2(null);
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const sessionData = sessions.map((sess, idx) => {
+        const totalIn = sess.inputTokens ?? 0, totalOut = sess.outputTokens ?? 0;
+        const inputs = [], outputs = [];
+        (sess.timeline ?? []).forEach((e4) => {
+          if (e4.type === "llm" && ((e4.inputTokens ?? 0) > 0 || (e4.outputTokens ?? 0) > 0)) {
+            inputs.push(e4.inputTokens ?? 0);
+            outputs.push(e4.outputTokens ?? 0);
+          }
+        });
+        if (inputs.length === 0 && (totalIn > 0 || totalOut > 0)) {
+          inputs.push(totalIn);
+          outputs.push(totalOut);
+        }
+        const num = getSessionGlobalNumber(sess) || idx + 1;
+        return totalIn + totalOut > 0 ? { session: num, tokens: totalIn + totalOut, inputTokens: inputs, outputTokens: outputs, source: sess.source } : null;
+      }).filter(Boolean).reverse();
+      if (sessionData.length === 0) {
+        canvas.style.display = "none";
+        return;
+      }
+      canvas.style.display = "block";
+      const dpr = window.devicePixelRatio || 1;
+      const drect = canvas.getBoundingClientRect();
+      canvas.width = drect.width * dpr;
+      canvas.height = drect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      const w5 = drect.width, h5 = drect.height;
+      ctx.clearRect(0, 0, w5, h5);
+      const pad = { top: 8, right: 44, bottom: 34, left: 44 };
+      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
+      const sessionTotals = sessionData.map((d5) => {
+        const input = d5.inputTokens.reduce((a4, b4) => a4 + b4, 0);
+        const output = d5.outputTokens.reduce((a4, b4) => a4 + b4, 0);
+        return { input, output, session: d5.session, source: d5.source };
+      });
+      const maxIn = Math.max(...sessionTotals.map((s4) => s4.input)) || 1;
+      const maxOut = Math.max(...sessionTotals.map((s4) => s4.output)) || 1;
+      const cs = getComputedStyle(document.body);
+      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
+      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
+      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 0.5;
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const y5 = pad.top + chartH * i4 / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y5);
+        ctx.lineTo(pad.left + chartW, y5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#FFB74D";
+      ctx.font = fontStr;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxIn * (4 - i4) / 4;
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
+      }
+      ctx.fillStyle = "#81C784";
+      ctx.textAlign = "left";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxOut * (4 - i4) / 4;
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left + chartW + 4, pad.top + chartH * i4 / 4);
+      }
+      const barGap = 8;
+      const sl = sessionData.length;
+      const groupWidth = Math.max(12, (chartW - barGap * (sl + 1)) / sl);
+      const halfBar = groupWidth / 2;
+      const totalBarsW = sl * groupWidth + (sl + 1) * barGap;
+      const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      sessionTotals.forEach((s4, i4) => {
+        const x4 = offsetX + i4 * (groupWidth + barGap);
+        const inH = s4.input / maxIn * chartH;
+        const inY = pad.top + chartH - inH;
+        ctx.fillStyle = "#FFB74D";
+        ctx.fillRect(x4, inY, halfBar, inH);
+        const outH = s4.output / maxOut * chartH;
+        const outY = pad.top + chartH - outH;
+        ctx.fillStyle = "#81C784";
+        ctx.fillRect(x4 + halfBar, outY, halfBar, outH);
+        ctx.fillStyle = textColor;
+        ctx.fillText("" + s4.session, x4 + groupWidth / 2, pad.top + chartH + 4);
+        ctx.beginPath();
+        ctx.arc(x4 + groupWidth / 2, pad.top + chartH + 18, 3, 0, Math.PI * 2);
+        ctx.fillStyle = getAgentColor(s4.source);
+        ctx.fill();
+      });
+    });
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("canvas", { ref: canvasRef, id: "dashboard-session-chart", style: "width:100%;height:200px;display:block" }),
+      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
+    ] });
+  }
+  function agentLabel(source) {
+    if (source === "claude_code") return "Claude";
+    if (source === "copilot") return "Copilot";
+    if (source === "codex") return "Codex";
+    return "Agent";
+  }
+  function Tokens() {
+    const spans2 = displaySpans.value;
+    const sessions = displaySessions.value;
+    const byName = {};
+    if (sessions.length > 0) {
+      sessions.forEach((sess) => {
+        ;
+        (sess.timeline ?? []).forEach((entry) => {
+          const tokens = (entry.inputTokens ?? 0) + (entry.outputTokens ?? 0);
+          if (tokens <= 0) {
+            return;
+          }
+          const name = entry.type === "llm" ? entry.model || `${agentLabel(sess.source)} LLM` : `${agentLabel(sess.source)} ${entry.label}`;
+          if (!byName[name]) byName[name] = { tokens: 0, count: 0 };
+          byName[name].tokens += tokens;
+          byName[name].count++;
+        });
+      });
+    } else {
+      const tokenSpans = spans2.filter((s4) => getTokenCount(s4) > 0 && !isSessionSpan(s4.name));
+      tokenSpans.forEach((s4) => {
+        if (!byName[s4.name]) byName[s4.name] = { tokens: 0, count: 0 };
+        byName[s4.name].tokens += getTokenCount(s4);
+        byName[s4.name].count++;
+      });
+    }
+    if (Object.keys(byName).length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "tokens-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
+    const _totalOutput = spans2.reduce((s4, sp) => s4 + getOutputTokenCount(sp), 0);
+    const data = Object.entries(byName).map(([name, v4]) => ({ name, ...v4 })).sort((a4, b4) => b4.tokens - a4.tokens);
+    const maxTokensBar = data.length > 0 ? data[0].tokens : 1;
+    return /* @__PURE__ */ u4("div", { id: "tokens-content", children: [
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:24px", children: [
+        /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "TOKEN USAGE PER SESSION" }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
+          /* @__PURE__ */ u4("span", { children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" }),
+            " Input"
+          ] }),
+          /* @__PURE__ */ u4("span", { children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" }),
+            " Output"
+          ] })
+        ] }),
+        /* @__PURE__ */ u4(SessionChart, { sessions })
+      ] }),
+      /* @__PURE__ */ u4("h3", { style: "margin:32px 0 12px;font-size:13px;color:var(--muted)", children: "TOKENS BY SPAN TYPE" }),
+      /* @__PURE__ */ u4("div", { class: "bar-chart-container", style: "margin-top:32px", children: [
+        /* @__PURE__ */ u4("div", { class: "bar-chart", children: data.slice(0, 20).map((d5) => {
+          const h5 = Math.max(d5.tokens / maxTokensBar * 180, 2);
+          const label = d5.name.split("/").pop() ?? d5.name;
+          const countLabel = d5.count > 1 ? ` (${d5.count}\xD7)` : "";
+          return /* @__PURE__ */ u4("div", { class: "bar-col", children: [
+            /* @__PURE__ */ u4("div", { class: "bar-value", children: d5.tokens.toLocaleString() }),
+            /* @__PURE__ */ u4("div", { class: "bar-rect", style: "height:" + h5 + "px", title: `${d5.name}: ${d5.tokens.toLocaleString()} tokens${countLabel}` }),
+            /* @__PURE__ */ u4("div", { class: "bar-label", children: [
+              label,
+              countLabel
+            ] })
+          ] }, d5.name);
+        }) }),
+        /* @__PURE__ */ u4("div", { class: "axis-label", children: "Token consumption by operation type (top 20, aggregated)" })
+      ] })
+    ] });
+  }
+
+  // media/src/tabs/Cost.tsx
+  function fmtUsd(usd) {
+    if (usd === 0) return "$0.00";
+    if (usd < 1e-3) return "<$0.001";
+    if (usd < 1) return "$" + usd.toFixed(3);
+    return "$" + usd.toFixed(2);
+  }
+  function fmtCredits(credits) {
+    if (credits === 0) return "0";
+    if (credits < 0.1) return "<0.1";
+    return credits.toFixed(1);
+  }
+  function CostBarChart({ sessions, mode }) {
+    const canvasRef = A2(null);
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const data = sessions.map((sess, idx) => {
+        const cost = calcSessionCost(sess, mode);
+        return { cost: cost.totalUsd, unknown: cost.modelUnknown, session: getSessionGlobalNumber(sess) || idx + 1, source: sess.source };
+      }).reverse();
+      const maxCost = Math.max(...data.map((d5) => d5.cost), 1e-4);
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w5 = rect.width, h5 = rect.height;
+      ctx.clearRect(0, 0, w5, h5);
+      const pad = { top: 8, right: 16, bottom: 30, left: 64 };
+      const chartW = w5 - pad.left - pad.right;
+      const chartH = h5 - pad.top - pad.bottom;
+      const cs = getComputedStyle(document.body);
+      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
+      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
+      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 0.5;
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const y5 = pad.top + chartH * i4 / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y5);
+        ctx.lineTo(pad.left + chartW, y5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = textColor;
+      ctx.font = fontStr;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxCost * (4 - i4) / 4;
+        ctx.fillText("$" + val.toFixed(val < 0.01 ? 3 : 2), pad.left - 4, pad.top + chartH * i4 / 4);
+      }
+      const barGap = 6;
+      const barW = Math.max(10, (chartW - barGap * (data.length + 1)) / data.length);
+      const offsetX = pad.left + (chartW - (data.length * barW + (data.length + 1) * barGap)) / 2 + barGap;
+      data.forEach((d5, i4) => {
+        const x4 = offsetX + i4 * (barW + barGap);
+        const barH = d5.cost / maxCost * chartH;
+        const y5 = pad.top + chartH - barH;
+        const color = d5.unknown ? "#666" : getAgentColor(d5.source);
+        if (barH < 1) {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x4, pad.top + chartH);
+          ctx.lineTo(x4 + barW, pad.top + chartH);
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = color;
+          ctx.fillRect(x4, y5, barW, barH);
+        }
+        ctx.fillStyle = textColor;
+        ctx.font = fontStr;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(String(d5.session), x4 + barW / 2, pad.top + chartH + 4);
+        if (d5.unknown) {
+          ctx.fillStyle = "#999";
+          ctx.textBaseline = "bottom";
+          ctx.fillText("?", x4 + barW / 2, pad.top + chartH - 3);
+        }
+      });
+    });
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:180px;display:block" }),
+      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
+    ] });
+  }
+  function Cost() {
+    const sessions = displaySessions.value;
+    const [mode, setMode] = d2("token");
+    const copilotSessions = sessions.filter((s4) => s4.source === "copilot");
+    const scopeNote = /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:7px 10px;margin-bottom:12px;line-height:1.5", children: [
+      "Cost estimation is currently implemented for ",
+      /* @__PURE__ */ u4("strong", { children: "Copilot" }),
+      " sessions only. Claude and Codex support coming soon."
+    ] });
+    const disclaimer = /* @__PURE__ */ u4("div", { style: "font-size:11px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:8px 10px;margin-bottom:16px;line-height:1.6;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap", children: [
+      /* @__PURE__ */ u4("span", { children: [
+        /* @__PURE__ */ u4("strong", { style: "color:var(--foreground)", children: "Estimates only" }),
+        " \u2014 not your actual bill. ",
+        /* @__PURE__ */ u4("a", { href: "#cost-known-gaps", style: "color:inherit;text-decoration:underline;text-underline-offset:2px", children: "See known gaps." })
+      ] }),
+      /* @__PURE__ */ u4("span", { style: "white-space:nowrap", children: [
+        "Rates last updated: ",
+        PRICING_LAST_UPDATED
+      ] })
+    ] });
+    if (copilotSessions.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "cost-content", children: [
+        scopeNote,
+        disclaimer,
+        /* @__PURE__ */ u4("div", { class: "empty-state", children: "No Copilot sessions recorded \u2014 start a Copilot chat session to see cost estimates" })
+      ] });
+    }
+    const costs = copilotSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, mode) }));
+    const totalUsd = costs.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
+    const totalCredits = totalUsd / 0.01;
+    const anyUnknown = costs.some((c4) => c4.cost.modelUnknown);
+    const sessionRows = costs.slice().reverse();
+    return /* @__PURE__ */ u4("div", { id: "cost-content", children: [
+      scopeNote,
+      disclaimer,
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap", children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px", children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + getAgentColor("copilot") + ";vertical-align:middle;margin-right:5px" }),
+          "Copilot \u2014 pricing model"
+        ] }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;flex-wrap:wrap", children: [
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "tab-mini" + (mode === "token" ? " active" : ""),
+              onClick: () => setMode("token"),
+              title: "Token-based AI Credits billing, effective Jun 1, 2026",
+              children: "Token-based (from Jun 1, 2026)"
+            }
+          ),
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "tab-mini" + (mode === "request" ? " active" : ""),
+              onClick: () => setMode("request"),
+              title: "Request-based billing with model multipliers, active before Jun 1, 2026",
+              children: "Request-based (pre-Jun 1, 2026)"
+            }
+          ),
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "tab-mini" + (mode === "request-annual" ? " active" : ""),
+              onClick: () => setMode("request-annual"),
+              title: "Annual plan holders staying on request billing after Jun 1, 2026 face significantly higher multipliers",
+              children: "Annual plan request-based (post-Jun 1, 2026)"
+            }
+          )
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "ESTIMATED COST PER SESSION" }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
+        /* @__PURE__ */ u4("span", { children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:2px;background:#00EAFF;vertical-align:middle;margin-right:3px" }),
+          "Copilot"
+        ] }),
+        /* @__PURE__ */ u4("span", { children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:2px;background:#FFB085;vertical-align:middle;margin-right:3px" }),
+          "Claude"
+        ] }),
+        /* @__PURE__ */ u4("span", { children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:2px;background:#F0FF42;vertical-align:middle;margin-right:3px" }),
+          "Codex"
+        ] })
+      ] }),
+      /* @__PURE__ */ u4(CostBarChart, { sessions: copilotSessions, mode }),
+      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 8px;font-size:13px;color:var(--muted)", children: "SESSION COST TABLE" }),
+      /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
+        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border);color:var(--muted);text-align:left", children: [
+          /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "#" }),
+          /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Agent" }),
+          /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Model" }),
+          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Turns" }),
+          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Input tok" }),
+          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Output tok" }),
+          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Cache read" }),
+          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Est. cost" }),
+          mode === "token" && /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", "data-tip": "Copilot AI Credits (1 credit = $0.01)", children: "Credits" })
+        ] }) }),
+        /* @__PURE__ */ u4("tbody", { children: sessionRows.map(({ session: s4, cost }) => {
+          const num = getSessionGlobalNumber(s4);
+          const rawInput = Math.max(0, s4.inputTokens - s4.cacheReadTokens - s4.cacheCreateTokens);
+          return /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border)", children: [
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;color:var(--muted)", children: num }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px", children: [
+              /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor(s4.source) + ";margin-right:5px;vertical-align:middle" }),
+              getAgentSourceLabel(s4.source)
+            ] }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;color:var(--muted);font-size:10px", children: s4.model || "\u2014" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: s4.turns }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(rawInput) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(s4.outputTokens) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: s4.cacheReadTokens > 0 ? formatCompact(s4.cacheReadTokens) : "\u2014" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-weight:600", children: cost.modelUnknown ? /* @__PURE__ */ u4("span", { style: "color:var(--muted)", "data-tip": 'Model "' + s4.model + '" not in rate table \u2014 add rates in pricing.ts', children: "~$?" }) : fmtUsd(cost.totalUsd) }),
+            mode === "token" && /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: cost.modelUnknown ? "?" : fmtCredits(cost.aiCredits) })
+          ] }, s4.sessionId);
+        }) }),
+        /* @__PURE__ */ u4("tfoot", { children: /* @__PURE__ */ u4("tr", { style: "border-top:2px solid var(--vscode-panel-border);font-weight:600", children: [
+          /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:6px 8px;text-align:right;color:var(--muted)", children: [
+            "Total (",
+            copilotSessions.length,
+            " Copilot session",
+            copilotSessions.length !== 1 ? "s" : "",
+            ")"
+          ] }),
+          /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right", children: [
+            anyUnknown ? "~" : "",
+            fmtUsd(totalUsd)
+          ] }),
+          mode === "token" && /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right;color:var(--muted)", children: [
+            anyUnknown ? "~" : "",
+            fmtCredits(totalCredits)
+          ] })
+        ] }) })
+      ] }) }),
+      /* @__PURE__ */ u4("div", { style: "margin-top:16px;font-size:10px;color:var(--muted);line-height:1.6", children: mode === "token" ? "Token-based AI Credits: effective Jun 1, 2026. Per-turn chart uses input+output only; session totals include cache tokens." : mode === "request" ? "Request-based: active before Jun 1, 2026. Cost = multiplier \xD7 $0.04 per user prompt. Models marked 0\xD7 (e.g. GPT-4.1) are free under this model." : "Annual plan request-based: for annual-plan holders staying on old billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June." }),
+      /* @__PURE__ */ u4("div", { id: "cost-known-gaps", style: "margin-top:24px;padding-top:16px;border-top:1px solid var(--vscode-panel-border);font-size:11px;color:var(--muted);line-height:1.7", children: [
+        /* @__PURE__ */ u4("strong", { style: "color:var(--foreground);font-size:12px", children: "Known gaps" }),
+        /* @__PURE__ */ u4("div", { style: "margin-top:8px", children: [
+          /* @__PURE__ */ u4("span", { style: "font-size:10px;text-transform:uppercase;letter-spacing:.4px", children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("copilot") + ";vertical-align:middle;margin-right:4px" }),
+            "Copilot"
+          ] }),
+          /* @__PURE__ */ u4("ul", { style: "margin:4px 0 0;padding-left:18px", children: [
+            /* @__PURE__ */ u4("li", { children: "Long-context surcharges are not applied \u2014 GPT-5.4 (prompts >272K tokens) and Gemini 2.5 Pro / 3.1 Pro (prompts >200K tokens) have higher rates above those thresholds, which require per-prompt token counts not available in session telemetry." }),
+            /* @__PURE__ */ u4("li", { children: [
+              "Models not in the rate table are shown as ",
+              /* @__PURE__ */ u4("strong", { children: "~$?" }),
+              " \u2014 this can happen when GitHub releases a new model after the last rate update, or when the model ID in telemetry doesn't match the published name."
+            ] }),
+            /* @__PURE__ */ u4("li", { children: "Request-based cost uses session turn count as a proxy for billable prompts, which may not match exactly for all session shapes." })
+          ] })
+        ] })
+      ] })
+    ] });
+  }
+
+  // media/src/tabs/Latency.tsx
+  function TtftChart({ sessions }) {
+    const canvasRef = A2(null);
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const barData = sessions.map((sess, idx) => {
+        const llmEntries = (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.ttft ?? 0) > 0);
+        if (llmEntries.length === 0) return null;
+        const ttft = Math.round(llmEntries.reduce((s4, e4) => s4 + (e4.ttft ?? 0), 0) / llmEntries.length);
+        return ttft > 0 ? { session: getSessionGlobalNumber(sess) || idx + 1, ttft, source: sess.source } : null;
+      }).filter(Boolean).reverse();
+      if (barData.length === 0) {
+        canvas.style.display = "none";
+        return;
+      }
+      canvas.style.display = "block";
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      const w5 = rect.width, h5 = rect.height;
+      ctx.clearRect(0, 0, w5, h5);
+      const pad = { top: 8, right: 44, bottom: 34, left: 44 };
+      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
+      const maxTtft = Math.max(...barData.map((d5) => d5.ttft)) || 1;
+      const cs = getComputedStyle(document.body);
+      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
+      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
+      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 0.5;
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const y5 = pad.top + chartH * i4 / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y5);
+        ctx.lineTo(pad.left + chartW, y5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = textColor;
+      ctx.font = fontStr;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxTtft * (4 - i4) / 4;
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
+      }
+      const barGap = 8;
+      const sl = barData.length;
+      const barWidth = Math.max(12, (chartW - barGap * (sl + 1)) / sl);
+      const totalBarsW = sl * barWidth + (sl + 1) * barGap;
+      const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      barData.forEach((d5, i4) => {
+        const x4 = offsetX + i4 * (barWidth + barGap);
+        const barH = d5.ttft / maxTtft * chartH;
+        const barY = pad.top + chartH - barH;
+        ctx.fillStyle = getAgentColor(d5.source);
+        ctx.fillRect(x4, barY, barWidth, barH);
+        ctx.fillStyle = textColor;
+        ctx.font = fontStr;
+        ctx.fillText("" + d5.session, x4 + barWidth / 2, pad.top + chartH + 4);
+      });
+    });
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:200px;display:block" }),
+      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
+    ] });
+  }
+  function Latency() {
+    const spans2 = displaySpans.value;
+    const sessions = displaySessions.value;
+    if (spans2.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "latency-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
+    let displayGroups;
+    if (sessions.length === 0) {
+      displayGroups = [{ label: "1", spans: spans2 }];
+    } else {
+      displayGroups = sessions.map((sess, idx) => ({
+        label: "" + (getSessionGlobalNumber(sess) || idx + 1),
+        source: sess.source,
+        spans: spans2.filter((s4) => s4.traceId === sess.traceId)
+      }));
+    }
+    displayGroups.reverse();
+    if (displayGroups.length > 20) displayGroups = displayGroups.slice(0, 20);
+    const nameSet = /* @__PURE__ */ new Set();
+    spans2.forEach((s4) => nameSet.add(s4.name.split("/")[0] ?? s4.name));
+    let names = Array.from(nameSet);
+    names.sort((a4, b4) => {
+      const aA = isSessionSpan(a4) ? 0 : 1;
+      const bA = isSessionSpan(b4) ? 0 : 1;
+      if (aA !== bA) return aA - bA;
+      return a4.localeCompare(b4);
+    });
+    names = names.filter(
+      (name) => displayGroups.some((g4) => g4.spans.some((s4) => {
+        const sName = s4.name.split("/")[0] ?? s4.name;
+        if (sName !== name) return false;
+        return nanoToMs(s4.endTime) - nanoToMs(s4.startTime) > 0;
+      }))
+    );
+    const grid = {};
+    let maxDur = 0;
+    names.forEach((name) => {
+      grid[name] = displayGroups.map((g4) => {
+        let best = 0;
+        g4.spans.forEach((s4) => {
+          const sName = s4.name.split("/")[0] ?? s4.name;
+          if (sName === name) {
+            const dur = nanoToMs(s4.endTime) - nanoToMs(s4.startTime);
+            if (dur > best) best = dur;
+          }
+        });
+        if (best > maxDur) maxDur = best;
+        return best;
+      });
+    });
+    maxDur = maxDur || 1;
+    const slowest = names.map((name) => ({ name, dur: Math.max(...grid[name]) })).filter((x4) => x4.dur > 0).sort((a4, b4) => b4.dur - a4.dur);
+    const _consistentlySlow = slowest.filter((s4) => {
+      const allDurs = grid[s4.name].filter((d5) => d5 > 0);
+      if (allDurs.length < 2) return false;
+      const avg = allDurs.reduce((sum, d5) => sum + d5, 0) / allDurs.length;
+      return avg > maxDur * 0.5;
+    });
+    const sessionsWithTtft = sessions.filter((s4) => (s4.timeline ?? []).some((e4) => e4.type === "llm" && (e4.ttft ?? 0) > 0));
+    return /* @__PURE__ */ u4("div", { id: "latency-content", children: [
+      sessionsWithTtft.length > 0 && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:0 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Time to first token per session, broken out by agent. Each dot is one session. A rising trend indicates model load or growing context is increasing response start latency.", children: "TIME TO FIRST TOKEN" }),
+        /* @__PURE__ */ u4(TtftChart, { sessions })
+      ] }),
+      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", children: "SPAN DURATION HEATMAP" }),
+      /* @__PURE__ */ u4("div", { class: "heatmap", children: [
+        /* @__PURE__ */ u4("table", { style: "border-collapse:collapse", children: [
+          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
+            /* @__PURE__ */ u4("td", {}),
+            displayGroups.map((g4, gi) => /* @__PURE__ */ u4("td", { style: "text-align:center;width:32px;min-width:32px;padding:2px 4px;vertical-align:bottom", children: /* @__PURE__ */ u4("div", { style: "font-size:10px;white-space:nowrap;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px", children: [
+              /* @__PURE__ */ u4("span", { style: "opacity:0.6", children: g4.label }),
+              g4.source && /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getAgentDotHtml(g4.source) } })
+            ] }) }, gi))
+          ] }) }),
+          /* @__PURE__ */ u4("tbody", { children: names.map((name) => /* @__PURE__ */ u4("tr", { children: [
+            /* @__PURE__ */ u4("td", { class: "heatmap-row-label", children: name }),
+            grid[name].map((dur, idx) => {
+              const intensity = dur / maxDur;
+              const r5 = Math.round(79 + intensity * 176);
+              const g4 = Math.round(195 - intensity * 130);
+              const bl = Math.round(247 - intensity * 180);
+              const bg = dur > 0 ? `rgb(${r5},${g4},${bl})` : "transparent";
+              return /* @__PURE__ */ u4("td", { style: "text-align:center;width:32px;min-width:32px;padding:2px 4px", children: /* @__PURE__ */ u4("div", { class: "heatmap-cell", style: "background:" + bg, children: dur > 0 && /* @__PURE__ */ u4("span", { class: "htip", children: [
+                name,
+                " session ",
+                displayGroups[idx].label,
+                ": ",
+                formatMs(dur)
+              ] }) }) }, idx);
+            })
+          ] }, name)) })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" }),
+        /* @__PURE__ */ u4("div", { class: "heatmap-legend", children: [
+          /* @__PURE__ */ u4("span", { children: "Duration:" }),
+          /* @__PURE__ */ u4("span", { children: "Low" }),
+          /* @__PURE__ */ u4("div", { class: "heatmap-legend-bar", children: Array.from({ length: 6 }, (_4, li) => {
+            const int = li / 5;
+            const lr = Math.round(79 + int * 176);
+            const lg = Math.round(195 - int * 130);
+            const lb = Math.round(247 - int * 180);
+            return /* @__PURE__ */ u4("span", { style: `background:rgb(${lr},${lg},${lb})` }, li);
+          }) }),
+          /* @__PURE__ */ u4("span", { children: [
+            "High (",
+            formatMs(maxDur),
+            ")"
+          ] })
+        ] })
+      ] })
+    ] });
+  }
+
+  // media/src/tabs/Summaries.tsx
+  function BgSummaryBlock({ bgSpans }) {
+    const [open, setOpen] = d2(false);
+    if (!bgSpans?.length) return null;
+    const groups = {};
+    let totalTokens = 0;
+    bgSpans.forEach((bg) => {
+      const key = bg.purpose || bg.name || "Unknown";
+      if (!groups[key]) groups[key] = { count: 0, tokens: 0, model: bg.model || "" };
+      groups[key].count++;
+      const tok = (bg.inputTokens ?? 0) + (bg.outputTokens ?? 0);
+      groups[key].tokens += tok;
+      totalTokens += tok;
+    });
+    const descriptions = {
+      "Generate chat title": "Creates the title shown in the chat history sidebar.",
+      "Generate progress messages": "Produces the status messages shown while the agent works.",
+      "Extension language model call": "LLM call made by a VS Code extension \u2014 often used for completions or inline suggestions."
+    };
+    const purposes = Object.keys(groups).sort((a4, b4) => groups[b4].tokens - groups[a4].tokens);
+    return /* @__PURE__ */ u4("div", { class: "sw-bg-group", children: [
+      /* @__PURE__ */ u4("div", { class: "sw-bg-header", onClick: () => setOpen((v4) => !v4), children: [
+        /* @__PURE__ */ u4("span", { class: "sw-bg-chevron", children: open ? "\u25BC" : "\u25B6" }),
+        " ",
+        /* @__PURE__ */ u4("span", { children: "Background Overhead" }),
+        /* @__PURE__ */ u4("span", { class: "sw-bg-summary", children: [
+          bgSpans.length,
+          " calls \xB7 ",
+          totalTokens.toLocaleString(),
+          " tokens"
+        ] })
+      ] }),
+      open && /* @__PURE__ */ u4("div", { class: "sw-bg-body", children: [
+        /* @__PURE__ */ u4("div", { class: "sw-bg-note", children: "Automatic LLM calls that ran alongside this prompt. These are not part of your agent session but still consume tokens." }),
+        purposes.map((purpose) => /* @__PURE__ */ u4("div", { class: "sw-bg-item", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-bg-item-header", children: [
+            /* @__PURE__ */ u4("span", { class: "sw-bg-item-name", children: purpose }),
+            /* @__PURE__ */ u4("span", { class: "sw-bg-item-stats", children: [
+              groups[purpose].count,
+              "\xD7 \xB7 ",
+              groups[purpose].tokens.toLocaleString(),
+              " tok \xB7 ",
+              groups[purpose].model
+            ] })
+          ] }),
+          descriptions[purpose] && /* @__PURE__ */ u4("div", { class: "sw-bg-item-desc", children: descriptions[purpose] })
+        ] }, purpose))
+      ] })
+    ] });
+  }
+  function StepDetail({ step, idx, sessIdx }) {
+    const [showOutput, setShowOutput] = d2(false);
+    const entry = step.entry;
+    if (entry.type === "llm") {
+      return /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Model" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.model || "unknown" })
+        ] }),
+        ((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Token Usage" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: [
+            /* @__PURE__ */ u4("span", { class: "sw-token-in", children: [
+              (entry.inputTokens ?? 0).toLocaleString(),
+              " input"
+            ] }),
+            /* @__PURE__ */ u4("span", { class: "sw-token-arrow", children: " \u2192 " }),
+            /* @__PURE__ */ u4("span", { class: "sw-token-out", children: [
+              (entry.outputTokens ?? 0).toLocaleString(),
+              " output"
+            ] }),
+            entry.responseText && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setShowOutput((v4) => !v4), children: showOutput ? "hide output" : "view output" })
+          ] })
+        ] }),
+        showOutput && entry.responseText && /* @__PURE__ */ u4(LongTextSection, { heading: "Output", text: entry.responseText, id: "sw-output-" + sessIdx + "-" + idx }),
+        (entry.ttft ?? 0) > 0 && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Time to First Token" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(entry.ttft) })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
+        ] }),
+        entry.action && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Decision" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.action })
+        ] }),
+        entry.thinking && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Reasoning" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-thinking", style: "white-space:pre-wrap", children: entry.thinking })
+        ] }),
+        entry.timestamp && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Timestamp" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value sw-detail-muted", children: entry.timestamp })
+        ] })
+      ] });
+    }
+    if (entry.type === "tool") {
+      const toolParts = (entry.label ?? "").match(/^(\S+)\s*([\s\S]*)$/);
+      const tName = toolParts ? toolParts[1] : entry.label;
+      const tArgs = toolParts ? toolParts[2] : "";
+      const resultText = entry.fullResult || entry.resultSummary || "";
+      return /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Tool" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: /* @__PURE__ */ u4("code", { children: tName }) })
+        ] }),
+        tArgs && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Arguments" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: /* @__PURE__ */ u4("code", { children: tArgs }) })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
+        ] }),
+        resultText && /* @__PURE__ */ u4(LongTextSection, { heading: "Result", text: resultText, id: "sw-result-" + sessIdx + "-" + idx, isJson: true }),
+        entry.isError && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading err", children: "Error" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value err", children: "This step failed" })
+        ] }),
+        entry.timestamp && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Timestamp" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value sw-detail-muted", children: entry.timestamp })
+        ] })
+      ] });
+    }
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+        /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Background Task" }),
+        /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.label || "" })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+        /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
+        /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
+      ] })
+    ] });
+  }
+  function LongTextSection({ heading, text, id: _id, isJson }) {
+    const [expanded, setExpanded] = d2(false);
+    const maxPreviewChars = 600;
+    const isLong = text.length > maxPreviewChars;
+    let formatted = text.length > 6e3 ? text.slice(0, 6e3) + "\n... [truncated " + (text.length - 6e3).toLocaleString() + " chars]" : text;
+    if (formatted.length <= 2e3) {
+      try {
+        formatted = JSON.stringify(JSON.parse(formatted), null, 2);
+      } catch {
+      }
+    }
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: [
+        heading,
+        isLong && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setExpanded((v4) => !v4), children: expanded ? "Collapse" : "Show full" })
+      ] }) }),
+      !isLong || !expanded ? /* @__PURE__ */ u4("pre", { class: "sw-full-result-pre", style: "margin:0 0 8px", children: isJson && formatted.length <= 2e3 ? /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: syntaxHighlightJson(isLong ? text.slice(0, maxPreviewChars) : formatted) } }) : isLong ? text.slice(0, maxPreviewChars) + "\u2026" : formatted }) : /* @__PURE__ */ u4("pre", { class: "sw-full-result-pre", style: "margin:0 0 8px", children: isJson && formatted.length <= 2e3 ? /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: syntaxHighlightJson(formatted) } }) : formatted })
+    ] });
+  }
+  function StepRow({ step, idx, sessIdx, sessionDur }) {
+    const [open, setOpen] = d2(false);
+    const entry = step.entry;
+    let badgeLabel, barColor;
+    if (entry.type === "llm") {
+      badgeLabel = "LLM";
+      barColor = "var(--accent)";
+    } else if (entry.type === "tool") {
+      badgeLabel = "TOOL";
+      barColor = "#B8E986";
+    } else {
+      badgeLabel = "BG";
+      barColor = "var(--muted)";
+    }
+    if (entry.isError) barColor = "var(--error)";
+    const rowLabel = entry.type === "llm" ? formatLlmLabel(entry) : entry.type === "tool" ? formatToolLabel(entry) + (formatToolResult(entry) ? " \u2192 " + formatToolResult(entry) : "") : entry.label || "";
+    const left = sessionDur > 0 ? step.offsetMs / sessionDur * 100 : 0;
+    const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100;
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { class: "wf-row", onClick: () => setOpen((v4) => !v4), children: [
+        /* @__PURE__ */ u4("div", { class: "wf-label", title: rowLabel, children: [
+          /* @__PURE__ */ u4("span", { class: "wf-indent" }),
+          /* @__PURE__ */ u4("span", { class: "sw-chevron", children: open ? "\u25BC" : "\u25B6" }),
+          /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + barColor + ";color:#000", children: badgeLabel }),
+          /* @__PURE__ */ u4("span", { class: "wf-name", children: rowLabel })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "wf-bar-area", children: /* @__PURE__ */ u4("div", { class: "wf-bar", style: `left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`, children: /* @__PURE__ */ u4("div", { class: "wf-bar-inner", style: "background:" + barColor + ";opacity:" + (entry.isError ? "1" : "0.7") }) }) }),
+        /* @__PURE__ */ u4("div", { class: "wf-info", children: [
+          formatMs(step.durationMs),
+          entry.type === "llm" && ((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);white-space:nowrap;margin-top:2px", children: [
+            "\u2191",
+            formatCompact(entry.inputTokens ?? 0),
+            " \u2193",
+            formatCompact(entry.outputTokens ?? 0)
+          ] })
+        ] })
+      ] }),
+      open && /* @__PURE__ */ u4("div", { class: "sw-detail open", children: /* @__PURE__ */ u4(StepDetail, { step, idx, sessIdx }) })
+    ] });
+  }
+  function SessionBlock({ sess, sessIdx, totalCount, isFirst }) {
+    const [collapsed, setCollapsed] = d2(!isFirst);
+    const [promptExpanded, setPromptExpanded] = d2(false);
+    const isLongPrompt = (sess.userRequest?.length ?? 0) > 100;
+    const sessionNum = getSessionGlobalNumber(sess) || totalCount - sessIdx;
+    const sessionStartMs2 = sess.startTime ? new Date(sess.startTime).getTime() : 0;
+    let sessionDur = sess.durationMs || 1;
+    const steps = (sess.timeline ?? []).map((entry) => {
+      const entryStart = entry.timestamp ? new Date(entry.timestamp).getTime() : 0;
+      const offset = sessionStartMs2 > 0 && entryStart > 0 ? entryStart - sessionStartMs2 : 0;
+      return { entry, offsetMs: Math.max(offset, 0), durationMs: entry.durationMs || 0 };
+    });
+    if (steps.length > 0) {
+      const maxEnd = Math.max(...steps.map((s4) => s4.offsetMs + s4.durationMs));
+      if (maxEnd > sessionDur) sessionDur = maxEnd;
+    }
+    if (sessionDur <= 0) sessionDur = 1;
+    const errorCount = sess.errors || 0;
+    const outcomeLabel = sess.outcome === "text_response" ? "Responded" : sess.outcome === "tool_calls" ? "Tool calls" : null;
+    return /* @__PURE__ */ u4("div", { class: "wf-trace-group", children: [
+      /* @__PURE__ */ u4("div", { class: "wf-trace-header", onClick: () => setCollapsed((v4) => !v4), children: [
+        /* @__PURE__ */ u4("span", { children: [
+          /* @__PURE__ */ u4("span", { class: "wf-header-chevron", children: collapsed ? "\u25B6" : "\u25BC" }),
+          /* @__PURE__ */ u4("strong", { children: sessionNum }),
+          " ",
+          /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getAgentDotHtml(sess.source) } }),
+          " ",
+          '"',
+          sess.userRequest.slice(0, 100),
+          isLongPrompt ? "\u2026" : "",
+          '"',
+          isLongPrompt && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: (e4) => {
+            e4.stopPropagation();
+            setPromptExpanded((v4) => !v4);
+          }, children: promptExpanded ? "Collapse" : "Show full prompt" })
+        ] }),
+        /* @__PURE__ */ u4("span", { class: "wf-trace-stats", children: [
+          steps.length,
+          " steps \xB7 ",
+          formatMs(sessionDur),
+          " \xB7 ",
+          sess.model,
+          errorCount > 0 && /* @__PURE__ */ u4("span", { class: "err", children: [
+            " \xB7 ",
+            errorCount,
+            " errors"
+          ] }),
+          outcomeLabel && /* @__PURE__ */ u4(S, { children: [
+            " \xB7 ",
+            outcomeLabel
+          ] })
+        ] })
+      ] }),
+      promptExpanded && /* @__PURE__ */ u4("div", { style: "padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word", children: sess.userRequest }),
+      !collapsed && /* @__PURE__ */ u4("div", { class: "wf-trace-body", children: [
+        /* @__PURE__ */ u4("div", { class: "wf-time-ruler", children: Array.from({ length: 6 }, (_4, t4) => /* @__PURE__ */ u4("span", { children: formatMs(sessionDur * t4 / 5) }, t4)) }),
+        steps.map((step, si) => /* @__PURE__ */ u4(StepRow, { step, idx: si, sessIdx, sessionDur }, step.entry.spanId + si))
+      ] })
+    ] });
+  }
+  function Summaries() {
+    const base = displaySessions.value;
+    const summary = sessionSummary.value;
+    if (!summary?.sessions?.length) {
+      return /* @__PURE__ */ u4("div", { id: "summary-traces-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
+    const sessionsToShow = [...base].reverse();
+    const totalLlmCalls = sessionsToShow.reduce((s4, sess) => s4 + sess.totalLlmCalls, 0);
+    const totalToolCalls = sessionsToShow.reduce((s4, sess) => s4 + sess.totalToolCalls, 0);
+    const totalTokens = sessionsToShow.reduce((s4, sess) => s4 + sess.inputTokens + sess.outputTokens, 0);
+    return /* @__PURE__ */ u4("div", { id: "summary-traces-content", children: [
+      /* @__PURE__ */ u4("div", { class: "tab-stats", children: [
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: sessionsToShow.length }),
+          " sessions"
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: totalLlmCalls }),
+          " LLM calls"
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: totalToolCalls }),
+          " tool calls"
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: formatCompact(totalTokens) }),
+          " tokens"
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)", children: "Each agent exposes different OTEL data \u2014 some fields may be missing or estimated. See the Traces tab for raw span-level detail." }),
+      /* @__PURE__ */ u4("div", { class: "waterfall", children: [
+        sessionsToShow.map((sess, idx) => /* @__PURE__ */ u4(
+          SessionBlock,
+          {
+            sess,
+            sessIdx: idx,
+            totalCount: sessionsToShow.length,
+            isFirst: idx === 0
+          },
+          sess.traceId + idx
+        )),
+        sessionsToShow.length === 0 && /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions to display" })
+      ] }),
+      summary.backgroundSpans?.length > 0 && /* @__PURE__ */ u4(BgSummaryBlock, { bgSpans: summary.backgroundSpans })
+    ] });
+  }
+
+  // media/src/tabs/Traces.tsx
+  function isCodexWebsocketSpan(span) {
+    const name = (span.name ?? "").toLowerCase();
+    if (!name.includes("websocket")) return false;
+    const eventName = String(getAttr(span, "event.name") ?? "").toLowerCase();
+    return name.startsWith("codex.") || eventName.startsWith("codex.") || Boolean(getCodexSessionId(span));
+  }
+  function SpanRow({ span, minStart, traceRange, depth }) {
+    const isExpanded = expandedSpanIds.has(span.spanId);
+    const [localOpen, setLocalOpen] = d2(isExpanded);
+    const st = nanoToMs(span.startTime), en = nanoToMs(span.endTime);
+    const dur = en - st;
+    const left = minStart > 0 && st > 0 ? (st - minStart) / traceRange * 100 : 0;
+    const width = traceRange > 0 ? Math.max(dur / traceRange * 100, 0.5) : 100;
+    const badge = spanTypeBadge(span);
+    const isErr = span.status?.code === 2;
+    const barColor = isErr ? "var(--error)" : badge.color;
+    const attrs = span.attributes ?? [];
+    const tipLines = [
+      span.name,
+      "Duration: " + formatMs(dur),
+      "Span: " + span.spanId,
+      ...span.parentSpanId ? ["Parent: " + span.parentSpanId] : [],
+      ...attrs.slice(0, 8).map((a4) => {
+        const v4 = a4.value;
+        const display = v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue;
+        return a4.key + ": " + String(display ?? JSON.stringify(v4));
+      }),
+      ...attrs.length > 8 ? ["... +" + (attrs.length - 8) + " more attributes"] : []
+    ];
+    const detailLines = [
+      { k: "Span ID", v: span.spanId ?? "\u2014" },
+      { k: "Trace ID", v: span.traceId ?? "\u2014" },
+      ...span.parentSpanId ? [{ k: "Parent Span ID", v: span.parentSpanId }] : [],
+      { k: "Status", v: span.status ? (span.status.code === 0 ? "OK" : span.status.code === 2 ? "ERROR" : "UNSET") + (span.status.message ? " \u2014 " + span.status.message : "") : "UNSET" },
+      ...attrs.map((a4) => {
+        const v4 = a4.value;
+        const display = v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue;
+        return { k: a4.key, v: String(display ?? JSON.stringify(v4)) };
+      })
+    ];
+    function toggle() {
+      const next = !localOpen;
+      setLocalOpen(next);
+      if (next) expandedSpanIds.add(span.spanId);
+      else expandedSpanIds.delete(span.spanId);
+    }
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { class: clsx_default("wf-row", { selected: localOpen }), onClick: toggle, children: [
+        /* @__PURE__ */ u4("div", { class: "wf-label", title: span.name, children: [
+          Array.from({ length: depth }, (_4, i4) => /* @__PURE__ */ u4("span", { class: "wf-indent" }, i4)),
+          /* @__PURE__ */ u4("span", { class: "wf-chevron", children: localOpen ? "\u25BC" : "\u25B6" }),
+          /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + barColor + ";color:#000", children: badge.label }),
+          /* @__PURE__ */ u4("span", { class: "wf-name", children: span.name })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "wf-bar-area", children: /* @__PURE__ */ u4("div", { class: "wf-bar", style: `left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`, children: [
+          /* @__PURE__ */ u4("div", { class: "wf-bar-inner", style: "background:" + barColor + ";opacity:" + (isErr ? "1" : "0.7") }),
+          width < 15 && /* @__PURE__ */ u4("span", { class: "wf-dur", children: formatMs(dur) }),
+          /* @__PURE__ */ u4("div", { class: "wf-tip", dangerouslySetInnerHTML: { __html: tipLines.map((l5) => esc(l5)).join("<br>") } })
+        ] }) }),
+        /* @__PURE__ */ u4("div", { class: "wf-info", children: formatMs(dur) })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: clsx_default("wf-detail", { open: localOpen }), id: "detail-" + span.spanId, children: detailLines.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
+        /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
+        /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
+      ] }, dl.k)) })
+    ] });
+  }
+  function TraceGroup({
+    traceId,
+    traceSpans,
+    sessionNum,
+    source,
+    sessionPrompt,
+    model,
+    isFirst
+  }) {
+    const [collapsed, setCollapsed] = d2(!isFirst);
+    const [promptExpanded, setPromptExpanded] = d2(false);
+    const minStart = Math.min(...traceSpans.map((s4) => nanoToMs(s4.startTime)).filter((t4) => t4 > 0)) || 0;
+    const maxEnd = Math.max(...traceSpans.map((s4) => nanoToMs(s4.endTime)));
+    const traceRange = maxEnd - minStart || 1;
+    const traceDur = formatMs(traceRange);
+    const errorCount = traceSpans.filter((s4) => s4.status?.code === 2).length;
+    const tree = buildSpanTree(traceSpans);
+    const traceLabel = sessionNum ? /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("strong", { children: sessionNum }),
+      " ",
+      source && /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getAgentDotHtml(source) } }),
+      " "
+    ] }) : null;
+    const sessionTitle = sessionNum ? sessionPrompt || "[session in progress]" : sessionPrompt;
+    const isLongPrompt = (sessionTitle?.length ?? 0) > 120;
+    const promptSnippet = sessionTitle ? ` ${isLongPrompt ? sessionTitle.slice(0, 120) + "\u2026" : sessionTitle}` : "";
+    const idLabel = traceId.startsWith("codex:") ? "Session" : "Trace";
+    const timeMarks = Array.from({ length: 6 }, (_4, t4) => formatMs(traceRange * t4 / 5));
+    return /* @__PURE__ */ u4("div", { class: "wf-trace-group", children: [
+      /* @__PURE__ */ u4("div", { class: "wf-trace-header", onClick: () => setCollapsed((c4) => !c4), children: [
+        /* @__PURE__ */ u4("span", { children: [
+          /* @__PURE__ */ u4("span", { class: "wf-header-chevron", children: collapsed ? "\u25B6" : "\u25BC" }),
+          traceLabel,
+          promptSnippet,
+          isLongPrompt && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: (e4) => {
+            e4.stopPropagation();
+            setPromptExpanded((v4) => !v4);
+          }, children: promptExpanded ? "Collapse" : "Show full prompt" })
+        ] }),
+        /* @__PURE__ */ u4("span", { class: "wf-trace-stats", children: [
+          /* @__PURE__ */ u4("span", { class: "wf-trace-id", children: [
+            idLabel,
+            " ",
+            traceId.substring(0, 16),
+            "..."
+          ] }),
+          " \xB7 ",
+          traceSpans.length,
+          " spans",
+          " \xB7 ",
+          traceDur,
+          model && /* @__PURE__ */ u4(S, { children: [
+            " \xB7 ",
+            model
+          ] }),
+          errorCount > 0 && /* @__PURE__ */ u4("span", { class: "err", children: [
+            " \xB7 ",
+            errorCount,
+            " errors"
+          ] })
+        ] })
+      ] }),
+      promptExpanded && sessionTitle && /* @__PURE__ */ u4("div", { style: "padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word", children: sessionTitle }),
+      /* @__PURE__ */ u4("div", { class: clsx_default("wf-trace-body", { collapsed }), children: [
+        /* @__PURE__ */ u4("div", { class: "wf-time-ruler", children: timeMarks.map((m4, i4) => /* @__PURE__ */ u4("span", { children: m4 }, i4)) }),
+        tree.map((node) => /* @__PURE__ */ u4(
+          SpanRow,
+          {
+            span: node.span,
+            minStart,
+            traceRange,
+            depth: node.depth
+          },
+          node.span.spanId
+        ))
+      ] })
+    ] });
+  }
+  function Traces() {
+    const wfSpans = waterfallSpans.value;
+    const sessions = displaySessions.value;
+    const codexRawTraceSessionMap = /* @__PURE__ */ new Map();
+    wfSpans.forEach((span) => {
+      const sessionId = getCodexSessionId(span);
+      const rawTraceId = getAttr(span, "otel.trace_id");
+      if (sessionId && rawTraceId) codexRawTraceSessionMap.set(String(rawTraceId), sessionId);
+    });
+    const sessionSpanMap = /* @__PURE__ */ new Map();
+    sessions.forEach((sess) => {
+      if (sess.source !== "codex" || !sess.traceId) return;
+      if (sess.sessionId) sessionSpanMap.set(sess.sessionId, sess.traceId);
+      for (const entry of sess.timeline ?? []) {
+        if (entry.spanId) sessionSpanMap.set(entry.spanId, sess.traceId);
+      }
+    });
+    const groupKeyForSpan = (span) => sessionSpanMap.get(span.spanId) || getCodexSessionId(span) || codexRawTraceSessionMap.get(span.traceId) || span.traceId;
+    const displayTraceIds = sessions.length > 0 ? new Set(sessions.map((s4) => s4.traceId).filter(Boolean)) : null;
+    const allSessionTraceIds = new Set(
+      (sessionSummary.value?.sessions ?? []).map((s4) => s4.traceId).filter(Boolean)
+    );
+    const filtered = wfSpans.filter((s4) => {
+      if (isCodexWebsocketSpan(s4)) return false;
+      const groupKey = groupKeyForSpan(s4);
+      return !displayTraceIds || displayTraceIds.has(groupKey) || !allSessionTraceIds.has(groupKey);
+    });
+    const traceMap = {};
+    const traceOrder = [];
+    filtered.forEach((s4) => {
+      const groupKey = groupKeyForSpan(s4);
+      if (!traceMap[groupKey]) {
+        traceMap[groupKey] = [];
+        traceOrder.push(groupKey);
+      }
+      traceMap[groupKey].push(s4);
+    });
+    const spanCount = filtered.length;
+    const traceCount = new Set(filtered.map((s4) => groupKeyForSpan(s4))).size;
+    const errorCount = filtered.filter((s4) => s4.status?.code === 2).length;
+    const sessionTraceMap = {};
+    const sessionPromptMap = {};
+    const sessionSourceMap = {};
+    const sessionModelMap = {};
+    sessions.forEach((sess) => {
+      if (sess.traceId) {
+        sessionTraceMap[sess.traceId] = getSessionGlobalNumber(sess);
+        sessionPromptMap[sess.traceId] = sess.userRequest ?? "";
+        sessionSourceMap[sess.traceId] = sess.source ?? "";
+        sessionModelMap[sess.traceId] = sess.model ?? "";
+      }
+    });
+    const reverseOrder = [...traceOrder].reverse();
+    const sessionTraceIdsFromSummary = sessions.map((sess) => sess.traceId).filter((traceId) => Boolean(traceId && traceMap[traceId]));
+    const seenSessionTraceIds = new Set(sessionTraceIdsFromSummary);
+    const sessionTraceIdsRev = [
+      ...sessionTraceIdsFromSummary.reverse(),
+      ...reverseOrder.filter((tid) => sessionTraceMap[tid] && !seenSessionTraceIds.has(tid))
+    ];
+    const bgTraceIdsRev = reverseOrder.filter((tid) => !sessionTraceMap[tid]);
+    const toRender = sessionTraceIdsRev.length > 0 ? sessionTraceIdsRev : reverseOrder;
+    return /* @__PURE__ */ u4("div", { id: "traces-content", children: [
+      /* @__PURE__ */ u4("div", { class: "tab-stats", children: [
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: spanCount }),
+          " spans"
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: traceCount }),
+          " traces"
+        ] }),
+        errorCount > 0 && /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val err", children: errorCount }),
+          " errors"
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { id: "traces-content-inner", children: filtered.length === 0 ? /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) : /* @__PURE__ */ u4(S, { children: /* @__PURE__ */ u4("div", { class: "waterfall", children: [
+        toRender.map((tid, i4) => {
+          const prompt = sessionPromptMap[tid] || (() => {
+            const spans2 = traceMap[tid] ?? [];
+            for (const s4 of spans2) {
+              if (isSessionSpan(s4.name)) return extractUserRequest(getSessionUserRequest(s4));
+            }
+            return "";
+          })();
+          return /* @__PURE__ */ u4(
+            TraceGroup,
+            {
+              traceId: tid,
+              traceSpans: traceMap[tid],
+              sessionNum: sessionTraceMap[tid],
+              source: sessionSourceMap[tid],
+              sessionPrompt: prompt,
+              model: sessionModelMap[tid],
+              isFirst: i4 === 0
+            },
+            tid
+          );
+        }),
+        bgTraceIdsRev.length > 0 && sessionTraceIdsRev.length > 0 && /* @__PURE__ */ u4(BgGroup, { bgTraceIds: bgTraceIdsRev, traceMap })
+      ] }) }) })
+    ] });
+  }
+  function BgGroup({ bgTraceIds, traceMap }) {
+    const [collapsed, setCollapsed] = d2(true);
+    const totalBgSpans = bgTraceIds.reduce((s4, tid) => s4 + (traceMap[tid]?.length ?? 0), 0);
+    return /* @__PURE__ */ u4("div", { class: "sw-bg-group", style: "margin-top:16px", children: [
+      /* @__PURE__ */ u4("div", { class: "sw-bg-header", onClick: () => setCollapsed((c4) => !c4), children: [
+        /* @__PURE__ */ u4("span", { class: "sw-bg-chevron", children: collapsed ? "\u25B6" : "\u25BC" }),
+        /* @__PURE__ */ u4("strong", { children: "Background Overhead" }),
+        /* @__PURE__ */ u4("span", { class: "sw-bg-summary", children: [
+          bgTraceIds.length,
+          " trace",
+          bgTraceIds.length !== 1 ? "s" : "",
+          " \xB7 ",
+          totalBgSpans,
+          " spans"
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: clsx_default("sw-bg-body", { collapsed }), children: bgTraceIds.map((tid, _i) => /* @__PURE__ */ u4(TraceGroup, { traceId: tid, traceSpans: traceMap[tid], isFirst: false }, tid)) })
+    ] });
+  }
+
+  // media/src/tabs/Files.tsx
+  function countLines(s4) {
+    return s4 ? s4.split("\n").length : 0;
+  }
+  function editLineCounts(edits) {
+    let added = 0, removed = 0;
+    for (const e4 of edits) {
+      if (e4.content) {
+        added += countLines(e4.content);
+      } else {
+        added += countLines(e4.newString);
+        removed += countLines(e4.oldString);
+      }
+    }
+    return { added, removed };
+  }
+  function DiffLines({ lines, type }) {
+    const bg = type === "added" ? "rgba(76,175,80,0.12)" : "rgba(244,67,54,0.12)";
+    const border = type === "added" ? "rgba(76,175,80,0.3)" : "rgba(244,67,54,0.3)";
+    const prefix = type === "added" ? "+ " : "- ";
+    return /* @__PURE__ */ u4("div", { style: "font-family:var(--vscode-editor-font-family,monospace);font-size:11px;line-height:1.5;overflow-x:auto;white-space:pre", children: lines.map((line, i4) => /* @__PURE__ */ u4("div", { style: `padding:0 10px;background:${bg};border-left:3px solid ${border}`, children: [
+      prefix,
+      line
+    ] }, i4)) });
+  }
+  function EditBlock({ edit, ei }) {
+    return /* @__PURE__ */ u4("div", { children: [
+      /* @__PURE__ */ u4("div", { style: "padding:4px 10px;font-size:10px;color:var(--muted);background:var(--vscode-editorWidget-background,var(--bg));border-top:" + (ei > 0 ? "1px solid var(--border)" : "none") + ";font-weight:600;display:flex;align-items:center;gap:8px", children: [
+        /* @__PURE__ */ u4("span", { children: [
+          "Change ",
+          ei + 1
+        ] }),
+        /* @__PURE__ */ u4("span", { style: "text-transform:uppercase;opacity:0.7", children: edit.tool })
+      ] }),
+      edit.content && /* @__PURE__ */ u4(DiffLines, { lines: edit.content.split("\n"), type: "added" }),
+      !edit.content && /* @__PURE__ */ u4(S, { children: [
+        edit.oldString && /* @__PURE__ */ u4(S, { children: [
+          /* @__PURE__ */ u4("div", { style: "padding:4px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;border-bottom:1px solid var(--border)", children: "Removed" }),
+          /* @__PURE__ */ u4(DiffLines, { lines: edit.oldString.split("\n"), type: "removed" })
+        ] }),
+        edit.oldString && edit.newString && /* @__PURE__ */ u4("div", { style: "padding:2px 10px;color:var(--muted);font-size:10px;background:var(--border);text-align:center;user-select:none", children: "\u2192" }),
+        edit.newString && /* @__PURE__ */ u4(S, { children: [
+          /* @__PURE__ */ u4("div", { style: "padding:4px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;border-bottom:1px solid var(--border)", children: "Added" }),
+          /* @__PURE__ */ u4(DiffLines, { lines: edit.newString.split("\n"), type: "added" })
+        ] })
+      ] })
+    ] });
+  }
+  function FileItem({ fp, edits, ridx: _ridx }) {
+    const [editsOpen, setEditsOpen] = d2(false);
+    const parts = fp.split("/");
+    const fileName = parts.pop() ?? fp;
+    const dirPath = parts.join("/");
+    const isCreated = edits.some((e4) => e4.tool === "create_file");
+    const editCount = edits.length;
+    const hasDiffs = edits.some((e4) => e4.oldString || e4.newString || e4.content);
+    const { added, removed } = hasDiffs ? editLineCounts(edits) : { added: 0, removed: 0 };
+    function handleClick() {
+      vscode?.postMessage({ type: "openFile", filePath: fp });
+    }
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4(
+        "div",
+        {
+          class: "files-file-item",
+          onClick: handleClick,
+          style: "display:flex;align-items:center;gap:10px;padding:8px 16px 8px 42px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer",
+          children: [
+            !window.__STANDALONE__ && /* @__PURE__ */ u4("span", { style: "font-size:14px;width:18px;text-align:center;color:" + (isCreated ? "var(--vscode-testing-iconPassed,#4c4)" : "var(--accent)"), children: isCreated ? "\uFF0B" : "\u270E" }),
+            /* @__PURE__ */ u4("span", { style: "flex:1;min-width:0;font-family:var(--vscode-editor-font-family,monospace);font-size:12px", children: [
+              /* @__PURE__ */ u4("span", { style: "color:var(--fg);font-weight:500", children: fileName }),
+              dirPath && /* @__PURE__ */ u4("span", { class: "muted", children: [
+                " ",
+                dirPath
+              ] })
+            ] }),
+            /* @__PURE__ */ u4("span", { style: "font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;text-transform:uppercase;" + (isCreated ? "background:rgba(76,175,80,0.15);color:var(--vscode-testing-iconPassed,#4c4)" : "background:rgba(79,195,247,0.15);color:var(--accent)"), children: isCreated ? "Created" : "Edited" }),
+            editCount > 1 && /* @__PURE__ */ u4("span", { style: "font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;background:rgba(79,195,247,0.15);color:var(--accent)", children: [
+              editCount,
+              " edits"
+            ] }),
+            added > 0 && /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:600;color:#4caf50", children: [
+              "+",
+              added
+            ] }),
+            removed > 0 && /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:600;color:#f44336", children: [
+              "-",
+              removed
+            ] })
+          ]
+        }
+      ),
+      hasDiffs && /* @__PURE__ */ u4("div", { style: "border:1px solid var(--border);border-radius:4px;margin:0 16px 12px 42px;background:var(--bg);overflow:hidden", children: [
+        /* @__PURE__ */ u4(
+          "div",
+          {
+            class: "files-edit-header",
+            onClick: (e4) => {
+              e4.stopPropagation();
+              setEditsOpen((o4) => !o4);
+            },
+            style: "display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;user-select:none;font-size:11px",
+            children: [
+              /* @__PURE__ */ u4("span", { class: "files-edit-chevron", style: "font-size:9px;color:var(--muted);width:12px", children: editsOpen ? "\u25BC" : "\u25B6" }),
+              /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: [
+                editCount,
+                " change",
+                editCount !== 1 ? "s" : "",
+                " \u2014 click to ",
+                editsOpen ? "collapse" : "expand"
+              ] })
+            ]
+          }
+        ),
+        editsOpen && /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border)", children: edits.map((edit, ei) => /* @__PURE__ */ u4(EditBlock, { edit, ei }, edit.editKey)) })
+      ] })
+    ] });
+  }
+  function SessionBlock2({ sess, ridx, allCount, isOpen: defaultOpen }) {
+    const [open, setOpen] = d2(defaultOpen);
+    const sessionNum = getSessionGlobalNumber(sess) || allCount - ridx;
+    const changedFiles = sess.filesChanged ?? [];
+    const filesChangedNote = sess.filesChangedNote ?? "";
+    const fileEdits = {};
+    let editIdx = 0;
+    (sess.timeline ?? []).forEach((e4) => {
+      if (!e4.editDetails?.length) return;
+      const entryLabel = (e4.label ?? "").split(" ")[0];
+      e4.editDetails.forEach((ed) => {
+        const fp = ed.filePath;
+        if (!fp) return;
+        if (!fileEdits[fp]) fileEdits[fp] = [];
+        fileEdits[fp].push({ tool: ed.toolName || entryLabel, oldString: ed.oldString, newString: ed.newString, content: ed.content, editKey: ridx + "-" + editIdx });
+        editIdx++;
+      });
+    });
+    const fileCountSess = changedFiles.length;
+    const fileCountLabel = fileCountSess === 0 && filesChangedNote ? "paths unavailable" : fileCountSess + " file" + (fileCountSess !== 1 ? "s" : "");
+    return /* @__PURE__ */ u4("div", { style: "background:var(--vscode-editorWidget-background,var(--bg));border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden", children: [
+      /* @__PURE__ */ u4(
+        "div",
+        {
+          class: "files-session-header",
+          onClick: () => setOpen((o4) => !o4),
+          style: "display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none",
+          children: [
+            /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);width:14px;text-align:center", children: open ? "\u25BC" : "\u25B6" }),
+            /* @__PURE__ */ u4("span", { style: "font-weight:700;font-size:12px;color:var(--fg)", children: sessionNum }),
+            /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getAgentDotHtml(sess.source) } }),
+            /* @__PURE__ */ u4("span", { style: "flex:1;min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis", title: sess.userRequest ?? "", children: sess.userRequest }),
+            /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:4px", children: fileCountLabel })
+          ]
+        }
+      ),
+      open && /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border)", children: changedFiles.length === 0 ? /* @__PURE__ */ u4("div", { style: "padding:16px 42px;color:var(--muted);font-style:italic;font-size:12px", children: [
+        filesChangedNote ? "Changed files could not be recovered for this session" : "No files were modified in this session",
+        filesChangedNote && /* @__PURE__ */ u4("div", { style: "margin-top:8px;padding:10px 12px;border-radius:6px;border:1px solid rgba(217,119,87,0.35);background:rgba(217,119,87,0.08);color:var(--fg);font-style:normal;line-height:1.45", children: filesChangedNote })
+      ] }) : changedFiles.map((fp) => /* @__PURE__ */ u4(FileItem, { fp, edits: fileEdits[fp] ?? [], ridx }, fp)) })
+    ] });
+  }
+  function Files() {
+    const sessions = displaySessions.value;
+    if (!sessions.length) {
+      return /* @__PURE__ */ u4("div", { id: "files-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
+    const reversed = sessions.slice().reverse();
+    const totalFilesSet = /* @__PURE__ */ new Set();
+    let totalEdits = 0, totalAdded = 0, totalRemoved = 0;
+    reversed.forEach((sess) => {
+      ;
+      (sess.filesChanged ?? []).forEach((f5) => totalFilesSet.add(f5));
+      (sess.timeline ?? []).forEach((e4) => {
+        totalEdits += e4.editDetails?.length ?? 0;
+        for (const ed of e4.editDetails ?? []) {
+          if (ed.content) {
+            totalAdded += countLines(ed.content);
+          } else {
+            totalAdded += countLines(ed.newString);
+            totalRemoved += countLines(ed.oldString);
+          }
+        }
+      });
+    });
+    return /* @__PURE__ */ u4("div", { id: "files-content", children: [
+      /* @__PURE__ */ u4("div", { class: "tab-stats", children: [
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: totalFilesSet.size }),
+          " files changed"
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: totalEdits }),
+          " edit operations"
+        ] }),
+        totalAdded > 0 && /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", style: "color:#4caf50", children: [
+            "+",
+            totalAdded
+          ] }),
+          " lines added"
+        ] }),
+        totalRemoved > 0 && /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", style: "color:#f44336", children: [
+            "-",
+            totalRemoved
+          ] }),
+          " lines removed"
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: reversed.length }),
+          " sessions"
+        ] })
+      ] }),
+      reversed.map((sess, ridx) => /* @__PURE__ */ u4(
+        SessionBlock2,
+        {
+          sess,
+          ridx,
+          allCount: sessions.length,
+          isOpen: ridx === 0
+        },
+        sess.traceId + ridx
+      ))
+    ] });
+  }
+
+  // media/src/tabs/Flow.tsx
+  var LLM_COLOR = "#3794FF";
+  var TOOL_COLOR = "#B8E986";
+  var ERR_COLOR = "#f44747";
+  var TURN_X = 130;
+  var TOOL_X = 380;
+  var LLM_R = 26;
+  var TOOL_R = 22;
+  function createInferredTurnEntry(sess, tools, index) {
+    const sourceLabel = getAgentSourceLabel(sess.source);
+    return {
+      type: "llm",
+      spanId: "flow-inferred-turn-" + index,
+      label: sourceLabel + " tool phase",
+      model: sess.model || sourceLabel,
+      durationMs: 0,
+      action: "Inferred turn for tool events emitted before a response",
+      isError: tools.some((t4) => t4.isError),
+      timestamp: tools[0]?.timestamp || sess.startTime
+    };
+  }
+  function buildTurnGroups(sess, timeline) {
+    const turns = [];
+    let pendingTools = [];
+    const pushInferredTurn = () => {
+      if (pendingTools.length === 0) {
+        return;
+      }
+      turns.push({
+        entry: createInferredTurnEntry(sess, pendingTools, turns.length),
+        tools: pendingTools
+      });
+      pendingTools = [];
+    };
+    for (const entry of timeline) {
+      if (entry.type === "llm") {
+        if (turns.length === 0) {
+          pushInferredTurn();
+        } else {
+          turns[turns.length - 1].tools = pendingTools;
+          pendingTools = [];
+        }
+        turns.push({ entry, tools: [] });
+      } else if (entry.type === "tool") {
+        pendingTools.push(entry);
+      }
+    }
+    if (pendingTools.length > 0) {
+      if (turns.length > 0) {
+        turns[turns.length - 1].tools = pendingTools;
+      } else {
+        pushInferredTurn();
+      }
+    }
+    return turns;
+  }
+  function isInferredTurn(entry) {
+    return entry.spanId.startsWith("flow-inferred-turn-");
+  }
+  function Flow() {
+    const sessions = displaySessions.value;
+    const [selectedIdx, setSelectedIdx] = d2(-1);
+    const [isPlaying, setIsPlaying] = d2(false);
+    const setIsPlayingRef = A2(setIsPlaying);
+    setIsPlayingRef.current = setIsPlaying;
+    const canvasRef = A2(null);
+    const stateRef = A2({
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      dragging: false,
+      didDrag: false,
+      lastMX: 0,
+      lastMY: 0,
+      hoverNodeId: null,
+      clickedNodeId: null,
+      nodes: [],
+      edges: [],
+      playbackTurns: [],
+      // node indices for LLM turns in order
+      playbackIdx: 0,
+      playbackPlaying: false,
+      playbackTimer: null
+    });
+    if (sessions.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "flow-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
+    const allSessions = sessions.map((sess, idx) => {
+      const num = getSessionGlobalNumber(sess) || idx + 1;
+      const src = getAgentSourceLabel(sess.source);
+      const turns = sess.totalLlmCalls ?? 0;
+      const tools = sess.totalToolCalls ?? 0;
+      return {
+        label: `${num} \xB7 ${src} \xB7 ${turns} turns \xB7 ${tools} tool calls`,
+        sess
+      };
+    });
+    const clampedIdx = Math.max(0, Math.min(
+      selectedIdx < 0 ? allSessions.length - 1 : selectedIdx,
+      allSessions.length - 1
+    ));
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const st = stateRef.current;
+      if (st.playbackTimer) {
+        clearInterval(st.playbackTimer);
+        st.playbackTimer = null;
+      }
+      st.playbackPlaying = false;
+      st.playbackIdx = 0;
+      st.clickedNodeId = null;
+      setIsPlayingRef.current(false);
+      const sess = allSessions[clampedIdx]?.sess;
+      const timeline = (sess?.timeline ?? []).filter((e4) => e4.type !== "background");
+      const turns = sess ? buildTurnGroups(sess, timeline) : [];
+      const toolData = /* @__PURE__ */ new Map();
+      turns.forEach((turn, ti) => {
+        const seenThisTurn = /* @__PURE__ */ new Set();
+        turn.tools.forEach((t4) => {
+          const name = t4.label || "tool";
+          if (!toolData.has(name)) toolData.set(name, { count: 0, totalMs: 0, errors: 0, turns: [] });
+          const d5 = toolData.get(name);
+          d5.count++;
+          d5.totalMs += t4.durationMs || 0;
+          if (t4.isError) d5.errors++;
+          if (!seenThisTurn.has(name)) {
+            d5.turns.push(ti);
+            seenThisTurn.add(name);
+          }
+        });
+      });
+      const N2 = turns.length;
+      const TURN_SPACING = N2 <= 1 ? 100 : Math.max(65, Math.min(100, Math.floor(480 / Math.max(N2 - 1, 1))));
+      const TOOL_MIN_GAP = 68;
+      const START_Y = 70;
+      const nodes = [];
+      const edges = [];
+      const nodeIdxMap = {};
+      turns.forEach((turn, i4) => {
+        const inferred = isInferredTurn(turn.entry);
+        const node = {
+          id: "llm-" + i4,
+          x: TURN_X,
+          y: START_Y + i4 * TURN_SPACING,
+          color: turn.entry.isError ? ERR_COLOR : LLM_COLOR,
+          type: "llm",
+          label: "T" + (i4 + 1),
+          subLabel: inferred ? turn.tools.length + "\xD7" : (turn.entry.inputTokens ?? 0) > 0 ? Math.round((turn.entry.inputTokens ?? 0) / 1e3) + "K" : "",
+          turnNum: i4 + 1,
+          totalTurns: turns.length,
+          inputTokens: turn.entry.inputTokens ?? 0,
+          outputTokens: turn.entry.outputTokens ?? 0,
+          model: turn.entry.model ?? turn.entry.label ?? "",
+          durationMs: turn.entry.durationMs ?? 0,
+          action: turn.entry.action ?? "",
+          note: inferred ? "Tool events arrived before a response event, so Flow anchors them to this inferred turn." : void 0,
+          toolsUsed: [...new Set(turn.tools.map((t4) => t4.label || "tool"))],
+          isError: turn.entry.isError
+        };
+        nodeIdxMap[node.id] = nodes.length;
+        nodes.push(node);
+      });
+      for (let i4 = 0; i4 < turns.length - 1; i4++) {
+        edges.push({ from: nodeIdxMap["llm-" + i4], to: nodeIdxMap["llm-" + (i4 + 1)], count: 1, kind: "seq" });
+      }
+      const toolNames = Array.from(toolData.keys());
+      const toolTargetY = (name) => {
+        const d5 = toolData.get(name);
+        const avg = d5.turns.reduce((a4, b4) => a4 + b4, 0) / d5.turns.length;
+        return START_Y + avg * TURN_SPACING;
+      };
+      const sortedTools = [...toolNames].sort((a4, b4) => toolTargetY(a4) - toolTargetY(b4));
+      let prevY = -Infinity;
+      const toolY = {};
+      for (const name of sortedTools) {
+        const ty = Math.max(toolTargetY(name), prevY + TOOL_MIN_GAP);
+        toolY[name] = ty;
+        prevY = ty;
+      }
+      if (sortedTools.length > 0) {
+        const turnsCenter = START_Y + (N2 - 1) * TURN_SPACING / 2;
+        const toolsFirst = toolY[sortedTools[0]];
+        const toolsLast = toolY[sortedTools[sortedTools.length - 1]];
+        const toolsCenter = (toolsFirst + toolsLast) / 2;
+        const shift = turnsCenter - toolsCenter;
+        sortedTools.forEach((name) => {
+          toolY[name] += shift;
+        });
+      }
+      sortedTools.forEach((name) => {
+        const d5 = toolData.get(name);
+        const node = {
+          id: "tool-" + name,
+          x: TOOL_X,
+          y: toolY[name],
+          color: d5.errors > 0 ? ERR_COLOR : TOOL_COLOR,
+          type: "tool",
+          label: name.length > 14 ? name.slice(0, 13) + "\u2026" : name,
+          fullLabel: name,
+          subLabel: d5.count + "\xD7",
+          callCount: d5.count,
+          totalDurationMs: d5.totalMs,
+          avgDurationMs: d5.count > 0 ? Math.round(d5.totalMs / d5.count) : 0,
+          errorCount: d5.errors,
+          usedInTurns: d5.turns
+        };
+        nodeIdxMap[node.id] = nodes.length;
+        nodes.push(node);
+      });
+      turns.forEach((turn, ti) => {
+        const perTool = {};
+        turn.tools.forEach((t4) => {
+          const n3 = t4.label || "tool";
+          perTool[n3] = (perTool[n3] || 0) + 1;
+        });
+        Object.entries(perTool).forEach(([name, count]) => {
+          const from = nodeIdxMap["llm-" + ti];
+          const to = nodeIdxMap["tool-" + name];
+          if (from !== void 0 && to !== void 0) {
+            edges.push({ from, to, count, kind: "use" });
+          }
+        });
+      });
+      st.nodes = nodes;
+      st.edges = edges;
+      st.playbackTurns = turns.map((_4, i4) => nodeIdxMap["llm-" + i4]).filter((i4) => i4 !== void 0);
+      function nR(n3) {
+        return n3.type === "llm" ? LLM_R : TOOL_R;
+      }
+      function centerGraph() {
+        if (!canvas || nodes.length === 0) return;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        nodes.forEach((n3) => {
+          const pad = nR(n3) + 34;
+          if (n3.x - pad < minX) minX = n3.x - pad;
+          if (n3.y - pad < minY) minY = n3.y - pad;
+          if (n3.x + pad > maxX) maxX = n3.x + pad;
+          if (n3.y + pad > maxY) maxY = n3.y + pad;
+        });
+        const gW = maxX - minX + 40, gH = maxY - minY + 40;
+        const rect = canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        st.zoom = Math.max(0.15, Math.min(rect.width / gW, rect.height / gH, 1.4));
+        st.panX = rect.width / 2 - (minX + maxX) / 2 * st.zoom;
+        st.panY = rect.height / 2 - (minY + maxY) / 2 * st.zoom;
+      }
+      function draw() {
+        if (!canvas) return;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        ctx.save();
+        ctx.translate(st.panX, st.panY);
+        ctx.scale(st.zoom, st.zoom);
+        const cs = getComputedStyle(document.body);
+        const fg = cs.getPropertyValue("--fg").trim() || "#ccc";
+        const muted = cs.getPropertyValue("--muted").trim() || "#666";
+        if (turns.length === 0) {
+          ctx.restore();
+          ctx.font = "13px sans-serif";
+          ctx.fillStyle = muted;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("No timeline data for this session", rect.width / 2, rect.height / 2);
+          return;
+        }
+        const activeId = st.clickedNodeId || st.hoverNodeId;
+        const hlNodes = /* @__PURE__ */ new Set();
+        const hlEdges = /* @__PURE__ */ new Set();
+        if (activeId) {
+          hlNodes.add(activeId);
+          edges.forEach((e4, ei) => {
+            const fn = nodes[e4.from], tn = nodes[e4.to];
+            if (fn.id === activeId || tn.id === activeId) {
+              hlEdges.add(ei);
+              hlNodes.add(fn.id);
+              hlNodes.add(tn.id);
+            }
+          });
+        }
+        const llmNodes = nodes.filter((n3) => n3.type === "llm");
+        if (llmNodes.length >= 2) {
+          const spineX = TURN_X - 44;
+          ctx.save();
+          ctx.setLineDash([4, 5]);
+          ctx.strokeStyle = LLM_COLOR + "40";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(spineX, llmNodes[0].y);
+          ctx.lineTo(spineX, llmNodes[llmNodes.length - 1].y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          llmNodes.forEach((n3) => {
+            ctx.strokeStyle = LLM_COLOR + "38";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(spineX, n3.y);
+            ctx.lineTo(n3.x - LLM_R, n3.y);
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+        edges.forEach((e4, ei) => {
+          const a4 = nodes[e4.from], b4 = nodes[e4.to];
+          const isHl = activeId ? hlEdges.has(ei) : false;
+          const dimmed = activeId && !isHl;
+          if (e4.kind === "seq") {
+            const ax = a4.x + 8, ay = a4.y + LLM_R;
+            const bx = b4.x + 8, by = b4.y - LLM_R;
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(bx, by);
+            ctx.strokeStyle = dimmed ? LLM_COLOR + "18" : isHl ? LLM_COLOR : LLM_COLOR + "50";
+            ctx.lineWidth = isHl ? 2.5 : 1.5;
+            ctx.stroke();
+            const ang = Math.atan2(by - ay, bx - ax), aLen = 7;
+            ctx.beginPath();
+            ctx.moveTo(bx, by);
+            ctx.lineTo(bx - aLen * Math.cos(ang - 0.4), by - aLen * Math.sin(ang - 0.4));
+            ctx.lineTo(bx - aLen * Math.cos(ang + 0.4), by - aLen * Math.sin(ang + 0.4));
+            ctx.closePath();
+            ctx.fillStyle = dimmed ? LLM_COLOR + "18" : isHl ? LLM_COLOR : LLM_COLOR + "60";
+            ctx.fill();
+          } else {
+            const sx = a4.x + LLM_R, sy = a4.y;
+            const ex = b4.x - TOOL_R, ey = b4.y;
+            const span = TOOL_X - TURN_X;
+            const cp1x = sx + span * 0.45, cp1y = sy;
+            const cp2x = ex - span * 0.45, cp2y = ey;
+            const alpha = dimmed ? 0.08 : isHl ? 1 : Math.min(0.75, 0.28 + e4.count * 0.1);
+            const lw = isHl ? 2.5 : Math.min(4, 1 + e4.count * 0.5);
+            const hexA = Math.round(alpha * 255).toString(16).padStart(2, "0");
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, ex, ey);
+            ctx.strokeStyle = a4.color + hexA;
+            ctx.lineWidth = lw;
+            ctx.stroke();
+            const ang = Math.atan2(ey - cp2y, ex - cp2x), aLen = 7;
+            ctx.beginPath();
+            ctx.moveTo(ex, ey);
+            ctx.lineTo(ex - aLen * Math.cos(ang - 0.4), ey - aLen * Math.sin(ang - 0.4));
+            ctx.lineTo(ex - aLen * Math.cos(ang + 0.4), ey - aLen * Math.sin(ang + 0.4));
+            ctx.closePath();
+            ctx.fillStyle = a4.color + hexA;
+            ctx.fill();
+            if (e4.count > 1 && !dimmed) {
+              const mx = (sx + ex) / 2, my = (sy + ey) / 2 - 9;
+              ctx.font = "bold 9px sans-serif";
+              ctx.fillStyle = a4.color + "cc";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText(e4.count + "\xD7", mx, my);
+            }
+          }
+        });
+        nodes.forEach((n3) => {
+          const r5 = nR(n3);
+          const isActive = n3.id === activeId;
+          const inHL = activeId ? hlNodes.has(n3.id) : false;
+          const dimmed = activeId && !inHL;
+          if (isActive) {
+            ctx.save();
+            ctx.shadowColor = n3.color;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(n3.x, n3.y, r5 + 4, 0, Math.PI * 2);
+            ctx.strokeStyle = n3.color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+          }
+          ctx.beginPath();
+          ctx.arc(n3.x, n3.y, r5, 0, Math.PI * 2);
+          ctx.fillStyle = isActive ? n3.color + "aa" : dimmed ? n3.color + "10" : n3.color + "28";
+          ctx.fill();
+          ctx.strokeStyle = dimmed ? n3.color + "30" : n3.color;
+          ctx.lineWidth = isActive ? 3 : inHL ? 2.5 : 2;
+          ctx.stroke();
+          ctx.font = (isActive ? "bold " : "") + "10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = dimmed ? muted + "40" : fg;
+          ctx.fillText(n3.label, n3.x, n3.y - (n3.subLabel ? 4 : 0));
+          if (n3.subLabel) {
+            ctx.font = "8px sans-serif";
+            ctx.fillStyle = dimmed ? muted + "30" : n3.type === "llm" ? "#7bb3ff" : n3.color === ERR_COLOR ? "#f99" : "#8ec96b";
+            ctx.fillText(n3.subLabel, n3.x, n3.y + 7);
+          }
+          ctx.font = "9px sans-serif";
+          ctx.fillStyle = dimmed ? muted + "30" : muted;
+          ctx.fillText(n3.type === "llm" ? "Turn " + n3.turnNum : "", n3.x, n3.y + r5 + 11);
+        });
+        const tipId = st.clickedNodeId || st.hoverNodeId;
+        if (tipId) {
+          const hn = nodes.find((n3) => n3.id === tipId);
+          if (hn) {
+            const trunc = (s4, max) => s4 && s4.length > max ? s4.slice(0, max) + "\u2026" : s4 || "";
+            const lines = [];
+            if (hn.type === "llm") {
+              lines.push({ value: "Turn " + hn.turnNum + " of " + hn.totalTurns, bold: true, color: hn.color });
+              if (hn.model) lines.push({ label: "Model", value: trunc(hn.model, 42) });
+              if (hn.note) lines.push({ label: "Note", value: hn.note });
+              if ((hn.inputTokens ?? 0) > 0 || (hn.outputTokens ?? 0) > 0)
+                lines.push({ label: "Tokens", value: (hn.inputTokens ?? 0).toLocaleString() + " in \u2192 " + (hn.outputTokens ?? 0).toLocaleString() + " out" });
+              if (hn.durationMs) lines.push({ label: "Duration", value: formatMs(hn.durationMs) });
+              if (hn.action) lines.push({ label: "Outcome", value: hn.action });
+              if (hn.toolsUsed?.length) lines.push({ label: "Tools used", value: hn.toolsUsed.slice(0, 5).join(", ") + (hn.toolsUsed.length > 5 ? " +" + (hn.toolsUsed.length - 5) + " more" : "") });
+              if (hn.isError) lines.push({ label: "Error", value: "This LLM call failed", color: ERR_COLOR });
+            } else {
+              lines.push({ value: hn.fullLabel || hn.label, bold: true, color: hn.color });
+              lines.push({ label: "Total calls", value: String(hn.callCount) });
+              if ((hn.usedInTurns?.length ?? 0) > 0)
+                lines.push({ label: "Used in turns", value: "T" + (hn.usedInTurns ?? []).map((t4) => t4 + 1).join(", T") });
+              if (hn.avgDurationMs) lines.push({ label: "Avg duration", value: formatMs(hn.avgDurationMs) });
+              if (hn.totalDurationMs) lines.push({ label: "Total time", value: formatMs(hn.totalDurationMs) });
+              if (hn.errorCount) lines.push({ label: "Errors", value: hn.errorCount + " failed call(s)", color: ERR_COLOR });
+            }
+            ctx.font = "11px sans-serif";
+            const lineH = 19, padX = 12, padY = 10;
+            let labelW = 0, valueW = 0;
+            lines.forEach((line) => {
+              if (line.label) {
+                ctx.font = "bold 10px sans-serif";
+                const lw = ctx.measureText(line.label + ":").width;
+                if (lw > labelW) labelW = lw;
+              }
+              ctx.font = line.bold ? "bold 12px sans-serif" : "11px sans-serif";
+              const vw = ctx.measureText(line.value).width;
+              if (vw > valueW) valueW = vw;
+            });
+            const gapW = 10, contentW = Math.max(labelW + gapW + valueW, valueW);
+            const boxW = Math.min(contentW + padX * 2, 390);
+            const boxH = lines.length * lineH + padY * 2 + 4;
+            let boxX = hn.x + nR(hn) + 14;
+            const boxY = hn.y - boxH / 2;
+            if (hn.x + nR(hn) + 14 + boxW > rect.width / st.zoom - st.panX / st.zoom - 20) {
+              boxX = hn.x - nR(hn) - 14 - boxW;
+            }
+            const br = 7;
+            ctx.fillStyle = "rgba(22,22,26,0.97)";
+            ctx.strokeStyle = hn.color;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(boxX + br, boxY);
+            ctx.lineTo(boxX + boxW - br, boxY);
+            ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + br);
+            ctx.lineTo(boxX + boxW, boxY + boxH - br);
+            ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - br, boxY + boxH);
+            ctx.lineTo(boxX + br, boxY + boxH);
+            ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - br);
+            ctx.lineTo(boxX, boxY + br);
+            ctx.quadraticCurveTo(boxX, boxY, boxX + br, boxY);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = hn.color + "cc";
+            ctx.fillRect(boxX, boxY + br, 3, boxH - br * 2);
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            let dividerDrawn = false;
+            lines.forEach((line, li) => {
+              const ly = boxY + padY + li * lineH + 2;
+              if (line.label) {
+                if (!dividerDrawn) {
+                  dividerDrawn = true;
+                  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+                  ctx.lineWidth = 0.5;
+                  ctx.beginPath();
+                  ctx.moveTo(boxX + 10, ly - 4);
+                  ctx.lineTo(boxX + boxW - 10, ly - 4);
+                  ctx.stroke();
+                }
+                ctx.font = "bold 10px sans-serif";
+                ctx.fillStyle = "#777";
+                ctx.fillText(line.label + ":", boxX + padX + 4, ly + 1);
+                ctx.font = "11px sans-serif";
+                ctx.fillStyle = line.color || "#ddd";
+                ctx.fillText(line.value, boxX + padX + 4 + labelW + gapW, ly);
+              } else {
+                ctx.font = line.bold ? "bold 12px sans-serif" : "11px sans-serif";
+                ctx.fillStyle = line.color || "#fff";
+                ctx.fillText(line.value, boxX + padX + 4, ly);
+              }
+            });
+          }
+        }
+        ctx.restore();
+      }
+      requestAnimationFrame(() => {
+        centerGraph();
+        draw();
+      });
+      const onWheel = (e4) => {
+        e4.preventDefault();
+        const f5 = e4.deltaY < 0 ? 1.1 : 0.9;
+        const wx = (e4.offsetX - st.panX) / st.zoom, wy = (e4.offsetY - st.panY) / st.zoom;
+        st.zoom = Math.max(0.1, Math.min(5, st.zoom * f5));
+        st.panX = e4.offsetX - wx * st.zoom;
+        st.panY = e4.offsetY - wy * st.zoom;
+        draw();
+      };
+      const onMouseDown = (e4) => {
+        st.dragging = true;
+        st.didDrag = false;
+        st.lastMX = e4.offsetX;
+        st.lastMY = e4.offsetY;
+        canvas.style.cursor = "grabbing";
+      };
+      const onMouseMove = (e4) => {
+        if (st.dragging) {
+          st.didDrag = true;
+          st.panX += e4.offsetX - st.lastMX;
+          st.panY += e4.offsetY - st.lastMY;
+          st.lastMX = e4.offsetX;
+          st.lastMY = e4.offsetY;
+          draw();
+          return;
+        }
+        if (!st.playbackPlaying) {
+          const rect = canvas.getBoundingClientRect();
+          const mx = (e4.clientX - rect.left - st.panX) / st.zoom;
+          const my = (e4.clientY - rect.top - st.panY) / st.zoom;
+          let found = null;
+          for (const n3 of nodes) {
+            const r5 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
+            if (dx * dx + dy * dy <= r5 * r5) {
+              found = n3.id;
+              break;
+            }
+          }
+          if (found !== st.hoverNodeId) {
+            st.hoverNodeId = found;
+            canvas.style.cursor = found ? "pointer" : "grab";
+            draw();
+          }
+        }
+      };
+      const onMouseUp = () => {
+        st.dragging = false;
+        canvas.style.cursor = "grab";
+      };
+      const onMouseLeave = () => {
+        st.dragging = false;
+        st.hoverNodeId = null;
+        canvas.style.cursor = "grab";
+        draw();
+      };
+      const onClick = (e4) => {
+        if (st.didDrag) return;
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e4.clientX - rect.left - st.panX) / st.zoom;
+        const my = (e4.clientY - rect.top - st.panY) / st.zoom;
+        for (const n3 of nodes) {
+          const r5 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
+          if (dx * dx + dy * dy <= r5 * r5) {
+            st.clickedNodeId = st.clickedNodeId === n3.id ? null : n3.id;
+            draw();
+            return;
+          }
+        }
+        st.clickedNodeId = null;
+        draw();
+      };
+      canvas.addEventListener("wheel", onWheel, { passive: false });
+      canvas.addEventListener("mousedown", onMouseDown);
+      canvas.addEventListener("mousemove", onMouseMove);
+      canvas.addEventListener("mouseup", onMouseUp);
+      canvas.addEventListener("mouseleave", onMouseLeave);
+      canvas.addEventListener("click", onClick);
+      canvas.__flowDraw = draw;
+      canvas.__flowCenter = centerGraph;
+      return () => {
+        if (st.playbackTimer) clearInterval(st.playbackTimer);
+        canvas.removeEventListener("wheel", onWheel);
+        canvas.removeEventListener("mousedown", onMouseDown);
+        canvas.removeEventListener("mousemove", onMouseMove);
+        canvas.removeEventListener("mouseup", onMouseUp);
+        canvas.removeEventListener("mouseleave", onMouseLeave);
+        canvas.removeEventListener("click", onClick);
+      };
+    }, [sessions, clampedIdx]);
+    function handleZoomIn() {
+      const c4 = canvasRef.current;
+      if (!c4) return;
+      stateRef.current.zoom = Math.min(5, stateRef.current.zoom * 1.3);
+      c4.__flowDraw?.();
+    }
+    function handleZoomOut() {
+      const c4 = canvasRef.current;
+      if (!c4) return;
+      stateRef.current.zoom = Math.max(0.1, stateRef.current.zoom / 1.3);
+      c4.__flowDraw?.();
+    }
+    function handleReset() {
+      const c4 = canvasRef.current;
+      if (!c4) return;
+      c4.__flowCenter?.();
+      c4.__flowDraw?.();
+    }
+    function handlePlayPause() {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const st = stateRef.current;
+      const draw = canvas.__flowDraw;
+      if (!draw) return;
+      const speedSel = canvas.closest("#flow-content")?.querySelector("#flow-speed");
+      const prog = canvas.closest("#flow-content")?.querySelector("#flow-progress");
+      if (st.playbackPlaying) {
+        if (st.playbackTimer) clearInterval(st.playbackTimer);
+        st.playbackTimer = null;
+        st.playbackPlaying = false;
+        st.clickedNodeId = null;
+        setIsPlaying(false);
+        if (prog) prog.textContent = "";
+        draw();
+        return;
+      }
+      if (st.playbackTurns.length === 0) return;
+      st.playbackPlaying = true;
+      setIsPlaying(true);
+      const speed = parseInt(speedSel?.value ?? "800") || 800;
+      st.playbackIdx = 0;
+      st.clickedNodeId = st.nodes[st.playbackTurns[0]]?.id ?? null;
+      if (prog) prog.textContent = "1 / " + st.playbackTurns.length;
+      draw();
+      st.playbackTimer = setInterval(() => {
+        if (st.playbackIdx >= st.playbackTurns.length - 1) {
+          clearInterval(st.playbackTimer);
+          st.playbackTimer = null;
+          st.playbackPlaying = false;
+          st.clickedNodeId = null;
+          setIsPlayingRef.current(false);
+          if (prog) prog.textContent = "";
+          draw();
+          return;
+        }
+        st.playbackIdx++;
+        st.clickedNodeId = st.nodes[st.playbackTurns[st.playbackIdx]]?.id ?? null;
+        if (prog) prog.textContent = st.playbackIdx + 1 + " / " + st.playbackTurns.length;
+        draw();
+      }, speed);
+    }
+    return /* @__PURE__ */ u4("div", { id: "flow-content", children: [
+      /* @__PURE__ */ u4("div", { class: "flow-controls", style: "margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap", children: [
+        /* @__PURE__ */ u4(
+          "select",
+          {
+            id: "flow-session-select",
+            class: "toolbar-select",
+            value: clampedIdx,
+            onChange: (e4) => setSelectedIdx(parseInt(e4.target.value) || 0),
+            children: allSessions.map((s4, idx) => /* @__PURE__ */ u4("option", { value: idx, children: s4.label }, idx))
+          }
+        ),
+        /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleZoomIn, children: "+" }),
+        /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleZoomOut, children: "\u2212" }),
+        /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleReset, children: "Reset" }),
+        /* @__PURE__ */ u4("span", { style: "width:1px;height:16px;background:var(--border);margin:0 4px" }),
+        /* @__PURE__ */ u4("button", { class: "flow-btn", title: "Animate turn sequence", onClick: handlePlayPause, children: isPlaying ? "\u23F8" : "\u25B6" }),
+        /* @__PURE__ */ u4("span", { class: "toolbar-control-label", children: "Speed" }),
+        /* @__PURE__ */ u4("select", { id: "flow-speed", class: "toolbar-select", children: [
+          /* @__PURE__ */ u4("option", { value: "2000", children: "Slow" }),
+          /* @__PURE__ */ u4("option", { value: "800", selected: true, children: "Normal" }),
+          /* @__PURE__ */ u4("option", { value: "300", children: "Fast" })
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:8px;font-size:10px;color:var(--muted);flex-wrap:wrap;align-items:center", children: [
+        [
+          { color: LLM_COLOR, label: "LLM turn" },
+          { color: TOOL_COLOR, label: "Tool" },
+          { color: ERR_COLOR, label: "Error" }
+        ].map(({ color, label }) => /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px", children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:9px;height:9px;border-radius:50%;background:" + color + "30;border:1.5px solid " + color }),
+          label
+        ] }, label)),
+        /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "Edge thickness = call freq" })
+      ] }),
+      /* @__PURE__ */ u4(
+        "canvas",
+        {
+          ref: canvasRef,
+          id: "flow-canvas",
+          style: "width:100%;height:520px;display:block;border:1px solid var(--border);border-radius:4px;cursor:grab"
+        }
+      )
+    ] });
+  }
+
+  // media/src/tabs/Agents.tsx
+  function computeStats(sessions) {
+    let totalInput = 0, totalOutput = 0, totalCache = 0;
+    let totalLlm = 0, totalTools = 0, ttftSum = 0, ttftCount = 0, durSum = 0;
+    const toolCounts = {};
+    sessions.forEach((s4) => {
+      totalInput += s4.inputTokens ?? 0;
+      totalOutput += s4.outputTokens ?? 0;
+      totalCache += (s4.cacheReadTokens ?? 0) + (s4.cacheCreateTokens ?? 0);
+      totalLlm += s4.totalLlmCalls ?? 0;
+      totalTools += s4.totalToolCalls ?? 0;
+      durSum += s4.durationMs ?? 0;
+      Object.keys(s4.toolCounts ?? {}).forEach((t4) => {
+        toolCounts[t4] = (toolCounts[t4] ?? 0) + s4.toolCounts[t4];
+      });
+      (s4.timeline ?? []).forEach((e4) => {
+        if (e4.type === "llm" && e4.ttft) {
+          ttftSum += e4.ttft;
+          ttftCount++;
+        }
+      });
+    });
+    return {
+      sessions: sessions.length,
+      totalInput,
+      totalOutput,
+      totalCache,
+      totalLlm,
+      totalTools,
+      avgTtft: ttftCount > 0 ? Math.round(ttftSum / ttftCount) : 0,
+      avgDuration: sessions.length > 0 ? Math.round(durSum / sessions.length) : 0,
+      cacheHitRate: totalInput > 0 ? totalCache / totalInput : 0,
+      toolCounts
+    };
+  }
+  function KV({ k: k3, v: v4, accent }) {
+    return /* @__PURE__ */ u4("div", { style: "padding:5px 8px;background:var(--panel-bg);border-radius:4px", children: [
+      /* @__PURE__ */ u4("div", { style: "font-size:18px;font-weight:bold;color:" + accent, children: v4 }),
+      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted)", children: k3 })
+    ] });
+  }
+  function AgentCol({ label, accent, stats }) {
+    const topTools = Object.keys(stats.toolCounts).sort((a4, b4) => stats.toolCounts[b4] - stats.toolCounts[a4]).slice(0, 8);
+    return /* @__PURE__ */ u4("div", { style: "border:1px solid var(--border);border-radius:6px;padding:12px", children: [
+      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;margin-bottom:10px", children: [
+        /* @__PURE__ */ u4("span", { style: "width:10px;height:10px;border-radius:50%;background:" + accent + ";display:inline-block" }),
+        /* @__PURE__ */ u4("strong", { style: "font-size:13px", children: label })
+      ] }),
+      stats.sessions === 0 ? /* @__PURE__ */ u4("div", { class: "empty-state", style: "font-size:12px;padding:12px 0", children: [
+        "No agent sessions recorded \u2014 start a ",
+        label,
+        " session"
+      ] }) : /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px", children: [
+          /* @__PURE__ */ u4(KV, { k: "Sessions", v: stats.sessions, accent }),
+          /* @__PURE__ */ u4(KV, { k: "LLM Calls", v: stats.totalLlm, accent }),
+          /* @__PURE__ */ u4(KV, { k: "Input Tokens", v: formatCompact(stats.totalInput), accent }),
+          /* @__PURE__ */ u4(KV, { k: "Output Tokens", v: formatCompact(stats.totalOutput), accent }),
+          stats.totalCache > 0 && /* @__PURE__ */ u4(KV, { k: "Cache Tokens", v: formatCompact(stats.totalCache), accent }),
+          stats.totalCache > 0 && /* @__PURE__ */ u4(KV, { k: "Cache Hit Rate", v: (stats.cacheHitRate * 100).toFixed(0) + "%", accent }),
+          stats.avgTtft > 0 && /* @__PURE__ */ u4(KV, { k: "Avg TTFT", v: formatMs(stats.avgTtft), accent }),
+          /* @__PURE__ */ u4(KV, { k: "Avg Duration", v: formatMs(stats.avgDuration), accent }),
+          /* @__PURE__ */ u4(KV, { k: "Total Tools", v: stats.totalTools, accent })
+        ] }),
+        topTools.length > 0 && /* @__PURE__ */ u4(S, { children: [
+          /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px;text-transform:uppercase", children: "Top Tools" }),
+          /* @__PURE__ */ u4("div", { style: "display:flex;flex-wrap:wrap;gap:4px", children: topTools.map((t4) => /* @__PURE__ */ u4("span", { style: "padding:2px 7px;background:var(--panel-bg);border-radius:3px;font-size:11px", children: [
+            t4,
+            " ",
+            /* @__PURE__ */ u4("span", { style: "color:" + accent, children: stats.toolCounts[t4] })
+          ] }, t4)) })
+        ] })
+      ] })
+    ] });
+  }
+  function Agents() {
+    const allSessions = displaySessions.value;
+    if (!allSessions.length) {
+      return /* @__PURE__ */ u4("div", { id: "agents-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
+    const copStats = computeStats(allSessions.filter((s4) => s4.source === "copilot"));
+    const cldStats = computeStats(allSessions.filter((s4) => s4.source === "claude_code"));
+    const cdxStats = computeStats(allSessions.filter((s4) => s4.source === "codex"));
+    return /* @__PURE__ */ u4("div", { id: "agents-content", children: /* @__PURE__ */ u4("div", { style: "display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px", children: [
+      /* @__PURE__ */ u4(AgentCol, { label: "GitHub Copilot", accent: "#00EAFF", stats: copStats }),
+      /* @__PURE__ */ u4(AgentCol, { label: "Claude", accent: "#FFB085", stats: cldStats }),
+      /* @__PURE__ */ u4(AgentCol, { label: "OpenAI Codex", accent: "#F0FF42", stats: cdxStats })
+    ] }) });
+  }
+
+  // media/src/tabs/Tools.tsx
+  function getInputTokenCount(span) {
+    let input = 0;
+    (span?.attributes ?? []).forEach((a4) => {
+      if (/input.?tokens|prompt.?tokens/i.test(a4.key))
+        input = parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? a4.value.doubleValue)) || 0;
+    });
+    return input;
+  }
+  function getOutputTokenCount2(span) {
+    let output = 0;
+    (span?.attributes ?? []).forEach((a4) => {
+      if (/output.?tokens|completion.?tokens/i.test(a4.key))
+        output = parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? a4.value.doubleValue)) || 0;
+    });
+    return output;
+  }
+  function Tools() {
+    const spans2 = displaySpans.value;
+    const sessions = displaySessions.value;
+    const traceSourceMap = {};
+    sessions.forEach((sess) => {
+      if (sess.traceId && sess.source) traceSourceMap[sess.traceId] = sess.source;
+    });
+    const counts = {};
+    const toolTokens = {};
+    const toolDurations = {};
+    const toolErrors = {};
+    const toolAgents = {};
+    spans2.forEach((s4) => {
+      if (s4.name?.includes("tool")) {
+        const name = s4.name;
+        counts[name] = (counts[name] ?? 0) + 1;
+        if (!toolTokens[name]) toolTokens[name] = { input: 0, output: 0 };
+        toolTokens[name].input += getInputTokenCount(s4);
+        toolTokens[name].output += getOutputTokenCount2(s4);
+        if (!toolDurations[name]) toolDurations[name] = [];
+        const dur = nanoToMs(s4.endTime) - nanoToMs(s4.startTime);
+        if (dur > 0) toolDurations[name].push(dur);
+        if (s4.status?.code === 2) toolErrors[name] = (toolErrors[name] ?? 0) + 1;
+        const src = s4.traceId && traceSourceMap[s4.traceId] || inferSpanSource(s4) || null;
+        if (src) {
+          if (!toolAgents[name]) toolAgents[name] = {};
+          toolAgents[name][src] = true;
+        }
+      }
+    });
+    const entries = Object.entries(counts).sort((a4, b4) => b4[1] - a4[1]);
+    if (entries.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "tools-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
+    const total = entries.reduce((sum, e4) => sum + e4[1], 0);
+    const _totalErrors = entries.reduce((s4, e4) => s4 + (toolErrors[e4[0]] ?? 0), 0);
+    const _failedTools = entries.filter((e4) => (toolErrors[e4[0]] ?? 0) > 0);
+    const _mostUsed = entries[0];
+    const mostTokens = entries.slice().sort((a4, b4) => {
+      const tA = toolTokens[a4[0]] ? toolTokens[a4[0]].input + toolTokens[a4[0]].output : 0;
+      const tB = toolTokens[b4[0]] ? toolTokens[b4[0]].input + toolTokens[b4[0]].output : 0;
+      return tB - tA;
+    })[0];
+    const _mostTokVal = mostTokens && toolTokens[mostTokens[0]] ? toolTokens[mostTokens[0]].input + toolTokens[mostTokens[0]].output : 0;
+    const r5 = 80, cx = 100, cy = 100, sw = 30;
+    const angleOffset = -Math.PI / 2;
+    let currentAngle = angleOffset;
+    function arcPath(startAngle, endAngle) {
+      const x1 = cx + r5 * Math.cos(startAngle), y1 = cy + r5 * Math.sin(startAngle);
+      const x22 = cx + r5 * Math.cos(endAngle), y22 = cy + r5 * Math.sin(endAngle);
+      const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+      return `M ${x1} ${y1} A ${r5} ${r5} 0 ${largeArc} 1 ${x22} ${y22}`;
+    }
+    const slices = entries.map((e4, i4) => {
+      const pct = e4[1] / total;
+      const sliceAngle = pct * 2 * Math.PI;
+      const color = COLORS[i4 % COLORS.length];
+      const startA = currentAngle;
+      currentAngle += sliceAngle;
+      return { name: e4[0], count: e4[1], pct, color, startA, endA: currentAngle };
+    });
+    let grandErrors = 0;
+    return /* @__PURE__ */ u4("div", { id: "tools-content", children: [
+      /* @__PURE__ */ u4("h3", { style: "margin:0 0 16px;font-size:13px;color:var(--muted)", children: "TOOL CALL DISTRIBUTION" }),
+      /* @__PURE__ */ u4("div", { class: "donut-container", children: [
+        /* @__PURE__ */ u4("svg", { width: "200", height: "200", viewBox: "0 0 200 200", children: [
+          slices.map(
+            (sl) => sl.pct >= 1 ? /* @__PURE__ */ u4("circle", { cx, cy, r: r5, fill: "none", stroke: sl.color, "stroke-width": sw }, sl.name) : /* @__PURE__ */ u4("path", { d: arcPath(sl.startA, sl.endA), fill: "none", stroke: sl.color, "stroke-width": sw, "stroke-linecap": "butt" }, sl.name)
+          ),
+          /* @__PURE__ */ u4("text", { x: cx, y: cy, "text-anchor": "middle", dy: "4", "font-size": "18", "font-weight": "bold", fill: "var(--fg)", children: total }),
+          /* @__PURE__ */ u4("text", { x: cx, y: cy + 16, "text-anchor": "middle", "font-size": "10", fill: "var(--muted)", opacity: "0.7", children: "total" })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "donut-legend", children: slices.map((sl) => /* @__PURE__ */ u4("div", { class: "donut-legend-item", children: [
+          /* @__PURE__ */ u4("div", { class: "donut-legend-color", style: "background:" + sl.color }),
+          /* @__PURE__ */ u4("span", { children: [
+            sl.name,
+            " (",
+            sl.count,
+            ", ",
+            (sl.pct * 100).toFixed(1),
+            "%)"
+          ] })
+        ] }, sl.name)) })
+      ] }),
+      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", children: "TOOL TOKEN USAGE & PERFORMANCE" }),
+      /* @__PURE__ */ u4("table", { class: "tool-insights-table", children: [
+        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
+          /* @__PURE__ */ u4("th", { children: "Tool" }),
+          /* @__PURE__ */ u4("th", { children: "Calls" }),
+          /* @__PURE__ */ u4("th", { children: "Errors" }),
+          /* @__PURE__ */ u4("th", { children: "Avg Duration" })
+        ] }) }),
+        /* @__PURE__ */ u4("tbody", { children: entries.map(([name, callCount]) => {
+          const durations = toolDurations[name] ?? [];
+          const errCount = toolErrors[name] ?? 0;
+          grandErrors += errCount;
+          const avgDur = durations.length > 0 ? durations.reduce((s4, d5) => s4 + d5, 0) / durations.length : 0;
+          const agents = toolAgents[name] ? Object.keys(toolAgents[name]) : [];
+          return /* @__PURE__ */ u4("tr", { children: [
+            /* @__PURE__ */ u4("td", { children: [
+              agents.map((a4) => /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + getAgentColor(a4) + ";vertical-align:middle;margin-right:4px", title: getAgentSourceLabel(a4) }, a4)),
+              name
+            ] }),
+            /* @__PURE__ */ u4("td", { class: "right", children: callCount }),
+            /* @__PURE__ */ u4("td", { style: "text-align:right" + (errCount > 0 ? ";color:var(--error)" : ""), children: errCount }),
+            /* @__PURE__ */ u4("td", { class: "right", children: avgDur > 0 ? formatMs(avgDur) : "\u2014" })
+          ] }, name);
+        }) }),
+        /* @__PURE__ */ u4("tfoot", { children: /* @__PURE__ */ u4("tr", { children: [
+          /* @__PURE__ */ u4("td", { children: /* @__PURE__ */ u4("strong", { children: "Total" }) }),
+          /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: total }) }),
+          /* @__PURE__ */ u4("td", { style: "text-align:right" + (grandErrors > 0 ? ";color:var(--error)" : ""), children: /* @__PURE__ */ u4("strong", { children: grandErrors }) }),
+          /* @__PURE__ */ u4("td", {})
+        ] }) })
+      ] })
+    ] });
+  }
+
+  // media/src/tabs/Errors.tsx
+  function ErrorItem({ span, source }) {
+    const [open, setOpen] = d2(false);
+    const st = nanoToMs(span.startTime);
+    const en = nanoToMs(span.endTime);
+    const dur = en - st;
+    const badge = spanTypeBadge(span);
+    const statusMsg = span.status?.message ?? "";
+    const dotColor = source ? getAgentColor(source) : null;
+    const detailLines = [
+      { k: "Span Name", v: span.name ?? "\u2014" },
+      { k: "Span ID", v: span.spanId ?? "\u2014" },
+      { k: "Trace ID", v: span.traceId ?? "\u2014" },
+      ...span.parentSpanId ? [{ k: "Parent Span ID", v: span.parentSpanId }] : [],
+      { k: "Start Time", v: st > 0 ? new Date(st).toISOString() : "\u2014" },
+      { k: "End Time", v: en > 0 ? new Date(en).toISOString() : "\u2014" },
+      { k: "Duration", v: dur > 0 ? formatMs(dur) : "\u2014" },
+      ...(span.attributes ?? []).map((a4) => {
+        const v4 = a4.value;
+        const display = v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue;
+        return { k: a4.key, v: String(display ?? JSON.stringify(v4)) };
+      })
+    ];
+    return /* @__PURE__ */ u4("div", { class: clsx_default("error-item", { open }), children: [
+      /* @__PURE__ */ u4("div", { class: "error-item-header", onClick: () => setOpen((o4) => !o4), "data-error-id": span.spanId, children: [
+        /* @__PURE__ */ u4("span", { class: "error-chevron", children: open ? "\u25BC" : "\u25B6" }),
+        /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + badge.color + ";color:#000", children: badge.label }),
+        /* @__PURE__ */ u4("span", { class: "error-name", children: [
+          dotColor && /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + dotColor + ";vertical-align:middle;margin-right:4px", title: source ? getAgentSourceLabel(source) : "" }),
+          span.name
+        ] }),
+        /* @__PURE__ */ u4("span", { class: "error-dur", children: formatMs(dur) }),
+        st > 0 && /* @__PURE__ */ u4("span", { class: "error-time", children: new Date(st).toLocaleTimeString() })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: clsx_default("error-detail", { open }), children: [
+        statusMsg && /* @__PURE__ */ u4("div", { class: "error-message", children: statusMsg }),
+        detailLines.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
+          /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
+          /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
+        ] }, dl.k))
+      ] })
+    ] });
+  }
+  function Errors() {
+    const spans2 = displaySpans.value;
+    const sessions = displaySessions.value;
+    const traceSourceMap = {};
+    sessions.forEach((sess) => {
+      if (sess.traceId && sess.source) traceSourceMap[sess.traceId] = sess.source;
+    });
+    const errorSpans = spans2.filter((s4) => s4.status?.code === 2).sort((a4, b4) => nanoToMs(b4.startTime) - nanoToMs(a4.startTime));
+    if (errorSpans.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "errors-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No errors recorded" }) });
+    }
+    return /* @__PURE__ */ u4("div", { id: "errors-content", children: /* @__PURE__ */ u4("div", { class: "error-list", children: errorSpans.map((s4) => {
+      const src = s4.traceId && traceSourceMap[s4.traceId] || inferSpanSource(s4) || null;
+      return /* @__PURE__ */ u4(ErrorItem, { span: s4, source: src }, s4.spanId);
+    }) }) });
+  }
+
+  // media/src/tabs/Export.tsx
+  function send(type) {
+    if (vscode) {
+      vscode.postMessage({ type });
+    } else {
+      window.dispatchEvent(new MessageEvent("message", { data: { type } }));
+    }
+  }
+  function Export() {
+    const [rawDone, setRawDone] = d2(false);
+    const [redactedDone, setRedactedDone] = d2(false);
+    const standalone = !!window.__STANDALONE__;
+    const spanCount = displaySpans.value.length;
+    const sessionCount = displaySessions.value.length;
+    const doExport = () => {
+      send("exportSessionData");
+      setRawDone(true);
+      setTimeout(() => setRawDone(false), 3e3);
+    };
+    const doRedacted = () => {
+      send("exportSessionDataRedacted");
+      setRedactedDone(true);
+      setTimeout(() => setRedactedDone(false), 3e3);
+    };
+    const empty = spanCount === 0;
+    return /* @__PURE__ */ u4("div", { id: "export-content", children: [
+      /* @__PURE__ */ u4("div", { class: "export-meta", children: [
+        sessionCount,
+        " session",
+        sessionCount !== 1 ? "s" : "",
+        " \xB7 ",
+        spanCount,
+        " span",
+        spanCount !== 1 ? "s" : "",
+        standalone && /* @__PURE__ */ u4("span", { class: "export-meta-mode", children: " \xB7 browser download" }),
+        !standalone && /* @__PURE__ */ u4("span", { class: "export-meta-mode", children: " \xB7 written to workspace root" })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: "export-cards", children: [
+        /* @__PURE__ */ u4("div", { class: "export-card", children: [
+          /* @__PURE__ */ u4("div", { class: "export-card-header", children: [
+            /* @__PURE__ */ u4("span", { class: "export-card-title", children: "Export OTEL Data" }),
+            /* @__PURE__ */ u4("span", { class: "export-card-badge export-badge-raw", children: "Raw" })
+          ] }),
+          /* @__PURE__ */ u4("p", { class: "export-card-desc", children: "All span attributes exported as-is \u2014 includes prompt text, tool inputs, tool outputs, and any other captured telemetry." }),
+          /* @__PURE__ */ u4("ul", { class: "export-card-includes", children: [
+            /* @__PURE__ */ u4("li", { children: "Prompt text and LLM responses" }),
+            /* @__PURE__ */ u4("li", { children: "Tool call inputs and outputs" }),
+            /* @__PURE__ */ u4("li", { children: "Token counts, timing, model names" }),
+            /* @__PURE__ */ u4("li", { children: "File paths and diffs" })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "export-card-warning", children: "Keep private \u2014 may contain sensitive content." }),
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "export-btn" + (rawDone ? " export-btn-done" : ""),
+              onClick: doExport,
+              disabled: empty,
+              children: rawDone ? "\u2713 Exported" : "Export OTEL Data"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "export-card export-card-redacted", children: [
+          /* @__PURE__ */ u4("div", { class: "export-card-header", children: [
+            /* @__PURE__ */ u4("span", { class: "export-card-title", children: "Export Redacted" }),
+            /* @__PURE__ */ u4("span", { class: "export-card-badge export-badge-redacted", children: "Safer to share" })
+          ] }),
+          /* @__PURE__ */ u4("p", { class: "export-card-desc", children: [
+            "Same export with all sensitive values replaced by ",
+            /* @__PURE__ */ u4("code", { children: "[redacted]" }),
+            "before the file is written. Safe to attach to bug reports or share with teammates."
+          ] }),
+          /* @__PURE__ */ u4("ul", { class: "export-card-includes", children: [
+            /* @__PURE__ */ u4("li", { children: [
+              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[redacted]" }),
+              " Prompt text and LLM responses"
+            ] }),
+            /* @__PURE__ */ u4("li", { children: [
+              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[redacted]" }),
+              " Tool call inputs and outputs"
+            ] }),
+            /* @__PURE__ */ u4("li", { children: "\u2713 Token counts, timing, model names" }),
+            /* @__PURE__ */ u4("li", { children: "\u2713 Span structure and trace IDs" }),
+            /* @__PURE__ */ u4("li", { children: [
+              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[redacted]" }),
+              " user.id, user.email, org.*"
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "export-card-safe", children: "Safer to share \u2014 review before sending, as file paths and custom attributes are not redacted." }),
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "export-btn export-btn-secondary" + (redactedDone ? " export-btn-done" : ""),
+              onClick: doRedacted,
+              disabled: empty,
+              children: redactedDone ? "\u2713 Exported" : "Export Redacted"
+            }
+          )
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: "export-replay-box", children: [
+        /* @__PURE__ */ u4("div", { class: "export-replay-title", children: "Replay an export in the dashboard" }),
+        /* @__PURE__ */ u4("p", { class: "export-replay-desc", children: [
+          "Replay any exported file to re-examine a past session without running an agent. Works with both the VS Code extension and the standalone server \u2014 whichever is on port ",
+          /* @__PURE__ */ u4("code", { children: "4318" }),
+          "."
+        ] }),
+        /* @__PURE__ */ u4("pre", { class: "export-replay-cmd", children: "pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json" }),
+        /* @__PURE__ */ u4("p", { class: "export-replay-note", children: [
+          "Each replay assigns fresh trace IDs so the session appears as a new entry. Pass ",
+          /* @__PURE__ */ u4("code", { children: "--speed 4" }),
+          " to pace the replay instead of sending all spans at once."
+        ] })
+      ] })
+    ] });
+  }
+
+  // media/src/tabs/Help.tsx
+  var VIEWS = [
+    ["Efficiency", "The default tab. Per-session metrics (turns, cache hit rate, error rate), a heat-scored session breakdown table, and a context growth chart showing input token accumulation across LLM calls within each session."],
+    ["Recommendations", "Actionable insights for improving prompt efficiency, plus loop and malfunction detection. Two signal categories: efficiency insights (token waste, cache, tool failures) and loop signals (tool deadlock, state spirals, error recurrence, runaway steps, context accumulation)."],
+    ["Alerts", "Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts."],
+    ["Automation", "Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay."],
+    ["Summaries", "A human-readable session waterfall with LLM decisions, tool arguments and results, token usage per step, and background overhead breakdown."],
+    ["Files", "Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed."],
+    ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
+    ["Traces", "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."],
+    ["Tokens", "Token consumption aggregated by span name and per session, sorted from highest to lowest."],
+    ["Cost", "Estimated session cost for Copilot sessions. Supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Shows a per-session bar chart and a cross-session cost table. Estimates only \u2014 not your actual bill."],
+    ["Tools", "Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],
+    ["Timeline", "All spans in chronological order as a vertical event list. Click any item to expand its attributes as formatted JSON."],
+    ["Latency", "Span durations as a color-coded grid, helping identify which operations are consistently slow."],
+    ["Errors", "All spans that completed with an error status. Click any item to expand its full details and attributes."],
+    ["Flow", "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency. Supports zoom, pan, and playback animation."],
+    ["Help", "This tab \u2014 an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Recommendations and malfunction detection."]
+  ];
+  var TERMS = [
+    ["Agent Loop / Malfunction", "A behavioral pattern in which an AI agent is stuck, oscillating, or spiraling into unproductive work. AgentLens detects five patterns: Tool Call Deadlock, State Corruption Spiral, Hallucination Amplification Loop, Ambiguous Success / Escalating Scope, and Infinite Loop \u2014 Context Accumulation."],
+    ["Agent", "The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that processes your prompts, reasons about tasks, and invokes tools to accomplish work."],
+    ["Avg Input/Call", "Average number of input tokens sent to the language model per LLM call. Lower means leaner prompts. Under 10K is lean; 10-30K is normal; 30K+ suggests large instruction files, verbose tool definitions, or accumulated context bloat."],
+    ["Avg Turns/Session", "Average number of LLM round-trips per session. Lower is more efficient. 1-3 turns is typical for simple tasks; 5+ may indicate the agent is struggling or the prompt needs more specifics."],
+    ["Background Span", "A span that runs outside the main request/response cycle \u2014 e.g., telemetry uploads, extension lifecycle events, or periodic health checks."],
+    ["Cache Create Tokens", "Tokens written into the prompt cache on the server during this request. These tokens become available for cache hits on subsequent requests."],
+    ["Cache Hit Rate", "The percentage of input tokens served from a server-side prompt cache instead of being reprocessed. Higher rates reduce latency and cost."],
+    ["Cache Read Tokens", "Input tokens served from the server-side prompt cache, avoiding reprocessing. Shown in efficiency metrics."],
+    ["Context Bloat", "An efficiency insight triggered when input tokens grow significantly across turns within a session."],
+    ["Files Changed", "Unique files that were created or modified by the agent during the current data collection period."],
+    ["Input Tokens", "The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt."],
+    ["Loop Signal", "A behavioral signal in the Recommendations tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a \u21BA icon."],
+    ["LLM", "Large Language Model \u2014 the AI model (e.g., GPT-4, Claude) that the agent calls to reason, generate text, or decide which tools to use."],
+    ["LLM Call", "A single request-response cycle to the language model. One session typically includes multiple LLM calls as the agent iterates."],
+    ["OTLP", "OpenTelemetry Protocol \u2014 the standard format used to collect and transmit telemetry from AI agents to this extension. AgentLens accepts trace spans and log-derived events."],
+    ["Outcome", 'How a session concluded: "text" means the agent responded with a text answer; "tool" means the last action was a tool call.'],
+    ["Output Tokens", "The number of tokens generated by the language model in its response, including reasoning, tool call instructions, and final answers."],
+    ["Output Ratio", "Percentage of total tokens that are output (generated by the model). In cached agentic coding sessions this can be naturally tiny, so AgentLens no longer uses it as a standalone alert."],
+    ["Prompt", "The text you type into the AI chat to request work. Each prompt initiates a new session."],
+    ["Request", "The user-visible message sent to the agent in a single prompt. In OTEL terms, the request anchor differs by agent: Copilot uses invoke_agent, Claude uses claude_code.interaction, and Codex is normalized from prompt log events."],
+    ["Retain Spans", "A waterfall checkbox option. When checked, spans from previous prompts are kept visible alongside new ones."],
+    ["Session", "A single prompt-to-response cycle. Starts when you send a prompt and ends when the agent delivers its final response. AgentLens normalizes different Copilot, Claude, and Codex OTEL shapes into this shared model."],
+    ["Span", "A single timed operation recorded by OpenTelemetry. AgentLens displays true trace spans and normalized log events with a span-like name, duration, and attributes."],
+    ["Span ID", "A unique identifier for a single span within a trace. Used to establish parent-child relationships between operations."],
+    ["Sparkline", "A small inline chart shown below summary cards, depicting the trend of a metric over recent time buckets."],
+    ["Tokens", "The fundamental unit language models use to process text. Roughly 1 token \u2248 4 characters or \xBE of a word."],
+    ["Tool Call", "A single invocation of a tool by the agent \u2014 e.g., reading a file, running a search, or executing a terminal command."],
+    ["Tool Definition Overhead", "An efficiency insight triggered when a large fraction of input tokens is consumed by tool definition schemas rather than actual content."],
+    ["Trace", "A group of related spans sharing a Trace ID. Copilot and Claude usually map a trace to a session; Codex log events can require AgentLens to group records by conversation, session, thread, or turn attributes."],
+    ["Trace ID", "A unique identifier linking all spans belonging to the same session/request."],
+    ["Turn", "One LLM call within a session. A multi-turn session involves the agent calling the LLM, executing tools, then calling the LLM again."],
+    ["TTFT", "Time to First Token \u2014 the latency between sending a prompt and receiving the first token of the response."],
+    ["Waterfall", "A visualization where spans are displayed as horizontal bars on a time axis, with nesting depth shown by indentation."]
+  ];
+  var HELP_SECTIONS = {
+    overview: {
+      href: "#help-overview",
+      heading: "Overview"
+    },
+    config: {
+      href: "#help-config",
+      heading: "Setup"
+    },
+    otel: {
+      href: "#help-otel",
+      heading: "OTEL Data"
+    },
+    insights: {
+      href: "#help-insights",
+      heading: "Insights"
+    },
+    loops: {
+      href: "#help-loops",
+      heading: "Loops"
+    },
+    views: {
+      href: "#help-views",
+      heading: "Views"
+    },
+    glossary: {
+      href: "#help-glossary",
+      heading: "Glossary"
+    }
+  };
+  var TOC_SECTIONS = Object.values(HELP_SECTIONS);
+  var AGENT_OTEL_SHAPES = [
+    {
+      agent: "Copilot",
+      format: "OpenTelemetry trace spans with a clean single-trace hierarchy. Each conversation is one trace; LLM calls and tool calls are child spans nested under a session root. No extra configuration needed.",
+      coverage: "Prompt text, token counts (input, output), model name, TTFT, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.",
+      gaps: "Cache token data (read/create) is not part of Copilot's telemetry. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available."
+    },
+    {
+      agent: "Claude Code",
+      format: "OpenTelemetry trace spans. The session root span closes when the interaction ends, with LLM calls and tool calls as children. Optional supplemental log records are emitted when enhanced telemetry env vars are set.",
+      coverage: "With the recommended configuration (all three OTEL_LOG_* vars set): prompt text, token counts, model, tool names, tool arguments, file paths, and full file diff content are all available.",
+      gaps: "The three OTEL_LOG_* env vars are not enabled by default \u2014 without them, tool arguments are absent, prompt text is omitted, and file diff content is unavailable. Cache token data is only present when using a model that supports prompt caching."
+    },
+    {
+      agent: "Codex CLI",
+      format: "Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to config also emits timing spans to /v1/traces.",
+      coverage: "With the recommended configuration (log_user_prompt = true and both exporters set): prompt text, token counts, model name, TTFT, tool names, tool arguments, tool results, and span timing are all present.",
+      gaps: "Trace and Timeline tabs have less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without trace_exporter, span waterfall data is limited."
+    }
+  ];
+  var codeStyle = "font-size:11px;background:var(--panel-bg);padding:1px 4px;border-radius:3px";
+  var preStyle = "background:var(--panel-bg);border:1px solid var(--border);border-radius:5px;padding:10px 14px;font-size:11.5px;line-height:1.6;overflow-x:auto;white-space:pre";
+  var h4Style = "font-size:13px;font-weight:600;margin:0 0 6px;color:var(--fg,inherit)";
+  var mutedP = "font-size:12px;color:var(--muted);margin:0 0 8px";
+  function InsightBlock({ id, title, why, steps, impact }) {
+    return /* @__PURE__ */ u4("div", { class: "glossary-item", id, style: "scroll-margin-top:12px;flex-direction:column;gap:0", children: [
+      /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "margin-bottom:6px", children: title }),
+      /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
+        /* @__PURE__ */ u4("p", { style: "margin:0 0 8px", children: [
+          /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Why it happens: " }),
+          /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: why } })
+        ] }),
+        /* @__PURE__ */ u4("p", { style: "margin:0 0 4px", children: /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "How to fix:" }) }),
+        /* @__PURE__ */ u4("ol", { style: "margin:0 0 8px;padding-left:20px;font-size:12px;line-height:1.7", dangerouslySetInnerHTML: { __html: steps } }),
+        /* @__PURE__ */ u4("p", { style: "margin:0;font-size:11px;color:var(--muted)", children: [
+          /* @__PURE__ */ u4("strong", { style: "color:var(--fg);font-size:11px", children: "Expected impact: " }),
+          /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: impact } })
+        ] })
+      ] })
+    ] });
+  }
+  function LoopBlock({ id, title, why, example, steps, impact }) {
+    return /* @__PURE__ */ u4("div", { class: "glossary-item", id, style: "scroll-margin-top:12px;flex-direction:column;gap:6px", children: [
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;align-items:flex-start", children: [
+        /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:200px", children: title }),
+        /* @__PURE__ */ u4("dd", { class: "glossary-def", dangerouslySetInnerHTML: { __html: why } })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "padding-left:8px;font-size:11px;color:var(--muted);line-height:1.5", children: [
+        /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Example: " }),
+        /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: example } })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "padding-left:8px;font-size:11px;line-height:1.6", children: [
+        /* @__PURE__ */ u4("p", { style: "margin:0 0 3px", children: /* @__PURE__ */ u4("strong", { style: "color:var(--fg);font-size:11px", children: "How to fix:" }) }),
+        /* @__PURE__ */ u4("ol", { style: "margin:0 0 6px;padding-left:18px;font-size:11px;line-height:1.7;color:var(--muted)", dangerouslySetInnerHTML: { __html: steps } }),
+        /* @__PURE__ */ u4("p", { style: "margin:0;font-size:10px;color:var(--muted)", children: [
+          /* @__PURE__ */ u4("strong", { style: "color:var(--fg);font-size:10px", children: "Expected impact: " }),
+          /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: impact } })
+        ] })
+      ] })
+    ] });
+  }
+  function Toc() {
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("style", { dangerouslySetInnerHTML: { __html: "html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc a{display:inline-block;padding:3px 11px;border-radius:12px;font-size:11px;font-weight:500;color:var(--muted);text-decoration:none;border:1px solid var(--border);transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover);border-color:var(--fg)}" } }),
+      /* @__PURE__ */ u4("nav", { class: "help-toc", "aria-label": "Help sections", style: "position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 0 8px;margin:0 -16px 20px -12px;padding-left:12px;display:flex;gap:4px;flex-wrap:wrap", children: TOC_SECTIONS.map((s4) => /* @__PURE__ */ u4("a", { href: s4.href, children: s4.heading })) })
+    ] });
+  }
+  function OverviewSection() {
+    const mascotSrc = window.__MASCOT_URI__ ?? "";
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-overview", children: [
+      mascotSrc && /* @__PURE__ */ u4("div", { style: { textAlign: "center", marginBottom: 16 }, children: [
+        /* @__PURE__ */ u4("img", { src: esc(mascotSrc), alt: "AgentLens mascot", style: { maxWidth: "65%", height: "auto", display: "block", margin: "0 auto" } }),
+        /* @__PURE__ */ u4("p", { style: { textAlign: "center", fontStyle: "italic", color: "var(--muted)", marginTop: 8, marginBottom: 0 }, children: "Watching your agents so you don't have to." })
+      ] }),
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.overview.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("div", { style: { background: "var(--panel-bg)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 16px", marginBottom: 18 }, children: [
+          /* @__PURE__ */ u4("h4", { style: { fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: "var(--fg,inherit)" }, children: "Agent vs LLM Model" }),
+          /* @__PURE__ */ u4("p", { style: { fontSize: 13, margin: 0 }, children: [
+            /* @__PURE__ */ u4("strong", { children: "Agent:" }),
+            " The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that receives your prompt, reasons about the task, and decides which tools to use. The agent manages the workflow, breaks down tasks, and may call the LLM multiple times per session."
+          ] }),
+          /* @__PURE__ */ u4("p", { style: { fontSize: 13, margin: 0, marginTop: 6 }, children: [
+            /* @__PURE__ */ u4("strong", { children: "LLM Model:" }),
+            " The underlying Large Language Model (e.g. GPT-4, Claude 3) that generates text, answers questions, or provides code. The agent sends requests to the LLM model as needed, but the model itself does not manage tools or workflow."
+          ] }),
+          /* @__PURE__ */ u4("p", { style: { fontSize: 12, color: "var(--muted)", margin: "8px 0 0" }, children: /* @__PURE__ */ u4("em", { children: [
+            "In short: The ",
+            /* @__PURE__ */ u4("strong", { children: "agent" }),
+            " is the smart assistant orchestrating your work; the ",
+            /* @__PURE__ */ u4("strong", { children: "LLM model" }),
+            " is the engine that generates language and code for the agent."
+          ] }) })
+        ] }),
+        /* @__PURE__ */ u4("p", { children: [
+          /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
+          " is a VS Code extension that captures and visualizes the OpenTelemetry (OTLP) traces emitted by AI coding agents like GitHub Copilot, Claude, and Codex. It runs a lightweight local collector that receives trace data in real time, then presents it through an interactive dashboard so you can understand exactly what happens behind the scenes when you use an AI agent."
+        ] }),
+        /* @__PURE__ */ u4("p", { children: "Use AgentLens to:" }),
+        /* @__PURE__ */ u4("ul", { children: [
+          /* @__PURE__ */ u4("li", { children: [
+            /* @__PURE__ */ u4("strong", { children: "Monitor efficiency" }),
+            " \u2014 see token usage, cache hit rates, time-to-first-token, and actionable insights about prompt waste."
+          ] }),
+          /* @__PURE__ */ u4("li", { children: [
+            /* @__PURE__ */ u4("strong", { children: "Debug sessions" }),
+            " \u2014 inspect every LLM call, tool invocation, and their arguments/results in a human-readable timeline."
+          ] }),
+          /* @__PURE__ */ u4("li", { children: [
+            /* @__PURE__ */ u4("strong", { children: "Trace performance" }),
+            " \u2014 view raw OTLP spans as waterfalls with full parent-child nesting and exact timing."
+          ] }),
+          /* @__PURE__ */ u4("li", { children: [
+            /* @__PURE__ */ u4("strong", { children: "Analyze tool usage" }),
+            " \u2014 see which tools the agent calls most and how tokens are distributed across operations."
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("p", { children: [
+          "Data is collected locally and never leaves your machine. Clear it at any time with the ",
+          /* @__PURE__ */ u4("em", { children: "Clear All Data" }),
+          " button."
+        ] })
+      ] })
+    ] });
+  }
+  function ConfigSection() {
+    const kbdStyle = "font-size:11px;background:var(--panel-bg);padding:1px 5px;border-radius:3px;border:1px solid var(--border)";
+    const pathNote = (mac, win) => /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0 0 6px", children: [
+      "macOS/Linux: ",
+      /* @__PURE__ */ u4("code", { style: codeStyle, children: mac }),
+      " \xA0\xB7\xA0 Windows: ",
+      /* @__PURE__ */ u4("code", { style: codeStyle, children: win })
+    ] });
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-config", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.config.heading }),
+      /* @__PURE__ */ u4("p", { style: mutedP, children: [
+        "AgentLens auto-configures supported agents on activation. If auto-config fails, or you prefer to configure manually, use the instructions below. Replace ",
+        /* @__PURE__ */ u4("code", { style: codeStyle, children: "4318" }),
+        " with your custom port if you changed ",
+        /* @__PURE__ */ u4("em", { children: "agentLens.otlpPort" }),
+        "."
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Auto-configuration" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: "On activation, AgentLens automatically writes the required telemetry config for each supported agent. This happens both when running as a VS Code extension and when running as the standalone server." }),
+        /* @__PURE__ */ u4("table", { style: "font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px", children: [
+          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+            /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 10px 4px 0;color:var(--fg)", children: "Agent" }),
+            /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 10px 4px 0;color:var(--fg)", children: "Config location" })
+          ] }) }),
+          /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
+            /* @__PURE__ */ u4("tr", { children: [
+              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "GitHub Copilot" }),
+              /* @__PURE__ */ u4("td", { children: "VS Code User Settings (via VS Code API \u2014 same on all platforms)" })
+            ] }),
+            /* @__PURE__ */ u4("tr", { children: [
+              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "Claude Code" }),
+              /* @__PURE__ */ u4("td", { children: [
+                /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.claude/settings.json" }),
+                " (macOS/Linux)",
+                /* @__PURE__ */ u4("br", {}),
+                /* @__PURE__ */ u4("code", { style: codeStyle, children: "%USERPROFILE%\\.claude\\settings.json" }),
+                " (Windows)"
+              ] })
+            ] }),
+            /* @__PURE__ */ u4("tr", { children: [
+              /* @__PURE__ */ u4("td", { style: "padding:4px 10px 4px 0;vertical-align:top", children: "OpenAI Codex CLI" }),
+              /* @__PURE__ */ u4("td", { children: [
+                /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.codex/config.toml" }),
+                " (macOS/Linux)",
+                /* @__PURE__ */ u4("br", {}),
+                /* @__PURE__ */ u4("code", { style: codeStyle, children: "%USERPROFILE%\\.codex\\config.toml" }),
+                " (Windows)"
+              ] })
+            ] })
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0", children: [
+          "After first install, ",
+          /* @__PURE__ */ u4("strong", { children: "restart any running agent sessions" }),
+          " to pick up the new config."
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "GitHub Copilot \u2014 VS Code Extension" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: [
+          "Add the following to VS Code ",
+          /* @__PURE__ */ u4("strong", { children: "User Settings" }),
+          " (",
+          /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Cmd+Shift+P" }),
+          " / ",
+          /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Ctrl+Shift+P" }),
+          " \u2192 ",
+          /* @__PURE__ */ u4("em", { children: "Preferences: Open User Settings (JSON)" }),
+          "). These settings work the same on macOS, Linux, and Windows."
+        ] }),
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: `{
   "github.copilot.chat.otel.enabled": true,
   "github.copilot.chat.otel.exporterType": "otlp-http",
   "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
-}`})]}),n("div",{style:"margin-bottom:20px",children:[n("h4",{style:St,children:"Claude Code \u2014 CLI and VS Code Extension"}),n("p",{style:Tt,children:["The ",n("code",{style:j,children:"claude"})," CLI and the Claude Code VS Code extension both read from the same settings file. Add the following to the ",n("code",{style:j,children:'"env"'})," block:"]}),t("~/.claude/settings.json","%USERPROFILE%\\.claude\\settings.json"),n("pre",{style:kn,children:`{
+}` })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Claude Code \u2014 CLI and VS Code Extension" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: [
+          "The ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "claude" }),
+          " CLI and the Claude Code VS Code extension both read from the same settings file. Add the following to the ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: '"env"' }),
+          " block:"
+        ] }),
+        pathNote("~/.claude/settings.json", "%USERPROFILE%\\.claude\\settings.json"),
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: `{
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
@@ -27,10 +6561,56 @@ Examples: `+_.examples.join(" \xB7 "):"";o.push({severity:"loop-"+_.severity,cat
     "OTEL_LOG_TOOL_CONTENT": "1",
     "OTEL_LOG_USER_PROMPTS": "1"
   }
-}`}),n("p",{style:"font-size:11px;color:var(--muted);margin-top:6px",children:[n("strong",{children:"CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1"})," enables span-level tracing: without it Claude only emits aggregate metrics, so turns and LLM calls are indistinguishable and cache token breakdowns are unavailable."," ",n("strong",{children:"OTEL_LOG_TOOL_DETAILS=1"})," unlocks tool call records (tool name + file path)."," ",n("strong",{children:"OTEL_LOG_TOOL_CONTENT=1"})," includes full file contents and terminal output \u2014 needed for Summaries tool outputs and Files tab diffs."," ",n("strong",{children:"OTEL_LOG_USER_PROMPTS=1"})," includes your typed prompt; without it sessions show ",n("code",{style:j,children:"[N chars \u2014 prompt not included]"}),"."]})]}),n("div",{style:"margin-bottom:20px",children:[n("h4",{style:St,children:"OpenAI Codex CLI"}),n("p",{style:Tt,children:["Add an ",n("code",{style:j,children:"[otel]"})," section to the Codex config file. Restart any running Codex sessions after saving."]}),t("~/.codex/config.toml","%USERPROFILE%\\.codex\\config.toml"),n("pre",{style:kn,children:`[otel]
+}` }),
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px", children: [
+          /* @__PURE__ */ u4("strong", { children: "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1" }),
+          " enables span-level tracing: without it Claude only emits aggregate metrics, so turns and LLM calls are indistinguishable and cache token breakdowns are unavailable.",
+          " ",
+          /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_TOOL_DETAILS=1" }),
+          " unlocks tool call records (tool name + file path).",
+          " ",
+          /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_TOOL_CONTENT=1" }),
+          " includes full file contents and terminal output \u2014 needed for Summaries tool outputs and Files tab diffs.",
+          " ",
+          /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_USER_PROMPTS=1" }),
+          " includes your typed prompt; without it sessions show ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "[N chars \u2014 prompt not included]" }),
+          "."
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "OpenAI Codex CLI" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: [
+          "Add an ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "[otel]" }),
+          " section to the Codex config file. Restart any running Codex sessions after saving."
+        ] }),
+        pathNote("~/.codex/config.toml", "%USERPROFILE%\\.codex\\config.toml"),
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: `[otel]
 log_user_prompt = true
 exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
-trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }`}),n("p",{style:"font-size:11px;color:var(--muted);margin-top:6px",children:[n("strong",{children:"log_user_prompt=true"})," includes your typed prompt; without it sessions show ",n("code",{style:j,children:"[session in progress]"}),"."," ",n("code",{style:j,children:"exporter"})," sends log events (",n("code",{style:j,children:"/v1/logs"}),");"," ",n("code",{style:j,children:"trace_exporter"})," sends trace spans (",n("code",{style:j,children:"/v1/traces"}),"). Both point at the same endpoint but cover different OTLP signal types."]})]}),n("div",{style:"margin-bottom:20px",children:[n("h4",{style:St,children:"VS Code Integrated Terminal"}),n("p",{style:Tt,children:"If the Claude Code CLI runs inside VS Code's integrated terminal and traces are not appearing, add the env vars directly to VS Code's terminal environment. Use the key matching your OS:"}),n("pre",{style:kn,children:`// macOS \u2014 add to VS Code User Settings (JSON):
+trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }` }),
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px", children: [
+          /* @__PURE__ */ u4("strong", { children: "log_user_prompt=true" }),
+          " includes your typed prompt; without it sessions show ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "[session in progress]" }),
+          ".",
+          " ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "exporter" }),
+          " sends log events (",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "/v1/logs" }),
+          ");",
+          " ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "trace_exporter" }),
+          " sends trace spans (",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "/v1/traces" }),
+          "). Both point at the same endpoint but cover different OTLP signal types."
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "VS Code Integrated Terminal" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: "If the Claude Code CLI runs inside VS Code's integrated terminal and traces are not appearing, add the env vars directly to VS Code's terminal environment. Use the key matching your OS:" }),
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: `// macOS \u2014 add to VS Code User Settings (JSON):
 "terminal.integrated.env.osx": {
   "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
   "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
@@ -46,45 +6626,1271 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
 "terminal.integrated.env.linux": { ... }
 
 // Windows \u2014 same keys, different top-level key:
-"terminal.integrated.env.windows": { ... }`}),n("ul",{style:"font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:6px 0 0",children:[n("li",{children:["Open the ",n("strong",{children:"AgentLens"})," output channel (",n("em",{children:"View \u2192 Output \u2192 AgentLens"}),") to confirm spans are arriving."]}),n("li",{children:["Check that your shell profile does not override ",n("code",{style:j,children:"OTEL_EXPORTER_OTLP_ENDPOINT"}),"."]}),n("li",{children:"Confirm the collector is running on the correct port."})]})]}),n("div",{style:"margin-bottom:4px",children:[n("h4",{style:St,children:"Quick Verification"}),n("ul",{style:"font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:0",children:[n("li",{children:[n("strong",{children:"Copilot:"})," confirm ",n("code",{style:j,children:"github.copilot.chat.otel.enabled"})," is ",n("code",{style:j,children:"true"})," in VS Code User Settings."]}),n("li",{children:[n("strong",{children:"Claude (macOS/Linux):"})," run ",n("code",{style:j,children:"echo $OTEL_EXPORTER_OTLP_ENDPOINT"})," \u2014 should print ",n("code",{style:j,children:"http://localhost:4318"}),"."]}),n("li",{children:[n("strong",{children:"Claude (Windows cmd):"})," run ",n("code",{style:j,children:"echo %OTEL_EXPORTER_OTLP_ENDPOINT%"}),"; in PowerShell: ",n("code",{style:j,children:"$env:OTEL_EXPORTER_OTLP_ENDPOINT"}),"."]}),n("li",{children:[n("strong",{children:"Codex (macOS/Linux):"})," run ",n("code",{style:j,children:"cat ~/.codex/config.toml"})," and confirm the ",n("code",{style:j,children:"[otel]"})," section."]}),n("li",{children:[n("strong",{children:"Codex (Windows):"})," run ",n("code",{style:j,children:"type %USERPROFILE%\\.codex\\config.toml"}),"."]})]})]})]})}function ta(){return n("div",{class:"help-section",id:"help-otel",children:[n("h3",{class:"help-heading",children:it.otel.heading}),n("div",{class:"help-overview-body",children:[n("p",{children:"AgentLens normalizes three different OTEL shapes into one dashboard model. The shared model is a prompt-to-response session with LLM turns, tool calls, token usage, timing, errors, and files, but the raw data arrives differently for each agent."}),n("div",{class:"glossary",children:Js.map(e=>n("div",{class:"glossary-item",style:"flex-direction:column;gap:6px",children:[n("dt",{class:"glossary-term",children:e.agent}),n("dd",{class:"glossary-def",style:"display:block",children:[n("p",{style:"margin:0 0 6px",children:[n("strong",{style:"color:var(--fg)",children:"Format: "}),e.format]}),n("p",{style:"margin:0 0 6px",children:[n("strong",{style:"color:var(--fg)",children:"What's included: "}),e.coverage]}),n("p",{style:"margin:0",children:[n("strong",{style:"color:var(--fg)",children:"Gaps: "}),e.gaps]})]})]}))}),n("p",{style:"margin-top:14px;font-size:12px;color:var(--muted)",children:"The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side."})]})]})}function na(){return n("div",{class:"help-section",id:"help-insights",children:[n("h3",{class:"help-heading",children:it.insights.heading}),n("div",{class:"help-overview-body",children:[n("p",{children:["The ",n("strong",{children:"Recommendations"})," tab surfaces efficiency insights for token waste, cache patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer turns and fewer tokens on the same work."]}),n("div",{class:"glossary",children:[n(Qe,{id:"help-context-bloat",title:"Context Bloat",why:"Every LLM turn receives the full conversation so far. When tool results are large \u2014 full file reads, wide search outputs \u2014 the context balloons quickly. Instruction files that repeat the same guidance across turns are another common cause.",steps:`<li>Run <code style="${j}">wc -c ~/.claude/CLAUDE.md</code> to measure instruction file size. Target under 4 KB.</li><li>Remove verbose examples from instruction files.</li><li>Replace broad <code style="${j}">read_file</code> calls with line-ranged reads.</li><li>Add to your prompt: "Only include relevant excerpts in your reasoning."</li>`,impact:"Reducing context size by 30% typically halves cost per session and cuts TTFT by 15\u201325%."}),n(Qe,{id:"help-files-repeated",title:"Files Read Multiple Times",why:"Agents re-read files when processing tasks in chunks, when the file path appears ambiguously in context, or when a previous read was so broad the model lost the relevant section.",steps:'<li>Explicitly name key files upfront in your prompt.</li><li>Specify which file contains what: <em>"The schema is in db/schema.sql lines 1-40"</em>.</li><li>Ask for a "read plan" before execution.</li><li>If a file is read 4+ times, paste the relevant lines directly into your prompt.</li>',impact:"Eliminating repeated reads of a 500-line file saves 2,000\u20135,000 input tokens per extra read."}),n(Qe,{id:"help-high-turns",title:"High Turn Count",why:"High turn counts happen when the agent discovers information iteratively. The prompt describes the <em>goal</em> but not the <em>location</em>; the task has implicit sub-tasks; or success criteria were not specified.",steps:"<li>Add explicit file paths and line numbers.</li><li>Define explicit stopping conditions.</li><li>Break multi-step tasks into separate prompts.</li><li>Review the Timeline tab: if &gt;50% of turns are reads, add more upfront context.</li>",impact:"Going from 12 turns to 5 reduces cost by 40\u201360% and cuts wall-clock time proportionally."}),n(Qe,{id:"help-large-context",title:"Large Starting Context",why:"If your instruction files (CLAUDE.md, .agent.md, copilot-instructions.md) are large, every session starts expensive. Common culprits: long examples, full API docs pasted inline, duplicate instructions.",steps:"<li>Audit instruction files \u2014 look for sections longer than 20 lines.</li><li>Move reference material into separate docs the agent can read on demand.</li><li>Check for duplicate instruction sources across file levels.</li><li>Target a meaningful reduction in combined static instructions \u2014 even halving them cuts baseline cost per call.</li>",impact:"Trimming 10,000 tokens from starting context saves those tokens on <em>every</em> LLM call. For a 10-turn session, that is 100,000 tokens recovered."}),n(Qe,{id:"help-duplicate-searches",title:"Duplicate Searches",why:"Agents repeat searches when results were too broad, when the model forgot a search was already run, or when handling multiple similar operations.",steps:'<li>Add directory scope: <em>"Search only in src/components/"</em>.</li><li>Provide the file name if you know it.</li><li>Use exact function/class names for symbol searches.</li><li>Add: <em>"Do not repeat a search you have already run."</em></li>',impact:"Each eliminated search removes one tool call and ~5KB from context."}),n(Qe,{id:"help-tool-failures",title:"Tool Failures",why:"Tool failures come from: (1) guessed file paths that don't exist, (2) unavailable commands, or (3) hallucinated APIs. Each failure adds error text to context.",steps:"<li>Provide exact file paths in your prompt.</li><li>Tell the agent which package manager and runtime are available.</li><li>Check the Errors tab to see what paths were guessed.</li><li>Verify files exist before prompting.</li>",impact:"Each eliminated failure saves one full LLM recovery turn \u2014 roughly 30,000 wasted tokens per failure cascade."}),n(Qe,{id:"help-large-results",title:"Large Tool Results",why:"When the agent reads entire large files or runs broad searches, results are appended to context in full. A 50KB file adds ~12,500 tokens to every subsequent call.",steps:'<li>Use line-range reads: <em>"Read src/app.ts lines 1-80"</em>.</li><li>Provide tighter search patterns.</li><li>Pipe command output to head or limit lines.</li><li>Split large reads into separate steps.</li>',impact:"Replacing a 300-line read with a 30-line read saves 2,700 tokens per turn."}),n(Qe,{id:"help-tool-overhead",title:"Tool Definition Overhead",why:"Every LLM call includes the full JSON schema for every available tool. With 70+ tools, this overhead reaches 8,000\u201315,000 tokens per call.",steps:`<li>Create a task-specific <code style="${j}">.agent.md</code> with only needed tools.</li><li>Disable unused tools for specific task types.</li><li>Check your agent's documentation for tool restriction syntax.</li>`,impact:"Reducing from 70 to 10 tools saves ~10,000 tokens per LLM call."}),n(Qe,{id:"help-cache-rate",title:"Low Cache Hit Rate",why:"Prompt caching stores the stable prefix on the model server. The cache breaks when the prefix changes between calls \u2014 timestamps, reordered instructions, or modified instruction files.",steps:"<li>Keep static content at the <em>top</em> of prompts, identical across calls.</li><li>Avoid timestamps or counters in instruction files.</li><li>Cache rate will be low after editing instruction files until re-cached.</li><li>Ensure system prompt templates are not dynamically generated.</li>",impact:"Going from 0% to 60% cache hit rate reduces effective cost by 80\u201390%. TTFT also drops significantly."})]})]})]})}function oa(){return n("div",{class:"help-section",id:"help-loops",children:[n("h3",{class:"help-heading",children:it.loops.heading}),n("div",{class:"help-overview-body",children:[n("p",{children:"Loop signals are behavioral patterns indicating the agent is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity."}),n("div",{class:"glossary",children:[n(Ut,{id:"help-tool-deadlock",title:"Tool Call Deadlock",why:"The same tool call \u2014 identical name and arguments \u2014 was executed 5+ times. The agent is not retaining the result, likely lost in a long context.",example:'The agent ran <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">read_file src/types.ts</code> eight times in one session.',steps:'<li>Add: <em>"After reading a file, do not read it again unless you have modified it."</em></li><li>Scope the task so fewer files are needed.</li><li>Pin non-deterministic commands to fixed output.</li><li>Stop the session and restart with what was already read.</li>',impact:"Stopping this pattern prevents runaway token accumulation. 200K tokens looping \u2192 20K tokens with a direct prompt."}),n(Ut,{id:"help-state-spiral",title:"State Corruption Spiral",why:"A file was edited (A\u2192B) then reverted (B\u2192A). The agent oscillates because two constraints are mutually exclusive.",example:"The agent added a null check (fixing one test), removed it (breaking another), then added it back \u2014 cycling.",steps:"<li>Clarify success criteria with explicit priority ordering.</li><li>Provide the exact final file state if possible.</li><li>Check if tests assert contradictory behavior.</li><li>Use the Files tab to spot A\u2192B\u2192A patterns.</li>",impact:"Resolving the conflict takes 2\u20133 focused turns vs. 20\u201340 oscillating turns."}),n(Ut,{id:"help-hallucination",title:"Hallucination Amplification Loop",why:"The same error appeared 3+ times. The agent's fix attempts fail because the root cause is something the model invented \u2014 a nonexistent package, wrong function name, or outdated API.",example:'A <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">ModuleNotFoundError</code> appeared five times as the agent tried different import paths for a package not installed.',steps:"<li>Stop and verify the root cause yourself.</li><li>Tell the agent explicitly what exists.</li><li>Paste actual API responses or function signatures.</li><li>After 2 failures, resolve the underlying issue before re-prompting.</li>",impact:"Intervening after 2 recurrences instead of 6 saves ~120,000 tokens in a 30K-token session."}),n(Ut,{id:"help-runaway-steps",title:"Ambiguous Success / Escalating Scope",why:"The session consumed far more LLM calls than expected. The prompt has no stopping condition, uses open-ended phrasing, or the agent expands scope on its own.",example:'"Fix the login bug" accumulated 90+ steps \u2014 the agent then noticed unrelated issues and updated 3 extra files.',steps:'<li>Add explicit stopping conditions.</li><li>Avoid open-ended phrasing \u2014 name specific functions and files.</li><li>Specify scope: <em>"Only change files in src/auth/"</em>.</li><li>Monitor the context growth chart for steep rises.</li>',impact:"A 5-step prompt vs. a 90-step session saves 85 tool calls \u2014 a 5\u201320x token reduction."}),n(Ut,{id:"help-context-accumulation",title:"Infinite Loop \u2014 Context Accumulation",why:"Input tokens grew by 30,000+ across 4+ calls while output-to-input ratio collapsed by 70%+. The agent is consuming context while producing less output.",example:"First call: 8K in \u2192 600 out (7.5%). Last call: 65K in \u2192 80 out (0.12%). Five turns reading the same files without edits.",steps:"<li>Stop immediately \u2014 cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Summaries tab to review what was accomplished.</li>",impact:"Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."})]}),n("p",{style:"margin-top:16px;font-size:12px;color:var(--muted)",children:["Loop signals appear first in the Recommendations list, sorted by severity. Use the ",n("strong",{children:"Loops"})," filter pill to view only malfunction signals. Use ",n("strong",{children:"Ignore"})," to dismiss a signal if it was intentional behavior."]})]})]})}function ra(){return n("div",{class:"help-section",id:"help-views",children:[n("h3",{class:"help-heading",children:it.views.heading}),n("div",{class:"glossary",children:Ks.map(([e,t])=>n("div",{class:"glossary-item",children:[n("dt",{class:"glossary-term",children:e}),n("dd",{class:"glossary-def",children:t})]}))})]})}function ia(){return n("div",{class:"help-section",id:"help-glossary",children:[n("h3",{class:"help-heading",children:it.glossary.heading}),n("div",{class:"glossary",children:Ys.map(([e,t])=>n("div",{class:"glossary-item",children:[n("dt",{class:"glossary-term",children:e}),n("dd",{class:"glossary-def",children:t})]}))})]})}function ui(){return n("div",{id:"help-content",children:[n(Zs,{}),n(Qs,{}),n(ea,{}),n(ta,{}),n(na,{}),n(oa,{}),n(ra,{}),n(ia,{}),n("p",{style:"font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6",children:[n("strong",{children:"Disclaimer:"})," AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / OpenAI Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces."]})]})}var fi=8,hi=8,Sn=[{id:"context_compaction",label:"Context Compaction",severity:"warning",description:"When a session reaches the configured peak input-token threshold for that agent, prompt the agent to summarize and compact its context.",enabled:!1,writePromptsFile:!1,threshold:14e4,unit:"tokens",min:1e4,max:1e6,step:1e3,agentThresholds:{claude_code:14e4,copilot:89600,codex:28e4}},{id:"loop_break",label:"Loop Breaker",severity:"critical",description:"When the same tool with identical arguments repeats beyond the agent-specific threshold without file changes between repeats, prompt the agent to stop and choose a different approach. A hard-stop backstop fires at 8 repeats.",enabled:!1,writePromptsFile:!1,threshold:3,unit:"agent profile",min:3,max:8,step:1},{id:"error_cascade",label:"Error Cascade Stop",severity:"critical",description:"When a session hits its agent-specific consecutive-error streak, prompt the agent to stop, diagnose the root cause, and change strategy. A hard-stop backstop fires at 8 consecutive errors.",enabled:!1,writePromptsFile:!1,threshold:3,unit:"agent profile",min:2,max:8,step:1},{id:"high_turns",label:"Turn Limit Wrap-up",severity:"warning",description:"When a session reaches its agent-specific turn threshold, prompt the agent to summarize progress, merge check-in details, and work toward a stopping point.",enabled:!1,writePromptsFile:!1,threshold:120,unit:"agent profile",min:20,max:300,step:10}];function mo(e){if(e)return{claude_code:e.claude_code,copilot:e.copilot,codex:e.codex}}function ft(e){return{...e,agentThresholds:mo(e.agentThresholds)}}function sa(e){return{claude_code:e,copilot:e,codex:e}}function aa(e,t){let o=mo(e.agentThresholds);if(!o)return;let r=Number(t?.threshold);if(!t?.agentThresholds&&Number.isFinite(r)&&r>=e.min&&r<=e.max)for(let i of ot)o[i]=r;for(let i of ot){let s=Number(t?.agentThresholds?.[i]);Number.isFinite(s)&&s>=e.min&&s<=e.max&&(o[i]=s)}return o}function gi(e){return mo(e.agentThresholds)??sa(e.threshold)}function la(e,t){return e.agentThresholds?.[t]??e.threshold}function mi(){try{let e=localStorage.getItem("agentLens.automationConfigs");if(!e)return Sn.map(ft);let t=JSON.parse(e);return Sn.map(o=>{let r=t.find(a=>a.id===o.id);if(!r)return ft(o);let i=Number(r.threshold),s=i>=o.min&&i<=o.max?i:o.threshold;return{...ft(o),enabled:typeof r.enabled=="boolean"?r.enabled:o.enabled,writePromptsFile:typeof r.writePromptsFile=="boolean"?r.writePromptsFile:o.writePromptsFile,threshold:s,agentThresholds:aa(o,r)}})}catch{return Sn.map(ft)}}function go(e){try{localStorage.setItem("agentLens.automationConfigs",JSON.stringify(e.map(t=>({id:t.id,enabled:t.enabled,writePromptsFile:t.writePromptsFile,threshold:t.threshold,agentThresholds:t.agentThresholds}))))}catch{}}function ca(e){return e.id==="context_compaction"}function da(e){switch(e.id){case"high_turns":return["turnNudge"];case"loop_break":return["identicalRepeatNudge"];case"error_cascade":return["consecutiveErrorNudge"];default:return[]}}function pa(e,t,o,r,i){let s=`Triggering evidence:
-- Session: ${rt(t)}
-- Signal: ${r.evidence}
-- Threshold: ${r.threshold.toLocaleString()} ${r.unit}
-`;switch(e){case"context_compaction":{let a=Ft(t,i);return`${s}
-Your conversation context is large \u2014 peak input is ${a.peakTokens.toLocaleString()} tokens, crossing the ${r.threshold.toLocaleString()}-token threshold configured for this agent.
+"terminal.integrated.env.windows": { ... }` }),
+        /* @__PURE__ */ u4("ul", { style: "font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:6px 0 0", children: [
+          /* @__PURE__ */ u4("li", { children: [
+            "Open the ",
+            /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
+            " output channel (",
+            /* @__PURE__ */ u4("em", { children: "View \u2192 Output \u2192 AgentLens" }),
+            ") to confirm spans are arriving."
+          ] }),
+          /* @__PURE__ */ u4("li", { children: [
+            "Check that your shell profile does not override ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "OTEL_EXPORTER_OTLP_ENDPOINT" }),
+            "."
+          ] }),
+          /* @__PURE__ */ u4("li", { children: "Confirm the collector is running on the correct port." })
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:4px", children: [
+        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Quick Verification" }),
+        /* @__PURE__ */ u4("ul", { style: "font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:0", children: [
+          /* @__PURE__ */ u4("li", { children: [
+            /* @__PURE__ */ u4("strong", { children: "Copilot:" }),
+            " confirm ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "github.copilot.chat.otel.enabled" }),
+            " is ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "true" }),
+            " in VS Code User Settings."
+          ] }),
+          /* @__PURE__ */ u4("li", { children: [
+            /* @__PURE__ */ u4("strong", { children: "Claude (macOS/Linux):" }),
+            " run ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "echo $OTEL_EXPORTER_OTLP_ENDPOINT" }),
+            " \u2014 should print ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "http://localhost:4318" }),
+            "."
+          ] }),
+          /* @__PURE__ */ u4("li", { children: [
+            /* @__PURE__ */ u4("strong", { children: "Claude (Windows cmd):" }),
+            " run ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "echo %OTEL_EXPORTER_OTLP_ENDPOINT%" }),
+            "; in PowerShell: ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "$env:OTEL_EXPORTER_OTLP_ENDPOINT" }),
+            "."
+          ] }),
+          /* @__PURE__ */ u4("li", { children: [
+            /* @__PURE__ */ u4("strong", { children: "Codex (macOS/Linux):" }),
+            " run ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "cat ~/.codex/config.toml" }),
+            " and confirm the ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "[otel]" }),
+            " section."
+          ] }),
+          /* @__PURE__ */ u4("li", { children: [
+            /* @__PURE__ */ u4("strong", { children: "Codex (Windows):" }),
+            " run ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "type %USERPROFILE%\\.codex\\config.toml" }),
+            "."
+          ] })
+        ] })
+      ] })
+    ] });
+  }
+  function AgentOtelSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-otel", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.otel.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("p", { children: "AgentLens normalizes three different OTEL shapes into one dashboard model. The shared model is a prompt-to-response session with LLM turns, tool calls, token usage, timing, errors, and files, but the raw data arrives differently for each agent." }),
+        /* @__PURE__ */ u4("div", { class: "glossary", children: AGENT_OTEL_SHAPES.map((row) => /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:6px", children: [
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", children: row.agent }),
+          /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
+            /* @__PURE__ */ u4("p", { style: "margin:0 0 6px", children: [
+              /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Format: " }),
+              row.format
+            ] }),
+            /* @__PURE__ */ u4("p", { style: "margin:0 0 6px", children: [
+              /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "What's included: " }),
+              row.coverage
+            ] }),
+            /* @__PURE__ */ u4("p", { style: "margin:0", children: [
+              /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Gaps: " }),
+              row.gaps
+            ] })
+          ] })
+        ] })) }),
+        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: "The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side." })
+      ] })
+    ] });
+  }
+  function InsightsSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-insights", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.insights.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("p", { children: [
+          "The ",
+          /* @__PURE__ */ u4("strong", { children: "Recommendations" }),
+          " tab surfaces efficiency insights for token waste, cache patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer turns and fewer tokens on the same work."
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "glossary", children: [
+          /* @__PURE__ */ u4(
+            InsightBlock,
+            {
+              id: "help-context-bloat",
+              title: "Context Bloat",
+              why: "Every LLM turn receives the full conversation so far. When tool results are large \u2014 full file reads, wide search outputs \u2014 the context balloons quickly. Instruction files that repeat the same guidance across turns are another common cause.",
+              steps: `<li>Run <code style="${codeStyle}">wc -c ~/.claude/CLAUDE.md</code> to measure instruction file size. Target under 4 KB.</li><li>Remove verbose examples from instruction files.</li><li>Replace broad <code style="${codeStyle}">read_file</code> calls with line-ranged reads.</li><li>Add to your prompt: "Only include relevant excerpts in your reasoning."</li>`,
+              impact: "Reducing context size by 30% typically halves cost per session and cuts TTFT by 15\u201325%."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            InsightBlock,
+            {
+              id: "help-files-repeated",
+              title: "Files Read Multiple Times",
+              why: "Agents re-read files when processing tasks in chunks, when the file path appears ambiguously in context, or when a previous read was so broad the model lost the relevant section.",
+              steps: `<li>Explicitly name key files upfront in your prompt.</li><li>Specify which file contains what: <em>"The schema is in db/schema.sql lines 1-40"</em>.</li><li>Ask for a "read plan" before execution.</li><li>If a file is read 4+ times, paste the relevant lines directly into your prompt.</li>`,
+              impact: "Eliminating repeated reads of a 500-line file saves 2,000\u20135,000 input tokens per extra read."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            InsightBlock,
+            {
+              id: "help-high-turns",
+              title: "High Turn Count",
+              why: `High turn counts happen when the agent discovers information iteratively. The prompt describes the <em>goal</em> but not the <em>location</em>; the task has implicit sub-tasks; or success criteria were not specified.`,
+              steps: `<li>Add explicit file paths and line numbers.</li><li>Define explicit stopping conditions.</li><li>Break multi-step tasks into separate prompts.</li><li>Review the Timeline tab: if &gt;50% of turns are reads, add more upfront context.</li>`,
+              impact: "Going from 12 turns to 5 reduces cost by 40\u201360% and cuts wall-clock time proportionally."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            InsightBlock,
+            {
+              id: "help-large-context",
+              title: "Large Starting Context",
+              why: "If your instruction files (CLAUDE.md, .agent.md, copilot-instructions.md) are large, every session starts expensive. Common culprits: long examples, full API docs pasted inline, duplicate instructions.",
+              steps: `<li>Audit instruction files \u2014 look for sections longer than 20 lines.</li><li>Move reference material into separate docs the agent can read on demand.</li><li>Check for duplicate instruction sources across file levels.</li><li>Target a meaningful reduction in combined static instructions \u2014 even halving them cuts baseline cost per call.</li>`,
+              impact: `Trimming 10,000 tokens from starting context saves those tokens on <em>every</em> LLM call. For a 10-turn session, that is 100,000 tokens recovered.`
+            }
+          ),
+          /* @__PURE__ */ u4(
+            InsightBlock,
+            {
+              id: "help-duplicate-searches",
+              title: "Duplicate Searches",
+              why: "Agents repeat searches when results were too broad, when the model forgot a search was already run, or when handling multiple similar operations.",
+              steps: `<li>Add directory scope: <em>"Search only in src/components/"</em>.</li><li>Provide the file name if you know it.</li><li>Use exact function/class names for symbol searches.</li><li>Add: <em>"Do not repeat a search you have already run."</em></li>`,
+              impact: "Each eliminated search removes one tool call and ~5KB from context."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            InsightBlock,
+            {
+              id: "help-tool-failures",
+              title: "Tool Failures",
+              why: "Tool failures come from: (1) guessed file paths that don't exist, (2) unavailable commands, or (3) hallucinated APIs. Each failure adds error text to context.",
+              steps: `<li>Provide exact file paths in your prompt.</li><li>Tell the agent which package manager and runtime are available.</li><li>Check the Errors tab to see what paths were guessed.</li><li>Verify files exist before prompting.</li>`,
+              impact: "Each eliminated failure saves one full LLM recovery turn \u2014 roughly 30,000 wasted tokens per failure cascade."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            InsightBlock,
+            {
+              id: "help-large-results",
+              title: "Large Tool Results",
+              why: "When the agent reads entire large files or runs broad searches, results are appended to context in full. A 50KB file adds ~12,500 tokens to every subsequent call.",
+              steps: `<li>Use line-range reads: <em>"Read src/app.ts lines 1-80"</em>.</li><li>Provide tighter search patterns.</li><li>Pipe command output to head or limit lines.</li><li>Split large reads into separate steps.</li>`,
+              impact: "Replacing a 300-line read with a 30-line read saves 2,700 tokens per turn."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            InsightBlock,
+            {
+              id: "help-tool-overhead",
+              title: "Tool Definition Overhead",
+              why: "Every LLM call includes the full JSON schema for every available tool. With 70+ tools, this overhead reaches 8,000\u201315,000 tokens per call.",
+              steps: `<li>Create a task-specific <code style="${codeStyle}">.agent.md</code> with only needed tools.</li><li>Disable unused tools for specific task types.</li><li>Check your agent's documentation for tool restriction syntax.</li>`,
+              impact: "Reducing from 70 to 10 tools saves ~10,000 tokens per LLM call."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            InsightBlock,
+            {
+              id: "help-cache-rate",
+              title: "Low Cache Hit Rate",
+              why: "Prompt caching stores the stable prefix on the model server. The cache breaks when the prefix changes between calls \u2014 timestamps, reordered instructions, or modified instruction files.",
+              steps: `<li>Keep static content at the <em>top</em> of prompts, identical across calls.</li><li>Avoid timestamps or counters in instruction files.</li><li>Cache rate will be low after editing instruction files until re-cached.</li><li>Ensure system prompt templates are not dynamically generated.</li>`,
+              impact: `Going from 0% to 60% cache hit rate reduces effective cost by 80\u201390%. TTFT also drops significantly.`
+            }
+          )
+        ] })
+      ] })
+    ] });
+  }
+  function LoopsSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-loops", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.loops.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("p", { children: "Loop signals are behavioral patterns indicating the agent is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity." }),
+        /* @__PURE__ */ u4("div", { class: "glossary", children: [
+          /* @__PURE__ */ u4(
+            LoopBlock,
+            {
+              id: "help-tool-deadlock",
+              title: "Tool Call Deadlock",
+              why: "The same tool call \u2014 identical name and arguments \u2014 was executed 5+ times. The agent is not retaining the result, likely lost in a long context.",
+              example: `The agent ran <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">read_file src/types.ts</code> eight times in one session.`,
+              steps: `<li>Add: <em>"After reading a file, do not read it again unless you have modified it."</em></li><li>Scope the task so fewer files are needed.</li><li>Pin non-deterministic commands to fixed output.</li><li>Stop the session and restart with what was already read.</li>`,
+              impact: "Stopping this pattern prevents runaway token accumulation. 200K tokens looping \u2192 20K tokens with a direct prompt."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            LoopBlock,
+            {
+              id: "help-state-spiral",
+              title: "State Corruption Spiral",
+              why: "A file was edited (A\u2192B) then reverted (B\u2192A). The agent oscillates because two constraints are mutually exclusive.",
+              example: "The agent added a null check (fixing one test), removed it (breaking another), then added it back \u2014 cycling.",
+              steps: `<li>Clarify success criteria with explicit priority ordering.</li><li>Provide the exact final file state if possible.</li><li>Check if tests assert contradictory behavior.</li><li>Use the Files tab to spot A\u2192B\u2192A patterns.</li>`,
+              impact: "Resolving the conflict takes 2\u20133 focused turns vs. 20\u201340 oscillating turns."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            LoopBlock,
+            {
+              id: "help-hallucination",
+              title: "Hallucination Amplification Loop",
+              why: "The same error appeared 3+ times. The agent's fix attempts fail because the root cause is something the model invented \u2014 a nonexistent package, wrong function name, or outdated API.",
+              example: `A <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">ModuleNotFoundError</code> appeared five times as the agent tried different import paths for a package not installed.`,
+              steps: `<li>Stop and verify the root cause yourself.</li><li>Tell the agent explicitly what exists.</li><li>Paste actual API responses or function signatures.</li><li>After 2 failures, resolve the underlying issue before re-prompting.</li>`,
+              impact: "Intervening after 2 recurrences instead of 6 saves ~120,000 tokens in a 30K-token session."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            LoopBlock,
+            {
+              id: "help-runaway-steps",
+              title: "Ambiguous Success / Escalating Scope",
+              why: "The session consumed far more LLM calls than expected. The prompt has no stopping condition, uses open-ended phrasing, or the agent expands scope on its own.",
+              example: `"Fix the login bug" accumulated 90+ steps \u2014 the agent then noticed unrelated issues and updated 3 extra files.`,
+              steps: `<li>Add explicit stopping conditions.</li><li>Avoid open-ended phrasing \u2014 name specific functions and files.</li><li>Specify scope: <em>"Only change files in src/auth/"</em>.</li><li>Monitor the context growth chart for steep rises.</li>`,
+              impact: "A 5-step prompt vs. a 90-step session saves 85 tool calls \u2014 a 5\u201320x token reduction."
+            }
+          ),
+          /* @__PURE__ */ u4(
+            LoopBlock,
+            {
+              id: "help-context-accumulation",
+              title: "Infinite Loop \u2014 Context Accumulation",
+              why: "Input tokens grew by 30,000+ across 4+ calls while output-to-input ratio collapsed by 70%+. The agent is consuming context while producing less output.",
+              example: "First call: 8K in \u2192 600 out (7.5%). Last call: 65K in \u2192 80 out (0.12%). Five turns reading the same files without edits.",
+              steps: `<li>Stop immediately \u2014 cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Summaries tab to review what was accomplished.</li>`,
+              impact: "Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."
+            }
+          )
+        ] }),
+        /* @__PURE__ */ u4("p", { style: "margin-top:16px;font-size:12px;color:var(--muted)", children: [
+          "Loop signals appear first in the Recommendations list, sorted by severity. Use the ",
+          /* @__PURE__ */ u4("strong", { children: "Loops" }),
+          " filter pill to view only malfunction signals. Use ",
+          /* @__PURE__ */ u4("strong", { children: "Ignore" }),
+          " to dismiss a signal if it was intentional behavior."
+        ] })
+      ] })
+    ] });
+  }
+  function ViewsSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-views", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.views.heading }),
+      /* @__PURE__ */ u4("div", { class: "glossary", children: VIEWS.map(([name, desc]) => /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
+        /* @__PURE__ */ u4("dt", { class: "glossary-term", children: name }),
+        /* @__PURE__ */ u4("dd", { class: "glossary-def", children: desc })
+      ] })) })
+    ] });
+  }
+  function GlossarySection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-glossary", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.glossary.heading }),
+      /* @__PURE__ */ u4("div", { class: "glossary", children: TERMS.map(([term, def]) => /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
+        /* @__PURE__ */ u4("dt", { class: "glossary-term", children: term }),
+        /* @__PURE__ */ u4("dd", { class: "glossary-def", children: def })
+      ] })) })
+    ] });
+  }
+  function Help() {
+    return /* @__PURE__ */ u4("div", { id: "help-content", children: [
+      /* @__PURE__ */ u4(Toc, {}),
+      /* @__PURE__ */ u4(OverviewSection, {}),
+      /* @__PURE__ */ u4(ConfigSection, {}),
+      /* @__PURE__ */ u4(AgentOtelSection, {}),
+      /* @__PURE__ */ u4(InsightsSection, {}),
+      /* @__PURE__ */ u4(LoopsSection, {}),
+      /* @__PURE__ */ u4(ViewsSection, {}),
+      /* @__PURE__ */ u4(GlossarySection, {}),
+      /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6", children: [
+        /* @__PURE__ */ u4("strong", { children: "Disclaimer:" }),
+        " AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / OpenAI Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces."
+      ] })
+    ] });
+  }
+
+  // media/src/tabs/Automation.tsx
+  var HARD_STOP_IDENTICAL_TOOL_REPEATS = 8;
+  var HARD_STOP_CONSECUTIVE_ERRORS = 8;
+  var DEFAULT_AUTOMATION_CONFIGS = [
+    {
+      id: "context_compaction",
+      label: "Context Compaction",
+      severity: "warning",
+      description: "When a session reaches the configured peak input-token threshold for that agent, prompt the agent to summarize and compact its context.",
+      enabled: false,
+      writePromptsFile: false,
+      threshold: 14e4,
+      unit: "tokens",
+      min: 1e4,
+      max: 1e6,
+      step: 1e3,
+      agentThresholds: { claude_code: 14e4, copilot: 89600, codex: 28e4 }
+    },
+    {
+      id: "loop_break",
+      label: "Loop Breaker",
+      severity: "critical",
+      description: "When the same tool with identical arguments repeats beyond the agent-specific threshold without file changes between repeats, prompt the agent to stop and choose a different approach. A hard-stop backstop fires at 8 repeats.",
+      enabled: false,
+      writePromptsFile: false,
+      threshold: 3,
+      unit: "agent profile",
+      min: 3,
+      max: 8,
+      step: 1
+    },
+    {
+      id: "error_cascade",
+      label: "Error Cascade Stop",
+      severity: "critical",
+      description: "When a session hits its agent-specific consecutive-error streak, prompt the agent to stop, diagnose the root cause, and change strategy. A hard-stop backstop fires at 8 consecutive errors.",
+      enabled: false,
+      writePromptsFile: false,
+      threshold: 3,
+      unit: "agent profile",
+      min: 2,
+      max: 8,
+      step: 1
+    },
+    {
+      id: "high_turns",
+      label: "Turn Limit Wrap-up",
+      severity: "warning",
+      description: "When a session reaches its agent-specific turn threshold, prompt the agent to summarize progress, merge check-in details, and work toward a stopping point.",
+      enabled: false,
+      writePromptsFile: false,
+      threshold: 120,
+      unit: "agent profile",
+      min: 20,
+      max: 300,
+      step: 10
+    }
+  ];
+  function cloneAgentThresholds2(thresholds) {
+    if (!thresholds) return void 0;
+    return {
+      claude_code: thresholds.claude_code,
+      copilot: thresholds.copilot,
+      codex: thresholds.codex
+    };
+  }
+  function cloneAutomationConfig(config) {
+    return {
+      ...config,
+      agentThresholds: cloneAgentThresholds2(config.agentThresholds)
+    };
+  }
+  function fallbackAgentThresholds2(threshold) {
+    return {
+      claude_code: threshold,
+      copilot: threshold,
+      codex: threshold
+    };
+  }
+  function normalizeAgentThresholds2(def, saved) {
+    const thresholds = cloneAgentThresholds2(def.agentThresholds);
+    if (!thresholds) return void 0;
+    const legacyThreshold = Number(saved?.threshold);
+    if (!saved?.agentThresholds && Number.isFinite(legacyThreshold) && legacyThreshold >= def.min && legacyThreshold <= def.max) {
+      for (const source of AGENT_ORDER) {
+        thresholds[source] = legacyThreshold;
+      }
+    }
+    for (const source of AGENT_ORDER) {
+      const value = Number(saved?.agentThresholds?.[source]);
+      if (Number.isFinite(value) && value >= def.min && value <= def.max) {
+        thresholds[source] = value;
+      }
+    }
+    return thresholds;
+  }
+  function getConfigAgentThresholds2(cfg) {
+    return cloneAgentThresholds2(cfg.agentThresholds) ?? fallbackAgentThresholds2(cfg.threshold);
+  }
+  function getAutomationAgentThreshold(cfg, source) {
+    return cfg.agentThresholds?.[source] ?? cfg.threshold;
+  }
+  function getAutomationConfigs() {
+    try {
+      const stored = localStorage.getItem("agentLens.automationConfigs");
+      if (!stored) return DEFAULT_AUTOMATION_CONFIGS.map(cloneAutomationConfig);
+      const saved = JSON.parse(stored);
+      return DEFAULT_AUTOMATION_CONFIGS.map((def) => {
+        const s4 = saved.find((x4) => x4.id === def.id);
+        if (!s4) return cloneAutomationConfig(def);
+        const savedThreshold = Number(s4.threshold);
+        const threshold = savedThreshold >= def.min && savedThreshold <= def.max ? savedThreshold : def.threshold;
+        return {
+          ...cloneAutomationConfig(def),
+          enabled: typeof s4.enabled === "boolean" ? s4.enabled : def.enabled,
+          writePromptsFile: typeof s4.writePromptsFile === "boolean" ? s4.writePromptsFile : def.writePromptsFile,
+          threshold,
+          agentThresholds: normalizeAgentThresholds2(def, s4)
+        };
+      });
+    } catch {
+      return DEFAULT_AUTOMATION_CONFIGS.map(cloneAutomationConfig);
+    }
+  }
+  function saveAutomationConfigs(configs) {
+    try {
+      localStorage.setItem(
+        "agentLens.automationConfigs",
+        JSON.stringify(configs.map((c4) => ({
+          id: c4.id,
+          enabled: c4.enabled,
+          writePromptsFile: c4.writePromptsFile,
+          threshold: c4.threshold,
+          agentThresholds: c4.agentThresholds
+        })))
+      );
+    } catch {
+    }
+  }
+  function hasSharedThreshold2(cfg) {
+    return cfg.id === "context_compaction";
+  }
+  function automationProfileMetrics(cfg) {
+    switch (cfg.id) {
+      case "high_turns":
+        return ["turnNudge"];
+      case "loop_break":
+        return ["identicalRepeatNudge"];
+      case "error_cascade":
+        return ["consecutiveErrorNudge"];
+      default:
+        return [];
+    }
+  }
+  function buildPrompt(id, session, _cfg, evaluation, profiles) {
+    const evidenceBlock = `Triggering evidence:
+- Session: ${sessionDisplayName(session)}
+- Signal: ${evaluation.evidence}
+- Threshold: ${evaluation.threshold.toLocaleString()} ${evaluation.unit}
+`;
+    switch (id) {
+      case "context_compaction": {
+        const usage = getPeakContextUsage(session, profiles);
+        return `${evidenceBlock}
+Your conversation context is large \u2014 peak input is ${usage.peakTokens.toLocaleString()} tokens, crossing the ${evaluation.threshold.toLocaleString()}-token threshold configured for this agent.
 
 Please do the following right now:
 1. Write a compact summary of: key decisions made, files changed, and what still needs to be done
 2. Continue the task using only this summary as working context, discarding the detailed history
 
-This will reduce token cost and prevent context window exhaustion.`}case"loop_break":{let a=Dt(t),l=a?.display??"the same tool call",p=a?.count??r.metric,d=r.stage==="hard_stop";return`${d?`HARD STOP.
-
-`:""}${s}
-You have repeated the identical tool call "${l}" ${p} times in this session \u2014 this indicates a stuck loop.
+This will reduce token cost and prevent context window exhaustion.`;
+      }
+      case "loop_break": {
+        const repeat = getIdenticalToolRepeat(session);
+        const repeatedAction = repeat?.display ?? "the same tool call";
+        const count = repeat?.count ?? evaluation.metric;
+        const hardStop = evaluation.stage === "hard_stop";
+        return `${hardStop ? "HARD STOP.\n\n" : ""}${evidenceBlock}
+You have repeated the identical tool call "${repeatedAction}" ${count} times in this session \u2014 this indicates a stuck loop.
 
 Stop calling that tool with those arguments immediately and:
 1. Explain what you were trying to accomplish with this tool
 2. Describe why the repeated calls have not worked
 3. Choose a completely different approach to reach the goal
 
-${d?"Do not make another tool call until you have written the diagnosis and a different plan.":"If you are genuinely blocked, ask for clarification rather than retrying the same action."}`}case"error_cascade":{let a=Ht(t),l=a.recentErrors.map(d=>`  - ${d}`).join(`
-`),p=r.stage==="hard_stop";return`${p?`HARD STOP.
-
-`:""}${s}
-This session has hit ${a.maxConsecutive} consecutive error(s)${l?`:
-${l}
-`:". "}
+${hardStop ? "Do not make another tool call until you have written the diagnosis and a different plan." : "If you are genuinely blocked, ask for clarification rather than retrying the same action."}`;
+      }
+      case "error_cascade": {
+        const health = getErrorHealth(session);
+        const recentErrors = health.recentErrors.map((e4) => `  - ${e4}`).join("\n");
+        const hardStop = evaluation.stage === "hard_stop";
+        return `${hardStop ? "HARD STOP.\n\n" : ""}${evidenceBlock}
+This session has hit ${health.maxConsecutive} consecutive error(s)${recentErrors ? `:
+${recentErrors}
+` : ". "}
 Stop attempting the current approach and:
 1. Identify the root cause of these repeated failures
 2. Propose a different strategy before making any more tool calls
 3. If you are blocked by missing information or permissions, say so explicitly
 
-${p?"Do not make another tool call until the root cause and new strategy are clear.":"Do not proceed until you have a clear reason to believe the next attempt will succeed."}`}case"high_turns":{let a=t.totalLlmCalls??0;return`${s}
-This session has made ${a} LLM calls. Please assess where things stand:
+${hardStop ? "Do not make another tool call until the root cause and new strategy are clear." : "Do not proceed until you have a clear reason to believe the next attempt will succeed."}`;
+      }
+      case "high_turns": {
+        const turns = session.totalLlmCalls ?? 0;
+        return `${evidenceBlock}
+This session has made ${turns} LLM calls. Please assess where things stand:
 
 1. Summarize what has been completed
 2. List what remains to be done
 3. Decide whether you can finish in a few more steps
 4. If not, stop and explain what guidance or information is needed
 
-Aim to reach a clear stopping point or completion within the next 2-3 steps.`}default:return""}}var Wt=new Set;function vi(e){return e.filter(t=>t.outcome==="unknown")}function ua(e,t,o){let r=He(t.source,o);switch(e.id){case"context_compaction":{let i=Ft(t,o),s=la(e,t.source);return{triggered:i.peakTokens>=s,stage:"nudge",metric:i.peakTokens,threshold:s,unit:"tokens",evidence:"peak context "+i.peakTokens.toLocaleString()+" tokens"}}case"loop_break":{let i=Dt(t),s=i?.count??0,a=s>=fi?"hard_stop":"nudge";return{triggered:s>=r.identicalRepeatNudge,stage:a,metric:s,threshold:a==="hard_stop"?fi:r.identicalRepeatNudge,unit:"identical repeats",evidence:i?'"'+i.display+'" repeated '+s+" times without intervening file changes":"no identical tool repeat detected"}}case"error_cascade":{let i=Ht(t),s=i.maxConsecutive>=hi?"hard_stop":"nudge";return{triggered:i.maxConsecutive>=r.consecutiveErrorNudge,stage:s,metric:i.maxConsecutive,threshold:s==="hard_stop"?hi:r.consecutiveErrorNudge,unit:"consecutive errors",evidence:i.maxConsecutive+" consecutive error(s), "+i.errorCount+" total error(s)"}}case"high_turns":{let i=t.totalLlmCalls??0;return{triggered:i>=r.turnNudge,stage:"nudge",metric:i,threshold:r.turnNudge,unit:"LLM turns",evidence:i+" LLM turn(s)"}}default:return{triggered:!1,stage:"nudge",metric:0,threshold:0,unit:"",evidence:""}}}var fa=12e4;function vo(e){if(!e.length)return[];let t=mi(),o=De(),r=[],i=vi(e);if(!i.length)return[];let s=Date.now(),a=i.filter(d=>{let c=(d.timeline&&d.timeline.length>0?d.timeline[d.timeline.length-1]:null)?.timestamp??d.startTime;if(!c)return!1;let m=typeof c=="number"?c:Date.parse(c);return s-m<fa}),l=new Set,p=new Set(a.map(d=>d.traceId??d.sessionId));for(let d of t)if(d.enabled)for(let u of a){let c=ua(d,u,o);if(!c.triggered)continue;let m=u.traceId??u.sessionId,h=c.stage==="hard_stop"?"hard":String(c.threshold),f=`${d.id}:${m}:${c.stage}:${h}`;if(l.add(f),!Wt.has(f)){Wt.add(f);let g=pa(d.id,u,d,c,o);if(!g)continue;r.push({automationId:d.id,label:c.stage==="hard_stop"?d.label+" Hard Stop":d.label,writePromptsFile:d.writePromptsFile,agent:u.source??"generic",sessionTitle:(u.userRequest??"").slice(0,70)||"(session in progress)",prompt:g})}}for(let d of Array.from(Wt)){if(l.has(d))continue;let u=d.indexOf(":"),c=d.slice(u+1),m=c.indexOf(":"),h=c.slice(0,m);p.has(h)&&Wt.delete(d)}return r}function xi(){let e=F.value,[t,o]=D(mi),[r,i]=D(De);function s(c,m){o(h=>{let f=h.map(g=>g.id===c?{...g,...m}:g);return go(f),f})}function a(c,m,h){let f={...r,[c]:{...r[c],[m]:h}};vn(f),i(f)}function l(c,m,h){s(c.id,{agentThresholds:{...gi(c),[m]:h}})}let p=t.filter(c=>c.enabled).length,d=vi(e).length,u=!!window.__STANDALONE__;return n("div",{id:"automation-content",children:[n("div",{style:"font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)",children:n("strong",{children:"Settings below are adjustable per agent. Reminder: your choice of LLM model significantly affects efficiency and may require threshold adjustments."})}),n("div",{style:"padding:12px 16px;margin:0 0 16px;border-radius:6px;border:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));font-size:12px;line-height:1.6",children:[n("div",{class:"section-label",style:"margin-bottom:6px",children:"How Automation Works"}),n("div",{style:"color:var(--muted)",children:["Automations monitor in-progress agent sessions only \u2014 completed sessions are ignored.",u?n(z,{children:[" When a threshold is crossed, AgentLens shows a notification with a ",n("strong",{style:"color:var(--fg)",children:"Copy Prompt"})," button. Enable ",n("strong",{style:"color:var(--fg)",children:"Write prompts file"})," to automatically write the prompt to ",n("code",{children:"agentlens-prompts-{agent}.md"})," in the current directory instead."]}):n(z,{children:[" When a threshold is crossed, AgentLens shows a VS Code notification with a ",n("strong",{style:"color:var(--fg)",children:"Copy Prompt"})," button. Enable ",n("strong",{style:"color:var(--fg)",children:"Write prompts file"})," to automatically write the prompt to ",n("code",{children:"agentlens-prompts-{agent}.md"})," in your workspace root instead."]})," ","All automations are ",n("strong",{style:"color:var(--fg)",children:"off by default"})," and debounce each threshold crossing."]}),p>0&&n("div",{style:"margin-top:8px;color:var(--accent);font-weight:600;font-size:11px",children:[p," automation",p>1?"s":""," active"]})]}),t.map(c=>{let m=c.severity,h=m==="critical"?"var(--error)":m==="warning"?"#f6a623":"var(--accent)",f=c.enabled?h:"var(--border)",g=da(c);return n("div",{style:`border:1px solid ${f};border-left:4px solid ${f};border-radius:6px;padding:12px 14px;margin-bottom:10px`,children:[n("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:6px",children:[n("div",{class:"flex-8",children:[n("strong",{style:"font-size:13px",children:c.label}),n("span",{style:`font-size:10px;padding:1px 6px;border-radius:3px;background:${h};color:#000;font-weight:700;letter-spacing:.4px`,children:m.toUpperCase()})]}),n("label",{class:"toggle-switch",children:[n("input",{type:"checkbox",checked:c.enabled,onChange:w=>s(c.id,{enabled:w.target.checked})}),n("span",{class:"toggle-track",children:n("span",{class:"toggle-thumb"})}),n("span",{class:"toggle-label"+(c.enabled?" on":""),children:c.enabled?"Enabled":"Disabled"})]})]}),n("div",{style:"font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5",children:c.description}),ca(c)?n(yn,{profiles:r,metricName:"Context window tokens",unit:"tokens",values:gi(c),min:c.min,max:c.max,onChange:(w,k)=>l(c,w,k)}):g.length>0&&n(z,{children:[n(bn,{profiles:r,metrics:g,onChange:a}),(c.id==="loop_break"||c.id==="error_cascade")&&n("div",{style:"font-size:12px;color:var(--muted);margin:6px 0 8px",children:"Hard stop: 8 for all agents"})]}),c.enabled&&n("label",{class:"toggle-switch",children:[n("input",{type:"checkbox",checked:c.writePromptsFile,onChange:w=>s(c.id,{writePromptsFile:w.target.checked})}),n("span",{class:"toggle-track",children:n("span",{class:"toggle-thumb"})}),n("span",{class:"toggle-label"+(c.writePromptsFile?" on":""),children:[n("strong",{children:"Write prompts file"})," \u2014 ",c.writePromptsFile?"writes prompt to agentlens-prompts-{agent}.md automatically when triggered":"show a Copy Prompt notification \u2014 click to copy, then paste into your agent"]})]})]},c.id)}),n("div",{style:"margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px",children:[n("div",{style:"display:flex;gap:6px",children:[n("button",{onClick:()=>{let c=t.map(m=>({...ft(m),enabled:!0}));go(c),o(c)},style:"font-size:11px;background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer;color:var(--fg)",children:"Enable All"}),n("button",{onClick:()=>{let c=t.map(m=>({...ft(m),enabled:!1}));go(c),o(c)},style:"font-size:11px;background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer;color:var(--muted)",children:"Disable All"})]}),n("button",{onClick:()=>{Wt.clear();try{localStorage.removeItem("agentLens.automationConfigs")}catch{}o(Sn.map(ft))},style:"font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer",children:"Reset to Defaults"}),n("button",{onClick:()=>i(xn()),style:"font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer",children:"Reset Agent Thresholds"})]})]})}var Tn=se(!0),ha=[{id:"efficiency",label:"Efficiency",title:"Per-session metrics and token usage breakdown."},{id:"recommendations",label:"Recommendations",title:"Actionable insights and recommendations for improving prompt efficiency and reducing token waste."},{id:"alerts",label:"Alerts",title:"Configurable alerts for context window usage, error rates, session length, and other efficiency signals."},{id:"automation",label:"Automation",title:"Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed."},{id:"tokens",label:"Tokens",title:"Token consumption aggregated by span name and per session, sorted from highest to lowest."},{id:"latency",label:"Latency",title:"Span durations as a color-coded grid, helping identify which operations are consistently slow."},{id:"summaries",label:"Summaries",title:"A high-level, human-readable timeline of each session \u2014 LLM calls with their decisions, tool calls with arguments, and token usage."},{id:"traces",label:"Traces",title:"Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."},{id:"files",label:"Files",title:"Files created or modified by the agent, organized by session with inline diffs."},{id:"flow",label:"Flow",title:"LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency."},{id:"agents",label:"Agents",title:"Copilot, Claude, and Codex \u2014 session counts, token usage, tools, and latency broken down by agent source."},{id:"tools",label:"Tools",title:"Tool call distribution broken down by tool name, with token usage and performance stats per tool."},{id:"errors",label:"Errors",title:"All spans that completed with an error status. Click any item to expand its full details and attributes."},{id:"export",label:"Export",title:"Export raw or redacted OTEL span data as JSON files."},{id:"help",label:"Help",title:"Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard."}];function bi(e,t){if(!e)return null;let o=new Set(e.sessions.map(d=>d.traceId).filter(Boolean)),r={};for(let d of t)!d.traceId||o.has(d.traceId)||d.name!=="claude_code.llm_request"&&d.name!=="claude_code.tool"||(r[d.traceId]||(r[d.traceId]=[]),r[d.traceId].push(d));let i=Object.keys(r);if(i.length===0)return e;let s=(d,u)=>{let c=(d.attributes??[]).find(m=>m.key===u);return String(c?.value?.stringValue??c?.value?.intValue??c?.value?.doubleValue??"")},a=(d,u)=>{let c=(d.attributes??[]).find(m=>m.key===u);return parseInt(String(c?.value?.intValue??c?.value?.stringValue??0))||0},l=i.map(d=>{let u=r[d],c=u.filter(v=>v.name==="claude_code.llm_request"),m=u.filter(v=>v.name==="claude_code.tool"),h=[...u].sort((v,y)=>(v.startTime??"0")<(y.startTime??"0")?-1:1),f=0,g=0,w=0,k=0,C="";for(let v of c){f+=a(v,"input_tokens"),g+=a(v,"output_tokens"),w+=a(v,"cache_read_tokens"),k+=a(v,"cache_creation_tokens");let y=s(v,"gen_ai.request.model")||s(v,"model");y&&(C=y)}let S=f+w+k,I=[...c,...m].sort((v,y)=>(v.startTime??"0")<(y.startTime??"0")?-1:1).map(v=>{let y=Y(v.startTime),A=Y(v.endTime),R=Math.max(A-y,0);if(v.name==="claude_code.llm_request"){let O=a(v,"input_tokens")+a(v,"cache_read_tokens")+a(v,"cache_creation_tokens"),N=s(v,"gen_ai.request.model")||s(v,"model"),P=s(v,"stop_reason");return{type:"llm",spanId:v.spanId,label:N||"LLM",model:N,inputTokens:O,outputTokens:a(v,"output_tokens"),ttft:a(v,"ttft_ms"),durationMs:R,action:P==="tool_use"?"called tools":P==="end_turn"?"text response":P||"unknown",isError:v.status?.code===2,errorMessage:v.status?.code===2&&v.status?.message||void 0,timestamp:y>0?new Date(y).toISOString():""}}else{let O=s(v,"tool_name")||v.name;return{type:"tool",spanId:v.spanId,label:O,durationMs:R,toolInput:s(v,"tool_input")||s(v,"input")||void 0,isError:v.status?.code===2,errorMessage:v.status?.code===2&&v.status?.message||void 0,timestamp:y>0?new Date(y).toISOString():""}}}),_={};for(let v of m){let y=s(v,"tool_name")||v.name;_[y]=(_[y]||0)+1}let T=Y(h[0]?.startTime),x=Y(h[h.length-1]?.endTime);return{sessionId:`synth-${d.slice(0,12)}`,traceId:d,source:"claude_code",userRequest:"[session in progress]",model:C,turns:c.length,inputTokens:S,outputTokens:g,cacheReadTokens:w,cacheCreateTokens:k,cacheHitRate:S>0?w/S:0,durationMs:x-T,startTime:T>0?new Date(T).toISOString():"",filesRead:[],filesSearched:[],filesChanged:[],filesChangedNote:"Session in progress \u2014 file changes will appear when the interaction completes.",toolCounts:_,totalToolCalls:m.length,totalLlmCalls:c.length,errors:u.filter(v=>v.status?.code===2).length,outcome:"unknown",timeline:I,backgroundSpans:[],loopSignals:[]}}),p=[...e.sessions,...l].sort((d,u)=>Jn(d)-Jn(u));return{...e,sessions:p}}function yi(e){if(Cr.value){let t=new Set(Ue.value.map(r=>r.spanId)),o=e.filter(r=>!t.has(r.spanId)&&!Pt.has(r.spanId));o.length>0&&(Ue.value=[...Ue.value,...o])}else{let t=e.filter(o=>Je(o.name));if(t.length>0){t.sort((i,s)=>{let a=i.startTime??"0",l=s.startTime??"0";return a<l?1:a>l?-1:0});let o=t[0].traceId,r=new Set([o]);for(let i of e){if(i.traceId!==o)continue;let s=te(i,"otel.trace_id");s&&r.add(String(s))}Ue.value=e.filter(i=>r.has(i.traceId)&&!Pt.has(i.spanId))}else Ue.value=e.filter(o=>!Pt.has(o.spanId))}}function ga(){switch(xo(pt.value)){case"efficiency":return n(Rr,{});case"recommendations":return n(Nr,{});case"alerts":return n(Kr,{});case"tokens":return n(Xr,{});case"latency":return n(Jr,{});case"summaries":return n(Qr,{});case"traces":return n(ti,{});case"files":return n(ni,{});case"flow":return n(si,{});case"agents":return n(ai,{});case"tools":return n(li,{});case"errors":return n(ci,{});case"export":return n(pi,{});case"automation":return n(xi,{});case"help":return n(ui,{});default:return null}}function xo(e){return e==="dependencies"?"flow":e}function wi(){return ve(()=>{let e=t=>{let o=t.data?.type;if(o!=="exportSessionData"&&o!=="exportSessionDataRedacted"||!window.__STANDALONE__)return;let r=o==="exportSessionDataRedacted",i=Te.value,s=F.value,a=new Date,l=S=>S.toString().padStart(2,"0"),p=`${a.getFullYear()}${l(a.getMonth()+1)}${l(a.getDate())}_${l(a.getHours())}${l(a.getMinutes())}${l(a.getSeconds())}`,d=r?"export_redacted":"export",u=new Set(["gen_ai.prompt","gen_ai.completion","llm.prompts","llm.completions","tool_input","tool_result","user_prompt","system_prompt","input","output"]),c=new Set(["user.id","user.name","user.email","user.username","enduser.id","enduser.name","enduser.email","organization.id","organization.name","github.copilot.user","github.user"]),m=S=>u.has(S)||c.has(S)||S.endsWith(".content")||S.includes("prompt")||S.includes("tool_input")||S.includes("tool_result")||S.startsWith("user.")||S.startsWith("enduser.")||S.startsWith("organization."),h={};for(let S of s){let I=S.source==="claude_code"?"claude":S.source||"unknown";S.traceId&&(h[S.traceId]=I)}let f={};for(let S of i){let I=h[S.traceId];if(!I)continue;let _=Array.isArray(S.attributes)?S.attributes:[],T=_.find(A=>A.key==="_agentlens.collector_path")?.value?.stringValue||"",v=`${T?T.replace(/^\//,"").replace(/\//g,"-"):"main"}__${I}`;f[v]||(f[v]=[]);let y=r?{...S,attributes:_.map(A=>m(A.key)?{key:A.key,value:{stringValue:"[redacted]"}}:A)}:S;f[v].push(y)}let g=(S,I)=>{let _=URL.createObjectURL(S),T=document.createElement("a");T.href=_,T.download=I,document.body.appendChild(T),T.click(),setTimeout(()=>{document.body.removeChild(T),URL.revokeObjectURL(_)},100)},w=Object.entries(f);if(w.length===0)return;let k={};for(let[S,I]of w){let[_,T]=S.split("__");k[`${d}_${T}_${_}_${p}.json`]=pn(JSON.stringify(I,null,2))}let C=new Blob([vr(k)],{type:"application/zip"});g(C,`agentlens_${d}_${p}.zip`)};return window.addEventListener("message",e),()=>window.removeEventListener("message",e)},[]),ve(()=>{let e=null;function t(r){let i=r.target.closest("[data-tip]");if(!i)return;let s=i.getAttribute("data-tip");if(!s)return;e||(e=document.createElement("div"),e.className="metric-tooltip",document.body.appendChild(e)),e.textContent=s,e.style.display="block";let a=i.getBoundingClientRect(),l=220,p=e.offsetHeight||60,d=a.left+a.width/2-l/2,u=a.bottom+6;d<4&&(d=4),d+l>window.innerWidth-4&&(d=window.innerWidth-l-4),u+p>window.innerHeight-4&&(u=a.top-p-6),e.style.left=d+"px",e.style.top=u+"px"}function o(){e&&(e.style.display="none")}return document.addEventListener("mouseover",t),document.addEventListener("mouseout",o),()=>{document.removeEventListener("mouseover",t),document.removeEventListener("mouseout",o),e&&(e.remove(),e=null)}},[]),ve(()=>{if(Te.value.length>0){Ue.value.length===0&&yi(Te.value);let e=bi(ge.value,Te.value);e&&(ge.value=e)}},[]),ve(()=>{let e=!1,t=o=>{let r=o.data;if(r.type==="update"){Te.value=r.spans??[],r.summary?.toolCalls&&(eo.value=r.summary.toolCalls);let i=r.sessionSummary??ge.value,s=bi(i,Te.value);s&&(ge.value=s),yi(Te.value),e?setTimeout(()=>{let a=vo(F.value);for(let p of a)Me?.postMessage({type:"automation",...p});let l=co();for(let p of l)Me?.postMessage({type:"alert",label:p.label,detail:p.detail,severity:p.severity})},0):(e=!0,setTimeout(()=>{vo(ge.value?.sessions??F.value),co()},0))}else if(r.type==="switchTab"&&r.tab)pt.value=xo(r.tab);else if(r.type==="setFilter"){if(r.agentFilter!==void 0){Ot.value=r.agentFilter;let i=document.getElementById("agent-filter");i&&(i.value=r.agentFilter)}if(r.sessionLimit!==void 0){let i=Number(r.sessionLimit);hn.value=i;let s=document.getElementById("session-limit");s&&(s.value=String(i))}}else r.type==="clearAll"&&(Te.value=[],eo.value={},ge.value=null,Ue.value=[],Ar.value=[],Lr.value=0,Pt.clear(),Er.clear(),yt.clear())};return window.addEventListener("message",t),()=>window.removeEventListener("message",t)},[]),n(z,{children:[n("div",{class:"tabs",children:[n("button",{class:"sidebar-toggle-btn",title:Tn.value?"Close AgentLens sidebar":"Open AgentLens sidebar",onClick:()=>{let e=!Tn.value;Tn.value=e,Me?Me.postMessage({type:e?"openSidebar":"closeSidebar"}):window.dispatchEvent(new CustomEvent("agentlens:sidebar",{detail:{open:e}}))},children:Tn.value?"\u25C4":"\u25BA"}),ha.map(e=>e.id==="alerts"?n(va,{},"alerts"):n(ma,{id:e.id,label:e.label},e.id))]}),n("div",{class:"panel active",children:n(ga,{})}),n("img",{id:"mascot-img",src:"",alt:"AgentLens mascot",style:"display:none"})]})}function ma({id:e,label:t}){let o=xo(pt.value)===e;return n("button",{class:"tab"+(o?" active":""),"data-tab":e,onClick:()=>{pt.value=e},children:t})}function va(){let e=pt.value==="alerts",t=F.value,o=Gr();return n("button",{class:"tab"+(e?" active":""),"data-tab":"alerts",onClick:()=>{pt.value="alerts"},children:o>0?n("span",{style:"color:var(--error);font-weight:700",children:["Alerts \u26A0 ",o]}):"Alerts"})}var xa=window.acquireVsCodeApi();Ir(xa);Oo(n(wi,{}),document.getElementById("app"));})();
+Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
+      }
+      default:
+        return "";
+    }
+  }
+  var firedSet = /* @__PURE__ */ new Set();
+  function getInProgressSessions(sessions) {
+    return sessions.filter((s4) => s4.outcome === "unknown");
+  }
+  function evaluateAutomation(cfg, session, profiles) {
+    const profile = resolveAgentProfile(session.source, profiles);
+    switch (cfg.id) {
+      case "context_compaction": {
+        const usage = getPeakContextUsage(session, profiles);
+        const threshold = getAutomationAgentThreshold(cfg, session.source);
+        return {
+          triggered: usage.peakTokens >= threshold,
+          stage: "nudge",
+          metric: usage.peakTokens,
+          threshold,
+          unit: "tokens",
+          evidence: "peak context " + usage.peakTokens.toLocaleString() + " tokens"
+        };
+      }
+      case "loop_break": {
+        const repeat = getIdenticalToolRepeat(session);
+        const count = repeat?.count ?? 0;
+        const stage = count >= HARD_STOP_IDENTICAL_TOOL_REPEATS ? "hard_stop" : "nudge";
+        return {
+          triggered: count >= profile.identicalRepeatNudge,
+          stage,
+          metric: count,
+          threshold: stage === "hard_stop" ? HARD_STOP_IDENTICAL_TOOL_REPEATS : profile.identicalRepeatNudge,
+          unit: "identical repeats",
+          evidence: repeat ? '"' + repeat.display + '" repeated ' + count + " times without intervening file changes" : "no identical tool repeat detected"
+        };
+      }
+      case "error_cascade": {
+        const health = getErrorHealth(session);
+        const stage = health.maxConsecutive >= HARD_STOP_CONSECUTIVE_ERRORS ? "hard_stop" : "nudge";
+        return {
+          triggered: health.maxConsecutive >= profile.consecutiveErrorNudge,
+          stage,
+          metric: health.maxConsecutive,
+          threshold: stage === "hard_stop" ? HARD_STOP_CONSECUTIVE_ERRORS : profile.consecutiveErrorNudge,
+          unit: "consecutive errors",
+          evidence: health.maxConsecutive + " consecutive error(s), " + health.errorCount + " total error(s)"
+        };
+      }
+      case "high_turns": {
+        const turns = session.totalLlmCalls ?? 0;
+        return {
+          triggered: turns >= profile.turnNudge,
+          stage: "nudge",
+          metric: turns,
+          threshold: profile.turnNudge,
+          unit: "LLM turns",
+          evidence: turns + " LLM turn(s)"
+        };
+      }
+      default:
+        return { triggered: false, stage: "nudge", metric: 0, threshold: 0, unit: "", evidence: "" };
+    }
+  }
+  var AUTOMATION_RECENCY_MS = 12e4;
+  function checkAutomations(sessions) {
+    if (!sessions.length) return [];
+    const configs = getAutomationConfigs();
+    const profiles = getAgentProfiles();
+    const triggers = [];
+    const allInProgress = getInProgressSessions(sessions);
+    if (!allInProgress.length) return [];
+    const now = Date.now();
+    const active = allInProgress.filter((s4) => {
+      const lastEntry = s4.timeline && s4.timeline.length > 0 ? s4.timeline[s4.timeline.length - 1] : null;
+      const lastTs = lastEntry?.timestamp ?? s4.startTime;
+      if (!lastTs) return false;
+      const tsNum = typeof lastTs === "number" ? lastTs : Date.parse(lastTs);
+      return now - tsNum < AUTOMATION_RECENCY_MS;
+    });
+    const activeKeys = /* @__PURE__ */ new Set();
+    const visibleSessionKeys = new Set(active.map((s4) => s4.traceId ?? s4.sessionId));
+    for (const cfg of configs) {
+      if (!cfg.enabled) continue;
+      for (const session of active) {
+        const evaluation = evaluateAutomation(cfg, session, profiles);
+        if (!evaluation.triggered) continue;
+        const sessionKey = session.traceId ?? session.sessionId;
+        const stageThreshold = evaluation.stage === "hard_stop" ? "hard" : String(evaluation.threshold);
+        const key = `${cfg.id}:${sessionKey}:${evaluation.stage}:${stageThreshold}`;
+        activeKeys.add(key);
+        if (!firedSet.has(key)) {
+          firedSet.add(key);
+          const body = buildPrompt(cfg.id, session, cfg, evaluation, profiles);
+          if (!body) continue;
+          triggers.push({
+            automationId: cfg.id,
+            label: evaluation.stage === "hard_stop" ? cfg.label + " Hard Stop" : cfg.label,
+            writePromptsFile: cfg.writePromptsFile,
+            agent: session.source ?? "generic",
+            sessionTitle: (session.userRequest ?? "").slice(0, 70) || "(session in progress)",
+            prompt: body
+          });
+        }
+      }
+    }
+    for (const key of Array.from(firedSet)) {
+      if (activeKeys.has(key)) continue;
+      const firstColon = key.indexOf(":");
+      const rest = key.slice(firstColon + 1);
+      const secondColon = rest.indexOf(":");
+      const sessionKey = rest.slice(0, secondColon);
+      if (visibleSessionKeys.has(sessionKey)) {
+        firedSet.delete(key);
+      }
+    }
+    return triggers;
+  }
+  function Automation() {
+    const sessions = displaySessions.value;
+    const [configs, setConfigs] = d2(getAutomationConfigs);
+    const [profiles, setProfiles] = d2(getAgentProfiles);
+    function updateConfig(id, changes) {
+      setConfigs((prev) => {
+        const next = prev.map((c4) => c4.id === id ? { ...c4, ...changes } : c4);
+        saveAutomationConfigs(next);
+        return next;
+      });
+    }
+    function updateAgentThreshold(source, metric, value) {
+      const next = {
+        ...profiles,
+        [source]: {
+          ...profiles[source],
+          [metric]: value
+        }
+      };
+      saveAgentProfiles(next);
+      setProfiles(next);
+    }
+    function updateConfigAgentThreshold(cfg, source, value) {
+      updateConfig(cfg.id, {
+        agentThresholds: {
+          ...getConfigAgentThresholds2(cfg),
+          [source]: value
+        }
+      });
+    }
+    const enabledCount = configs.filter((c4) => c4.enabled).length;
+    const _inProgressCount = getInProgressSessions(sessions).length;
+    const standalone = !!window.__STANDALONE__;
+    return /* @__PURE__ */ u4("div", { id: "automation-content", children: [
+      /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)", children: /* @__PURE__ */ u4("strong", { children: "Settings below are adjustable per agent. Reminder: your choice of LLM model significantly affects efficiency and may require threshold adjustments." }) }),
+      /* @__PURE__ */ u4("div", { style: "padding:12px 16px;margin:0 0 16px;border-radius:6px;border:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));font-size:12px;line-height:1.6", children: [
+        /* @__PURE__ */ u4("div", { class: "section-label", style: "margin-bottom:6px", children: "How Automation Works" }),
+        /* @__PURE__ */ u4("div", { style: "color:var(--muted)", children: [
+          "Automations monitor in-progress agent sessions only \u2014 completed sessions are ignored.",
+          standalone ? /* @__PURE__ */ u4(S, { children: [
+            " When a threshold is crossed, AgentLens shows a notification with a ",
+            /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Copy Prompt" }),
+            " button. Enable ",
+            /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Write prompts file" }),
+            " to automatically write the prompt to ",
+            /* @__PURE__ */ u4("code", { children: "agentlens-prompts-{agent}.md" }),
+            " in the current directory instead."
+          ] }) : /* @__PURE__ */ u4(S, { children: [
+            " When a threshold is crossed, AgentLens shows a VS Code notification with a ",
+            /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Copy Prompt" }),
+            " button. Enable ",
+            /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Write prompts file" }),
+            " to automatically write the prompt to ",
+            /* @__PURE__ */ u4("code", { children: "agentlens-prompts-{agent}.md" }),
+            " in your workspace root instead."
+          ] }),
+          " ",
+          "All automations are ",
+          /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "off by default" }),
+          " and debounce each threshold crossing."
+        ] }),
+        enabledCount > 0 && /* @__PURE__ */ u4("div", { style: "margin-top:8px;color:var(--accent);font-weight:600;font-size:11px", children: [
+          enabledCount,
+          " automation",
+          enabledCount > 1 ? "s" : "",
+          " active"
+        ] })
+      ] }),
+      configs.map((cfg) => {
+        const sev = cfg.severity;
+        const sevColor = sev === "critical" ? "var(--error)" : sev === "warning" ? "#f6a623" : "var(--accent)";
+        const borderColor = cfg.enabled ? sevColor : "var(--border)";
+        const profileMetrics = automationProfileMetrics(cfg);
+        return /* @__PURE__ */ u4("div", { style: `border:1px solid ${borderColor};border-left:4px solid ${borderColor};border-radius:6px;padding:12px 14px;margin-bottom:10px`, children: [
+          /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px", children: [
+            /* @__PURE__ */ u4("div", { class: "flex-8", children: [
+              /* @__PURE__ */ u4("strong", { style: "font-size:13px", children: cfg.label }),
+              /* @__PURE__ */ u4("span", { style: `font-size:10px;padding:1px 6px;border-radius:3px;background:${sevColor};color:#000;font-weight:700;letter-spacing:.4px`, children: sev.toUpperCase() })
+            ] }),
+            /* @__PURE__ */ u4("label", { class: "toggle-switch", children: [
+              /* @__PURE__ */ u4(
+                "input",
+                {
+                  type: "checkbox",
+                  checked: cfg.enabled,
+                  onChange: (e4) => updateConfig(cfg.id, { enabled: e4.target.checked })
+                }
+              ),
+              /* @__PURE__ */ u4("span", { class: "toggle-track", children: /* @__PURE__ */ u4("span", { class: "toggle-thumb" }) }),
+              /* @__PURE__ */ u4("span", { class: "toggle-label" + (cfg.enabled ? " on" : ""), children: cfg.enabled ? "Enabled" : "Disabled" })
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { style: "font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5", children: cfg.description }),
+          hasSharedThreshold2(cfg) ? /* @__PURE__ */ u4(
+            AgentThresholdNumberInputs,
+            {
+              profiles,
+              metricName: "Context window tokens",
+              unit: "tokens",
+              values: getConfigAgentThresholds2(cfg),
+              min: cfg.min,
+              max: cfg.max,
+              onChange: (source, value) => updateConfigAgentThreshold(cfg, source, value)
+            }
+          ) : profileMetrics.length > 0 && /* @__PURE__ */ u4(S, { children: [
+            /* @__PURE__ */ u4(
+              AgentThresholdInputs,
+              {
+                profiles,
+                metrics: profileMetrics,
+                onChange: updateAgentThreshold
+              }
+            ),
+            (cfg.id === "loop_break" || cfg.id === "error_cascade") && /* @__PURE__ */ u4("div", { style: "font-size:12px;color:var(--muted);margin:6px 0 8px", children: "Hard stop: 8 for all agents" })
+          ] }),
+          cfg.enabled && /* @__PURE__ */ u4("label", { class: "toggle-switch", children: [
+            /* @__PURE__ */ u4(
+              "input",
+              {
+                type: "checkbox",
+                checked: cfg.writePromptsFile,
+                onChange: (e4) => updateConfig(cfg.id, { writePromptsFile: e4.target.checked })
+              }
+            ),
+            /* @__PURE__ */ u4("span", { class: "toggle-track", children: /* @__PURE__ */ u4("span", { class: "toggle-thumb" }) }),
+            /* @__PURE__ */ u4("span", { class: "toggle-label" + (cfg.writePromptsFile ? " on" : ""), children: [
+              /* @__PURE__ */ u4("strong", { children: "Write prompts file" }),
+              " \u2014 ",
+              cfg.writePromptsFile ? "writes prompt to agentlens-prompts-{agent}.md automatically when triggered" : "show a Copy Prompt notification \u2014 click to copy, then paste into your agent"
+            ] })
+          ] })
+        ] }, cfg.id);
+      }),
+      /* @__PURE__ */ u4("div", { style: "margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px", children: [
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:6px", children: [
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => {
+                const next = configs.map((c4) => ({ ...cloneAutomationConfig(c4), enabled: true }));
+                saveAutomationConfigs(next);
+                setConfigs(next);
+              },
+              style: "font-size:11px;background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer;color:var(--fg)",
+              children: "Enable All"
+            }
+          ),
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => {
+                const next = configs.map((c4) => ({ ...cloneAutomationConfig(c4), enabled: false }));
+                saveAutomationConfigs(next);
+                setConfigs(next);
+              },
+              style: "font-size:11px;background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer;color:var(--muted)",
+              children: "Disable All"
+            }
+          )
+        ] }),
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            onClick: () => {
+              firedSet.clear();
+              try {
+                localStorage.removeItem("agentLens.automationConfigs");
+              } catch {
+              }
+              setConfigs(DEFAULT_AUTOMATION_CONFIGS.map(cloneAutomationConfig));
+            },
+            style: "font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer",
+            children: "Reset to Defaults"
+          }
+        ),
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            onClick: () => setProfiles(resetAgentProfiles()),
+            style: "font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;cursor:pointer",
+            children: "Reset Agent Thresholds"
+          }
+        )
+      ] })
+    ] });
+  }
+
+  // media/src/App.tsx
+  var sidebarOpen = y3(true);
+  var TABS = [
+    { id: "efficiency", label: "Efficiency", title: "Per-session metrics and token usage breakdown." },
+    { id: "recommendations", label: "Recommendations", title: "Actionable insights and recommendations for improving prompt efficiency and reducing token waste." },
+    { id: "alerts", label: "Alerts", title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
+    { id: "automation", label: "Automation", title: "Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed." },
+    { id: "tokens", label: "Tokens", title: "Token consumption aggregated by span name and per session, sorted from highest to lowest." },
+    { id: "cost", label: "Cost", title: "Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing." },
+    { id: "latency", label: "Latency", title: "Span durations as a color-coded grid, helping identify which operations are consistently slow." },
+    { id: "summaries", label: "Summaries", title: "A high-level, human-readable timeline of each session \u2014 LLM calls with their decisions, tool calls with arguments, and token usage." },
+    { id: "traces", label: "Traces", title: "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing." },
+    { id: "files", label: "Files", title: "Files created or modified by the agent, organized by session with inline diffs." },
+    { id: "flow", label: "Flow", title: "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency." },
+    { id: "agents", label: "Agents", title: "Copilot, Claude, and Codex \u2014 session counts, token usage, tools, and latency broken down by agent source." },
+    { id: "tools", label: "Tools", title: "Tool call distribution broken down by tool name, with token usage and performance stats per tool." },
+    { id: "errors", label: "Errors", title: "All spans that completed with an error status. Click any item to expand its full details and attributes." },
+    { id: "export", label: "Export", title: "Export raw or redacted OTEL span data as JSON files." },
+    { id: "help", label: "Help", title: "Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard." }
+  ];
+  function fillMissingClaudeSessions(summary, allSpans) {
+    if (!summary) return null;
+    const sessionTraceIds = new Set(summary.sessions.map((s4) => s4.traceId).filter(Boolean));
+    const claudeTraceMap = {};
+    for (const span of allSpans) {
+      if (!span.traceId || sessionTraceIds.has(span.traceId)) continue;
+      if (span.name !== "claude_code.llm_request" && span.name !== "claude_code.tool") continue;
+      if (!claudeTraceMap[span.traceId]) claudeTraceMap[span.traceId] = [];
+      claudeTraceMap[span.traceId].push(span);
+    }
+    const traceIds = Object.keys(claudeTraceMap);
+    if (traceIds.length === 0) return summary;
+    const attrStr = (span, key) => {
+      const a4 = (span.attributes ?? []).find((x4) => x4.key === key);
+      return String(a4?.value?.stringValue ?? a4?.value?.intValue ?? a4?.value?.doubleValue ?? "");
+    };
+    const attrInt = (span, key) => {
+      const a4 = (span.attributes ?? []).find((x4) => x4.key === key);
+      return parseInt(String(a4?.value?.intValue ?? a4?.value?.stringValue ?? 0)) || 0;
+    };
+    const newSessions = traceIds.map((traceId) => {
+      const traceSpans = claudeTraceMap[traceId];
+      const llmSpans = traceSpans.filter((s4) => s4.name === "claude_code.llm_request");
+      const toolSpans = traceSpans.filter((s4) => s4.name === "claude_code.tool");
+      const allSorted = [...traceSpans].sort((a4, b4) => (a4.startTime ?? "0") < (b4.startTime ?? "0") ? -1 : 1);
+      let inputTokens = 0, outputTokens = 0, cacheReadTokens = 0, cacheCreateTokens = 0;
+      let model = "";
+      for (const s4 of llmSpans) {
+        inputTokens += attrInt(s4, "input_tokens");
+        outputTokens += attrInt(s4, "output_tokens");
+        cacheReadTokens += attrInt(s4, "cache_read_tokens");
+        cacheCreateTokens += attrInt(s4, "cache_creation_tokens");
+        const m4 = attrStr(s4, "gen_ai.request.model") || attrStr(s4, "model");
+        if (m4) model = m4;
+      }
+      const totalInput = inputTokens + cacheReadTokens + cacheCreateTokens;
+      const timeline = [...llmSpans, ...toolSpans].sort((a4, b4) => (a4.startTime ?? "0") < (b4.startTime ?? "0") ? -1 : 1).map((s4) => {
+        const st = nanoToMs(s4.startTime), en = nanoToMs(s4.endTime);
+        const dur = Math.max(en - st, 0);
+        if (s4.name === "claude_code.llm_request") {
+          const inTok = attrInt(s4, "input_tokens") + attrInt(s4, "cache_read_tokens") + attrInt(s4, "cache_creation_tokens");
+          const llmModel = attrStr(s4, "gen_ai.request.model") || attrStr(s4, "model");
+          const stopReason = attrStr(s4, "stop_reason");
+          return {
+            type: "llm",
+            spanId: s4.spanId,
+            label: llmModel || "LLM",
+            model: llmModel,
+            inputTokens: inTok,
+            outputTokens: attrInt(s4, "output_tokens"),
+            ttft: attrInt(s4, "ttft_ms"),
+            durationMs: dur,
+            action: stopReason === "tool_use" ? "called tools" : stopReason === "end_turn" ? "text response" : stopReason || "unknown",
+            isError: s4.status?.code === 2,
+            errorMessage: s4.status?.code === 2 ? s4.status?.message || void 0 : void 0,
+            timestamp: st > 0 ? new Date(st).toISOString() : ""
+          };
+        } else {
+          const toolName2 = attrStr(s4, "tool_name") || s4.name;
+          return {
+            type: "tool",
+            spanId: s4.spanId,
+            label: toolName2,
+            durationMs: dur,
+            toolInput: attrStr(s4, "tool_input") || attrStr(s4, "input") || void 0,
+            isError: s4.status?.code === 2,
+            errorMessage: s4.status?.code === 2 ? s4.status?.message || void 0 : void 0,
+            timestamp: st > 0 ? new Date(st).toISOString() : ""
+          };
+        }
+      });
+      const toolCounts = {};
+      for (const s4 of toolSpans) {
+        const tn = attrStr(s4, "tool_name") || s4.name;
+        toolCounts[tn] = (toolCounts[tn] || 0) + 1;
+      }
+      const startMs = nanoToMs(allSorted[0]?.startTime);
+      const endMs = nanoToMs(allSorted[allSorted.length - 1]?.endTime);
+      return {
+        sessionId: `synth-${traceId.slice(0, 12)}`,
+        traceId,
+        source: "claude_code",
+        userRequest: "[session in progress]",
+        model,
+        turns: llmSpans.length,
+        inputTokens: totalInput,
+        outputTokens,
+        cacheReadTokens,
+        cacheCreateTokens,
+        cacheHitRate: totalInput > 0 ? cacheReadTokens / totalInput : 0,
+        durationMs: endMs - startMs,
+        startTime: startMs > 0 ? new Date(startMs).toISOString() : "",
+        filesRead: [],
+        filesSearched: [],
+        filesChanged: [],
+        filesChangedNote: "Session in progress \u2014 file changes will appear when the interaction completes.",
+        toolCounts,
+        totalToolCalls: toolSpans.length,
+        totalLlmCalls: llmSpans.length,
+        errors: traceSpans.filter((s4) => s4.status?.code === 2).length,
+        outcome: "unknown",
+        timeline,
+        backgroundSpans: [],
+        loopSignals: []
+      };
+    });
+    const combined = [...summary.sessions, ...newSessions].sort((a4, b4) => sessionStartMs(a4) - sessionStartMs(b4));
+    return { ...summary, sessions: combined };
+  }
+  function updateWaterfall(newSpans) {
+    if (retainWaterfall.value) {
+      const existingIds = new Set(waterfallSpans.value.map((s4) => s4.spanId));
+      const toAdd = newSpans.filter((s4) => !existingIds.has(s4.spanId) && !dismissedSpanIds.has(s4.spanId));
+      if (toAdd.length > 0) {
+        waterfallSpans.value = [...waterfallSpans.value, ...toAdd];
+      }
+    } else {
+      const agentSpans = newSpans.filter((s4) => isSessionSpan(s4.name));
+      if (agentSpans.length > 0) {
+        agentSpans.sort((a4, b4) => {
+          const ta = a4.startTime ?? "0", tb = b4.startTime ?? "0";
+          return ta < tb ? 1 : ta > tb ? -1 : 0;
+        });
+        const latestTraceId = agentSpans[0].traceId;
+        const relatedTraceIds = /* @__PURE__ */ new Set([latestTraceId]);
+        for (const s4 of newSpans) {
+          if (s4.traceId !== latestTraceId) continue;
+          const rawTraceId = getAttr(s4, "otel.trace_id");
+          if (rawTraceId) relatedTraceIds.add(String(rawTraceId));
+        }
+        waterfallSpans.value = newSpans.filter(
+          (s4) => relatedTraceIds.has(s4.traceId) && !dismissedSpanIds.has(s4.spanId)
+        );
+      } else {
+        waterfallSpans.value = newSpans.filter((s4) => !dismissedSpanIds.has(s4.spanId));
+      }
+    }
+  }
+  function ActivePanel() {
+    const tab = normalizeTabId(activeTab.value);
+    switch (tab) {
+      case "efficiency":
+        return /* @__PURE__ */ u4(Efficiency, {});
+      case "recommendations":
+        return /* @__PURE__ */ u4(Recommendations, {});
+      case "alerts":
+        return /* @__PURE__ */ u4(Alerts, {});
+      case "tokens":
+        return /* @__PURE__ */ u4(Tokens, {});
+      case "cost":
+        return /* @__PURE__ */ u4(Cost, {});
+      case "latency":
+        return /* @__PURE__ */ u4(Latency, {});
+      case "summaries":
+        return /* @__PURE__ */ u4(Summaries, {});
+      case "traces":
+        return /* @__PURE__ */ u4(Traces, {});
+      case "files":
+        return /* @__PURE__ */ u4(Files, {});
+      case "flow":
+        return /* @__PURE__ */ u4(Flow, {});
+      case "agents":
+        return /* @__PURE__ */ u4(Agents, {});
+      case "tools":
+        return /* @__PURE__ */ u4(Tools, {});
+      case "errors":
+        return /* @__PURE__ */ u4(Errors, {});
+      case "export":
+        return /* @__PURE__ */ u4(Export, {});
+      case "automation":
+        return /* @__PURE__ */ u4(Automation, {});
+      case "help":
+        return /* @__PURE__ */ u4(Help, {});
+      default:
+        return null;
+    }
+  }
+  function normalizeTabId(tab) {
+    return tab === "dependencies" ? "flow" : tab;
+  }
+  function App() {
+    y2(() => {
+      const exportHandler = (e4) => {
+        const type = e4.data?.type;
+        if (type !== "exportSessionData" && type !== "exportSessionDataRedacted") return;
+        if (!window.__STANDALONE__) return;
+        const redact = type === "exportSessionDataRedacted";
+        const allSpans = spans.value;
+        const sessions = displaySessions.value;
+        const _now = /* @__PURE__ */ new Date();
+        const _pad = (n3) => n3.toString().padStart(2, "0");
+        const timestamp = `${_now.getFullYear()}${_pad(_now.getMonth() + 1)}${_pad(_now.getDate())}_${_pad(_now.getHours())}${_pad(_now.getMinutes())}${_pad(_now.getSeconds())}`;
+        const prefix = redact ? "export_redacted" : "export";
+        const REDACT_CONTENT = /* @__PURE__ */ new Set([
+          "gen_ai.prompt",
+          "gen_ai.completion",
+          "llm.prompts",
+          "llm.completions",
+          "tool_input",
+          "tool_result",
+          "user_prompt",
+          "system_prompt",
+          "input",
+          "output"
+        ]);
+        const REDACT_PII = /* @__PURE__ */ new Set([
+          "user.id",
+          "user.name",
+          "user.email",
+          "user.username",
+          "enduser.id",
+          "enduser.name",
+          "enduser.email",
+          "organization.id",
+          "organization.name",
+          "github.copilot.user",
+          "github.user"
+        ]);
+        const shouldRedact = (key) => REDACT_CONTENT.has(key) || REDACT_PII.has(key) || key.endsWith(".content") || key.includes("prompt") || key.includes("tool_input") || key.includes("tool_result") || key.startsWith("user.") || key.startsWith("enduser.") || key.startsWith("organization.");
+        const traceAgent = {};
+        for (const s4 of sessions) {
+          const agent = s4.source === "claude_code" ? "claude" : s4.source || "unknown";
+          if (s4.traceId) traceAgent[s4.traceId] = agent;
+        }
+        const groups = {};
+        for (const span of allSpans) {
+          const agent = traceAgent[span.traceId];
+          if (!agent) continue;
+          const attrs = Array.isArray(span.attributes) ? span.attributes : [];
+          const rawPath = attrs.find((a4) => a4.key === "_agentlens.collector_path")?.value?.stringValue || "";
+          const endpoint = rawPath ? rawPath.replace(/^\//, "").replace(/\//g, "-") : "main";
+          const key = `${endpoint}__${agent}`;
+          if (!groups[key]) groups[key] = [];
+          const exportSpan = redact ? { ...span, attributes: attrs.map((a4) => shouldRedact(a4.key) ? { key: a4.key, value: { stringValue: "[redacted]" } } : a4) } : span;
+          groups[key].push(exportSpan);
+        }
+        const triggerDownload = (blob2, filename) => {
+          const url = URL.createObjectURL(blob2);
+          const a4 = document.createElement("a");
+          a4.href = url;
+          a4.download = filename;
+          document.body.appendChild(a4);
+          a4.click();
+          setTimeout(() => {
+            document.body.removeChild(a4);
+            URL.revokeObjectURL(url);
+          }, 100);
+        };
+        const groupEntries = Object.entries(groups);
+        if (groupEntries.length === 0) return;
+        const files = {};
+        for (const [key, groupSpans] of groupEntries) {
+          const [endpoint, agent] = key.split("__");
+          files[`${prefix}_${agent}_${endpoint}_${timestamp}.json`] = strToU8(JSON.stringify(groupSpans, null, 2));
+        }
+        const blob = new Blob([zipSync(files)], { type: "application/zip" });
+        triggerDownload(blob, `agentlens_${prefix}_${timestamp}.zip`);
+      };
+      window.addEventListener("message", exportHandler);
+      return () => window.removeEventListener("message", exportHandler);
+    }, []);
+    y2(() => {
+      let tipEl = null;
+      function show(e4) {
+        const target = e4.target.closest("[data-tip]");
+        if (!target) return;
+        const text = target.getAttribute("data-tip");
+        if (!text) return;
+        if (!tipEl) {
+          tipEl = document.createElement("div");
+          tipEl.className = "metric-tooltip";
+          document.body.appendChild(tipEl);
+        }
+        tipEl.textContent = text;
+        tipEl.style.display = "block";
+        const rect = target.getBoundingClientRect();
+        const tipW = 220, tipH = tipEl.offsetHeight || 60;
+        let left = rect.left + rect.width / 2 - tipW / 2;
+        let top = rect.bottom + 6;
+        if (left < 4) left = 4;
+        if (left + tipW > window.innerWidth - 4) left = window.innerWidth - tipW - 4;
+        if (top + tipH > window.innerHeight - 4) top = rect.top - tipH - 6;
+        tipEl.style.left = left + "px";
+        tipEl.style.top = top + "px";
+      }
+      function hide() {
+        if (tipEl) tipEl.style.display = "none";
+      }
+      document.addEventListener("mouseover", show);
+      document.addEventListener("mouseout", hide);
+      return () => {
+        document.removeEventListener("mouseover", show);
+        document.removeEventListener("mouseout", hide);
+        if (tipEl) {
+          tipEl.remove();
+          tipEl = null;
+        }
+      };
+    }, []);
+    y2(() => {
+      if (spans.value.length > 0) {
+        if (waterfallSpans.value.length === 0) updateWaterfall(spans.value);
+        const supplemented = fillMissingClaudeSessions(sessionSummary.value, spans.value);
+        if (supplemented) sessionSummary.value = supplemented;
+      }
+    }, []);
+    y2(() => {
+      let initialLoadDone = false;
+      const handler = (e4) => {
+        const msg = e4.data;
+        if (msg.type === "update") {
+          spans.value = msg.spans ?? [];
+          if (msg.summary?.toolCalls) toolCalls.value = msg.summary.toolCalls;
+          const incomingSummary = msg.sessionSummary ?? sessionSummary.value;
+          const supplemented = fillMissingClaudeSessions(incomingSummary, spans.value);
+          if (supplemented) sessionSummary.value = supplemented;
+          updateWaterfall(spans.value);
+          if (!initialLoadDone) {
+            initialLoadDone = true;
+            setTimeout(() => {
+              checkAutomations(sessionSummary.value?.sessions ?? displaySessions.value);
+              checkAlerts();
+            }, 0);
+          } else {
+            setTimeout(() => {
+              const triggers = checkAutomations(displaySessions.value);
+              for (const t4 of triggers) {
+                vscode?.postMessage({ type: "automation", ...t4 });
+              }
+              const alertNotifications = checkAlerts();
+              for (const a4 of alertNotifications) {
+                vscode?.postMessage({ type: "alert", label: a4.label, detail: a4.detail, severity: a4.severity });
+              }
+            }, 0);
+          }
+        } else if (msg.type === "switchTab" && msg.tab) {
+          activeTab.value = normalizeTabId(msg.tab);
+        } else if (msg.type === "setFilter") {
+          if (msg.agentFilter !== void 0) {
+            selectedAgentFilter.value = msg.agentFilter;
+            const sel = document.getElementById("agent-filter");
+            if (sel) sel.value = msg.agentFilter;
+          }
+          if (msg.sessionLimit !== void 0) {
+            const limit = Number(msg.sessionLimit);
+            sessionLimit.value = limit;
+            const sel = document.getElementById("session-limit");
+            if (sel) sel.value = String(limit);
+          }
+        } else if (msg.type === "clearAll") {
+          spans.value = [];
+          toolCalls.value = {};
+          sessionSummary.value = null;
+          waterfallSpans.value = [];
+          swRetainedSessions.value = [];
+          swLastSessionCount.value = 0;
+          dismissedSpanIds.clear();
+          lastSeenTraceIds.clear();
+          expandedSpanIds.clear();
+        }
+      };
+      window.addEventListener("message", handler);
+      return () => window.removeEventListener("message", handler);
+    }, []);
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { class: "tabs", children: [
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            class: "sidebar-toggle-btn",
+            title: sidebarOpen.value ? "Close AgentLens sidebar" : "Open AgentLens sidebar",
+            onClick: () => {
+              const opening = !sidebarOpen.value;
+              sidebarOpen.value = opening;
+              if (vscode) {
+                vscode.postMessage({ type: opening ? "openSidebar" : "closeSidebar" });
+              } else {
+                window.dispatchEvent(new CustomEvent("agentlens:sidebar", { detail: { open: opening } }));
+              }
+            },
+            children: sidebarOpen.value ? "\u25C4" : "\u25BA"
+          }
+        ),
+        TABS.map(
+          (t4) => t4.id === "alerts" ? /* @__PURE__ */ u4(AlertsTab, {}, "alerts") : /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id)
+        )
+      ] }),
+      /* @__PURE__ */ u4("div", { class: "panel active", children: /* @__PURE__ */ u4(ActivePanel, {}) }),
+      /* @__PURE__ */ u4("img", { id: "mascot-img", src: "", alt: "AgentLens mascot", style: "display:none" })
+    ] });
+  }
+  function Tab({ id, label }) {
+    const isActive = normalizeTabId(activeTab.value) === id;
+    return /* @__PURE__ */ u4(
+      "button",
+      {
+        class: "tab" + (isActive ? " active" : ""),
+        "data-tab": id,
+        onClick: () => {
+          activeTab.value = id;
+        },
+        children: label
+      }
+    );
+  }
+  function AlertsTab() {
+    const isActive = activeTab.value === "alerts";
+    const _s = displaySessions.value;
+    const count = computeAlertCount();
+    return /* @__PURE__ */ u4(
+      "button",
+      {
+        class: "tab" + (isActive ? " active" : ""),
+        "data-tab": "alerts",
+        onClick: () => {
+          activeTab.value = "alerts";
+        },
+        children: count > 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--error);font-weight:700", children: [
+          "Alerts \u26A0 ",
+          count
+        ] }) : "Alerts"
+      }
+    );
+  }
+
+  // media/src/dashboard.tsx
+  var vscode2 = window.acquireVsCodeApi();
+  setVscode(vscode2);
+  R(/* @__PURE__ */ u4(App, {}), document.getElementById("app"));
+})();
+//# sourceMappingURL=dashboard.js.map

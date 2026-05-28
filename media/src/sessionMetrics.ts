@@ -1,6 +1,6 @@
 import type { SessionSummaryCard, TimelineEntry } from './types'
 import { getAgentProfiles, resolveAgentProfile, type AgentThresholdProfiles } from './agentProfiles'
-import { lookupRates, calcTokenCost, calcRequestCost, type PricingMode } from './pricing'
+import { lookupRates, calcTokenCost, type PricingMode } from './pricing'
 
 export type { PricingMode }
 
@@ -17,15 +17,18 @@ export function calcSessionCost(session: SessionSummaryCard, mode: PricingMode):
   const rates = lookupRates(modelId)
   const llmEntries = (session.timeline ?? []).filter(e => e.type === 'llm')
 
-  if (mode === 'request') {
-    if (!rates || rates.multiplier === 0) {
+  if (mode === 'request' || mode === 'request-annual') {
+    const mult = mode === 'request-annual'
+      ? (rates?.multiplierAnnualPostJun1 ?? 0)
+      : (rates?.multiplier ?? 0)
+    if (!rates || mult === 0) {
       return { totalUsd: 0, aiCredits: 0, byTurn: llmEntries.map(() => 0), modelUnknown: !rates, pricingMode: mode }
     }
     // Only the user-initiated prompt counts as a premium request in agentic sessions;
     // autonomous tool calls and internal LLM calls within a session do not.
     // session.turns reflects user prompt count; fall back to 1 if unavailable.
     const promptCount = session.turns || 1
-    const totalUsd = calcRequestCost(promptCount, rates)
+    const totalUsd = promptCount * mult * 0.04
     const perPrompt = totalUsd / promptCount
     let cum = 0
     // Spread cost evenly across LLM entries for the chart shape, but total is prompt-based.
