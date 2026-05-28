@@ -14,7 +14,7 @@
 - **Telemetry Collection** — Built-in OpenTelemetry receiver captures traces and logs from Copilot, Claude Code, and Codex — no external infrastructure needed
 - **Session Dashboard** — See inside every agent run: context growth, tool calls, token usage, latency, errors, and file changes across interactive real-time panels
 - **Recommendations & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns — with suggested prompts to correct course
-- **Cost Estimation** — Estimates Copilot session cost under both the new token-based AI Credits model (Jun 2026+) and the legacy request-based model, with a per-session bar chart and cross-session cost table.  Claude and Codex cost estimation coming soon.
+- **Cost Estimation** — Estimates session cost for Copilot and Codex sessions. Copilot supports three billing models (token-based AI Credits, request-based, and annual-plan request-based). Codex uses token-based pricing. Shown as a per-session bar chart and cross-session cost table. Claude cost estimation coming soon.
 - **Files Changed** — Track which files each session created or modified, with before/after diffs
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat loops — per-agent or shared
 - **Multi-session Support** — Compare sessions side-by-side to spot patterns across runs
@@ -48,7 +48,11 @@ Each signal includes a specific recommended action and a **Copy for {Agent}** bu
 
 ## Cost Estimation
 
-The **Cost** tab estimates the dollar cost of Copilot sessions using localized pricing data. Three billing models are supported via a toggle:
+The **Cost** tab estimates the dollar cost of Copilot and Codex sessions using localized pricing data.
+
+### Copilot
+
+Three billing models are supported via a toggle:
 
 | Mode | Who it applies to |
 | ---- | ----------------- |
@@ -56,11 +60,19 @@ The **Cost** tab estimates the dollar cost of Copilot sessions using localized p
 | **Request-based** | All plans before Jun 1, 2026 — multiplier × $0.04 per user-initiated prompt |
 | **Annual plan request-based** | Annual-plan holders staying on request billing after Jun 1, 2026 — same formula, significantly higher multipliers |
 
-The tab shows a per-session cost bar chart and a cross-session cost table that respects the active session filter. Included models (GPT-4.1, GPT-5 mini) show $0 under token-based billing, consistent with Copilot's pricing docs.
+Included models (GPT-4.1, GPT-5 mini) show $0 under token-based billing, consistent with Copilot's pricing docs.
 
-All figures are estimates — not your actual GitHub bill. Rates are sourced from GitHub's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
+### Codex
 
-Known gaps are listed at the bottom of the Cost tab, including long-context surcharges (not applied) and the session turn count proxy used for request-based billing.
+Codex uses token-based pricing only (input, cached input, output). The billing model toggle does not apply to Codex sessions. Rates are sourced from OpenAI's API pricing page and the Codex CLI pricing page.
+
+### General
+
+The tab shows a per-session bar chart (colored by agent) and a cross-session cost table with per-source subtotals and a grand total when both agent types are present.
+
+All figures are estimates — not your actual bill. See [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative source URLs and maintainer notes on keeping rates current.
+
+Known gaps for each agent are listed at the bottom of the Cost tab.
 
 ## Getting Started
 

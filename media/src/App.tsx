@@ -33,11 +33,11 @@ const sidebarOpen = signal(true)
 
 const TABS = [
   { id: 'efficiency',      label: 'Efficiency',      title: 'Per-session metrics and token usage breakdown.' },
+  { id: 'cost',            label: 'Cost',            title: 'Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing.' },
   { id: 'recommendations', label: 'Recommendations', title: 'Actionable insights and recommendations for improving prompt efficiency and reducing token waste.' },
   { id: 'alerts',          label: 'Alerts',          title: 'Configurable alerts for context window usage, error rates, session length, and other efficiency signals.' },
   { id: 'automation',      label: 'Automation',      title: 'Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed.' },
   { id: 'tokens',          label: 'Tokens',          title: 'Token consumption aggregated by span name and per session, sorted from highest to lowest.' },
-  { id: 'cost',            label: 'Cost',            title: 'Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing.' },
   { id: 'latency',         label: 'Latency',         title: 'Span durations as a color-coded grid, helping identify which operations are consistently slow.' },
   { id: 'summaries',       label: 'Summaries',       title: 'A high-level, human-readable timeline of each session — LLM calls with their decisions, tool calls with arguments, and token usage.' },
   { id: 'traces',          label: 'Traces',          title: 'Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing.' },

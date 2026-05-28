@@ -74,7 +74,69 @@ Coming soon.
 
 ## Codex
 
-Coming soon.
+Codex CLI uses OpenAI token-based pricing only — no request-multiplier system.
+
+### Billing model — Token-based (input / cached input / output)
+
+**Who it applies to:** All Codex CLI users.
+
+**Sources:**
+
+- Rate card (official, may require login): <https://help.openai.com/en/articles/20001106-codex-rate-card>
+- Codex CLI pricing page (credits; divide by 25 for USD): <https://developers.openai.com/codex/pricing>
+- API pricing (USD, includes codex models): <https://developers.openai.com/api/docs/pricing>
+- `codex-mini-latest` model spec: <https://developers.openai.com/api/docs/models/codex-mini-latest>
+- Prompt caching mechanics: <https://developers.openai.com/api/docs/guides/prompt-caching>
+- Token concepts: <https://developers.openai.com/api/docs/concepts/tokens>
+
+**Formula:**
+```
+non_cached_input = gen_ai.usage.input_tokens - gen_ai.usage.cache_read.input_tokens
+cost = (non_cached_input / 1_000_000 × inputRate)
+     + (cacheReadTokens / 1_000_000 × cacheReadRate)
+     + (outputTokens / 1_000_000 × outputRate)
+```
+
+**OTEL fields (from Codex CLI telemetry):**
+
+On `handle_responses` spans (per-API-call):
+
+- `gen_ai.usage.input_tokens` — total input including cached portion
+- `gen_ai.usage.output_tokens` — total output including reasoning tokens
+- `gen_ai.usage.cache_read.input_tokens` — cached portion of input
+- `codex.usage.reasoning_output_tokens` — reasoning subset of output (billed at output rate; no separate reasoning rate observed)
+
+On `session_task.turn` spans (per-turn aggregate):
+
+- `codex.turn.token_usage.input_tokens`
+- `codex.turn.token_usage.cached_input_tokens`
+- `codex.turn.token_usage.non_cached_input_tokens`
+- `codex.turn.token_usage.output_tokens`
+- `codex.turn.token_usage.reasoning_output_tokens`
+
+Model name available on `codex.user_prompt`, `codex.turn_ttft`, and `codex.tool_decision` spans via `model` attribute.
+
+**Rates (USD per 1M tokens, verified 2026-05-28):**
+
+| Model | Input | Cached Input | Output | Cache discount | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `gpt-5.5` | $5.00 | $0.50 | $30.00 | 90% | Flagship; used directly by Codex CLI |
+| `gpt-5.4` | $2.50 | $0.25 | $15.00 | 90% | |
+| `gpt-5.4-mini` | $0.75 | $0.075 | $4.50 | 90% | |
+| `gpt-5.3-codex` | $1.75 | $0.175 | $14.00 | 90% | Current primary Codex model |
+| `gpt-5.3-codex-spark` | TBD | TBD | TBD | — | Research preview, no rates published |
+| `gpt-5.2` | $1.75 | $0.175 | $14.00 | 90% | Deprecated |
+| `gpt-5.1-codex` | $1.75 | $0.175 | $14.00 | 90% | Deprecated |
+| `gpt-5.1-codex-mini` | $0.75 | $0.075 | $4.50 | 90% | Deprecated |
+| `codex-mini-latest` | $1.50 | $0.375 | $6.00 | 75% | Fine-tuned o4-mini; 200K ctx; deprecated |
+
+**Credits to USD conversion:** Rates on the Codex CLI pricing page are expressed in credits. 1 USD = 25 credits (verified: gpt-5.5 listed as 125 credits/MTok input = $5.00).
+
+**Known gaps:**
+
+- Long-context surcharges: `gpt-5.5` has a long-context tier ($10/$1.00/$45 above a certain token threshold — verify the cutoff from the API pricing page). Not yet implemented.
+- `gpt-5.3-codex-spark`: research preview with no published rates.
+- Reasoning tokens (`codex.usage.reasoning_output_tokens`): included in `gen_ai.usage.output_tokens` and billed at the standard output rate per available data; verify against the official rate card.
 
 ---
 

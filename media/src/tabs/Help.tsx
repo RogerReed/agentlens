@@ -12,7 +12,7 @@ const VIEWS: [string, string][] = [
   ['Agents',          'Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table.'],
   ['Traces',          'Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing.'],
   ['Tokens',          'Token consumption aggregated by span name and per session, sorted from highest to lowest.'],
-  ['Cost',            'Estimated session cost for Copilot sessions. Supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Shows a per-session bar chart and a cross-session cost table. Estimates only — not your actual bill.'],
+  ['Cost',            'Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cross-session cost table. Estimates only — not your actual bill.'],
   ['Tools',           'Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool.'],
   ['Timeline',        'All spans in chronological order as a vertical event list. Click any item to expand its attributes as formatted JSON.'],
   ['Latency',         'Span durations as a color-coded grid, helping identify which operations are consistently slow.'],
