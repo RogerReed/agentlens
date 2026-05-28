@@ -228,13 +228,13 @@ export function Cost() {
           <button
             class={'tab-mini' + (mode === 'token' ? ' active' : '')}
             onClick={() => setMode('token')}
-            title="Copilot Jun 2026+ token-based AI Credits billing"
-          >Token-based (Jun 2026+)</button>
+            title="Token-based AI Credits billing, effective Jun 1, 2026"
+          >Token-based (from Jun 1, 2026)</button>
           <button
             class={'tab-mini' + (mode === 'request' ? ' active' : '')}
             onClick={() => setMode('request')}
-            title="Legacy Copilot request-based billing with model multipliers"
-          >Request-based (legacy)</button>
+            title="Request-based billing with model multipliers, active before Jun 1, 2026"
+          >Request-based (pre-Jun 1, 2026)</button>
         </div>
       </div>
 
@@ -318,8 +318,8 @@ export function Cost() {
         Rates as of {PRICING_LAST_UPDATED} ·{' '}
         {anyUnknown && <span style="color:var(--warning,#ffb74d)">⚠ Some models not in rate table (shown as ~$?) · </span>}
         {mode === 'token'
-          ? 'Token-based AI Credits: Copilot Jun 2026+ billing. Per-turn chart uses input+output only; session totals include cache tokens.'
-          : 'Request-based: legacy Copilot billing. Cost = multiplier × $0.04 per LLM call. Models marked 0× were free under this model.'}
+          ? 'Token-based AI Credits: effective Jun 1, 2026. Per-turn chart uses input+output only; session totals include cache tokens.'
+          : 'Request-based: active before Jun 1, 2026. Cost = multiplier × $0.04 per LLM call. Models marked 0× (e.g. GPT-4.1) are free under this model.'}
       </div>
     </div>
   )

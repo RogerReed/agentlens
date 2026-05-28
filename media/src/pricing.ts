@@ -21,7 +21,7 @@ const RATES: Record<string, ModelRates> = {
   'gpt-5 mini':        { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025, cacheWritePerMTok: 0,    outputPerMTok: 2.00,  multiplier: 0 },
   'gpt-4o-mini':       { inputPerMTok: 0.15,  cacheReadPerMTok: 0.075, cacheWritePerMTok: 0,    outputPerMTok: 0.60,  multiplier: 0 },
   'gpt-4o':            { inputPerMTok: 2.50,  cacheReadPerMTok: 1.25,  cacheWritePerMTok: 0,    outputPerMTok: 10.00, multiplier: 0 },
-  'gpt-4.1':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 1 },
+  'gpt-4.1':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 0 },
   'gpt-5.2':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 1 },
   'gpt-5.2-codex':     { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 1 },
   'gpt-5.3-codex':     { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,  cacheWritePerMTok: 0,    outputPerMTok: 8.00,  multiplier: 1 },
