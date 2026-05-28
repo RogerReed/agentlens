@@ -1,5 +1,59 @@
 import type { SessionSummaryCard, TimelineEntry } from './types'
 import { getAgentProfiles, resolveAgentProfile, type AgentThresholdProfiles } from './agentProfiles'
+import { lookupRates, calcTokenCost, type PricingMode } from './pricing'
+
+export type { PricingMode }
+
+export interface SessionCost {
+  totalUsd: number
+  aiCredits: number     // totalUsd / 0.01 — Copilot's billing unit
+  byTurn: number[]      // cumulative USD at each LLM timeline entry index
+  modelUnknown: boolean
+  pricingMode: PricingMode
+}
+
+export function calcSessionCost(session: SessionSummaryCard, mode: PricingMode): SessionCost {
+  const modelId = session.model || ''
+  const rates = lookupRates(modelId)
+  const llmEntries = (session.timeline ?? []).filter(e => e.type === 'llm')
+
+  if (mode === 'request' || mode === 'request-annual') {
+    const mult = mode === 'request-annual'
+      ? (rates?.multiplierAnnualPostJun1 ?? 0)
+      : (rates?.multiplier ?? 0)
+    if (!rates || mult === 0) {
+      return { totalUsd: 0, aiCredits: 0, byTurn: llmEntries.map(() => 0), modelUnknown: !rates, pricingMode: mode }
+    }
+    // Only the user-initiated prompt counts as a premium request in agentic sessions;
+    // autonomous tool calls and internal LLM calls within a session do not.
+    // session.turns reflects user prompt count; fall back to 1 if unavailable.
+    const promptCount = session.turns || 1
+    const totalUsd = promptCount * mult * 0.04
+    const perPrompt = totalUsd / promptCount
+    let cum = 0
+    // Spread cost evenly across LLM entries for the chart shape, but total is prompt-based.
+    const byTurn = llmEntries.map(() => { cum = Math.min(cum + perPrompt, totalUsd); return cum })
+    return { totalUsd, aiCredits: totalUsd / 0.01, byTurn, modelUnknown: false, pricingMode: mode }
+  }
+
+  // Token-based mode.
+  // session.inputTokens includes cacheRead + cacheCreate for all agents, so subtract them back out.
+  const rawInput = Math.max(0, session.inputTokens - session.cacheReadTokens - session.cacheCreateTokens)
+  const totalUsd = rates
+    ? calcTokenCost(rawInput, session.cacheReadTokens, session.cacheCreateTokens, session.outputTokens, rates)
+    : 0
+
+  // Per-turn cumulative cost using per-turn token counts (cache not broken out at turn level).
+  let cum = 0
+  const byTurn = llmEntries.map(entry => {
+    const entryRates = lookupRates(entry.model || modelId) || rates
+    if (!entryRates) return cum
+    cum += calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, entryRates)
+    return cum
+  })
+
+  return { totalUsd, aiCredits: totalUsd / 0.01, byTurn, modelUnknown: !rates, pricingMode: mode }
+}
 
 export interface PeakContextUsage {
   peakTokens: number

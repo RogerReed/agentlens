@@ -14,9 +14,10 @@
 - **Telemetry Collection** — Built-in OpenTelemetry receiver captures traces and logs from Copilot, Claude Code, and Codex — no external infrastructure needed
 - **Session Dashboard** — See inside every agent run: context growth, tool calls, token usage, latency, errors, and file changes across interactive real-time panels
 - **Recommendations & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns — with suggested prompts to correct course
+- **Cost Estimation** — Estimates Copilot session cost under both the new token-based AI Credits model (Jun 2026+) and the legacy request-based model, with a per-session bar chart and cross-session cost table.  Claude and Codex cost estimation coming soon.
 - **Files Changed** — Track which files each session created or modified, with before/after diffs
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat loops — per-agent or shared
-- **Multi-session Support** — Compare sessions side-by-side to spot patterns across runs 
+- **Multi-session Support** — Compare sessions side-by-side to spot patterns across runs
 
 ## Session Model
 
@@ -44,6 +45,22 @@ The **Recommendations** tab analyzes session data and surfaces two categories of
 | **Infinite Loop — Context Accumulation** | Input tokens growing while output ratio collapses 70%+ | Agent stuck, accumulating context without progress |
 
 Each signal includes a specific recommended action and a **Copy for {Agent}** button that copies the recommendation prompt to your clipboard so you can paste it into your AI session. Use the **Ignore** button to dismiss signals that represent intentional behavior.
+
+## Cost Estimation
+
+The **Cost** tab estimates the dollar cost of Copilot sessions using localized pricing data. Three billing models are supported via a toggle:
+
+| Mode | Who it applies to |
+| ---- | ----------------- |
+| **Token-based AI Credits** (default) | All Copilot plans from Jun 1, 2026 — charges per input/output/cache token at per-model rates |
+| **Request-based** | All plans before Jun 1, 2026 — multiplier × $0.04 per user-initiated prompt |
+| **Annual plan request-based** | Annual-plan holders staying on request billing after Jun 1, 2026 — same formula, significantly higher multipliers |
+
+The tab shows a per-session cost bar chart and a cross-session cost table that respects the active session filter. Included models (GPT-4.1, GPT-5 mini) show $0 under token-based billing, consistent with Copilot's pricing docs.
+
+All figures are estimates — not your actual GitHub bill. Rates are sourced from GitHub's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
+
+Known gaps are listed at the bottom of the Cost tab, including long-context surcharges (not applied) and the session turn count proxy used for request-based billing.
 
 ## Getting Started
 
@@ -292,7 +309,7 @@ Open the VS Code Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for
 
 | Command | Description |
 | ------- | ----------- |
-| `AgentLens: Open Dashboard` | Open the full 15-tab dashboard in an editor panel |
+| `AgentLens: Open Dashboard` | Open the full 16-tab dashboard in an editor panel |
 | `AgentLens: Clear Session Data` | Wipe all collected spans from memory |
 | `AgentLens: Export OTEL Data` | Write raw OTEL spans to JSON files in your workspace root (also available in the **Export** dashboard tab) |
 | `AgentLens: Export OTEL Data (Redacted)` | Same, with prompt text, tool inputs, tool results, and PII replaced with `[redacted]` (also available in the **Export** tab) |
