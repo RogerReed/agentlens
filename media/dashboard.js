@@ -6344,9 +6344,9 @@
   var AGENT_OTEL_SHAPES = [
     {
       agent: "Copilot",
-      format: 'OpenTelemetry <a href="#gl-trace" style="color:inherit;text-underline-offset:2px">trace</a> <a href="#gl-span" style="color:inherit;text-underline-offset:2px">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call" style="color:inherit;text-underline-offset:2px">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
-      coverage: 'Prompt text, token counts (<a href="#gl-input-tokens" style="color:inherit;text-underline-offset:2px">input</a>, <a href="#gl-output-tokens" style="color:inherit;text-underline-offset:2px">output</a>), model name, <a href="#gl-ttft" style="color:inherit;text-underline-offset:2px">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
-      gaps: `<a href="#gl-cache-read-tokens" style="color:inherit;text-underline-offset:2px">Cache</a> token data (read/create) is not part of Copilot's telemetry. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available.`
+      format: 'OpenTelemetry <a href="#gl-trace">trace</a> <a href="#gl-span">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
+      coverage: 'Prompt text, token counts (<a href="#gl-input-tokens">input</a>, <a href="#gl-output-tokens">output</a>), model name, <a href="#gl-ttft">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
+      gaps: `<a href="#gl-cache-read-tokens">Cache</a> token data (read/create) is not part of Copilot's telemetry. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available.`
     },
     {
       agent: "Claude Code",
@@ -6419,17 +6419,17 @@
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: /* @__PURE__ */ u4("p", { children: [
         /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
         " is a local observability dashboard for AI coding ",
-        /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agents" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agents" }),
         " \u2014 GitHub Copilot, Claude Code, and Codex. It captures the ",
-        /* @__PURE__ */ u4("a", { href: "#gl-otlp", style: "color:inherit;text-underline-offset:2px", children: "OpenTelemetry (OTLP)" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-otlp", children: "OpenTelemetry (OTLP)" }),
         " traces each agent emits and surfaces them through an interactive dashboard showing ",
-        /* @__PURE__ */ u4("a", { href: "#gl-tokens", style: "color:inherit;text-underline-offset:2px", children: "token" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-tokens", children: "token" }),
         " usage, cost, latency, ",
-        /* @__PURE__ */ u4("a", { href: "#gl-tool-call", style: "color:inherit;text-underline-offset:2px", children: "tool calls" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-tool-call", children: "tool calls" }),
         ", file changes, ",
-        /* @__PURE__ */ u4("a", { href: "#gl-cache-hit-rate", style: "color:inherit;text-underline-offset:2px", children: "cache" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-cache-hit-rate", children: "cache" }),
         " performance, and ",
-        /* @__PURE__ */ u4("a", { href: "#gl-agent-loop-malfunction", style: "color:inherit;text-underline-offset:2px", children: "loop" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-agent-loop-malfunction", children: "loop" }),
         " detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image."
       ] }) })
     ] });
@@ -6459,7 +6459,7 @@
 .\\scripts\\configure-agents.ps1 -Agent copilot` }),
       /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0 0 6px", children: [
         "Config is read at startup \u2014 restart each ",
-        /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agent" }),
         " after running the script:"
       ] }),
       /* @__PURE__ */ u4("table", { style: "font-size:11px;border-collapse:collapse;width:100%", children: /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
@@ -6490,16 +6490,16 @@
       ] }) }),
       /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:8px 0 0", children: [
         "Start a short ",
-        /* @__PURE__ */ u4("a", { href: "#gl-session", style: "color:inherit;text-underline-offset:2px", children: "session" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-session", children: "session" }),
         " and check whether a session card appears in the sidebar to confirm data is arriving."
       ] })
     ] }) : /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
       /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)", children: "Not seeing any data?" }),
       /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 8px", children: [
         "AgentLens automatically configures all supported agents on first activation. Just restart each ",
-        /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agent" }),
         " once \u2014 ",
-        /* @__PURE__ */ u4("a", { href: "#gl-session", style: "color:inherit;text-underline-offset:2px", children: "sessions" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-session", children: "sessions" }),
         " will start appearing immediately."
       ] }),
       /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0 0 6px", children: "Config is read at startup \u2014 restart after AgentLens activates:" }),
@@ -6612,9 +6612,9 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
       /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6", children: [
         /* @__PURE__ */ u4("strong", { children: "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1" }),
         " enables span-level tracing \u2014 without it ",
-        /* @__PURE__ */ u4("a", { href: "#gl-turn", style: "color:inherit;text-underline-offset:2px", children: "turns" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-turn", children: "turns" }),
         " and ",
-        /* @__PURE__ */ u4("a", { href: "#gl-llm-call", style: "color:inherit;text-underline-offset:2px", children: "LLM calls" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-llm-call", children: "LLM calls" }),
         " are indistinguishable and cache token breakdowns are unavailable.",
         " ",
         "The three ",
@@ -6644,13 +6644,15 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
         " sends log events; ",
         /* @__PURE__ */ u4("code", { style: codeStyle, children: "trace_exporter" }),
         " sends ",
-        /* @__PURE__ */ u4("a", { href: "#gl-span", style: "color:inherit;text-underline-offset:2px", children: "trace spans" }),
+        /* @__PURE__ */ u4("a", { href: "#gl-span", children: "trace spans" }),
         ". Both point at the same endpoint."
       ] })
     ] });
+    const manualHeading = /* @__PURE__ */ u4("h4", { style: "font-size:13px;font-weight:600;margin:20px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border);color:var(--fg)", children: "Manual Configuration" });
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-config", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.config.heading }),
       callout,
+      manualHeading,
       portNote,
       copilotSection,
       claudeSection,
@@ -6663,15 +6665,15 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
         /* @__PURE__ */ u4("p", { children: [
           "AgentLens normalizes three different ",
-          /* @__PURE__ */ u4("a", { href: "#gl-otlp", style: "color:inherit;text-underline-offset:2px", children: "OTEL" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-otlp", children: "OTEL" }),
           " shapes into one dashboard model. The shared model is a prompt-to-response ",
-          /* @__PURE__ */ u4("a", { href: "#gl-session", style: "color:inherit;text-underline-offset:2px", children: "session" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-session", children: "session" }),
           " with ",
-          /* @__PURE__ */ u4("a", { href: "#gl-turn", style: "color:inherit;text-underline-offset:2px", children: "LLM turns" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-turn", children: "LLM turns" }),
           ", ",
-          /* @__PURE__ */ u4("a", { href: "#gl-tool-call", style: "color:inherit;text-underline-offset:2px", children: "tool calls" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-tool-call", children: "tool calls" }),
           ", ",
-          /* @__PURE__ */ u4("a", { href: "#gl-tokens", style: "color:inherit;text-underline-offset:2px", children: "token" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-tokens", children: "token" }),
           " usage, timing, errors, and files, but the raw data arrives differently for each agent."
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: AGENT_OTEL_SHAPES.map((row) => /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:6px", children: [
@@ -6693,7 +6695,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
         ] })) }),
         /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: [
           "The practical effect: ",
-          /* @__PURE__ */ u4("a", { href: "#gl-trace", style: "color:inherit;text-underline-offset:2px", children: "Traces" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-trace", children: "Traces" }),
           " and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side."
         ] })
       ] })
@@ -6707,11 +6709,11 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
           "The ",
           /* @__PURE__ */ u4("strong", { children: "Recommendations" }),
           " tab surfaces efficiency insights for ",
-          /* @__PURE__ */ u4("a", { href: "#gl-tokens", style: "color:inherit;text-underline-offset:2px", children: "token" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-tokens", children: "token" }),
           " waste, ",
-          /* @__PURE__ */ u4("a", { href: "#gl-cache-hit-rate", style: "color:inherit;text-underline-offset:2px", children: "cache" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-cache-hit-rate", children: "cache" }),
           " patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer ",
-          /* @__PURE__ */ u4("a", { href: "#gl-turn", style: "color:inherit;text-underline-offset:2px", children: "turns" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-turn", children: "turns" }),
           " and fewer tokens on the same work."
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
@@ -6814,9 +6816,9 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.loops.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
         /* @__PURE__ */ u4("p", { children: [
-          /* @__PURE__ */ u4("a", { href: "#gl-loop-signal", style: "color:inherit;text-underline-offset:2px", children: "Loop signals" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-loop-signal", children: "Loop signals" }),
           " are behavioral patterns indicating the ",
-          /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
+          /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agent" }),
           " is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity."
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
@@ -6869,7 +6871,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             {
               id: "help-context-accumulation",
               title: "Infinite Loop \u2014 Context Accumulation",
-              why: `<a href="#gl-input-tokens" style="color:inherit;text-underline-offset:2px">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio" style="color:inherit;text-underline-offset:2px">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`,
+              why: `<a href="#gl-input-tokens">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`,
               example: "First call: 8K in \u2192 600 out (7.5%). Last call: 65K in \u2192 80 out (0.12%). Five turns reading the same files without edits.",
               steps: `<li>Stop immediately \u2014 cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Summaries tab to review what was accomplished.</li>`,
               impact: "Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."

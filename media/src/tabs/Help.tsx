@@ -102,9 +102,9 @@ const AGENT_OTEL_SHAPES: Array<{
 }> = [
   {
     agent: 'Copilot',
-    format: 'OpenTelemetry <a href="#gl-trace" style="color:inherit;text-underline-offset:2px">trace</a> <a href="#gl-span" style="color:inherit;text-underline-offset:2px">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call" style="color:inherit;text-underline-offset:2px">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
-    coverage: 'Prompt text, token counts (<a href="#gl-input-tokens" style="color:inherit;text-underline-offset:2px">input</a>, <a href="#gl-output-tokens" style="color:inherit;text-underline-offset:2px">output</a>), model name, <a href="#gl-ttft" style="color:inherit;text-underline-offset:2px">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
-    gaps: '<a href="#gl-cache-read-tokens" style="color:inherit;text-underline-offset:2px">Cache</a> token data (read/create) is not part of Copilot\'s telemetry. No additional configuration unlocks further data — what Copilot exposes is already fully available.',
+    format: 'OpenTelemetry <a href="#gl-trace">trace</a> <a href="#gl-span">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
+    coverage: 'Prompt text, token counts (<a href="#gl-input-tokens">input</a>, <a href="#gl-output-tokens">output</a>), model name, <a href="#gl-ttft">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
+    gaps: '<a href="#gl-cache-read-tokens">Cache</a> token data (read/create) is not part of Copilot\'s telemetry. No additional configuration unlocks further data — what Copilot exposes is already fully available.',
   },
   {
     agent: 'Claude Code',
@@ -191,7 +191,7 @@ function OverviewSection() {
       )}
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
-        <p><strong>AgentLens</strong> is a local observability dashboard for AI coding <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agents</a> — GitHub Copilot, Claude Code, and Codex. It captures the <a href="#gl-otlp" style="color:inherit;text-underline-offset:2px">OpenTelemetry (OTLP)</a> traces each agent emits and surfaces them through an interactive dashboard showing <a href="#gl-tokens" style="color:inherit;text-underline-offset:2px">token</a> usage, cost, latency, <a href="#gl-tool-call" style="color:inherit;text-underline-offset:2px">tool calls</a>, file changes, <a href="#gl-cache-hit-rate" style="color:inherit;text-underline-offset:2px">cache</a> performance, and <a href="#gl-agent-loop-malfunction" style="color:inherit;text-underline-offset:2px">loop</a> detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image.</p>
+        <p><strong>AgentLens</strong> is a local observability dashboard for AI coding <a href="#gl-agent">agents</a> — GitHub Copilot, Claude Code, and Codex. It captures the <a href="#gl-otlp">OpenTelemetry (OTLP)</a> traces each agent emits and surfaces them through an interactive dashboard showing <a href="#gl-tokens">token</a> usage, cost, latency, <a href="#gl-tool-call">tool calls</a>, file changes, <a href="#gl-cache-hit-rate">cache</a> performance, and <a href="#gl-agent-loop-malfunction">loop</a> detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image.</p>
       </div>
     </div>
   )
@@ -222,7 +222,7 @@ function ConfigSection() {
 .\\scripts\\configure-agents.ps1 -Agent claude
 .\\scripts\\configure-agents.ps1 -Agent codex
 .\\scripts\\configure-agents.ps1 -Agent copilot`}</pre>
-      <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart each <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> after running the script:</p>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart each <a href="#gl-agent">agent</a> after running the script:</p>
       <table style="font-size:11px;border-collapse:collapse;width:100%">
         <tbody style="color:var(--muted)">
           <tr style="border-bottom:1px solid var(--border)">
@@ -239,12 +239,12 @@ function ConfigSection() {
           </tr>
         </tbody>
       </table>
-      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Start a short <a href="#gl-session" style="color:inherit;text-underline-offset:2px">session</a> and check whether a session card appears in the sidebar to confirm data is arriving.</p>
+      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Start a short <a href="#gl-session">session</a> and check whether a session card appears in the sidebar to confirm data is arriving.</p>
     </div>
   ) : (
     <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
       <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
-      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">AgentLens automatically configures all supported agents on first activation. Just restart each <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> once — <a href="#gl-session" style="color:inherit;text-underline-offset:2px">sessions</a> will start appearing immediately.</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">AgentLens automatically configures all supported agents on first activation. Just restart each <a href="#gl-agent">agent</a> once — <a href="#gl-session">sessions</a> will start appearing immediately.</p>
       <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart after AgentLens activates:</p>
       <table style="font-size:11px;border-collapse:collapse;width:100%">
         <tbody style="color:var(--muted)">
@@ -321,7 +321,7 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
   }
 }`}</pre>
       <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
-        <strong>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1</strong> enables span-level tracing — without it <a href="#gl-turn" style="color:inherit;text-underline-offset:2px">turns</a> and <a href="#gl-llm-call" style="color:inherit;text-underline-offset:2px">LLM calls</a> are indistinguishable and cache token breakdowns are unavailable.{' '}
+        <strong>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1</strong> enables span-level tracing — without it <a href="#gl-turn">turns</a> and <a href="#gl-llm-call">LLM calls</a> are indistinguishable and cache token breakdowns are unavailable.{' '}
         The three <strong>OTEL_LOG_*</strong> vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt.
       </p>
     </div>
@@ -338,15 +338,20 @@ exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json"
 trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }`}</pre>
       <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
         <strong>log_user_prompt=true</strong> includes your typed prompt; without it sessions show <code style={codeStyle}>[session in progress]</code>.{' '}
-        <code style={codeStyle}>exporter</code> sends log events; <code style={codeStyle}>trace_exporter</code> sends <a href="#gl-span" style="color:inherit;text-underline-offset:2px">trace spans</a>. Both point at the same endpoint.
+        <code style={codeStyle}>exporter</code> sends log events; <code style={codeStyle}>trace_exporter</code> sends <a href="#gl-span">trace spans</a>. Both point at the same endpoint.
       </p>
     </div>
+  )
+
+  const manualHeading = (
+    <h4 style="font-size:13px;font-weight:600;margin:20px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border);color:var(--fg)">Manual Configuration</h4>
   )
 
   return (
     <div class="help-section" id="help-config">
       <h3 class="help-heading">{HELP_SECTIONS.config.heading}</h3>
       {callout}
+      {manualHeading}
       {portNote}
       {copilotSection}
       {claudeSection}
@@ -360,7 +365,7 @@ function AgentOtelSection() {
     <div class="help-section" id="help-otel">
       <h3 class="help-heading">{HELP_SECTIONS.otel.heading}</h3>
       <div class="help-overview-body">
-        <p>AgentLens normalizes three different <a href="#gl-otlp" style="color:inherit;text-underline-offset:2px">OTEL</a> shapes into one dashboard model. The shared model is a prompt-to-response <a href="#gl-session" style="color:inherit;text-underline-offset:2px">session</a> with <a href="#gl-turn" style="color:inherit;text-underline-offset:2px">LLM turns</a>, <a href="#gl-tool-call" style="color:inherit;text-underline-offset:2px">tool calls</a>, <a href="#gl-tokens" style="color:inherit;text-underline-offset:2px">token</a> usage, timing, errors, and files, but the raw data arrives differently for each agent.</p>
+        <p>AgentLens normalizes three different <a href="#gl-otlp">OTEL</a> shapes into one dashboard model. The shared model is a prompt-to-response <a href="#gl-session">session</a> with <a href="#gl-turn">LLM turns</a>, <a href="#gl-tool-call">tool calls</a>, <a href="#gl-tokens">token</a> usage, timing, errors, and files, but the raw data arrives differently for each agent.</p>
         <div class="glossary">
           {AGENT_OTEL_SHAPES.map(row => (
             <div class="glossary-item" style="flex-direction:column;gap:6px">
@@ -373,7 +378,7 @@ function AgentOtelSection() {
             </div>
           ))}
         </div>
-        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: <a href="#gl-trace" style="color:inherit;text-underline-offset:2px">Traces</a> and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side.</p>
+        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: <a href="#gl-trace">Traces</a> and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side.</p>
       </div>
     </div>
   )
@@ -384,7 +389,7 @@ function InsightsSection() {
     <div class="help-section" id="help-insights">
       <h3 class="help-heading">{HELP_SECTIONS.insights.heading}</h3>
       <div class="help-overview-body">
-        <p>The <strong>Recommendations</strong> tab surfaces efficiency insights for <a href="#gl-tokens" style="color:inherit;text-underline-offset:2px">token</a> waste, <a href="#gl-cache-hit-rate" style="color:inherit;text-underline-offset:2px">cache</a> patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer <a href="#gl-turn" style="color:inherit;text-underline-offset:2px">turns</a> and fewer tokens on the same work.</p>
+        <p>The <strong>Recommendations</strong> tab surfaces efficiency insights for <a href="#gl-tokens">token</a> waste, <a href="#gl-cache-hit-rate">cache</a> patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer <a href="#gl-turn">turns</a> and fewer tokens on the same work.</p>
         <div class="glossary">
           <InsightBlock id="help-context-bloat" title="Context Bloat"
             why="Every LLM turn receives the full conversation so far. When tool results are large — full file reads, wide search outputs — the context balloons quickly. Instruction files that repeat the same guidance across turns are another common cause."
@@ -442,7 +447,7 @@ function LoopsSection() {
     <div class="help-section" id="help-loops">
       <h3 class="help-heading">{HELP_SECTIONS.loops.heading}</h3>
       <div class="help-overview-body">
-        <p><a href="#gl-loop-signal" style="color:inherit;text-underline-offset:2px">Loop signals</a> are behavioral patterns indicating the <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity.</p>
+        <p><a href="#gl-loop-signal">Loop signals</a> are behavioral patterns indicating the <a href="#gl-agent">agent</a> is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity.</p>
         <div class="glossary">
           <LoopBlock id="help-tool-deadlock" title="Tool Call Deadlock"            why="The same tool call — identical name and arguments — was executed 5+ times. The agent is not retaining the result, likely lost in a long context."
             example={`The agent ran <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">read_file src/types.ts</code> eight times in one session.`}
@@ -464,7 +469,7 @@ function LoopsSection() {
             steps={`<li>Add explicit stopping conditions.</li><li>Avoid open-ended phrasing — name specific functions and files.</li><li>Specify scope: <em>"Only change files in src/auth/"</em>.</li><li>Monitor the context growth chart for steep rises.</li>`}
             impact="A 5-step prompt vs. a 90-step session saves 85 tool calls — a 5–20x token reduction."
           />
-          <LoopBlock id="help-context-accumulation" title="Infinite Loop — Context Accumulation"            why={`<a href="#gl-input-tokens" style="color:inherit;text-underline-offset:2px">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio" style="color:inherit;text-underline-offset:2px">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`}
+          <LoopBlock id="help-context-accumulation" title="Infinite Loop — Context Accumulation"            why={`<a href="#gl-input-tokens">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`}
             example="First call: 8K in → 600 out (7.5%). Last call: 65K in → 80 out (0.12%). Five turns reading the same files without edits."
             steps={`<li>Stop immediately — cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Summaries tab to review what was accomplished.</li>`}
             impact="Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."
