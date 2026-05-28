@@ -187,21 +187,13 @@ function OverviewSection() {
       )}
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
-        <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 16px', marginBottom: 18 }}>
+        <p><strong>AgentLens</strong> is a local observability dashboard for AI coding agents — GitHub Copilot, Claude Code, and Codex. It captures the OpenTelemetry (OTLP) traces each agent emits and surfaces them through an interactive dashboard showing token usage, cost, latency, tool calls, file changes, cache performance, and loop detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image.</p>
+        <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 16px', marginTop: 14 }}>
           <h4 style={{ fontSize: 14, fontWeight: 600, margin: '0 0 6px', color: 'var(--fg,inherit)' }}>Agent vs LLM Model</h4>
           <p style={{ fontSize: 13, margin: 0 }}><strong>Agent:</strong> The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that receives your prompt, reasons about the task, and decides which tools to use. The agent manages the workflow, breaks down tasks, and may call the LLM multiple times per session.</p>
           <p style={{ fontSize: 13, margin: 0, marginTop: 6 }}><strong>LLM Model:</strong> The underlying Large Language Model (e.g. GPT-4, Claude 3) that generates text, answers questions, or provides code. The agent sends requests to the LLM model as needed, but the model itself does not manage tools or workflow.</p>
           <p style={{ fontSize: 12, color: 'var(--muted)', margin: '8px 0 0' }}><em>In short: The <strong>agent</strong> is the smart assistant orchestrating your work; the <strong>LLM model</strong> is the engine that generates language and code for the agent.</em></p>
         </div>
-        <p><strong>AgentLens</strong> is a VS Code extension that captures and visualizes the OpenTelemetry (OTLP) traces emitted by AI coding agents like GitHub Copilot, Claude, and Codex. It runs a lightweight local collector that receives trace data in real time, then presents it through an interactive dashboard so you can understand exactly what happens behind the scenes when you use an AI agent.</p>
-        <p>Use AgentLens to:</p>
-        <ul>
-          <li><strong>Monitor efficiency</strong> — see token usage, cache hit rates, time-to-first-token, and actionable insights about prompt waste.</li>
-          <li><strong>Debug sessions</strong> — inspect every LLM call, tool invocation, and their arguments/results in a human-readable timeline.</li>
-          <li><strong>Trace performance</strong> — view raw OTLP spans as waterfalls with full parent-child nesting and exact timing.</li>
-          <li><strong>Analyze tool usage</strong> — see which tools the agent calls most and how tokens are distributed across operations.</li>
-        </ul>
-        <p>Data is collected locally and never leaves your machine. Clear it at any time with the <em>Clear All Data</em> button.</p>
       </div>
     </div>
   )
@@ -234,6 +226,32 @@ function ConfigSection() {
           </tbody>
         </table>
         <p style="font-size:11px;color:var(--muted);margin:0">After first install, <strong>restart any running agent sessions</strong> to pick up the new config.</p>
+      </div>
+
+      <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
+        <p style="font-size:12px;font-weight:600;margin:0 0 6px;color:var(--foreground)">Not seeing any data?</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 8px">Config is read at startup — a running agent session will not pick up changes automatically. Restart the agent after AgentLens writes its config:</p>
+        <table style="font-size:11px;border-collapse:collapse;width:100%">
+          <tbody style="color:var(--muted)">
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">GitHub Copilot</td>
+              <td style="padding:4px 0;vertical-align:top"><kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Reload Window</em> to restart the VS Code extension host.</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code (CLI)</td>
+              <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>claude</code> session and start a new one. Each invocation reads <code style={codeStyle}>~/.claude/settings.json</code> fresh.</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code (VS Code)</td>
+              <td style="padding:4px 0;vertical-align:top">Reload the VS Code window (<em>Reload Window</em> from the Command Palette).</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Codex CLI</td>
+              <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one. Config is read from <code style={codeStyle}>~/.codex/config.toml</code> on each invocation.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:11px;color:var(--muted);margin:8px 0 0">After restarting, run a short session and check whether a session card appears in the sidebar. Open the <em>AgentLens</em> output channel (<em>View → Output → AgentLens</em>) to confirm spans are arriving.</p>
       </div>
 
       <div style="margin-bottom:20px">

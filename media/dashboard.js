@@ -6414,7 +6414,11 @@
       ] }),
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.overview.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("div", { style: { background: "var(--panel-bg)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 16px", marginBottom: 18 }, children: [
+        /* @__PURE__ */ u4("p", { children: [
+          /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
+          " is a local observability dashboard for AI coding agents \u2014 GitHub Copilot, Claude Code, and Codex. It captures the OpenTelemetry (OTLP) traces each agent emits and surfaces them through an interactive dashboard showing token usage, cost, latency, tool calls, file changes, cache performance, and loop detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image."
+        ] }),
+        /* @__PURE__ */ u4("div", { style: { background: "var(--panel-bg)", border: "1px solid var(--border)", borderRadius: 6, padding: "10px 16px", marginTop: 14 }, children: [
           /* @__PURE__ */ u4("h4", { style: { fontSize: 14, fontWeight: 600, margin: "0 0 6px", color: "var(--fg,inherit)" }, children: "Agent vs LLM Model" }),
           /* @__PURE__ */ u4("p", { style: { fontSize: 13, margin: 0 }, children: [
             /* @__PURE__ */ u4("strong", { children: "Agent:" }),
@@ -6431,34 +6435,6 @@
             /* @__PURE__ */ u4("strong", { children: "LLM model" }),
             " is the engine that generates language and code for the agent."
           ] }) })
-        ] }),
-        /* @__PURE__ */ u4("p", { children: [
-          /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
-          " is a VS Code extension that captures and visualizes the OpenTelemetry (OTLP) traces emitted by AI coding agents like GitHub Copilot, Claude, and Codex. It runs a lightweight local collector that receives trace data in real time, then presents it through an interactive dashboard so you can understand exactly what happens behind the scenes when you use an AI agent."
-        ] }),
-        /* @__PURE__ */ u4("p", { children: "Use AgentLens to:" }),
-        /* @__PURE__ */ u4("ul", { children: [
-          /* @__PURE__ */ u4("li", { children: [
-            /* @__PURE__ */ u4("strong", { children: "Monitor efficiency" }),
-            " \u2014 see token usage, cache hit rates, time-to-first-token, and actionable insights about prompt waste."
-          ] }),
-          /* @__PURE__ */ u4("li", { children: [
-            /* @__PURE__ */ u4("strong", { children: "Debug sessions" }),
-            " \u2014 inspect every LLM call, tool invocation, and their arguments/results in a human-readable timeline."
-          ] }),
-          /* @__PURE__ */ u4("li", { children: [
-            /* @__PURE__ */ u4("strong", { children: "Trace performance" }),
-            " \u2014 view raw OTLP spans as waterfalls with full parent-child nesting and exact timing."
-          ] }),
-          /* @__PURE__ */ u4("li", { children: [
-            /* @__PURE__ */ u4("strong", { children: "Analyze tool usage" }),
-            " \u2014 see which tools the agent calls most and how tokens are distributed across operations."
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("p", { children: [
-          "Data is collected locally and never leaves your machine. Clear it at any time with the ",
-          /* @__PURE__ */ u4("em", { children: "Clear All Data" }),
-          " button."
         ] })
       ] })
     ] });
@@ -6519,6 +6495,58 @@
           "After first install, ",
           /* @__PURE__ */ u4("strong", { children: "restart any running agent sessions" }),
           " to pick up the new config."
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 6px;color:var(--foreground)", children: "Not seeing any data?" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 8px", children: "Config is read at startup \u2014 a running agent session will not pick up changes automatically. Restart the agent after AgentLens writes its config:" }),
+        /* @__PURE__ */ u4("table", { style: "font-size:11px;border-collapse:collapse;width:100%", children: /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
+          /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "GitHub Copilot" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+              /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Cmd+Shift+P" }),
+              " / ",
+              /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Ctrl+Shift+P" }),
+              " \u2192 ",
+              /* @__PURE__ */ u4("em", { children: "Reload Window" }),
+              " to restart the VS Code extension host."
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Claude Code (CLI)" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+              "Exit any running ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "claude" }),
+              " session and start a new one. Each invocation reads ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.claude/settings.json" }),
+              " fresh."
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Claude Code (VS Code)" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+              "Reload the VS Code window (",
+              /* @__PURE__ */ u4("em", { children: "Reload Window" }),
+              " from the Command Palette)."
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("tr", { children: [
+            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Codex CLI" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+              "Exit any running ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "codex" }),
+              " session and start a new one. Config is read from ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.codex/config.toml" }),
+              " on each invocation."
+            ] })
+          ] })
+        ] }) }),
+        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:8px 0 0", children: [
+          "After restarting, run a short session and check whether a session card appears in the sidebar. Open the ",
+          /* @__PURE__ */ u4("em", { children: "AgentLens" }),
+          " output channel (",
+          /* @__PURE__ */ u4("em", { children: "View \u2192 Output \u2192 AgentLens" }),
+          ") to confirm spans are arriving."
         ] })
       ] }),
       /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
