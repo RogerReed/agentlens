@@ -6435,6 +6435,7 @@
     ] });
   }
   function ConfigSection() {
+    const standalone = window.__STANDALONE__ === true;
     const kbdStyle = "font-size:11px;background:var(--panel-bg);padding:1px 5px;border-radius:3px;border:1px solid var(--border)";
     const pathNote = (mac, win) => /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0 0 6px", children: [
       "macOS/Linux: ",
@@ -6442,93 +6443,134 @@
       " \xA0\xB7\xA0 Windows: ",
       /* @__PURE__ */ u4("code", { style: codeStyle, children: win })
     ] });
-    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-config", children: [
-      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.config.heading }),
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 10px;color:var(--foreground)", children: "Not seeing any data?" }),
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 4px", children: [
-          /* @__PURE__ */ u4("strong", { style: "color:var(--foreground)", children: "VS Code extension:" }),
-          " AgentLens automatically configures all supported agents on first activation. Just restart each agent once \u2014 sessions will start appearing immediately."
-        ] }),
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 6px", children: [
-          /* @__PURE__ */ u4("strong", { style: "color:var(--foreground)", children: "Standalone server:" }),
-          " Run the setup script once to configure Claude Code and Codex automatically, then restart each agent. GitHub Copilot requires the VS Code extension for auto-configuration."
-        ] }),
-        /* @__PURE__ */ u4("pre", { style: "font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 10px;overflow-x:auto;white-space:pre", children: `# macOS / Linux \u2014 configure all agents, or pick one:
+    const callout = standalone ? /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
+      /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)", children: "Not seeing any data?" }),
+      /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 6px", children: "Run the setup script once to configure agents automatically, then restart each agent." }),
+      /* @__PURE__ */ u4("pre", { style: "font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre", children: `# macOS / Linux \u2014 all agents, or pick one:
 ./scripts/configure-agents.sh
 ./scripts/configure-agents.sh --agent claude
 ./scripts/configure-agents.sh --agent codex
-./scripts/configure-agents.sh --agent copilot   # Copilot CLI only
+./scripts/configure-agents.sh --agent copilot
 
-# Windows (PowerShell) \u2014 configure all agents, or pick one:
+# Windows (PowerShell):
 .\\scripts\\configure-agents.ps1
 .\\scripts\\configure-agents.ps1 -Agent claude
 .\\scripts\\configure-agents.ps1 -Agent codex
-.\\scripts\\configure-agents.ps1 -Agent copilot  # Copilot CLI only` }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0 0 6px", children: [
-          "Config is read at startup \u2014 a running ",
-          /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
-          " ",
-          /* @__PURE__ */ u4("a", { href: "#gl-session", style: "color:inherit;text-underline-offset:2px", children: "session" }),
-          " started before configuration will not emit telemetry. Restart using the steps below:"
-        ] }),
-        /* @__PURE__ */ u4("table", { style: "font-size:11px;border-collapse:collapse;width:100%", children: /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
-          /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
-            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "GitHub Copilot" }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
-              /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Cmd+Shift+P" }),
-              " / ",
-              /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Ctrl+Shift+P" }),
-              " \u2192 ",
-              /* @__PURE__ */ u4("em", { children: "Reload Window" }),
-              " to restart the VS Code extension host."
-            ] })
-          ] }),
-          /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
-            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Claude Code (CLI)" }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
-              "Exit any running ",
-              /* @__PURE__ */ u4("code", { style: codeStyle, children: "claude" }),
-              " session and start a new one. Each invocation reads ",
-              /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.claude/settings.json" }),
-              " fresh."
-            ] })
-          ] }),
-          /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
-            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Claude Code (VS Code)" }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
-              "Reload the VS Code window (",
-              /* @__PURE__ */ u4("em", { children: "Reload Window" }),
-              " from the Command Palette)."
-            ] })
-          ] }),
-          /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "OpenAI Codex" }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
-              "Exit any running ",
-              /* @__PURE__ */ u4("code", { style: codeStyle, children: "codex" }),
-              " session and start a new one, or reload the VS Code window if using the Codex extension."
-            ] })
+.\\scripts\\configure-agents.ps1 -Agent copilot` }),
+      /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0 0 6px", children: [
+        "Config is read at startup \u2014 restart each ",
+        /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
+        " after running the script:"
+      ] }),
+      /* @__PURE__ */ u4("table", { style: "font-size:11px;border-collapse:collapse;width:100%", children: /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
+        /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+          /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Claude Code" }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+            "Exit any running ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "claude" }),
+            " session and start a new one."
           ] })
-        ] }) }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:8px 0 0", children: [
-          "After restarting, run a short session and check whether a session card appears in the sidebar. Open the ",
-          /* @__PURE__ */ u4("em", { children: "AgentLens" }),
-          " output channel (",
-          /* @__PURE__ */ u4("em", { children: "View \u2192 Output \u2192 AgentLens" }),
-          ") to confirm spans are arriving."
+        ] }),
+        /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+          /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "OpenAI Codex" }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+            "Exit any running ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "codex" }),
+            " session and start a new one."
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("tr", { children: [
+          /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Copilot CLI" }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+            "Open a new terminal (or restart your shell) to pick up the env vars, then run ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "copilot" }),
+            "."
+          ] })
         ] })
+      ] }) }),
+      /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:8px 0 0", children: [
+        "Start a short ",
+        /* @__PURE__ */ u4("a", { href: "#gl-session", style: "color:inherit;text-underline-offset:2px", children: "session" }),
+        " and check whether a session card appears in the sidebar to confirm data is arriving."
+      ] })
+    ] }) : /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
+      /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)", children: "Not seeing any data?" }),
+      /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 8px", children: [
+        "AgentLens automatically configures all supported agents on first activation. Just restart each ",
+        /* @__PURE__ */ u4("a", { href: "#gl-agent", style: "color:inherit;text-underline-offset:2px", children: "agent" }),
+        " once \u2014 ",
+        /* @__PURE__ */ u4("a", { href: "#gl-session", style: "color:inherit;text-underline-offset:2px", children: "sessions" }),
+        " will start appearing immediately."
       ] }),
-      /* @__PURE__ */ u4("p", { style: mutedP, children: [
-        "Manual configuration \u2014 replace ",
-        /* @__PURE__ */ u4("code", { style: codeStyle, children: "4318" }),
-        " with your custom port if you changed ",
-        /* @__PURE__ */ u4("em", { children: "agentLens.otlpPort" }),
-        "."
-      ] }),
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "GitHub Copilot" }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:0 0 4px", children: "VS Code extension" }),
+      /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0 0 6px", children: "Config is read at startup \u2014 restart after AgentLens activates:" }),
+      /* @__PURE__ */ u4("table", { style: "font-size:11px;border-collapse:collapse;width:100%", children: /* @__PURE__ */ u4("tbody", { style: "color:var(--muted)", children: [
+        /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+          /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "GitHub Copilot" }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+            /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Cmd+Shift+P" }),
+            " / ",
+            /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Ctrl+Shift+P" }),
+            " \u2192 ",
+            /* @__PURE__ */ u4("em", { children: "Reload Window" }),
+            " to restart the VS Code extension host."
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+          /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Claude Code (CLI)" }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+            "Exit any running ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "claude" }),
+            " session and start a new one."
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+          /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "Claude Code (VS Code)" }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+            "Reload the VS Code window (",
+            /* @__PURE__ */ u4("em", { children: "Reload Window" }),
+            " from the Command Palette)."
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("tr", { children: [
+          /* @__PURE__ */ u4("td", { style: "padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)", children: "OpenAI Codex" }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 0;vertical-align:top", children: [
+            "Exit any running ",
+            /* @__PURE__ */ u4("code", { style: codeStyle, children: "codex" }),
+            " session and start a new one, or reload the VS Code window if using the Codex extension."
+          ] })
+        ] })
+      ] }) }),
+      /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:8px 0 0", children: [
+        "Open the ",
+        /* @__PURE__ */ u4("em", { children: "AgentLens" }),
+        " output channel (",
+        /* @__PURE__ */ u4("em", { children: "View \u2192 Output \u2192 AgentLens" }),
+        ") to confirm spans are arriving."
+      ] })
+    ] });
+    const portNote = /* @__PURE__ */ u4("p", { style: mutedP, children: [
+      "Manual configuration \u2014 replace ",
+      /* @__PURE__ */ u4("code", { style: codeStyle, children: "4318" }),
+      " with your custom port if you changed ",
+      /* @__PURE__ */ u4("em", { children: "agentLens.otlpPort" }),
+      "."
+    ] });
+    const copilotSection = /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
+      /* @__PURE__ */ u4("h4", { style: h4Style, children: "GitHub Copilot" }),
+      standalone ? /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("p", { style: mutedP, children: [
+          "Set these environment variables so they are available when you run ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "copilot" }),
+          ". The configure script updates your shell profile automatically; or set them manually."
+        ] }),
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: `# macOS / Linux \u2014 add to ~/.zshrc or ~/.bashrc, then: source ~/.zshrc
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
+
+# Windows \u2014 run once in PowerShell (persists across sessions):
+[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
+[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")` })
+      ] }) : /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("p", { style: mutedP, children: [
           "Add to VS Code ",
           /* @__PURE__ */ u4("strong", { children: "User Settings" }),
@@ -6544,30 +6586,18 @@
   "github.copilot.chat.otel.enabled": true,
   "github.copilot.chat.otel.exporterType": "otlp-http",
   "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
-}` }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:12px 0 4px", children: "Copilot CLI" }),
-        /* @__PURE__ */ u4("p", { style: mutedP, children: [
-          "Set these environment variables so they are available when you run ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: "copilot" }),
-          ". The configure script updates your shell profile automatically; or set them manually."
-        ] }),
-        /* @__PURE__ */ u4("pre", { style: preStyle, children: `# macOS / Linux \u2014 add to ~/.zshrc or ~/.bashrc, then: source ~/.zshrc
-export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
-export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
-
-# Windows \u2014 run once in PowerShell (sets user-level env vars, persists across sessions):
-[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
-[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")` })
+}` })
+      ] })
+    ] });
+    const claudeSection = /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
+      /* @__PURE__ */ u4("h4", { style: h4Style, children: "Claude Code" }),
+      /* @__PURE__ */ u4("p", { style: mutedP, children: [
+        "The CLI and VS Code extension both read the same file. Add to the ",
+        /* @__PURE__ */ u4("code", { style: codeStyle, children: '"env"' }),
+        " block:"
       ] }),
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:20px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "Claude Code" }),
-        /* @__PURE__ */ u4("p", { style: mutedP, children: [
-          "The CLI and VS Code extension both read the same file. Add to the ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: '"env"' }),
-          " block:"
-        ] }),
-        pathNote("~/.claude/settings.json", "%USERPROFILE%\\.claude\\settings.json"),
-        /* @__PURE__ */ u4("pre", { style: preStyle, children: `{
+      pathNote("~/.claude/settings.json", "%USERPROFILE%\\.claude\\settings.json"),
+      /* @__PURE__ */ u4("pre", { style: preStyle, children: `{
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
@@ -6579,45 +6609,52 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
     "OTEL_LOG_USER_PROMPTS": "1"
   }
 }` }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6", children: [
-          /* @__PURE__ */ u4("strong", { children: "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1" }),
-          " enables span-level tracing \u2014 without it ",
-          /* @__PURE__ */ u4("a", { href: "#gl-turn", style: "color:inherit;text-underline-offset:2px", children: "turns" }),
-          " and ",
-          /* @__PURE__ */ u4("a", { href: "#gl-llm-call", style: "color:inherit;text-underline-offset:2px", children: "LLM calls" }),
-          " are indistinguishable and cache token breakdowns are unavailable.",
-          " ",
-          "The three ",
-          /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_*" }),
-          " vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt."
-        ] })
+      /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6", children: [
+        /* @__PURE__ */ u4("strong", { children: "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1" }),
+        " enables span-level tracing \u2014 without it ",
+        /* @__PURE__ */ u4("a", { href: "#gl-turn", style: "color:inherit;text-underline-offset:2px", children: "turns" }),
+        " and ",
+        /* @__PURE__ */ u4("a", { href: "#gl-llm-call", style: "color:inherit;text-underline-offset:2px", children: "LLM calls" }),
+        " are indistinguishable and cache token breakdowns are unavailable.",
+        " ",
+        "The three ",
+        /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_*" }),
+        " vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt."
+      ] })
+    ] });
+    const codexSection = /* @__PURE__ */ u4("div", { style: "margin-bottom:4px", children: [
+      /* @__PURE__ */ u4("h4", { style: h4Style, children: "OpenAI Codex" }),
+      /* @__PURE__ */ u4("p", { style: mutedP, children: [
+        "The CLI and VS Code extension both read the same file. Add an ",
+        /* @__PURE__ */ u4("code", { style: codeStyle, children: "[otel]" }),
+        " section:"
       ] }),
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:4px", children: [
-        /* @__PURE__ */ u4("h4", { style: h4Style, children: "OpenAI Codex" }),
-        /* @__PURE__ */ u4("p", { style: mutedP, children: [
-          "The CLI and VS Code extension both read the same file. Add an ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: "[otel]" }),
-          " section:"
-        ] }),
-        pathNote("~/.codex/config.toml", "%USERPROFILE%\\.codex\\config.toml"),
-        /* @__PURE__ */ u4("pre", { style: preStyle, children: `[otel]
+      pathNote("~/.codex/config.toml", "%USERPROFILE%\\.codex\\config.toml"),
+      /* @__PURE__ */ u4("pre", { style: preStyle, children: `[otel]
 log_user_prompt = true
 exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
 trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }` }),
-        /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6", children: [
-          /* @__PURE__ */ u4("strong", { children: "log_user_prompt=true" }),
-          " includes your typed prompt; without it sessions show ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: "[session in progress]" }),
-          ".",
-          " ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: "exporter" }),
-          " sends log events; ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: "trace_exporter" }),
-          " sends ",
-          /* @__PURE__ */ u4("a", { href: "#gl-span", style: "color:inherit;text-underline-offset:2px", children: "trace spans" }),
-          ". Both point at the same endpoint."
-        ] })
+      /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6", children: [
+        /* @__PURE__ */ u4("strong", { children: "log_user_prompt=true" }),
+        " includes your typed prompt; without it sessions show ",
+        /* @__PURE__ */ u4("code", { style: codeStyle, children: "[session in progress]" }),
+        ".",
+        " ",
+        /* @__PURE__ */ u4("code", { style: codeStyle, children: "exporter" }),
+        " sends log events; ",
+        /* @__PURE__ */ u4("code", { style: codeStyle, children: "trace_exporter" }),
+        " sends ",
+        /* @__PURE__ */ u4("a", { href: "#gl-span", style: "color:inherit;text-underline-offset:2px", children: "trace spans" }),
+        ". Both point at the same endpoint."
       ] })
+    ] });
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-config", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.config.heading }),
+      callout,
+      portNote,
+      copilotSection,
+      claudeSection,
+      codexSection
     ] });
   }
   function AgentOtelSection() {

@@ -198,91 +198,117 @@ function OverviewSection() {
 }
 
 function ConfigSection() {
+  const standalone = window.__STANDALONE__ === true
   const kbdStyle = 'font-size:11px;background:var(--panel-bg);padding:1px 5px;border-radius:3px;border:1px solid var(--border)'
   const pathNote = (mac: string, win: string) => (
     <p style="font-size:11px;color:var(--muted);margin:0 0 6px">
       macOS/Linux: <code style={codeStyle}>{mac}</code> &nbsp;·&nbsp; Windows: <code style={codeStyle}>{win}</code>
     </p>
   )
-  return (
-    <div class="help-section" id="help-config">
-      <h3 class="help-heading">{HELP_SECTIONS.config.heading}</h3>
 
-      <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
-        <p style="font-size:12px;font-weight:600;margin:0 0 10px;color:var(--foreground)">Not seeing any data?</p>
-
-        <p style="font-size:12px;color:var(--muted);margin:0 0 4px">
-          <strong style="color:var(--foreground)">VS Code extension:</strong> AgentLens automatically configures all supported agents on first activation. Just restart each agent once — sessions will start appearing immediately.
-        </p>
-
-        <p style="font-size:12px;color:var(--muted);margin:0 0 6px">
-          <strong style="color:var(--foreground)">Standalone server:</strong> Run the setup script once to configure Claude Code and Codex automatically, then restart each agent. GitHub Copilot requires the VS Code extension for auto-configuration.
-        </p>
-        <pre style="font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 10px;overflow-x:auto;white-space:pre">{`# macOS / Linux — configure all agents, or pick one:
+  // ── "Not seeing any data?" callout ──────────────────────────────────────────
+  const callout = standalone ? (
+    <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
+      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 6px">Run the setup script once to configure agents automatically, then restart each agent.</p>
+      <pre style="font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre">{`# macOS / Linux — all agents, or pick one:
 ./scripts/configure-agents.sh
 ./scripts/configure-agents.sh --agent claude
 ./scripts/configure-agents.sh --agent codex
-./scripts/configure-agents.sh --agent copilot   # Copilot CLI only
+./scripts/configure-agents.sh --agent copilot
 
-# Windows (PowerShell) — configure all agents, or pick one:
+# Windows (PowerShell):
 .\\scripts\\configure-agents.ps1
 .\\scripts\\configure-agents.ps1 -Agent claude
 .\\scripts\\configure-agents.ps1 -Agent codex
-.\\scripts\\configure-agents.ps1 -Agent copilot  # Copilot CLI only`}</pre>
+.\\scripts\\configure-agents.ps1 -Agent copilot`}</pre>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart each <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> after running the script:</p>
+      <table style="font-size:11px;border-collapse:collapse;width:100%">
+        <tbody style="color:var(--muted)">
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code</td>
+            <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>claude</code> session and start a new one.</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">OpenAI Codex</td>
+            <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one.</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Copilot CLI</td>
+            <td style="padding:4px 0;vertical-align:top">Open a new terminal (or restart your shell) to pick up the env vars, then run <code style={codeStyle}>copilot</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Start a short <a href="#gl-session" style="color:inherit;text-underline-offset:2px">session</a> and check whether a session card appears in the sidebar to confirm data is arriving.</p>
+    </div>
+  ) : (
+    <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
+      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">AgentLens automatically configures all supported agents on first activation. Just restart each <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> once — <a href="#gl-session" style="color:inherit;text-underline-offset:2px">sessions</a> will start appearing immediately.</p>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart after AgentLens activates:</p>
+      <table style="font-size:11px;border-collapse:collapse;width:100%">
+        <tbody style="color:var(--muted)">
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">GitHub Copilot</td>
+            <td style="padding:4px 0;vertical-align:top"><kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Reload Window</em> to restart the VS Code extension host.</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code (CLI)</td>
+            <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>claude</code> session and start a new one.</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code (VS Code)</td>
+            <td style="padding:4px 0;vertical-align:top">Reload the VS Code window (<em>Reload Window</em> from the Command Palette).</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">OpenAI Codex</td>
+            <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one, or reload the VS Code window if using the Codex extension.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Open the <em>AgentLens</em> output channel (<em>View → Output → AgentLens</em>) to confirm spans are arriving.</p>
+    </div>
+  )
 
-        <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — a running <a href="#gl-agent" style="color:inherit;text-underline-offset:2px">agent</a> <a href="#gl-session" style="color:inherit;text-underline-offset:2px">session</a> started before configuration will not emit telemetry. Restart using the steps below:</p>
-        <table style="font-size:11px;border-collapse:collapse;width:100%">
-          <tbody style="color:var(--muted)">
-            <tr style="border-bottom:1px solid var(--border)">
-              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">GitHub Copilot</td>
-              <td style="padding:4px 0;vertical-align:top"><kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Reload Window</em> to restart the VS Code extension host.</td>
-            </tr>
-            <tr style="border-bottom:1px solid var(--border)">
-              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code (CLI)</td>
-              <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>claude</code> session and start a new one. Each invocation reads <code style={codeStyle}>~/.claude/settings.json</code> fresh.</td>
-            </tr>
-            <tr style="border-bottom:1px solid var(--border)">
-              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code (VS Code)</td>
-              <td style="padding:4px 0;vertical-align:top">Reload the VS Code window (<em>Reload Window</em> from the Command Palette).</td>
-            </tr>
-            <tr>
-              <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">OpenAI Codex</td>
-              <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one, or reload the VS Code window if using the Codex extension.</td>
-            </tr>
-          </tbody>
-        </table>
-        <p style="font-size:11px;color:var(--muted);margin:8px 0 0">After restarting, run a short session and check whether a session card appears in the sidebar. Open the <em>AgentLens</em> output channel (<em>View → Output → AgentLens</em>) to confirm spans are arriving.</p>
-      </div>
+  // ── Manual config sections ───────────────────────────────────────────────────
+  const portNote = (
+    <p style={mutedP}>Manual configuration — replace <code style={codeStyle}>4318</code> with your custom port if you changed <em>agentLens.otlpPort</em>.</p>
+  )
 
-      <p style={mutedP}>Manual configuration — replace <code style={codeStyle}>4318</code> with your custom port if you changed <em>agentLens.otlpPort</em>.</p>
+  // GitHub Copilot: show VS Code settings in extension mode, CLI env vars in standalone
+  const copilotSection = (
+    <div style="margin-bottom:20px">
+      <h4 style={h4Style}>GitHub Copilot</h4>
+      {standalone ? (
+        <>
+          <p style={mutedP}>Set these environment variables so they are available when you run <code style={codeStyle}>copilot</code>. The configure script updates your shell profile automatically; or set them manually.</p>
+          <pre style={preStyle}>{`# macOS / Linux — add to ~/.zshrc or ~/.bashrc, then: source ~/.zshrc
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
 
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>GitHub Copilot</h4>
-
-        <p style="font-size:11px;font-weight:600;color:var(--fg);margin:0 0 4px">VS Code extension</p>
-        <p style={mutedP}>Add to VS Code <strong>User Settings</strong> (<kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Preferences: Open User Settings (JSON)</em>):</p>
-        <pre style={preStyle}>{`{
+# Windows — run once in PowerShell (persists across sessions):
+[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
+[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")`}</pre>
+        </>
+      ) : (
+        <>
+          <p style={mutedP}>Add to VS Code <strong>User Settings</strong> (<kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Preferences: Open User Settings (JSON)</em>):</p>
+          <pre style={preStyle}>{`{
   "github.copilot.chat.otel.enabled": true,
   "github.copilot.chat.otel.exporterType": "otlp-http",
   "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
 }`}</pre>
+        </>
+      )}
+    </div>
+  )
 
-        <p style="font-size:11px;font-weight:600;color:var(--fg);margin:12px 0 4px">Copilot CLI</p>
-        <p style={mutedP}>Set these environment variables so they are available when you run <code style={codeStyle}>copilot</code>. The configure script updates your shell profile automatically; or set them manually.</p>
-        <pre style={preStyle}>{`# macOS / Linux — add to ~/.zshrc or ~/.bashrc, then: source ~/.zshrc
-export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
-export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
-
-# Windows — run once in PowerShell (sets user-level env vars, persists across sessions):
-[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
-[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")`}</pre>
-      </div>
-
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>Claude Code</h4>
-        <p style={mutedP}>The CLI and VS Code extension both read the same file. Add to the <code style={codeStyle}>"env"</code> block:</p>
-        {pathNote('~/.claude/settings.json', '%USERPROFILE%\\.claude\\settings.json')}
-        <pre style={preStyle}>{`{
+  const claudeSection = (
+    <div style="margin-bottom:20px">
+      <h4 style={h4Style}>Claude Code</h4>
+      <p style={mutedP}>The CLI and VS Code extension both read the same file. Add to the <code style={codeStyle}>"env"</code> block:</p>
+      {pathNote('~/.claude/settings.json', '%USERPROFILE%\\.claude\\settings.json')}
+      <pre style={preStyle}>{`{
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
@@ -294,25 +320,37 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
     "OTEL_LOG_USER_PROMPTS": "1"
   }
 }`}</pre>
-        <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
-          <strong>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1</strong> enables span-level tracing — without it <a href="#gl-turn" style="color:inherit;text-underline-offset:2px">turns</a> and <a href="#gl-llm-call" style="color:inherit;text-underline-offset:2px">LLM calls</a> are indistinguishable and cache token breakdowns are unavailable.{' '}
-          The three <strong>OTEL_LOG_*</strong> vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt.
-        </p>
-      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
+        <strong>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1</strong> enables span-level tracing — without it <a href="#gl-turn" style="color:inherit;text-underline-offset:2px">turns</a> and <a href="#gl-llm-call" style="color:inherit;text-underline-offset:2px">LLM calls</a> are indistinguishable and cache token breakdowns are unavailable.{' '}
+        The three <strong>OTEL_LOG_*</strong> vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt.
+      </p>
+    </div>
+  )
 
-      <div style="margin-bottom:4px">
-        <h4 style={h4Style}>OpenAI Codex</h4>
-        <p style={mutedP}>The CLI and VS Code extension both read the same file. Add an <code style={codeStyle}>[otel]</code> section:</p>
-        {pathNote('~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml')}
-        <pre style={preStyle}>{`[otel]
+  const codexSection = (
+    <div style="margin-bottom:4px">
+      <h4 style={h4Style}>OpenAI Codex</h4>
+      <p style={mutedP}>The CLI and VS Code extension both read the same file. Add an <code style={codeStyle}>[otel]</code> section:</p>
+      {pathNote('~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml')}
+      <pre style={preStyle}>{`[otel]
 log_user_prompt = true
 exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
 trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }`}</pre>
-        <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
-          <strong>log_user_prompt=true</strong> includes your typed prompt; without it sessions show <code style={codeStyle}>[session in progress]</code>.{' '}
-          <code style={codeStyle}>exporter</code> sends log events; <code style={codeStyle}>trace_exporter</code> sends <a href="#gl-span" style="color:inherit;text-underline-offset:2px">trace spans</a>. Both point at the same endpoint.
-        </p>
-      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
+        <strong>log_user_prompt=true</strong> includes your typed prompt; without it sessions show <code style={codeStyle}>[session in progress]</code>.{' '}
+        <code style={codeStyle}>exporter</code> sends log events; <code style={codeStyle}>trace_exporter</code> sends <a href="#gl-span" style="color:inherit;text-underline-offset:2px">trace spans</a>. Both point at the same endpoint.
+      </p>
+    </div>
+  )
+
+  return (
+    <div class="help-section" id="help-config">
+      <h3 class="help-heading">{HELP_SECTIONS.config.heading}</h3>
+      {callout}
+      {portNote}
+      {copilotSection}
+      {claudeSection}
+      {codexSection}
     </div>
   )
 }
