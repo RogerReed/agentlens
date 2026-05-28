@@ -2,7 +2,7 @@
   "name": "agentlens-dashboard",
   "displayName": "AgentLens - AI Agent Observability",
   "description": "Observability for AI agent sessions in VS Code",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "agentlens",
   "license": "MIT",
   "repository": {
@@ -122,7 +122,7 @@
           {
             "id": "agentlens.openDashboard",
             "title": "Open the Full Dashboard",
-            "description": "The sidebar shows a live summary. Open the full 15-tab dashboard in an editor panel for traces, diffs, alerts, export, and more.\n\n[Open Dashboard](command:agentLens.openDashboard)",
+            "description": "The sidebar shows a live summary. Open the full 16-tab dashboard in an editor panel for traces, diffs, alerts, cost estimation, export, and more.\n\n[Open Dashboard](command:agentLens.openDashboard)",
             "media": {
               "markdown": "walkthrough/dashboard.md"
             },
