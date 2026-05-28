@@ -3029,7 +3029,7 @@
   }
 
   // media/src/pricing.ts
-  var PRICING_LAST_UPDATED = "2026-05-27";
+  var PRICING_LAST_UPDATED = "2026-05-28";
   var RATES = {
     // ── OpenAI ─────────────────────────────────────────────────────────────────────────────────────
     //                                                                     token rates ──────────────────────────────────── │ pre-Jun1  │ annual post-Jun1
@@ -3054,7 +3054,10 @@
     "gpt-5.4-mini": { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 4.5, multiplier: 0.33, multiplierAnnualPostJun1: 6 },
     "gpt-5.4-nano": { inputPerMTok: 0.2, cacheReadPerMTok: 0.02, cacheWritePerMTok: 0, outputPerMTok: 1.25, multiplier: 0.25, multiplierAnnualPostJun1: 0.25 },
     "gpt-5.5": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 0, outputPerMTok: 30, multiplier: 7.5, multiplierAnnualPostJun1: 7.5 },
-    // TBD per docs
+    // TBD per docs; long-context surcharge (>unknown threshold) not implemented
+    // ── Codex-only models ──────────────────────────────────────────────────────────────────────────
+    // codex-mini-latest: fine-tuned o4-mini; 75% cache discount (not the usual 90%); deprecated
+    "codex-mini-latest": { inputPerMTok: 1.5, cacheReadPerMTok: 0.375, cacheWritePerMTok: 0, outputPerMTok: 6, multiplier: 0, multiplierAnnualPostJun1: 0 },
     // ── Anthropic ──────────────────────────────────────────────────────────────────────────────────
     "claude-haiku-4-5": { inputPerMTok: 1, cacheReadPerMTok: 0.1, cacheWritePerMTok: 1.25, outputPerMTok: 5, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
     "claude-sonnet-4": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 1 },
@@ -3938,13 +3941,16 @@
     if (credits < 0.1) return "<0.1";
     return credits.toFixed(1);
   }
+  function sessionCostMode(session, mode) {
+    return session.source === "codex" ? "token" : mode;
+  }
   function CostBarChart({ sessions, mode }) {
     const canvasRef = A2(null);
     y2(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const data = sessions.map((sess, idx) => {
-        const cost = calcSessionCost(sess, mode);
+        const cost = calcSessionCost(sess, sessionCostMode(sess, mode));
         return { cost: cost.totalUsd, unknown: cost.modelUnknown, session: getSessionGlobalNumber(sess) || idx + 1, source: sess.source };
       }).reverse();
       const maxCost = Math.max(...data.map((d5) => d5.cost), 1e-4);
@@ -4021,11 +4027,8 @@
     const sessions = displaySessions.value;
     const [mode, setMode] = d2("token");
     const copilotSessions = sessions.filter((s4) => s4.source === "copilot");
-    const scopeNote = /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:7px 10px;margin-bottom:12px;line-height:1.5", children: [
-      "Cost estimation is currently implemented for ",
-      /* @__PURE__ */ u4("strong", { children: "Copilot" }),
-      " sessions only. Claude and Codex support coming soon."
-    ] });
+    const codexSessions = sessions.filter((s4) => s4.source === "codex");
+    const pricedSessions = sessions.filter((s4) => s4.source === "copilot" || s4.source === "codex");
     const disclaimer = /* @__PURE__ */ u4("div", { style: "font-size:11px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:8px 10px;margin-bottom:16px;line-height:1.6;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap", children: [
       /* @__PURE__ */ u4("span", { children: [
         /* @__PURE__ */ u4("strong", { style: "color:var(--foreground)", children: "Estimates only" }),
@@ -4037,72 +4040,71 @@
         PRICING_LAST_UPDATED
       ] })
     ] });
-    if (copilotSessions.length === 0) {
+    if (pricedSessions.length === 0) {
       return /* @__PURE__ */ u4("div", { id: "cost-content", children: [
-        scopeNote,
         disclaimer,
-        /* @__PURE__ */ u4("div", { class: "empty-state", children: "No Copilot sessions recorded \u2014 start a Copilot chat session to see cost estimates" })
+        /* @__PURE__ */ u4("div", { class: "empty-state", children: "No Copilot or Codex sessions recorded \u2014 start a session to see cost estimates" })
       ] });
     }
-    const costs = copilotSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, mode) }));
-    const totalUsd = costs.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
-    const totalCredits = totalUsd / 0.01;
-    const anyUnknown = costs.some((c4) => c4.cost.modelUnknown);
-    const sessionRows = costs.slice().reverse();
+    const copilotCosts = copilotSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, mode) }));
+    const codexCosts = codexSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, "token") }));
+    const allCosts = pricedSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, sessionCostMode(s4, mode)) }));
+    const copilotTotalUsd = copilotCosts.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
+    const copilotTotalCredits = copilotTotalUsd / 0.01;
+    const copilotAnyUnknown = copilotCosts.some((c4) => c4.cost.modelUnknown);
+    const codexTotalUsd = codexCosts.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
+    const codexAnyUnknown = codexCosts.some((c4) => c4.cost.modelUnknown);
+    const sessionRows = allCosts.slice().sort((a4, b4) => {
+      const na = getSessionGlobalNumber(a4.session) ?? 0;
+      const nb = getSessionGlobalNumber(b4.session) ?? 0;
+      return nb - na;
+    });
+    const showCreditsCol = mode === "token";
     return /* @__PURE__ */ u4("div", { id: "cost-content", children: [
-      scopeNote,
       disclaimer,
       /* @__PURE__ */ u4("div", { style: "display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap", children: [
-        /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px", children: [
-          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + getAgentColor("copilot") + ";vertical-align:middle;margin-right:5px" }),
-          "Copilot \u2014 pricing model"
+        copilotSessions.length > 0 && /* @__PURE__ */ u4(S, { children: [
+          /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + getAgentColor("copilot") + ";vertical-align:middle;margin-right:5px" }),
+            "Copilot \u2014 Select pricing model"
+          ] }),
+          /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;flex-wrap:wrap", children: [
+            /* @__PURE__ */ u4(
+              "button",
+              {
+                class: "tab-mini" + (mode === "token" ? " active" : ""),
+                onClick: () => setMode("token"),
+                title: "Token-based AI Credits billing, effective Jun 1, 2026",
+                children: "Token-based (from Jun 1, 2026)"
+              }
+            ),
+            /* @__PURE__ */ u4(
+              "button",
+              {
+                class: "tab-mini" + (mode === "request" ? " active" : ""),
+                onClick: () => setMode("request"),
+                title: "Request-based billing with model multipliers, active before Jun 1, 2026",
+                children: "Request-based (pre-Jun 1, 2026)"
+              }
+            ),
+            /* @__PURE__ */ u4(
+              "button",
+              {
+                class: "tab-mini" + (mode === "request-annual" ? " active" : ""),
+                onClick: () => setMode("request-annual"),
+                title: "Annual plan holders staying on request billing after Jun 1, 2026 face significantly higher multipliers",
+                children: "Annual plan request-based (post-Jun 1, 2026)"
+              }
+            )
+          ] })
         ] }),
-        /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;flex-wrap:wrap", children: [
-          /* @__PURE__ */ u4(
-            "button",
-            {
-              class: "tab-mini" + (mode === "token" ? " active" : ""),
-              onClick: () => setMode("token"),
-              title: "Token-based AI Credits billing, effective Jun 1, 2026",
-              children: "Token-based (from Jun 1, 2026)"
-            }
-          ),
-          /* @__PURE__ */ u4(
-            "button",
-            {
-              class: "tab-mini" + (mode === "request" ? " active" : ""),
-              onClick: () => setMode("request"),
-              title: "Request-based billing with model multipliers, active before Jun 1, 2026",
-              children: "Request-based (pre-Jun 1, 2026)"
-            }
-          ),
-          /* @__PURE__ */ u4(
-            "button",
-            {
-              class: "tab-mini" + (mode === "request-annual" ? " active" : ""),
-              onClick: () => setMode("request-annual"),
-              title: "Annual plan holders staying on request billing after Jun 1, 2026 face significantly higher multipliers",
-              children: "Annual plan request-based (post-Jun 1, 2026)"
-            }
-          )
+        codexSessions.length > 0 && /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + getAgentColor("codex") + ";vertical-align:middle;margin-right:5px" }),
+          "Codex \u2014 Always uses token-based pricing"
         ] })
       ] }),
       /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "ESTIMATED COST PER SESSION" }),
-      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
-        /* @__PURE__ */ u4("span", { children: [
-          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:2px;background:#00EAFF;vertical-align:middle;margin-right:3px" }),
-          "Copilot"
-        ] }),
-        /* @__PURE__ */ u4("span", { children: [
-          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:2px;background:#FFB085;vertical-align:middle;margin-right:3px" }),
-          "Claude"
-        ] }),
-        /* @__PURE__ */ u4("span", { children: [
-          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:2px;background:#F0FF42;vertical-align:middle;margin-right:3px" }),
-          "Codex"
-        ] })
-      ] }),
-      /* @__PURE__ */ u4(CostBarChart, { sessions: copilotSessions, mode }),
+      /* @__PURE__ */ u4(CostBarChart, { sessions: pricedSessions, mode }),
       /* @__PURE__ */ u4("h3", { style: "margin:24px 0 8px;font-size:13px;color:var(--muted)", children: "SESSION COST TABLE" }),
       /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
         /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border);color:var(--muted);text-align:left", children: [
@@ -4114,11 +4116,12 @@
           /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Output tok" }),
           /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Cache read" }),
           /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Est. cost" }),
-          mode === "token" && /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", "data-tip": "Copilot AI Credits (1 credit = $0.01)", children: "Credits" })
+          showCreditsCol && /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", "data-tip": "Copilot AI Credits (1 credit = $0.01); not applicable to Codex", children: "AI Credits" })
         ] }) }),
         /* @__PURE__ */ u4("tbody", { children: sessionRows.map(({ session: s4, cost }) => {
           const num = getSessionGlobalNumber(s4);
           const rawInput = Math.max(0, s4.inputTokens - s4.cacheReadTokens - s4.cacheCreateTokens);
+          const isCopilot = s4.source === "copilot";
           return /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border)", children: [
             /* @__PURE__ */ u4("td", { style: "padding:4px 8px;color:var(--muted)", children: num }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 8px", children: [
@@ -4131,28 +4134,61 @@
             /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(s4.outputTokens) }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: s4.cacheReadTokens > 0 ? formatCompact(s4.cacheReadTokens) : "\u2014" }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-weight:600", children: cost.modelUnknown ? /* @__PURE__ */ u4("span", { style: "color:var(--muted)", "data-tip": 'Model "' + s4.model + '" not in rate table \u2014 add rates in pricing.ts', children: "~$?" }) : fmtUsd(cost.totalUsd) }),
-            mode === "token" && /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: cost.modelUnknown ? "?" : fmtCredits(cost.aiCredits) })
+            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: !isCopilot ? "\u2014" : cost.modelUnknown ? "?" : fmtCredits(cost.aiCredits) })
           ] }, s4.sessionId);
         }) }),
-        /* @__PURE__ */ u4("tfoot", { children: /* @__PURE__ */ u4("tr", { style: "border-top:2px solid var(--vscode-panel-border);font-weight:600", children: [
-          /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:6px 8px;text-align:right;color:var(--muted)", children: [
-            "Total (",
-            copilotSessions.length,
-            " Copilot session",
-            copilotSessions.length !== 1 ? "s" : "",
-            ")"
+        /* @__PURE__ */ u4("tfoot", { children: [
+          copilotSessions.length > 0 && /* @__PURE__ */ u4("tr", { style: "border-top:1px solid var(--vscode-panel-border)", children: [
+            /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:5px 8px;text-align:right;color:var(--muted);font-size:10px", children: [
+              "Copilot (",
+              copilotSessions.length,
+              " session",
+              copilotSessions.length !== 1 ? "s" : "",
+              ")"
+            ] }),
+            /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;font-weight:600", children: [
+              copilotAnyUnknown ? "~" : "",
+              fmtUsd(copilotTotalUsd)
+            ] }),
+            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: [
+              copilotAnyUnknown ? "~" : "",
+              fmtCredits(copilotTotalCredits)
+            ] })
           ] }),
-          /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right", children: [
-            anyUnknown ? "~" : "",
-            fmtUsd(totalUsd)
+          codexSessions.length > 0 && /* @__PURE__ */ u4("tr", { style: "border-top:1px solid var(--vscode-panel-border)", children: [
+            /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:5px 8px;text-align:right;color:var(--muted);font-size:10px", children: [
+              "Codex (",
+              codexSessions.length,
+              " session",
+              codexSessions.length !== 1 ? "s" : "",
+              ")"
+            ] }),
+            /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;font-weight:600", children: [
+              codexAnyUnknown ? "~" : "",
+              fmtUsd(codexTotalUsd)
+            ] }),
+            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
           ] }),
-          mode === "token" && /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right;color:var(--muted)", children: [
-            anyUnknown ? "~" : "",
-            fmtCredits(totalCredits)
+          copilotSessions.length > 0 && codexSessions.length > 0 && /* @__PURE__ */ u4("tr", { style: "border-top:2px solid var(--vscode-panel-border);font-weight:600", children: [
+            /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:6px 8px;text-align:right;color:var(--muted)", children: [
+              "Total (",
+              pricedSessions.length,
+              " session",
+              pricedSessions.length !== 1 ? "s" : "",
+              ")"
+            ] }),
+            /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right", children: [
+              copilotAnyUnknown || codexAnyUnknown ? "~" : "",
+              fmtUsd(copilotTotalUsd + codexTotalUsd)
+            ] }),
+            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
           ] })
-        ] }) })
+        ] })
       ] }) }),
-      /* @__PURE__ */ u4("div", { style: "margin-top:16px;font-size:10px;color:var(--muted);line-height:1.6", children: mode === "token" ? "Token-based AI Credits: effective Jun 1, 2026. Per-turn chart uses input+output only; session totals include cache tokens." : mode === "request" ? "Request-based: active before Jun 1, 2026. Cost = multiplier \xD7 $0.04 per user prompt. Models marked 0\xD7 (e.g. GPT-4.1) are free under this model." : "Annual plan request-based: for annual-plan holders staying on old billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June." }),
+      /* @__PURE__ */ u4("div", { style: "margin-top:16px;font-size:10px;color:var(--muted);line-height:1.6", children: [
+        mode === "token" ? "Token-based AI Credits: effective Jun 1, 2026. Per-turn chart uses input+output only; session totals include cache tokens." : mode === "request" ? "Request-based: active before Jun 1, 2026. Cost = multiplier \xD7 $0.04 per user prompt. Models marked 0\xD7 (e.g. GPT-4.1) are free under this model." : "Annual plan request-based: for annual-plan holders staying on old billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June.",
+        codexSessions.length > 0 && " Codex sessions use token-based pricing regardless of the Copilot billing model selected above."
+      ] }),
       /* @__PURE__ */ u4("div", { id: "cost-known-gaps", style: "margin-top:24px;padding-top:16px;border-top:1px solid var(--vscode-panel-border);font-size:11px;color:var(--muted);line-height:1.7", children: [
         /* @__PURE__ */ u4("strong", { style: "color:var(--foreground);font-size:12px", children: "Known gaps" }),
         /* @__PURE__ */ u4("div", { style: "margin-top:8px", children: [
@@ -4168,6 +4204,27 @@
               " \u2014 this can happen when GitHub releases a new model after the last rate update, or when the model ID in telemetry doesn't match the published name."
             ] }),
             /* @__PURE__ */ u4("li", { children: "Request-based cost uses session turn count as a proxy for billable prompts, which may not match exactly for all session shapes." })
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("div", { style: "margin-top:12px", children: [
+          /* @__PURE__ */ u4("span", { style: "font-size:10px;text-transform:uppercase;letter-spacing:.4px", children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("codex") + ";vertical-align:middle;margin-right:4px" }),
+            "Codex"
+          ] }),
+          /* @__PURE__ */ u4("ul", { style: "margin:4px 0 0;padding-left:18px", children: [
+            /* @__PURE__ */ u4("li", { children: "Long-context surcharges are not applied \u2014 GPT-5.5 has a higher-rate tier above an unconfirmed token threshold." }),
+            /* @__PURE__ */ u4("li", { children: [
+              "Reasoning tokens (",
+              /* @__PURE__ */ u4("code", { children: "codex.usage.reasoning_output_tokens" }),
+              ") are included in output token counts and billed at the standard output rate. A separate reasoning rate has not been confirmed from official sources."
+            ] }),
+            /* @__PURE__ */ u4("li", { children: [
+              "Models not in the rate table are shown as ",
+              /* @__PURE__ */ u4("strong", { children: "~$?" }),
+              ". The official Codex rate card (",
+              /* @__PURE__ */ u4("code", { children: "help.openai.com" }),
+              ") may list additional model aliases not yet captured here."
+            ] })
           ] })
         ] })
       ] })
@@ -6264,7 +6321,7 @@
     ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
     ["Traces", "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."],
     ["Tokens", "Token consumption aggregated by span name and per session, sorted from highest to lowest."],
-    ["Cost", "Estimated session cost for Copilot sessions. Supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Shows a per-session bar chart and a cross-session cost table. Estimates only \u2014 not your actual bill."],
+    ["Cost", "Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cross-session cost table. Estimates only \u2014 not your actual bill."],
     ["Tools", "Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],
     ["Timeline", "All spans in chronological order as a vertical event list. Click any item to expand its attributes as formatted JSON."],
     ["Latency", "Span durations as a color-coded grid, helping identify which operations are consistently slow."],
@@ -7447,11 +7504,11 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   var sidebarOpen = y3(true);
   var TABS = [
     { id: "efficiency", label: "Efficiency", title: "Per-session metrics and token usage breakdown." },
+    { id: "cost", label: "Cost", title: "Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing." },
     { id: "recommendations", label: "Recommendations", title: "Actionable insights and recommendations for improving prompt efficiency and reducing token waste." },
     { id: "alerts", label: "Alerts", title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
     { id: "automation", label: "Automation", title: "Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed." },
     { id: "tokens", label: "Tokens", title: "Token consumption aggregated by span name and per session, sorted from highest to lowest." },
-    { id: "cost", label: "Cost", title: "Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing." },
     { id: "latency", label: "Latency", title: "Span durations as a color-coded grid, helping identify which operations are consistently slow." },
     { id: "summaries", label: "Summaries", title: "A high-level, human-readable timeline of each session \u2014 LLM calls with their decisions, tool calls with arguments, and token usage." },
     { id: "traces", label: "Traces", title: "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing." },
