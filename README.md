@@ -102,7 +102,77 @@ Each signal includes a specific recommended action and a **Copy for {Agent}** bu
 
 ## Manual Configuration
 
-The VS Code extension configures agents automatically on first activation. For standalone mode, run the included setup scripts (see [Configuring Agents](#configuring-agents) above). For detailed per-agent configuration steps, open the **Help** tab in the AgentLens dashboard.
+The VS Code extension configures agents automatically on first activation. For standalone mode, run the included setup scripts (see [Configuring Agents](#configuring-agents) above). Replace `4318` with your custom port if you changed `agentLens.otlpPort`.
+
+### GitHub Copilot
+
+**VS Code extension** — Add to VS Code User Settings (`Cmd+Shift+P` / `Ctrl+Shift+P` → *Preferences: Open User Settings (JSON)*):
+
+```json
+{
+  "github.copilot.chat.otel.enabled": true,
+  "github.copilot.chat.otel.exporterType": "otlp-http",
+  "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
+}
+```
+
+**Copilot CLI (standalone)** — Add to your shell profile, then open a new terminal:
+
+```bash
+# macOS / Linux — add to ~/.zshrc or ~/.bashrc
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
+```
+
+```powershell
+# Windows — run once in PowerShell (persists across sessions)
+[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
+[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")
+```
+
+---
+
+### Claude Code
+
+The CLI and VS Code extension both read the same file. Add to the `"env"` block:
+
+- **macOS/Linux:** `~/.claude/settings.json`
+- **Windows:** `%USERPROFILE%\.claude\settings.json`
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
+    "OTEL_TRACES_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+    "OTEL_LOG_TOOL_DETAILS": "1",
+    "OTEL_LOG_TOOL_CONTENT": "1",
+    "OTEL_LOG_USER_PROMPTS": "1"
+  }
+}
+```
+
+`CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1` enables span-level tracing — without it turns and LLM calls are indistinguishable and cache token breakdowns are unavailable. The three `OTEL_LOG_*` vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt. If `settings.json` already exists, merge the `env` block — do not replace the whole file.
+
+---
+
+### Codex
+
+The CLI and VS Code extension both read the same file. Add an `[otel]` section:
+
+- **macOS/Linux:** `~/.codex/config.toml`
+- **Windows:** `%USERPROFILE%\.codex\config.toml`
+
+```toml
+[otel]
+log_user_prompt = true
+exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
+trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
+```
+
+`log_user_prompt = true` includes your typed prompt; without it sessions show `[session in progress]`. `exporter` sends log events; `trace_exporter` sends trace spans. Both point at the same endpoint. If `config.toml` already has an `[otel]` section, add only the missing keys.
 
 ## Replaying Exported Spans
 
