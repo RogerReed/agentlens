@@ -211,13 +211,15 @@ function ConfigSection() {
     <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
       <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
       <p style="font-size:12px;color:var(--muted);margin:0 0 6px">Run the setup script once to configure agents automatically, then restart each agent.</p>
-      <pre style="font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre">{`# macOS / Linux — all agents, or pick one:
-./scripts/configure-agents.sh
+      <pre style="font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre">{`# macOS / Linux — make executable (once), then run:
+chmod +x scripts/configure-agents.sh
+./scripts/configure-agents.sh             # all agents
 ./scripts/configure-agents.sh --agent claude
 ./scripts/configure-agents.sh --agent codex
 ./scripts/configure-agents.sh --agent copilot
 
-# Windows (PowerShell):
+# Windows (PowerShell) — if blocked, allow scripts first (once):
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\\scripts\\configure-agents.ps1
 .\\scripts\\configure-agents.ps1 -Agent claude
 .\\scripts\\configure-agents.ps1 -Agent codex

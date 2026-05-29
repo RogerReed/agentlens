@@ -6446,13 +6446,15 @@
     const callout = standalone ? /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
       /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)", children: "Not seeing any data?" }),
       /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 6px", children: "Run the setup script once to configure agents automatically, then restart each agent." }),
-      /* @__PURE__ */ u4("pre", { style: "font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre", children: `# macOS / Linux \u2014 all agents, or pick one:
-./scripts/configure-agents.sh
+      /* @__PURE__ */ u4("pre", { style: "font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre", children: `# macOS / Linux \u2014 make executable (once), then run:
+chmod +x scripts/configure-agents.sh
+./scripts/configure-agents.sh             # all agents
 ./scripts/configure-agents.sh --agent claude
 ./scripts/configure-agents.sh --agent codex
 ./scripts/configure-agents.sh --agent copilot
 
-# Windows (PowerShell):
+# Windows (PowerShell) \u2014 if blocked, allow scripts first (once):
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\\scripts\\configure-agents.ps1
 .\\scripts\\configure-agents.ps1 -Agent claude
 .\\scripts\\configure-agents.ps1 -Agent codex

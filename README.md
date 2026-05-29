@@ -42,10 +42,14 @@ Open <http://localhost:3000> after the container starts.
 Use the included setup scripts to configure agents automatically, or see [Manual Configuration](#manual-configuration) for the manual steps.
 
 ```bash
-# macOS / Linux
+# macOS / Linux — make executable (once), then run
+chmod +x scripts/configure-agents.sh
 ./scripts/configure-agents.sh
+```
 
-# Windows (PowerShell)
+```powershell
+# Windows (PowerShell) — if scripts are blocked, allow them first (once):
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\scripts\configure-agents.ps1
 ```
 
