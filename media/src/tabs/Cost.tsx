@@ -23,8 +23,8 @@ function fmtCredits(credits: number): string {
 }
 
 function sessionCostMode(session: SessionSummaryCard, mode: PricingMode): PricingMode {
-  // Codex is always token-based; the mode toggle only applies to Copilot
-  return session.source === 'codex' ? 'token' : mode
+  // Codex and Claude Code are always token-based; the mode toggle only applies to Copilot
+  return (session.source === 'codex' || session.source === 'claude_code') ? 'token' : mode
 }
 
 // ── Per-session cost bar chart ─────────────────────────────────────────────────
@@ -117,7 +117,8 @@ export function Cost() {
 
   const copilotSessions = sessions.filter(s => s.source === 'copilot')
   const codexSessions = sessions.filter(s => s.source === 'codex')
-  const pricedSessions = sessions.filter(s => s.source === 'copilot' || s.source === 'codex')
+  const claudeSessions = sessions.filter(s => s.source === 'claude_code')
+  const pricedSessions = sessions.filter(s => s.source === 'copilot' || s.source === 'codex' || s.source === 'claude_code')
 
   const disclaimer = (
     <div style="font-size:11px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:8px 10px;margin-bottom:16px;line-height:1.6;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
@@ -130,13 +131,14 @@ export function Cost() {
     return (
       <div id="cost-content">
         {disclaimer}
-        <div class="empty-state">No Copilot or Codex sessions recorded — start a session to see cost estimates</div>
+        <div class="empty-state">No Copilot, Claude, or Codex sessions recorded — start a session to see cost estimates</div>
       </div>
     )
   }
 
   const copilotCosts = copilotSessions.map(s => ({ session: s, cost: calcSessionCost(s, mode) }))
   const codexCosts = codexSessions.map(s => ({ session: s, cost: calcSessionCost(s, 'token') }))
+  const claudeCosts = claudeSessions.map(s => ({ session: s, cost: calcSessionCost(s, 'token') }))
   const allCosts = pricedSessions.map(s => ({ session: s, cost: calcSessionCost(s, sessionCostMode(s, mode)) }))
 
   const copilotTotalUsd = copilotCosts.reduce((sum, c) => sum + c.cost.totalUsd, 0)
@@ -144,6 +146,8 @@ export function Cost() {
   const copilotAnyUnknown = copilotCosts.some(c => c.cost.modelUnknown)
   const codexTotalUsd = codexCosts.reduce((sum, c) => sum + c.cost.totalUsd, 0)
   const codexAnyUnknown = codexCosts.some(c => c.cost.modelUnknown)
+  const claudeTotalUsd = claudeCosts.reduce((sum, c) => sum + c.cost.totalUsd, 0)
+  const claudeAnyUnknown = claudeCosts.some(c => c.cost.modelUnknown)
 
   const sessionRows = allCosts.slice().sort((a, b) => {
     const na = getSessionGlobalNumber(a.session) ?? 0
@@ -185,6 +189,12 @@ export function Cost() {
           <span style="font-size:11px;color:var(--muted)">
             <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;background:' + getAgentColor('codex') + ';vertical-align:middle;margin-right:5px'} />
             Codex — Always uses token-based pricing
+          </span>
+        )}
+        {claudeSessions.length > 0 && (
+          <span style="font-size:11px;color:var(--muted)">
+            <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;background:' + getAgentColor('claude_code') + ';vertical-align:middle;margin-right:5px'} />
+            Claude — Always uses token-based pricing
           </span>
         )}
       </div>
@@ -260,12 +270,21 @@ export function Cost() {
                 {showCreditsCol && <td style="padding:5px 8px;text-align:right;color:var(--muted)">—</td>}
               </tr>
             )}
-            {copilotSessions.length > 0 && codexSessions.length > 0 && (
+            {claudeSessions.length > 0 && (
+              <tr style="border-top:1px solid var(--vscode-panel-border)">
+                <td colSpan={7} style="padding:5px 8px;text-align:right;color:var(--muted);font-size:10px">
+                  Claude ({claudeSessions.length} session{claudeSessions.length !== 1 ? 's' : ''})
+                </td>
+                <td style="padding:5px 8px;text-align:right;font-weight:600">{claudeAnyUnknown ? '~' : ''}{fmtUsd(claudeTotalUsd)}</td>
+                {showCreditsCol && <td style="padding:5px 8px;text-align:right;color:var(--muted)">—</td>}
+              </tr>
+            )}
+            {[copilotSessions, codexSessions, claudeSessions].filter(s => s.length > 0).length > 1 && (
               <tr style="border-top:2px solid var(--vscode-panel-border);font-weight:600">
                 <td colSpan={7} style="padding:6px 8px;text-align:right;color:var(--muted)">
                   Total ({pricedSessions.length} session{pricedSessions.length !== 1 ? 's' : ''})
                 </td>
-                <td style="padding:6px 8px;text-align:right">{(copilotAnyUnknown || codexAnyUnknown) ? '~' : ''}{fmtUsd(copilotTotalUsd + codexTotalUsd)}</td>
+                <td style="padding:6px 8px;text-align:right">{(copilotAnyUnknown || codexAnyUnknown || claudeAnyUnknown) ? '~' : ''}{fmtUsd(copilotTotalUsd + codexTotalUsd + claudeTotalUsd)}</td>
                 {showCreditsCol && <td style="padding:6px 8px;text-align:right;color:var(--muted)">—</td>}
               </tr>
             )}
@@ -281,6 +300,7 @@ export function Cost() {
             ? 'Request-based: active before Jun 1, 2026. Cost = multiplier × $0.04 per user prompt. Models marked 0× (e.g. GPT-4.1) are free under this model.'
             : 'Annual plan request-based: for annual-plan holders staying on old billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June.'}
         {codexSessions.length > 0 && ' Codex sessions use token-based pricing regardless of the Copilot billing model selected above.'}
+        {claudeSessions.length > 0 && ' Claude sessions use Anthropic API token-based pricing regardless of the Copilot billing model selected above.'}
       </div>
 
       {/* Known gaps */}
@@ -306,6 +326,18 @@ export function Cost() {
             <li>Long-context surcharges are not applied — GPT-5.5 has a higher-rate tier above an unconfirmed token threshold.</li>
             <li>Reasoning tokens (<code>codex.usage.reasoning_output_tokens</code>) are included in output token counts and billed at the standard output rate. A separate reasoning rate has not been confirmed from official sources.</li>
             <li>Models not in the rate table are shown as <strong>~$?</strong>. The official Codex rate card (<code>help.openai.com</code>) may list additional model aliases not yet captured here.</li>
+          </ul>
+        </div>
+        <div style="margin-top:12px">
+          <span style="font-size:10px;text-transform:uppercase;letter-spacing:.4px">
+            <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor('claude_code') + ';vertical-align:middle;margin-right:4px'} />
+            Claude
+          </span>
+          <ul style="margin:4px 0 0;padding-left:18px">
+            <li>Cache write TTL cannot be determined from telemetry. Claude Code uses 5-minute prompt caches by default (1.25× input rate); if 1-hour caches are active (2× input rate), cost will be underestimated by ~37%.</li>
+            <li>Fast mode (<code>/fast</code>): Opus fast-mode requests are billed at $30 input / $150 output per MTok — 6× the standard Opus rate. The model ID in telemetry does not indicate fast mode, so fast-mode sessions are costed at the standard Opus rate and will be significantly underestimated.</li>
+            <li>Opus 4.7 tokenizer change (from Apr 16, 2026) generates up to 35% more tokens for the same text. Per-token prices are unchanged; sessions before and after this date are not directly cost-comparable.</li>
+            <li>Models not in the rate table are shown as <strong>~$?</strong>. Older Claude models (claude-3-5-sonnet, claude-3-opus, etc.) may appear in imported historical sessions.</li>
           </ul>
         </div>
       </div>
