@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { displaySessions } from '../state'
 import { getSessionGlobalNumber, getAgentSourceLabel, formatMs } from '../utils'
+import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry } from '../types'
 
 type FlowCanvas = HTMLCanvasElement & { __flowDraw?: () => void; __flowCenter?: () => void }
@@ -21,6 +22,7 @@ interface SemNode {
   totalTurns?: number
   inputTokens?: number
   outputTokens?: number
+  costUsd?: number
   model?: string
   durationMs?: number
   action?: string
@@ -216,6 +218,7 @@ export function Flow() {
         totalTurns: turns.length,
         inputTokens: turn.entry.inputTokens ?? 0,
         outputTokens: turn.entry.outputTokens ?? 0,
+        costUsd: inferred ? undefined : calcEntryCost(turn.entry, sess?.model ?? '') || undefined,
         model: turn.entry.model ?? turn.entry.label ?? '',
         durationMs: turn.entry.durationMs ?? 0,
         action: turn.entry.action ?? '',
@@ -484,6 +487,8 @@ export function Flow() {
             if (hn.note) lines.push({ label: 'Note', value: hn.note })
             if ((hn.inputTokens ?? 0) > 0 || (hn.outputTokens ?? 0) > 0)
               lines.push({ label: 'Tokens', value: (hn.inputTokens ?? 0).toLocaleString() + ' in → ' + (hn.outputTokens ?? 0).toLocaleString() + ' out' })
+            if ((hn.costUsd ?? 0) > 0)
+              lines.push({ label: 'Cost', value: fmtUsd(hn.costUsd!) })
             if (hn.durationMs) lines.push({ label: 'Duration', value: formatMs(hn.durationMs) })
             if (hn.action) lines.push({ label: 'Outcome', value: hn.action })
             if (hn.toolsUsed?.length) lines.push({ label: 'Tools used', value: hn.toolsUsed.slice(0, 5).join(', ') + (hn.toolsUsed.length > 5 ? ' +' + (hn.toolsUsed.length - 5) + ' more' : '') })
