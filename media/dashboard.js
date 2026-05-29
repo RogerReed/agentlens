@@ -6970,6 +6970,7 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
     "OTEL_TRACES_EXPORTER": "otlp",
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+    "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental",
     "OTEL_LOG_TOOL_DETAILS": "1",
     "OTEL_LOG_TOOL_CONTENT": "1",
     "OTEL_LOG_USER_PROMPTS": "1"
@@ -6982,6 +6983,9 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
         " and ",
         /* @__PURE__ */ u4("a", { href: "#gl-llm-call", children: "LLM calls" }),
         " are indistinguishable and cache token breakdowns are unavailable.",
+        " ",
+        /* @__PURE__ */ u4("strong", { children: "OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental" }),
+        " opts into the latest GenAI semantic conventions, enabling LLM response content in spans.",
         " ",
         "The three ",
         /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_*" }),
