@@ -133,6 +133,21 @@ export class SessionStore {
   getSummary() { return this.summary }
   getSpans() { return this.spans }
   export() { return { summary: this.summary, spans: this.spans } }
+
+  // Injects or overwrites a single attribute on an existing span. Used to attach
+  // gen_ai log event content (e.g. gen_ai.output.messages) to a span after the fact.
+  injectSpanAttribute(traceId: string, spanId: string, key: string, value: string): boolean {
+    const span = this.spans.find(s => s.traceId === traceId && s.spanId === spanId)
+    if (!span) { return false }
+    const existing = span.attributes.find(a => a.key === key)
+    if (existing) {
+      existing.value = { stringValue: value }
+    } else {
+      span.attributes.push({ key, value: { stringValue: value } })
+    }
+    this.notifyUpdate()
+    return true
+  }
   
   syncFromGlobalState() {
     const saved = this.context.globalState.get<Span[]>('agentLens.spans', [])

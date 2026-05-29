@@ -2,7 +2,7 @@ import { Span } from '../types'
 import { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizerTypes'
 import {
   getAttrStr, getAttrInt, nanoToMs, CLAUDE_WRITE_TOOLS,
-  extractResponseText, extractTokenCounts, normalizeUserRequest,
+  extractResponseText, extractTokenCounts, normalizeUserRequest, getGenAiModel,
 } from './helpers'
 
 function strOrUndef(v: unknown): string | undefined {
@@ -44,7 +44,7 @@ export function buildClaudeSessions(
         totalLlmCalls++
         const { input: inTok, output: outTok, cacheRead, cacheCreate } = extractTokenCounts(child)
         const ttft = getAttrInt(child, 'ttft_ms')
-        const childModel = getAttrStr(child, 'gen_ai.request.model') || getAttrStr(child, 'model')
+        const childModel = getGenAiModel(child)
         if (childModel) { model = childModel }
         inputTokens += inTok
         outputTokens += outTok

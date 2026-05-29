@@ -8,6 +8,16 @@ export function getAttrStr(span: Span, key: string): string {
   return String(attr.value?.stringValue ?? attr.value?.intValue ?? attr.value?.doubleValue ?? '')
 }
 
+// Handles the gen_ai.system → gen_ai.provider.name rename in gen_ai_latest_experimental.
+export function getGenAiSystem(span: Span): string {
+  return getFirstAttr(span, ['gen_ai.system', 'gen_ai.provider.name'])
+}
+
+// Handles gen_ai.request.model / gen_ai.response.model with old and new attribute names.
+export function getGenAiModel(span: Span): string {
+  return getFirstAttr(span, ['gen_ai.request.model', 'gen_ai.response.model', 'model'])
+}
+
 export function getAttrInt(span: Span, key: string): number {
   const attr = span.attributes?.find(a => a.key === key)
   if (!attr) { return 0 }

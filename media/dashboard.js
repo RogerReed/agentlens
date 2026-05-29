@@ -1851,6 +1851,7 @@
     "success",
     "duration_ms",
     "gen_ai.system",
+    "gen_ai.provider.name",
     "gen_ai.request.model",
     "gen_ai.response.model"
   ]);
@@ -1934,7 +1935,7 @@
         const snippet = responseText.trim().replace(/\s+/g, " ");
         return snippet.length > 100 ? snippet.slice(0, 100) + "\u2026" : snippet;
       }
-      const model = String(getAttr(span, "gen_ai.request.model") ?? getAttr(span, "model") ?? "");
+      const model = String(getAttr(span, "gen_ai.request.model") ?? getAttr(span, "gen_ai.response.model") ?? getAttr(span, "model") ?? "");
       const stop = String(getAttr(span, "stop_reason") ?? getAttr(span, "gen_ai.response.finish_reasons") ?? "");
       const inTok = Number(getAttr(span, "input_tokens") ?? 0);
       const outTok = Number(getAttr(span, "output_tokens") ?? 0);

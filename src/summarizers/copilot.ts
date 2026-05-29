@@ -3,7 +3,7 @@ import { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizerTypes
 import {
   getAttrStr, getAttrInt, nanoToMs, extractUserRequest,
   summarizeToolArgs, summarizeToolResult, extractResponseText, detectOutputAction,
-  extractTokenCounts,
+  extractTokenCounts, getGenAiModel,
 } from './helpers'
 
 export function buildCopilotSessions(
@@ -16,7 +16,7 @@ export function buildCopilotSessions(
       .sort((a, b) => nanoToMs(a.startTime) - nanoToMs(b.startTime))
 
     const userReq = extractUserRequest(getAttrStr(agent, 'copilot_chat.user_request')) || '[Copilot session]'
-    const model = getAttrStr(agent, 'gen_ai.request.model') || getAttrStr(agent, 'gen_ai.response.model')
+    const model = getGenAiModel(agent)
     const chatSpan = children.find(s => s.name.startsWith('chat'))
     const conversationId = chatSpan ? getAttrStr(chatSpan, 'gen_ai.conversation.id') : undefined
     const turns = getAttrInt(agent, 'copilot_chat.turn_count')
@@ -115,7 +115,7 @@ export function buildCopilotSessions(
         }
       } else if (child.name.startsWith('chat')) {
         totalLlmCalls++
-        const childModel = getAttrStr(child, 'gen_ai.request.model')
+        const childModel = getGenAiModel(child)
         const { input: inTok, output: outTok } = extractTokenCounts(child)
         const ttft = getAttrInt(child, 'copilot_chat.time_to_first_token')
         const thinking = getAttrStr(child, 'copilot_chat.reasoning_content')
