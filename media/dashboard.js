@@ -6313,20 +6313,20 @@
   // media/src/tabs/Help.tsx
   var VIEWS = [
     ["Efficiency", "The default tab. Per-session metrics (turns, cache hit rate, error rate), a heat-scored session breakdown table, and a context growth chart showing input token accumulation across LLM calls within each session."],
+    ["Cost", "Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cross-session cost table. Estimates only \u2014 not your actual bill."],
     ["Recommendations", "Actionable insights for improving prompt efficiency, plus loop and malfunction detection. Two signal categories: efficiency insights (token waste, cache, tool failures) and loop signals (tool deadlock, state spirals, error recurrence, runaway steps, context accumulation)."],
     ["Alerts", "Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts."],
     ["Automation", "Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay."],
-    ["Summaries", "A human-readable session waterfall with LLM decisions, tool arguments and results, token usage per step, and background overhead breakdown."],
-    ["Files", "Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed."],
-    ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
-    ["Traces", "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."],
     ["Tokens", "Token consumption aggregated by span name and per session, sorted from highest to lowest."],
-    ["Cost", "Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cross-session cost table. Estimates only \u2014 not your actual bill."],
-    ["Tools", "Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],
-    ["Timeline", "All spans in chronological order as a vertical event list. Click any item to expand its attributes as formatted JSON."],
     ["Latency", "Span durations as a color-coded grid, helping identify which operations are consistently slow."],
-    ["Errors", "All spans that completed with an error status. Click any item to expand its full details and attributes."],
+    ["Summaries", "A human-readable session waterfall with LLM decisions, tool arguments and results, token usage per step, and background overhead breakdown."],
+    ["Traces", "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."],
+    ["Files", "Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed."],
     ["Flow", "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency. Supports zoom, pan, and playback animation."],
+    ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
+    ["Tools", "Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],
+    ["Errors", "All spans that completed with an error status. Click any item to expand its full details and attributes."],
+    ["Export", "Export OTEL spans as JSON files \u2014 full or redacted (prompt text, tool inputs, and tool results replaced with [redacted]). Replay either format with pnpm run demo to re-examine a past session without the original agent running."],
     ["Help", "This tab \u2014 an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Recommendations and malfunction detection."]
   ];
   var TERMS = [
