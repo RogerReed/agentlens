@@ -6313,20 +6313,20 @@
   // media/src/tabs/Help.tsx
   var VIEWS = [
     ["Efficiency", "The default tab. Per-session metrics (turns, cache hit rate, error rate), a heat-scored session breakdown table, and a context growth chart showing input token accumulation across LLM calls within each session."],
+    ["Cost", "Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cross-session cost table. Estimates only \u2014 not your actual bill."],
     ["Recommendations", "Actionable insights for improving prompt efficiency, plus loop and malfunction detection. Two signal categories: efficiency insights (token waste, cache, tool failures) and loop signals (tool deadlock, state spirals, error recurrence, runaway steps, context accumulation)."],
     ["Alerts", "Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts."],
     ["Automation", "Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay."],
-    ["Summaries", "A human-readable session waterfall with LLM decisions, tool arguments and results, token usage per step, and background overhead breakdown."],
-    ["Files", "Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed."],
-    ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
-    ["Traces", "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."],
     ["Tokens", "Token consumption aggregated by span name and per session, sorted from highest to lowest."],
-    ["Cost", "Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cross-session cost table. Estimates only \u2014 not your actual bill."],
-    ["Tools", "Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],
-    ["Timeline", "All spans in chronological order as a vertical event list. Click any item to expand its attributes as formatted JSON."],
     ["Latency", "Span durations as a color-coded grid, helping identify which operations are consistently slow."],
-    ["Errors", "All spans that completed with an error status. Click any item to expand its full details and attributes."],
+    ["Summaries", "A human-readable session waterfall with LLM decisions, tool arguments and results, token usage per step, and background overhead breakdown."],
+    ["Traces", "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."],
+    ["Files", "Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed."],
     ["Flow", "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency. Supports zoom, pan, and playback animation."],
+    ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
+    ["Tools", "Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],
+    ["Errors", "All spans that completed with an error status. Click any item to expand its full details and attributes."],
+    ["Export", "Export OTEL spans as JSON files \u2014 full or redacted (prompt text, tool inputs, and tool results replaced with [redacted]). Replay either format with pnpm run demo to re-examine a past session without the original agent running."],
     ["Help", "This tab \u2014 an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Recommendations and malfunction detection."]
   ];
   var TERMS = [
@@ -7503,22 +7503,22 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   // media/src/App.tsx
   var sidebarOpen = y3(true);
   var TABS = [
-    { id: "efficiency", label: "Efficiency", title: "Per-session metrics and token usage breakdown." },
-    { id: "cost", label: "Cost", title: "Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing." },
-    { id: "recommendations", label: "Recommendations", title: "Actionable insights and recommendations for improving prompt efficiency and reducing token waste." },
-    { id: "alerts", label: "Alerts", title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
-    { id: "automation", label: "Automation", title: "Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed." },
-    { id: "tokens", label: "Tokens", title: "Token consumption aggregated by span name and per session, sorted from highest to lowest." },
-    { id: "latency", label: "Latency", title: "Span durations as a color-coded grid, helping identify which operations are consistently slow." },
-    { id: "summaries", label: "Summaries", title: "A high-level, human-readable timeline of each session \u2014 LLM calls with their decisions, tool calls with arguments, and token usage." },
-    { id: "traces", label: "Traces", title: "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing." },
-    { id: "files", label: "Files", title: "Files created or modified by the agent, organized by session with inline diffs." },
-    { id: "flow", label: "Flow", title: "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency." },
-    { id: "agents", label: "Agents", title: "Copilot, Claude, and Codex \u2014 session counts, token usage, tools, and latency broken down by agent source." },
-    { id: "tools", label: "Tools", title: "Tool call distribution broken down by tool name, with token usage and performance stats per tool." },
-    { id: "errors", label: "Errors", title: "All spans that completed with an error status. Click any item to expand its full details and attributes." },
-    { id: "export", label: "Export", title: "Export raw or redacted OTEL span data as JSON files." },
-    { id: "help", label: "Help", title: "Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard." }
+    { id: "efficiency", label: "Efficiency", primary: true, title: "Per-session metrics and token usage breakdown." },
+    { id: "cost", label: "Cost", primary: true, title: "Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing." },
+    { id: "summaries", label: "Summaries", primary: true, title: "A high-level, human-readable timeline of each session \u2014 LLM calls with their decisions, tool calls with arguments, and token usage." },
+    { id: "recommendations", label: "Recommendations", primary: true, title: "Actionable insights and recommendations for improving prompt efficiency and reducing token waste." },
+    { id: "agents", label: "Agents", primary: false, title: "Copilot, Claude, and Codex \u2014 session counts, token usage, tools, and latency broken down by agent source." },
+    { id: "alerts", label: "Alerts", primary: false, title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
+    { id: "automation", label: "Automation", primary: false, title: "Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed." },
+    { id: "errors", label: "Errors", primary: false, title: "All spans that completed with an error status. Click any item to expand its full details and attributes." },
+    { id: "files", label: "Files", primary: false, title: "Files created or modified by the agent, organized by session with inline diffs." },
+    { id: "flow", label: "Flow", primary: false, title: "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency." },
+    { id: "latency", label: "Latency", primary: false, title: "Span durations as a color-coded grid, helping identify which operations are consistently slow." },
+    { id: "tokens", label: "Tokens", primary: false, title: "Token consumption aggregated by span name and per session, sorted from highest to lowest." },
+    { id: "tools", label: "Tools", primary: false, title: "Tool call distribution broken down by tool name, with token usage and performance stats per tool." },
+    { id: "traces", label: "Traces", primary: false, title: "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing." },
+    { id: "export", label: "Export", primary: true, title: "Export raw or redacted OTEL span data as JSON files." },
+    { id: "help", label: "Help", primary: true, title: "Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard." }
   ];
   function fillMissingClaudeSessions(summary, allSpans) {
     if (!summary) return null;
@@ -7903,9 +7903,10 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             children: sidebarOpen.value ? "\u25C4" : "\u25BA"
           }
         ),
-        TABS.map(
-          (t4) => t4.id === "alerts" ? /* @__PURE__ */ u4(AlertsTab, {}, "alerts") : /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id)
-        )
+        TABS.filter((t4) => t4.primary).map(
+          (t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id)
+        ),
+        /* @__PURE__ */ u4(MoreDropdown, {})
       ] }),
       /* @__PURE__ */ u4("div", { class: "panel active", children: /* @__PURE__ */ u4(ActivePanel, {}) }),
       /* @__PURE__ */ u4("img", { id: "mascot-img", src: "", alt: "AgentLens mascot", style: "display:none" })
@@ -7925,24 +7926,72 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       }
     );
   }
-  function AlertsTab() {
-    const isActive = activeTab.value === "alerts";
+  function AlertsBadge() {
     const _s = displaySessions.value;
     const count = computeAlertCount();
-    return /* @__PURE__ */ u4(
-      "button",
-      {
-        class: "tab" + (isActive ? " active" : ""),
-        "data-tab": "alerts",
-        onClick: () => {
-          activeTab.value = "alerts";
-        },
-        children: count > 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--error);font-weight:700", children: [
-          "Alerts \u26A0 ",
-          count
-        ] }) : "Alerts"
-      }
-    );
+    return count > 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--error);font-weight:700", children: [
+      "Alerts \u26A0 ",
+      count
+    ] }) : /* @__PURE__ */ u4(S, { children: "Alerts" });
+  }
+  function MoreDropdown() {
+    const [open, setOpen] = d2(false);
+    const activeId = normalizeTabId(activeTab.value);
+    const secondaryTabs = TABS.filter((t4) => !t4.primary);
+    const activeSecondary = secondaryTabs.find((t4) => t4.id === activeId);
+    y2(() => {
+      if (!open) return;
+      const close = () => setOpen(false);
+      const closeOnEsc = (e4) => {
+        if (e4.key === "Escape") setOpen(false);
+      };
+      document.addEventListener("click", close);
+      document.addEventListener("keydown", closeOnEsc);
+      return () => {
+        document.removeEventListener("click", close);
+        document.removeEventListener("keydown", closeOnEsc);
+      };
+    }, [open]);
+    return /* @__PURE__ */ u4("div", { style: "position:relative", children: [
+      /* @__PURE__ */ u4(
+        "button",
+        {
+          class: "tab" + (activeSecondary ? " active" : ""),
+          "aria-haspopup": "listbox",
+          "aria-expanded": open,
+          onClick: (e4) => {
+            e4.stopPropagation();
+            setOpen((o4) => !o4);
+          },
+          children: [
+            activeSecondary ? activeSecondary.label : "More",
+            " \u25BE"
+          ]
+        }
+      ),
+      open && /* @__PURE__ */ u4(
+        "div",
+        {
+          role: "listbox",
+          style: "position:absolute;top:100%;right:0;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:4px;min-width:160px;box-shadow:0 4px 12px rgba(0,0,0,0.2)",
+          onClick: (e4) => e4.stopPropagation(),
+          children: secondaryTabs.map((t4) => /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "tab-dropdown-item" + (activeId === t4.id ? " active" : ""),
+              role: "option",
+              "aria-selected": activeId === t4.id,
+              onClick: () => {
+                activeTab.value = t4.id;
+                setOpen(false);
+              },
+              children: t4.id === "alerts" ? /* @__PURE__ */ u4(AlertsBadge, {}) : t4.label
+            },
+            t4.id
+          ))
+        }
+      )
+    ] });
   }
 
   // media/src/dashboard.tsx

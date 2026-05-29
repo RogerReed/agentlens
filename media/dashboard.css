@@ -229,7 +229,7 @@ body {
   gap: 0;
   border-bottom: 1px solid var(--border);
   margin-bottom: 16px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .tab {
   padding: 6px 10px;
@@ -267,6 +267,26 @@ body {
   color: var(--accent);
   border-color: var(--accent);
   background: rgba(79, 195, 247, 0.07);
+}
+.tab-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 7px 14px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab-dropdown-item:hover {
+  color: var(--fg);
+  background: var(--hover);
+}
+.tab-dropdown-item.active {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* media/src/styles/components.css */
