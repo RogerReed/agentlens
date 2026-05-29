@@ -191,7 +191,7 @@ function OverviewSection() {
       )}
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
-        <p><strong>AgentLens</strong> is a local observability dashboard for AI coding <a href="#gl-agent">agents</a> — GitHub Copilot, Claude Code, and Codex. It captures the <a href="#gl-otlp">OpenTelemetry (OTLP)</a> traces each agent emits and surfaces them through an interactive dashboard showing <a href="#gl-tokens">token</a> usage, cost, latency, <a href="#gl-tool-call">tool calls</a>, file changes, <a href="#gl-cache-hit-rate">cache</a> performance, and <a href="#gl-agent-loop-malfunction">loop</a> detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image.</p>
+        <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable recommendations in real time — then helps you prompt your agents on inefficiencies to improve interactions.</p>
       </div>
     </div>
   )

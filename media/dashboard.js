@@ -6525,19 +6525,13 @@
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.overview.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: /* @__PURE__ */ u4("p", { children: [
         /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
-        " is a local observability dashboard for AI coding ",
-        /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agents" }),
-        " \u2014 GitHub Copilot, Claude Code, and Codex. It captures the ",
-        /* @__PURE__ */ u4("a", { href: "#gl-otlp", children: "OpenTelemetry (OTLP)" }),
-        " traces each agent emits and surfaces them through an interactive dashboard showing ",
-        /* @__PURE__ */ u4("a", { href: "#gl-tokens", children: "token" }),
-        " usage, cost, latency, ",
-        /* @__PURE__ */ u4("a", { href: "#gl-tool-call", children: "tool calls" }),
-        ", file changes, ",
-        /* @__PURE__ */ u4("a", { href: "#gl-cache-hit-rate", children: "cache" }),
-        " performance, and ",
-        /* @__PURE__ */ u4("a", { href: "#gl-agent-loop-malfunction", children: "loop" }),
-        " detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image."
+        " is a local observability tool that makes AI ",
+        /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agent" }),
+        " sessions more transparent \u2014 see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. It captures ",
+        /* @__PURE__ */ u4("a", { href: "#gl-otlp", children: "OpenTelemetry" }),
+        " ",
+        /* @__PURE__ */ u4("a", { href: "#gl-trace", children: "traces" }),
+        " from GitHub Copilot, Claude Code, and Codex, and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable recommendations in real time \u2014 then helps you prompt your agents on inefficiencies to improve interactions."
       ] }) })
     ] });
   }
