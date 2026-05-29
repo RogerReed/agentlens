@@ -8,6 +8,7 @@ import {
   esc, nanoToMs, formatMs, getAgentDotHtml,
   buildSpanTree, isSessionSpan, getSessionUserRequest, extractUserRequest,
   spanTypeBadge, getSessionGlobalNumber, getCodexSessionId, getAttr,
+  extractSpanSummary, SPAN_ATTR_HIGHLIGHT, SPAN_ATTR_SUPPRESS,
 } from '../utils'
 import type { Span, SessionSummaryCard } from '../types'
 
@@ -24,6 +25,7 @@ function SpanRow({ span, minStart, traceRange, depth }: {
 }) {
   const isExpanded = expandedSpanIds.has(span.spanId)
   const [localOpen, setLocalOpen] = useState(isExpanded)
+  const [showSuppressed, setShowSuppressed] = useState(false)
 
   const st = nanoToMs(span.startTime), en = nanoToMs(span.endTime)
   const dur = en - st
@@ -32,32 +34,43 @@ function SpanRow({ span, minStart, traceRange, depth }: {
   const badge = spanTypeBadge(span)
   const isErr = span.status?.code === 2
   const barColor = isErr ? 'var(--error)' : badge.color
+  const summary = extractSpanSummary(span)
 
   const attrs = span.attributes ?? []
   const tipLines = [
     span.name,
+    ...(summary ? [summary] : []),
     'Duration: ' + formatMs(dur),
     'Span: ' + span.spanId,
     ...(span.parentSpanId ? ['Parent: ' + span.parentSpanId] : []),
-    ...attrs.slice(0, 8).map(a => {
+    ...attrs.filter(a => SPAN_ATTR_HIGHLIGHT.has(a.key)).slice(0, 6).map(a => {
       const v = a.value
       const display = v.stringValue ?? v.intValue ?? v.doubleValue ?? v.boolValue
       return a.key + ': ' + String(display ?? JSON.stringify(v))
     }),
-    ...(attrs.length > 8 ? ['... +' + (attrs.length - 8) + ' more attributes'] : []),
   ]
 
-  const detailLines = [
+  const statusStr = span.status
+    ? (span.status.code === 0 ? 'OK' : span.status.code === 2 ? 'ERROR' : 'UNSET')
+      + (span.status.message ? ' — ' + span.status.message : '')
+    : 'UNSET'
+
+  const metaLines = [
     { k: 'Span ID', v: span.spanId ?? '—' },
     { k: 'Trace ID', v: span.traceId ?? '—' },
     ...(span.parentSpanId ? [{ k: 'Parent Span ID', v: span.parentSpanId }] : []),
-    { k: 'Status', v: span.status ? (span.status.code === 0 ? 'OK' : span.status.code === 2 ? 'ERROR' : 'UNSET') + (span.status.message ? ' — ' + span.status.message : '') : 'UNSET' },
-    ...attrs.map(a => {
-      const v = a.value
-      const display = v.stringValue ?? v.intValue ?? v.doubleValue ?? v.boolValue
-      return { k: a.key, v: String(display ?? JSON.stringify(v)) }
-    }),
+    { k: 'Status', v: statusStr },
   ]
+
+  const attrToRow = (a: typeof attrs[number]) => {
+    const v = a.value
+    const display = v.stringValue ?? v.intValue ?? v.doubleValue ?? v.boolValue
+    return { k: a.key, v: String(display ?? JSON.stringify(v)) }
+  }
+
+  const highlightedRows = attrs.filter(a => SPAN_ATTR_HIGHLIGHT.has(a.key)).map(attrToRow)
+  const normalRows      = attrs.filter(a => !SPAN_ATTR_HIGHLIGHT.has(a.key) && !SPAN_ATTR_SUPPRESS.has(a.key)).map(attrToRow)
+  const suppressedRows  = attrs.filter(a => SPAN_ATTR_SUPPRESS.has(a.key)).map(attrToRow)
 
   function toggle() {
     const next = !localOpen
@@ -68,11 +81,14 @@ function SpanRow({ span, minStart, traceRange, depth }: {
   return (
     <>
       <div class={clsx('wf-row', { selected: localOpen })} onClick={toggle}>
-        <div class="wf-label" title={span.name}>
+        <div class="wf-label" title={summary ? span.name + ' — ' + summary : span.name}>
           {Array.from({ length: depth }, (_, i) => <span key={i} class="wf-indent" />)}
           <span class="wf-chevron">{localOpen ? '▼' : '▶'}</span>
           <span class="wf-type-badge" style={'background:' + barColor + ';color:#000'}>{badge.label}</span>
-          <span class="wf-name">{span.name}</span>
+          <span style="display:inline-flex;flex-direction:column;min-width:0">
+            <span class="wf-name">{span.name}</span>
+            {summary && <span style="font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px">{summary}</span>}
+          </span>
         </div>
         <div class="wf-bar-area">
           <div class="wf-bar" style={`left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`}>
@@ -85,12 +101,52 @@ function SpanRow({ span, minStart, traceRange, depth }: {
       </div>
 
       <div class={clsx('wf-detail', { open: localOpen })} id={'detail-' + span.spanId}>
-        {detailLines.map(dl => (
+        {metaLines.map(dl => (
           <div key={dl.k} class="wf-detail-row">
             <span class="wf-detail-key">{dl.k}</span>
             <span class="wf-detail-val">{dl.v}</span>
           </div>
         ))}
+        {highlightedRows.length > 0 && (
+          <>
+            <div class="wf-detail-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">
+              <span class="wf-detail-key" style="color:var(--accent);font-weight:600">Tool detail</span>
+              <span class="wf-detail-val" />
+            </div>
+            {highlightedRows.map(dl => (
+              <div key={dl.k} class="wf-detail-row">
+                <span class="wf-detail-key">{dl.k}</span>
+                <span class="wf-detail-val" style="white-space:pre-wrap;word-break:break-all">{dl.v}</span>
+              </div>
+            ))}
+          </>
+        )}
+        {normalRows.length > 0 && normalRows.map(dl => (
+          <div key={dl.k} class="wf-detail-row">
+            <span class="wf-detail-key">{dl.k}</span>
+            <span class="wf-detail-val">{dl.v}</span>
+          </div>
+        ))}
+        {suppressedRows.length > 0 && (
+          <>
+            <div class="wf-detail-row" style="margin-top:4px">
+              <span
+                class="wf-detail-key"
+                style="color:var(--muted);cursor:pointer;user-select:none"
+                onClick={e => { e.stopPropagation(); setShowSuppressed(v => !v) }}
+              >
+                {showSuppressed ? '▼' : '▶'} SDK / identity attrs ({suppressedRows.length})
+              </span>
+              <span class="wf-detail-val" />
+            </div>
+            {showSuppressed && suppressedRows.map(dl => (
+              <div key={dl.k} class="wf-detail-row" style="opacity:0.55">
+                <span class="wf-detail-key">{dl.k}</span>
+                <span class="wf-detail-val">{dl.v}</span>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </>
   )

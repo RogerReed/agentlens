@@ -216,6 +216,75 @@ export function spanTypeBadge(span: Span): { label: string; color: string } {
   return { label: 'SPAN', color: 'var(--muted)' }
 }
 
+// Attribute keys considered "interesting" — shown first in expanded detail.
+export const SPAN_ATTR_HIGHLIGHT = new Set([
+  'span.type', 'event.name', 'tool_name', 'full_command',
+  'gen_ai.tool.name', 'gen_ai.tool.call.arguments', 'gen_ai.tool.call.result',
+  'decision', 'source', 'success', 'duration_ms',
+  'gen_ai.system', 'gen_ai.request.model', 'gen_ai.response.model',
+])
+
+// Attribute keys that are identity/SDK noise — suppressed behind a toggle.
+export const SPAN_ATTR_SUPPRESS = new Set([
+  'user.id', 'user.email', 'user.account_uuid', 'user.account_id',
+  'organization.id', 'session.id', 'copilot_chat.chat_session_id',
+  'host.name', 'service.name', 'service.version',
+  'telemetry.sdk.language', 'telemetry.sdk.name', 'telemetry.sdk.version', 'env',
+  'code.file.path', 'code.module.name', 'code.line.number',
+  'thread.id', 'thread.name', 'target', 'busy_ns', 'idle_ns',
+  'terminal.type', 'gen_ai.tool.type', 'gen_ai.tool.description',
+  'otel.trace_id',
+])
+
+// Returns a human-readable one-line detail describing what a tool span did,
+// or null when no useful detail is available.
+export function extractSpanSummary(span: Span): string | null {
+  const name = span.name ?? ''
+
+  // Claude Code: claude_code.tool carries tool_name + full_command
+  if (name === 'claude_code.tool') {
+    const tool = String(getAttr(span, 'tool_name') ?? '')
+    const cmd  = String(getAttr(span, 'full_command') ?? '')
+    if (tool && cmd) return tool + ': ' + (cmd.length > 120 ? cmd.slice(0, 120) + '…' : cmd)
+    return tool || null
+  }
+
+  // Copilot: execute_tool {name} — arguments are a JSON object
+  if (name.startsWith('execute_tool ')) {
+    const argsRaw = String(getAttr(span, 'gen_ai.tool.call.arguments') ?? '')
+    if (argsRaw) {
+      try {
+        const args = JSON.parse(argsRaw) as Record<string, unknown>
+        const key = ['command', 'filePath', 'dirPath', 'query', 'pattern', 'operation', 'id', 'path']
+          .find(k => typeof args[k] === 'string' && (args[k] as string).length > 0)
+        if (key) {
+          const val = args[key] as string
+          return val.length > 120 ? val.slice(0, 120) + '…' : val
+        }
+        const first = Object.values(args).find(v => typeof v === 'string' && (v as string).length > 0 && (v as string).length < 200)
+        if (first) return (first as string).slice(0, 120)
+      } catch { /* ignore */ }
+    }
+    return null
+  }
+
+  // Codex tool_decision: tool_name + decision + source
+  if (name === 'codex.tool_decision') {
+    const tool     = String(getAttr(span, 'tool_name') ?? '')
+    const decision = String(getAttr(span, 'decision') ?? '')
+    const source   = String(getAttr(span, 'source') ?? '')
+    if (tool && decision) return tool + ' → ' + decision + (source ? ' (via ' + source + ')' : '')
+    return tool || null
+  }
+
+  // Codex exec_command / apply_patch spans
+  if (name === 'exec_command' || name === 'apply_patch') {
+    return String(getAttr(span, 'tool_name') ?? '') || name
+  }
+
+  return null
+}
+
 // ── Agent label / color helpers ───────────────────────────────────────────────
 
 export function getAgentSourceLabel(source: string | null | undefined): string {

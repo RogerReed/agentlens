@@ -1838,6 +1838,87 @@
     if (n3.includes("search") || n3.includes("retrieve")) return { label: "RAG", color: "#85E0D0" };
     return { label: "SPAN", color: "var(--muted)" };
   }
+  var SPAN_ATTR_HIGHLIGHT = /* @__PURE__ */ new Set([
+    "span.type",
+    "event.name",
+    "tool_name",
+    "full_command",
+    "gen_ai.tool.name",
+    "gen_ai.tool.call.arguments",
+    "gen_ai.tool.call.result",
+    "decision",
+    "source",
+    "success",
+    "duration_ms",
+    "gen_ai.system",
+    "gen_ai.request.model",
+    "gen_ai.response.model"
+  ]);
+  var SPAN_ATTR_SUPPRESS = /* @__PURE__ */ new Set([
+    "user.id",
+    "user.email",
+    "user.account_uuid",
+    "user.account_id",
+    "organization.id",
+    "session.id",
+    "copilot_chat.chat_session_id",
+    "host.name",
+    "service.name",
+    "service.version",
+    "telemetry.sdk.language",
+    "telemetry.sdk.name",
+    "telemetry.sdk.version",
+    "env",
+    "code.file.path",
+    "code.module.name",
+    "code.line.number",
+    "thread.id",
+    "thread.name",
+    "target",
+    "busy_ns",
+    "idle_ns",
+    "terminal.type",
+    "gen_ai.tool.type",
+    "gen_ai.tool.description",
+    "otel.trace_id"
+  ]);
+  function extractSpanSummary(span) {
+    const name = span.name ?? "";
+    if (name === "claude_code.tool") {
+      const tool = String(getAttr(span, "tool_name") ?? "");
+      const cmd = String(getAttr(span, "full_command") ?? "");
+      if (tool && cmd) return tool + ": " + (cmd.length > 120 ? cmd.slice(0, 120) + "\u2026" : cmd);
+      return tool || null;
+    }
+    if (name.startsWith("execute_tool ")) {
+      const argsRaw = String(getAttr(span, "gen_ai.tool.call.arguments") ?? "");
+      if (argsRaw) {
+        try {
+          const args = JSON.parse(argsRaw);
+          const key = ["command", "filePath", "dirPath", "query", "pattern", "operation", "id", "path"].find((k3) => typeof args[k3] === "string" && args[k3].length > 0);
+          if (key) {
+            const val = args[key];
+            return val.length > 120 ? val.slice(0, 120) + "\u2026" : val;
+          }
+          const first = Object.values(args).find((v4) => typeof v4 === "string" && v4.length > 0 && v4.length < 200);
+          if (first) return first.slice(0, 120);
+        } catch {
+        }
+      }
+      return null;
+    }
+    if (name === "codex.tool_decision") {
+      const tool = String(getAttr(span, "tool_name") ?? "");
+      const decision = String(getAttr(span, "decision") ?? "");
+      const source = String(getAttr(span, "source") ?? "");
+      if (tool && decision) return tool + " \u2192 " + decision + (source ? " (via " + source + ")" : "");
+      return tool || null;
+    }
+    if (name === "exec_command" || name === "apply_patch") {
+      return String(getAttr(span, "tool_name") ?? "") || name;
+    }
+    return null;
+  }
   function getAgentSourceLabel(source) {
     if (source === "claude_code") return "Claude";
     if (source === "codex") return "Codex";
@@ -4780,6 +4861,7 @@
   function SpanRow({ span, minStart, traceRange, depth }) {
     const isExpanded = expandedSpanIds.has(span.spanId);
     const [localOpen, setLocalOpen] = d2(isExpanded);
+    const [showSuppressed, setShowSuppressed] = d2(false);
     const st = nanoToMs(span.startTime), en = nanoToMs(span.endTime);
     const dur = en - st;
     const left = minStart > 0 && st > 0 ? (st - minStart) / traceRange * 100 : 0;
@@ -4787,30 +4869,35 @@
     const badge = spanTypeBadge(span);
     const isErr = span.status?.code === 2;
     const barColor = isErr ? "var(--error)" : badge.color;
+    const summary = extractSpanSummary(span);
     const attrs = span.attributes ?? [];
     const tipLines = [
       span.name,
+      ...summary ? [summary] : [],
       "Duration: " + formatMs(dur),
       "Span: " + span.spanId,
       ...span.parentSpanId ? ["Parent: " + span.parentSpanId] : [],
-      ...attrs.slice(0, 8).map((a4) => {
+      ...attrs.filter((a4) => SPAN_ATTR_HIGHLIGHT.has(a4.key)).slice(0, 6).map((a4) => {
         const v4 = a4.value;
         const display = v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue;
         return a4.key + ": " + String(display ?? JSON.stringify(v4));
-      }),
-      ...attrs.length > 8 ? ["... +" + (attrs.length - 8) + " more attributes"] : []
+      })
     ];
-    const detailLines = [
+    const statusStr = span.status ? (span.status.code === 0 ? "OK" : span.status.code === 2 ? "ERROR" : "UNSET") + (span.status.message ? " \u2014 " + span.status.message : "") : "UNSET";
+    const metaLines = [
       { k: "Span ID", v: span.spanId ?? "\u2014" },
       { k: "Trace ID", v: span.traceId ?? "\u2014" },
       ...span.parentSpanId ? [{ k: "Parent Span ID", v: span.parentSpanId }] : [],
-      { k: "Status", v: span.status ? (span.status.code === 0 ? "OK" : span.status.code === 2 ? "ERROR" : "UNSET") + (span.status.message ? " \u2014 " + span.status.message : "") : "UNSET" },
-      ...attrs.map((a4) => {
-        const v4 = a4.value;
-        const display = v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue;
-        return { k: a4.key, v: String(display ?? JSON.stringify(v4)) };
-      })
+      { k: "Status", v: statusStr }
     ];
+    const attrToRow = (a4) => {
+      const v4 = a4.value;
+      const display = v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue;
+      return { k: a4.key, v: String(display ?? JSON.stringify(v4)) };
+    };
+    const highlightedRows = attrs.filter((a4) => SPAN_ATTR_HIGHLIGHT.has(a4.key)).map(attrToRow);
+    const normalRows = attrs.filter((a4) => !SPAN_ATTR_HIGHLIGHT.has(a4.key) && !SPAN_ATTR_SUPPRESS.has(a4.key)).map(attrToRow);
+    const suppressedRows = attrs.filter((a4) => SPAN_ATTR_SUPPRESS.has(a4.key)).map(attrToRow);
     function toggle() {
       const next = !localOpen;
       setLocalOpen(next);
@@ -4819,11 +4906,14 @@
     }
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("div", { class: clsx_default("wf-row", { selected: localOpen }), onClick: toggle, children: [
-        /* @__PURE__ */ u4("div", { class: "wf-label", title: span.name, children: [
+        /* @__PURE__ */ u4("div", { class: "wf-label", title: summary ? span.name + " \u2014 " + summary : span.name, children: [
           Array.from({ length: depth }, (_4, i4) => /* @__PURE__ */ u4("span", { class: "wf-indent" }, i4)),
           /* @__PURE__ */ u4("span", { class: "wf-chevron", children: localOpen ? "\u25BC" : "\u25B6" }),
           /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + barColor + ";color:#000", children: badge.label }),
-          /* @__PURE__ */ u4("span", { class: "wf-name", children: span.name })
+          /* @__PURE__ */ u4("span", { style: "display:inline-flex;flex-direction:column;min-width:0", children: [
+            /* @__PURE__ */ u4("span", { class: "wf-name", children: span.name }),
+            summary && /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px", children: summary })
+          ] })
         ] }),
         /* @__PURE__ */ u4("div", { class: "wf-bar-area", children: /* @__PURE__ */ u4("div", { class: "wf-bar", style: `left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`, children: [
           /* @__PURE__ */ u4("div", { class: "wf-bar-inner", style: "background:" + barColor + ";opacity:" + (isErr ? "1" : "0.7") }),
@@ -4832,10 +4922,52 @@
         ] }) }),
         /* @__PURE__ */ u4("div", { class: "wf-info", children: formatMs(dur) })
       ] }),
-      /* @__PURE__ */ u4("div", { class: clsx_default("wf-detail", { open: localOpen }), id: "detail-" + span.spanId, children: detailLines.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
-        /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
-        /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
-      ] }, dl.k)) })
+      /* @__PURE__ */ u4("div", { class: clsx_default("wf-detail", { open: localOpen }), id: "detail-" + span.spanId, children: [
+        metaLines.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
+          /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
+          /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
+        ] }, dl.k)),
+        highlightedRows.length > 0 && /* @__PURE__ */ u4(S, { children: [
+          /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "border-top:1px solid var(--border);margin-top:4px;padding-top:4px", children: [
+            /* @__PURE__ */ u4("span", { class: "wf-detail-key", style: "color:var(--accent);font-weight:600", children: "Tool detail" }),
+            /* @__PURE__ */ u4("span", { class: "wf-detail-val" })
+          ] }),
+          highlightedRows.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
+            /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
+            /* @__PURE__ */ u4("span", { class: "wf-detail-val", style: "white-space:pre-wrap;word-break:break-all", children: dl.v })
+          ] }, dl.k))
+        ] }),
+        normalRows.length > 0 && normalRows.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
+          /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
+          /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
+        ] }, dl.k)),
+        suppressedRows.length > 0 && /* @__PURE__ */ u4(S, { children: [
+          /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "margin-top:4px", children: [
+            /* @__PURE__ */ u4(
+              "span",
+              {
+                class: "wf-detail-key",
+                style: "color:var(--muted);cursor:pointer;user-select:none",
+                onClick: (e4) => {
+                  e4.stopPropagation();
+                  setShowSuppressed((v4) => !v4);
+                },
+                children: [
+                  showSuppressed ? "\u25BC" : "\u25B6",
+                  " SDK / identity attrs (",
+                  suppressedRows.length,
+                  ")"
+                ]
+              }
+            ),
+            /* @__PURE__ */ u4("span", { class: "wf-detail-val" })
+          ] }),
+          showSuppressed && suppressedRows.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "opacity:0.55", children: [
+            /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
+            /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
+          ] }, dl.k))
+        ] })
+      ] })
     ] });
   }
   function TraceGroup({
