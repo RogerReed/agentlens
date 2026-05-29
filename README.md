@@ -7,7 +7,41 @@
 
 **Local** observability that makes AI agent sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. AgentLens captures OpenTelemetry traces from your agents and surfaces context growth, tool usage, token consumption, latency, errors, and file changes in real time — then helps you prompt your agents on inefficiencies to improve interactions.
 
-**[Install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)**
+## Getting Started
+
+### VS Code Extension
+
+1. **[Install from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)**
+2. Open the **AgentLens** view from the Activity Bar
+3. AgentLens automatically configures supported agents on activation — see [Auto-configuration](#auto-configuration)
+4. Start an agent session and watch the dashboard populate in real time
+
+### Standalone (Docker)
+
+```bash
+# Ephemeral — data cleared on container stop
+docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 agentlens/agentlens
+
+# Persistent — spans survive restarts (macOS/Linux)
+docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 \
+  -v ~/.agentlens:/data \
+  agentlens/agentlens
+
+# Persistent — spans survive restarts (Windows)
+docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
+  -v "$env:USERPROFILE\.agentlens:/data" `
+  agentlens/agentlens
+```
+
+Open <http://localhost:3000> after the container starts. Use the included setup scripts to configure agents automatically, or see [Manual Configuration](#manual-configuration) for the manual steps.
+
+```bash
+# macOS / Linux
+./scripts/configure-agents.sh
+
+# Windows (PowerShell)
+.\scripts\configure-agents.ps1
+```
 
 ## Features
 
@@ -61,42 +95,6 @@ The tab shows a per-session cost bar chart and a cross-session cost table that r
 All figures are estimates — not your actual GitHub bill. Rates are sourced from GitHub's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
 
 Known gaps are listed at the bottom of the Cost tab, including long-context surcharges (not applied) and the session turn count proxy used for request-based billing.
-
-## Getting Started
-
-### VS Code Extension
-
-1. Install the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)
-2. Open the **AgentLens** view from the Activity Bar
-3. AgentLens automatically configures supported agents on activation — see [Auto-configuration](#auto-configuration)
-4. Start an agent session and watch the dashboard populate in real time
-
-### Standalone (Docker)
-
-```bash
-# Ephemeral — data cleared on container stop
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 agentlens/agentlens
-
-# Persistent — spans survive restarts (macOS/Linux)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 \
-  -v ~/.agentlens:/data \
-  agentlens/agentlens
-
-# Persistent — spans survive restarts (Windows)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
-  -v "$env:USERPROFILE\.agentlens:/data" `
-  agentlens/agentlens
-```
-
-Open <http://localhost:3000> after the container starts. Use the included setup scripts to configure agents automatically, or see [Manual Configuration](#manual-configuration) for the manual steps.
-
-```bash
-# macOS / Linux
-./scripts/configure-agents.sh
-
-# Windows (PowerShell)
-.\scripts\configure-agents.ps1
-```
 
 ## Configuration
 
