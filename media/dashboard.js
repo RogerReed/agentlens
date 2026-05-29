@@ -4663,8 +4663,19 @@
     const entry = step.entry;
     if (entry.type === "llm") {
       const PREVIEW_LEN = 400;
+      const isTextResponse = entry.action === "text response";
       const isLongResponse = (entry.responseText?.length ?? 0) > PREVIEW_LEN;
       return /* @__PURE__ */ u4(S, { children: [
+        isTextResponse && entry.responseText && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", style: "font-size:11px;font-weight:700;letter-spacing:0.04em", children: [
+            "Answer",
+            isLongResponse && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setShowOutput((v4) => !v4), children: showOutput ? "Collapse" : "Show full response" })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", style: "white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.5", children: [
+            showOutput ? entry.responseText : entry.responseText.slice(0, PREVIEW_LEN),
+            isLongResponse && !showOutput && /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2026" })
+          ] })
+        ] }),
         /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
           /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Model" }),
           /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.model || "unknown" })
@@ -4683,7 +4694,7 @@
             ] })
           ] })
         ] }),
-        entry.responseText && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+        !isTextResponse && entry.responseText && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
           /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: [
             "Response",
             isLongResponse && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setShowOutput((v4) => !v4), children: showOutput ? "Collapse" : "Show full response" })
@@ -4802,17 +4813,22 @@
       if (isFilePath) return input.split("/").pop() || input;
       return input.length > 90 ? input.slice(0, 90) + "\u2026" : input;
     })();
+    const responseSnippet = entry.type === "llm" && entry.action === "text response" && entry.responseText ? (() => {
+      const firstLine = entry.responseText.trim().split("\n")[0];
+      return firstLine.length > 100 ? firstLine.slice(0, 100) + "\u2026" : firstLine;
+    })() : null;
+    const subtitle = toolSubtitle ?? responseSnippet;
     const left = sessionDur > 0 ? step.offsetMs / sessionDur * 100 : 0;
     const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100;
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("div", { class: "wf-row", onClick: () => setOpen((v4) => !v4), children: [
-        /* @__PURE__ */ u4("div", { class: "wf-label", title: toolSubtitle ? rowLabel + " \u2014 " + toolSubtitle : rowLabel, children: [
+        /* @__PURE__ */ u4("div", { class: "wf-label", title: subtitle ? rowLabel + " \u2014 " + subtitle : rowLabel, children: [
           /* @__PURE__ */ u4("span", { class: "wf-indent" }),
           /* @__PURE__ */ u4("span", { class: "sw-chevron", children: open ? "\u25BC" : "\u25B6" }),
           /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + barColor + ";color:#000", children: badgeLabel }),
           /* @__PURE__ */ u4("span", { style: "display:inline-flex;flex-direction:column;min-width:0", children: [
             /* @__PURE__ */ u4("span", { class: "wf-name", children: rowLabel }),
-            toolSubtitle && /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px", children: toolSubtitle })
+            subtitle && /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px", children: subtitle })
           ] })
         ] }),
         /* @__PURE__ */ u4("div", { class: "wf-bar-area", children: /* @__PURE__ */ u4("div", { class: "wf-bar", style: `left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`, children: /* @__PURE__ */ u4("div", { class: "wf-bar-inner", style: "background:" + barColor + ";opacity:" + (entry.isError ? "1" : "0.7") }) }) }),

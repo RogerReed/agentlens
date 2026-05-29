@@ -70,9 +70,27 @@ function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: 
 
   if (entry.type === 'llm') {
     const PREVIEW_LEN = 400
+    const isTextResponse = entry.action === 'text response'
     const isLongResponse = (entry.responseText?.length ?? 0) > PREVIEW_LEN
     return (
       <>
+        {/* For text-response turns, lead with the answer — it's the primary content */}
+        {isTextResponse && entry.responseText && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading" style="font-size:11px;font-weight:700;letter-spacing:0.04em">
+              Answer
+              {isLongResponse && (
+                <button class="sw-show-full-btn" style="margin-left:8px" onClick={() => setShowOutput(v => !v)}>
+                  {showOutput ? 'Collapse' : 'Show full response'}
+                </button>
+              )}
+            </div>
+            <div class="sw-detail-value" style="white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.5">
+              {showOutput ? entry.responseText : entry.responseText.slice(0, PREVIEW_LEN)}
+              {isLongResponse && !showOutput && <span style="color:var(--muted)">…</span>}
+            </div>
+          </div>
+        )}
         <div class="sw-detail-section"><div class="sw-detail-heading">Model</div><div class="sw-detail-value">{entry.model || 'unknown'}</div></div>
         {((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && (
           <div class="sw-detail-section">
@@ -84,7 +102,8 @@ function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: 
             </div>
           </div>
         )}
-        {entry.responseText && (
+        {/* For non-text-response turns (tool calls etc), still show response text if present */}
+        {!isTextResponse && entry.responseText && (
           <div class="sw-detail-section">
             <div class="sw-detail-heading">
               Response
@@ -217,19 +236,29 @@ function StepRow({ step, idx, sessIdx, sessionDur }: { step: Step; idx: number; 
     return input.length > 90 ? input.slice(0, 90) + '…' : input
   })()
 
+  // For 'Respond with answer' LLM entries, show the first line of the response as subtitle.
+  const responseSnippet = (entry.type === 'llm' && entry.action === 'text response' && entry.responseText)
+    ? (() => {
+        const firstLine = entry.responseText.trim().split('\n')[0]
+        return firstLine.length > 100 ? firstLine.slice(0, 100) + '…' : firstLine
+      })()
+    : null
+
+  const subtitle = toolSubtitle ?? responseSnippet
+
   const left = sessionDur > 0 ? (step.offsetMs / sessionDur * 100) : 0
   const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100
 
   return (
     <>
       <div class="wf-row" onClick={() => setOpen(v => !v)}>
-        <div class="wf-label" title={toolSubtitle ? rowLabel + ' — ' + toolSubtitle : rowLabel}>
+        <div class="wf-label" title={subtitle ? rowLabel + ' — ' + subtitle : rowLabel}>
           <span class="wf-indent" />
           <span class="sw-chevron">{open ? '▼' : '▶'}</span>
           <span class="wf-type-badge" style={'background:' + barColor + ';color:#000'}>{badgeLabel}</span>
           <span style="display:inline-flex;flex-direction:column;min-width:0">
             <span class="wf-name">{rowLabel}</span>
-            {toolSubtitle && <span style="font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px">{toolSubtitle}</span>}
+            {subtitle && <span style="font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px">{subtitle}</span>}
           </span>
         </div>
         <div class="wf-bar-area">
