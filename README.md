@@ -13,10 +13,12 @@
 
 1. **[Install from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)**
 2. Open the **AgentLens** view from the Activity Bar
-3. AgentLens automatically configures supported agents on activation — see [Auto-configuration](#auto-configuration)
+3. AgentLens automatically configures Copilot, Claude Code, and Codex on first activation — restart any running agent sessions to pick up the new settings
 4. Start an agent session and watch the dashboard populate in real time
 
 ### Standalone (Docker)
+
+#### Running AgentLens
 
 ```bash
 # Ephemeral — data cleared on container stop
@@ -33,7 +35,11 @@ docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
   agentlens/agentlens
 ```
 
-Open <http://localhost:3000> after the container starts. Use the included setup scripts to configure agents automatically, or see [Manual Configuration](#manual-configuration) for the manual steps.
+Open <http://localhost:3000> after the container starts.
+
+#### Configuring Agents
+
+Use the included setup scripts to configure agents automatically, or see [Manual Configuration](#manual-configuration) for the manual steps.
 
 ```bash
 # macOS / Linux
@@ -47,15 +53,25 @@ Open <http://localhost:3000> after the container starts. Use the included setup 
 
 - **Telemetry Collection** — Built-in OpenTelemetry receiver captures traces and logs from Copilot, Claude Code, and Codex — no external infrastructure needed
 - **Session Dashboard** — See inside every agent run: context growth, tool calls, token usage, latency, errors, and file changes across interactive real-time panels
+- **Cost Estimation** — Estimates session cost for Copilot (three billing models) and Codex, with a per-session bar chart and cross-session cost table
 - **Recommendations & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns — with suggested prompts to correct course
-- **Cost Estimation** — Estimates Copilot session cost under both the new token-based AI Credits model (Jun 2026+) and the legacy request-based model, with a per-session bar chart and cross-session cost table.  Claude and Codex cost estimation coming soon.
-- **Files Changed** — Track which files each session created or modified, with before/after diffs
-- **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat loops — per-agent or shared
-- **Multi-session Support** — Compare sessions side-by-side to spot patterns across runs
+- **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat tool calls — per-agent or shared
 
-## Session Model
+## Cost Estimation
 
-AgentLens treats a session as one prompt-to-response cycle. A single user prompt may contain multiple LLM calls, tool calls, trace spans, and log-derived events, but those steps stay grouped under one session until the agent delivers its final response. For Codex, startup and background telemetry is reported as background overhead instead of separate prompt sessions.
+The **Cost** tab estimates the dollar cost of Copilot and Codex sessions. Three Copilot billing models are supported via a toggle:
+
+| Mode | Who it applies to |
+| ---- | ----------------- |
+| **Token-based AI Credits** (default) | All Copilot plans from Jun 1, 2026 — charges per input/output/cache token at per-model rates |
+| **Request-based** | All plans before Jun 1, 2026 — multiplier × $0.04 per user-initiated prompt |
+| **Annual plan request-based** | Annual-plan holders staying on request billing after Jun 1, 2026 — same formula, significantly higher multipliers |
+
+The tab shows a per-session cost bar chart and a cross-session cost table that respects the active session filter. Included models (GPT-4.1, GPT-5 mini) show $0 under token-based billing, consistent with Copilot's pricing docs. Codex uses token-based pricing.
+
+All figures are estimates — not your actual bill. Rates are sourced from GitHub's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
+
+Known gaps are listed at the bottom of the Cost tab, including long-context surcharges (not applied) and the session turn count proxy used for request-based billing.
 
 ## Recommendations & Malfunction Detection
 
@@ -80,128 +96,9 @@ The **Recommendations** tab analyzes session data and surfaces two categories of
 
 Each signal includes a specific recommended action and a **Copy for {Agent}** button that copies the recommendation prompt to your clipboard so you can paste it into your AI session. Use the **Ignore** button to dismiss signals that represent intentional behavior.
 
-## Cost Estimation
+## Manual Configuration
 
-The **Cost** tab estimates the dollar cost of Copilot sessions using localized pricing data. Three billing models are supported via a toggle:
-
-| Mode | Who it applies to |
-| ---- | ----------------- |
-| **Token-based AI Credits** (default) | All Copilot plans from Jun 1, 2026 — charges per input/output/cache token at per-model rates |
-| **Request-based** | All plans before Jun 1, 2026 — multiplier × $0.04 per user-initiated prompt |
-| **Annual plan request-based** | Annual-plan holders staying on request billing after Jun 1, 2026 — same formula, significantly higher multipliers |
-
-The tab shows a per-session cost bar chart and a cross-session cost table that respects the active session filter. Included models (GPT-4.1, GPT-5 mini) show $0 under token-based billing, consistent with Copilot's pricing docs.
-
-All figures are estimates — not your actual GitHub bill. Rates are sourced from GitHub's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
-
-Known gaps are listed at the bottom of the Cost tab, including long-context surcharges (not applied) and the session turn count proxy used for request-based billing.
-
-## Configuration
-
-### Manual Configuration
-
-Replace `4318` with your custom port if you changed `agentLens.otlpPort`.
-
-#### GitHub Copilot
-
-**VS Code extension** — Add to VS Code User Settings (`Cmd+Shift+P` / `Ctrl+Shift+P` → *Preferences: Open User Settings (JSON)*):
-
-```json
-{
-  "github.copilot.chat.otel.enabled": true,
-  "github.copilot.chat.otel.exporterType": "otlp-http",
-  "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
-}
-```
-
-**Copilot CLI (standalone)** — Add to your shell profile, then open a new terminal:
-
-```bash
-# macOS / Linux — add to ~/.zshrc or ~/.bashrc
-export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
-export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
-```
-
-```powershell
-# Windows — run once in PowerShell (persists across sessions)
-[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
-[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")
-```
-
----
-
-#### Claude Code
-
-The `claude` CLI and the Claude Code VS Code extension both read from the same settings file. Add the following to the `"env"` block:
-
-- **macOS/Linux:** `~/.claude/settings.json`
-- **Windows:** `%USERPROFILE%\.claude\settings.json`
-
-```json
-{
-  "env": {
-    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-    "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
-    "OTEL_TRACES_EXPORTER": "otlp",
-    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
-    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
-    "OTEL_LOG_TOOL_DETAILS": "1",
-    "OTEL_LOG_TOOL_CONTENT": "1",
-    "OTEL_LOG_USER_PROMPTS": "1"
-  }
-}
-```
-
-| Key | Purpose |
-| --- | ------- |
-| `CLAUDE_CODE_ENABLE_TELEMETRY` | Turns on OTLP export |
-| `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA` | Adds token counts, model name, and tool inputs to LLM spans |
-| `OTEL_TRACES_EXPORTER` | Selects the OTLP exporter |
-| `OTEL_EXPORTER_OTLP_PROTOCOL` | Uses JSON-over-HTTP (required — protobuf is not supported) |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | Points at the AgentLens collector (base URL, no `/v1/traces` suffix) |
-| `OTEL_LOG_TOOL_DETAILS` | Logs tool call events (tool name, file path) |
-| `OTEL_LOG_TOOL_CONTENT` | Includes full file contents and terminal output in tool result logs — needed for the **Summaries** tab to show tool outputs and for **Files** tab diff content |
-| `OTEL_LOG_USER_PROMPTS` | Includes the actual prompt text in session records — without this, sessions show `[N chars — prompt redacted]` |
-
-If `settings.json` already exists, merge the `env` block — do not replace the whole file. After saving, **restart Claude Code** for the env vars to take effect.
-
----
-
-#### Codex
-
-The CLI and VS Code extension both read the same config file. Add an `[otel]` section:
-
-- **macOS/Linux:** `~/.codex/config.toml`
-- **Windows:** `%USERPROFILE%\.codex\config.toml`
-
-```toml
-[otel]
-log_user_prompt = true
-exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
-trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
-```
-
-| Key | Purpose |
-| --- | ------- |
-| `log_user_prompt` | Includes the actual prompt text — without this, sessions show `[session in progress]` |
-| `exporter` | Sends log events (tool calls, token usage, SSE events) to `/v1/logs` |
-| `trace_exporter` | Sends trace spans (timing, parent-child hierarchy) to `/v1/traces` |
-
-If `config.toml` already has an `[otel]` section, add only the missing keys. After saving, **restart Codex**.
-
----
-
-### Auto-configuration
-
-When the VS Code extension activates, AgentLens automatically writes the required telemetry config for each detected agent — no manual steps needed. After first install, **restart any running agent sessions** to pick up the new config.
-
-| Agent | Config file written |
-| --- | --- |
-| Claude Code (CLI + VS Code extension) | `~/.claude/settings.json` (macOS/Linux) · `%USERPROFILE%\.claude\settings.json` (Windows) |
-| GitHub Copilot (VS Code extension) | VS Code User Settings via VS Code API — same on all platforms |
-| Codex CLI | `~/.codex/config.toml` (macOS/Linux) · `%USERPROFILE%\.codex\config.toml` (Windows) |
-
-If auto-configuration fails or you need to verify what was written, use the [Manual Configuration](#manual-configuration) instructions above.
+The VS Code extension configures agents automatically on first activation. For standalone mode, run the included setup scripts (see [Configuring Agents](#configuring-agents) above). For detailed per-agent configuration steps, open the **Help** tab in the AgentLens dashboard.
 
 ## Replaying Exported Spans
 
@@ -347,6 +244,12 @@ Each AI coding agent emits a different OTEL shape. AgentLens normalizes all thre
 ---
 
 > **Note:** Agent observability is evolving rapidly. All three platforms are actively expanding what they expose via OpenTelemetry, and the GenAI semantic conventions are still being standardized. AgentLens will be updated as richer telemetry becomes available.
+
+## Additional Features
+
+- **Files Changed** — The Files tab tracks every file created or modified by the agent, organized by session with inline before/after diffs
+- **Multi-session Comparison** — The Agents tab shows side-by-side token totals, cache rates, TTFT, and top tools for Copilot, Claude, and Codex, plus a full cross-session history table
+- **Automated Prompts** — The Automation tab lets you configure threshold-based automations (Loop Breaker, Turn Limit Wrap-up, Context Dump) that trigger a correction prompt when a session crosses a limit — delivered as a VS Code notification or written to a file for agent consumption
 
 ## AI Usage Disclosure
 
