@@ -6,6 +6,7 @@ import { SidebarPanel } from './sidebarPanel'
 import { DashboardPanel } from './dashboardPanel'
 import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } from './autoConfig'
 import { exportSpans, exportSpansRedacted } from './exportData'
+import { openDatabase } from './database/db'
 
 let collector: OtlpCollector | undefined
 let store: SessionStore | undefined
@@ -44,6 +45,17 @@ export async function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel('AgentLens')
   context.subscriptions.push(outputChannel)
   outputChannel.appendLine('AgentLens activating...')
+
+  try {
+    const db = await openDatabase(
+      context.globalStorageUri.fsPath,
+      context.extensionUri.fsPath,
+    )
+    context.subscriptions.push(db)
+    outputChannel.appendLine('AgentLens database initialized.')
+  } catch (err) {
+    outputChannel.appendLine(`Failed to initialize database: ${err}`)
+  }
 
   try {
     store = new SessionStore(context)

@@ -1,0 +1,83 @@
+import * as fs from 'fs'
+import * as path from 'path'
+import { SCHEMA_SQL } from './schema'
+
+// Minimal sql.js surface we use — avoids pulling in @types/sql.js
+// which has a transitive @types/emscripten dep that requires browser lib types.
+interface SqlDatabase {
+  run(sql: string): void
+  export(): Uint8Array
+  close(): void
+}
+interface SqlJsStatic {
+  Database: new (data?: Buffer | Uint8Array) => SqlDatabase
+}
+type InitSqlJs = (config?: { locateFile?: (file: string) => string }) => Promise<SqlJsStatic>
+
+const DB_FILENAME = 'agentlens.db'
+const BLOBS_DIR = 'blobs'
+
+/**
+ * Opens (or creates) the AgentLens SQLite database at storagePath/agentlens.db
+ * and applies the schema. The extensionPath is needed to locate the sql.js
+ * WASM binary, which is copied to dist/ during the build.
+ */
+export async function openDatabase(storagePath: string, extensionPath: string): Promise<AgentLensDb> {
+  // sql.js is loaded dynamically to keep it out of the main extension bundle.
+  const initSqlJs = require('sql.js') as InitSqlJs
+  const SQL = await initSqlJs({
+    locateFile: (file: string) => path.join(extensionPath, 'dist', file),
+  })
+
+  const dbPath = path.join(storagePath, DB_FILENAME)
+  let db: SqlDatabase
+
+  try {
+    const fileBuffer = fs.readFileSync(dbPath)
+    db = new SQL.Database(fileBuffer)
+  } catch {
+    db = new SQL.Database()
+  }
+
+  db.run(SCHEMA_SQL)
+
+  ensureBlobsDir(storagePath)
+
+  return new AgentLensDb(db, dbPath, path.join(storagePath, BLOBS_DIR))
+}
+
+/** Wrapper that keeps the SqlDatabase and its file path together. */
+export class AgentLensDb {
+  constructor(
+    private readonly db: SqlDatabase,
+    private readonly dbPath: string,
+    readonly blobsDir: string,
+  ) {}
+
+  /** Flush the in-memory database to disk. Called periodically and on deactivate. */
+  save(): void {
+    const data = this.db.export()
+    fs.writeFileSync(this.dbPath, Buffer.from(data))
+  }
+
+  /** Save and close. Added to context.subscriptions so VS Code calls it on deactivation. */
+  dispose(): void {
+    try {
+      this.save()
+    } finally {
+      this.db.close()
+    }
+  }
+
+  /** Direct access for query/write operations added in later phases. */
+  get raw(): SqlDatabase {
+    return this.db
+  }
+}
+
+function ensureBlobsDir(storagePath: string): void {
+  const dir = path.join(storagePath, BLOBS_DIR)
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+}
