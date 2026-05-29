@@ -48,14 +48,21 @@ const RATES: Record<string, ModelRates> = {
   // codex-mini-latest: fine-tuned o4-mini; 75% cache discount (not the usual 90%); deprecated
   'codex-mini-latest':   { inputPerMTok: 1.50,  cacheReadPerMTok: 0.375,  cacheWritePerMTok: 0, outputPerMTok: 6.00,  multiplier: 0,    multiplierAnnualPostJun1: 0 },
   // ── Anthropic ──────────────────────────────────────────────────────────────────────────────────
-  'claude-haiku-4-5':      { inputPerMTok: 1.00, cacheReadPerMTok: 0.10, cacheWritePerMTok: 1.25, outputPerMTok: 5.00,  multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
-  'claude-sonnet-4':       { inputPerMTok: 3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 1 },
-  'claude-sonnet-4-5':     { inputPerMTok: 3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 6 },
-  'claude-sonnet-4-6':     { inputPerMTok: 3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 9 },
-  'claude-opus-4-5':       { inputPerMTok: 5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 15 },
-  'claude-opus-4-6':       { inputPerMTok: 5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 27 },
-  'claude-opus-4-6-fast':  { inputPerMTok: 5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 30,   multiplierAnnualPostJun1: 30 },
-  'claude-opus-4-7':       { inputPerMTok: 5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok: 6.25, outputPerMTok: 25.00, multiplier: 15,   multiplierAnnualPostJun1: 27 },
+  // deprecated — for historical Claude Code sessions
+  'claude-opus-4':         { inputPerMTok: 15.00, cacheReadPerMTok: 1.50, cacheWritePerMTok: 18.75, outputPerMTok: 75.00, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  'claude-opus-4-1':       { inputPerMTok: 15.00, cacheReadPerMTok: 1.50, cacheWritePerMTok: 18.75, outputPerMTok: 75.00, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  'claude-haiku-3-5':      { inputPerMTok:  0.80, cacheReadPerMTok: 0.08, cacheWritePerMTok:  1.00, outputPerMTok:  4.00, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  // current
+  'claude-haiku-4-5':      { inputPerMTok:  1.00, cacheReadPerMTok: 0.10, cacheWritePerMTok:  1.25, outputPerMTok:  5.00, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
+  'claude-sonnet-4':       { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 1 },
+  'claude-sonnet-4-5':     { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 6 },
+  'claude-sonnet-4-6':     { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 9 },
+  'claude-opus-4-5':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 15 },
+  'claude-opus-4-6':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 27 },
+  'claude-opus-4-7':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 15,   multiplierAnnualPostJun1: 27 },
+  // fast mode (/fast toggle in Claude Code) — 6× standard Opus rates; model ID in telemetry does NOT include -fast suffix (known gap)
+  'claude-opus-4-6-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
+  'claude-opus-4-7-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
   // ── Google ─────────────────────────────────────────────────────────────────────────────────────
   'gemini-2.5-pro':   { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, multiplier: 1,    multiplierAnnualPostJun1: 1 },  // long-context surcharge (>200K tokens) not implemented
   'gemini-3-flash':   { inputPerMTok: 0.50, cacheReadPerMTok: 0.05,  cacheWritePerMTok: 0, outputPerMTok: 3.00,  multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },

@@ -3059,14 +3059,21 @@
     // codex-mini-latest: fine-tuned o4-mini; 75% cache discount (not the usual 90%); deprecated
     "codex-mini-latest": { inputPerMTok: 1.5, cacheReadPerMTok: 0.375, cacheWritePerMTok: 0, outputPerMTok: 6, multiplier: 0, multiplierAnnualPostJun1: 0 },
     // ── Anthropic ──────────────────────────────────────────────────────────────────────────────────
+    // deprecated — for historical Claude Code sessions
+    "claude-opus-4": { inputPerMTok: 15, cacheReadPerMTok: 1.5, cacheWritePerMTok: 18.75, outputPerMTok: 75, multiplier: 0, multiplierAnnualPostJun1: 0 },
+    "claude-opus-4-1": { inputPerMTok: 15, cacheReadPerMTok: 1.5, cacheWritePerMTok: 18.75, outputPerMTok: 75, multiplier: 0, multiplierAnnualPostJun1: 0 },
+    "claude-haiku-3-5": { inputPerMTok: 0.8, cacheReadPerMTok: 0.08, cacheWritePerMTok: 1, outputPerMTok: 4, multiplier: 0, multiplierAnnualPostJun1: 0 },
+    // current
     "claude-haiku-4-5": { inputPerMTok: 1, cacheReadPerMTok: 0.1, cacheWritePerMTok: 1.25, outputPerMTok: 5, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
     "claude-sonnet-4": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 1 },
     "claude-sonnet-4-5": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 6 },
     "claude-sonnet-4-6": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 9 },
     "claude-opus-4-5": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 3, multiplierAnnualPostJun1: 15 },
     "claude-opus-4-6": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 3, multiplierAnnualPostJun1: 27 },
-    "claude-opus-4-6-fast": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 30, multiplierAnnualPostJun1: 30 },
     "claude-opus-4-7": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 15, multiplierAnnualPostJun1: 27 },
+    // fast mode (/fast toggle in Claude Code) — 6× standard Opus rates; model ID in telemetry does NOT include -fast suffix (known gap)
+    "claude-opus-4-6-fast": { inputPerMTok: 30, cacheReadPerMTok: 3, cacheWritePerMTok: 37.5, outputPerMTok: 150, multiplier: 30, multiplierAnnualPostJun1: 30 },
+    "claude-opus-4-7-fast": { inputPerMTok: 30, cacheReadPerMTok: 3, cacheWritePerMTok: 37.5, outputPerMTok: 150, multiplier: 30, multiplierAnnualPostJun1: 30 },
     // ── Google ─────────────────────────────────────────────────────────────────────────────────────
     "gemini-2.5-pro": { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 1, multiplierAnnualPostJun1: 1 },
     // long-context surcharge (>200K tokens) not implemented
@@ -3942,7 +3949,7 @@
     return credits.toFixed(1);
   }
   function sessionCostMode(session, mode) {
-    return session.source === "codex" ? "token" : mode;
+    return session.source === "codex" || session.source === "claude_code" ? "token" : mode;
   }
   function CostBarChart({ sessions, mode }) {
     const canvasRef = A2(null);
@@ -4028,7 +4035,8 @@
     const [mode, setMode] = d2("token");
     const copilotSessions = sessions.filter((s4) => s4.source === "copilot");
     const codexSessions = sessions.filter((s4) => s4.source === "codex");
-    const pricedSessions = sessions.filter((s4) => s4.source === "copilot" || s4.source === "codex");
+    const claudeSessions = sessions.filter((s4) => s4.source === "claude_code");
+    const pricedSessions = sessions.filter((s4) => s4.source === "copilot" || s4.source === "codex" || s4.source === "claude_code");
     const disclaimer = /* @__PURE__ */ u4("div", { style: "font-size:11px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:8px 10px;margin-bottom:16px;line-height:1.6;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap", children: [
       /* @__PURE__ */ u4("span", { children: [
         /* @__PURE__ */ u4("strong", { style: "color:var(--foreground)", children: "Estimates only" }),
@@ -4043,17 +4051,20 @@
     if (pricedSessions.length === 0) {
       return /* @__PURE__ */ u4("div", { id: "cost-content", children: [
         disclaimer,
-        /* @__PURE__ */ u4("div", { class: "empty-state", children: "No Copilot or Codex sessions recorded \u2014 start a session to see cost estimates" })
+        /* @__PURE__ */ u4("div", { class: "empty-state", children: "No Copilot, Claude, or Codex sessions recorded \u2014 start a session to see cost estimates" })
       ] });
     }
     const copilotCosts = copilotSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, mode) }));
     const codexCosts = codexSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, "token") }));
+    const claudeCosts = claudeSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, "token") }));
     const allCosts = pricedSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, sessionCostMode(s4, mode)) }));
     const copilotTotalUsd = copilotCosts.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
     const copilotTotalCredits = copilotTotalUsd / 0.01;
     const copilotAnyUnknown = copilotCosts.some((c4) => c4.cost.modelUnknown);
     const codexTotalUsd = codexCosts.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
     const codexAnyUnknown = codexCosts.some((c4) => c4.cost.modelUnknown);
+    const claudeTotalUsd = claudeCosts.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
+    const claudeAnyUnknown = claudeCosts.some((c4) => c4.cost.modelUnknown);
     const sessionRows = allCosts.slice().sort((a4, b4) => {
       const na = getSessionGlobalNumber(a4.session) ?? 0;
       const nb = getSessionGlobalNumber(b4.session) ?? 0;
@@ -4101,6 +4112,10 @@
         codexSessions.length > 0 && /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: [
           /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + getAgentColor("codex") + ";vertical-align:middle;margin-right:5px" }),
           "Codex \u2014 Always uses token-based pricing"
+        ] }),
+        claudeSessions.length > 0 && /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + getAgentColor("claude_code") + ";vertical-align:middle;margin-right:5px" }),
+          "Claude \u2014 Always uses token-based pricing"
         ] })
       ] }),
       /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "ESTIMATED COST PER SESSION" }),
@@ -4169,7 +4184,21 @@
             ] }),
             showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
           ] }),
-          copilotSessions.length > 0 && codexSessions.length > 0 && /* @__PURE__ */ u4("tr", { style: "border-top:2px solid var(--vscode-panel-border);font-weight:600", children: [
+          claudeSessions.length > 0 && /* @__PURE__ */ u4("tr", { style: "border-top:1px solid var(--vscode-panel-border)", children: [
+            /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:5px 8px;text-align:right;color:var(--muted);font-size:10px", children: [
+              "Claude (",
+              claudeSessions.length,
+              " session",
+              claudeSessions.length !== 1 ? "s" : "",
+              ")"
+            ] }),
+            /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;font-weight:600", children: [
+              claudeAnyUnknown ? "~" : "",
+              fmtUsd(claudeTotalUsd)
+            ] }),
+            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
+          ] }),
+          [copilotSessions, codexSessions, claudeSessions].filter((s4) => s4.length > 0).length > 1 && /* @__PURE__ */ u4("tr", { style: "border-top:2px solid var(--vscode-panel-border);font-weight:600", children: [
             /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:6px 8px;text-align:right;color:var(--muted)", children: [
               "Total (",
               pricedSessions.length,
@@ -4178,8 +4207,8 @@
               ")"
             ] }),
             /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right", children: [
-              copilotAnyUnknown || codexAnyUnknown ? "~" : "",
-              fmtUsd(copilotTotalUsd + codexTotalUsd)
+              copilotAnyUnknown || codexAnyUnknown || claudeAnyUnknown ? "~" : "",
+              fmtUsd(copilotTotalUsd + codexTotalUsd + claudeTotalUsd)
             ] }),
             showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
           ] })
@@ -4187,7 +4216,8 @@
       ] }) }),
       /* @__PURE__ */ u4("div", { style: "margin-top:16px;font-size:10px;color:var(--muted);line-height:1.6", children: [
         mode === "token" ? "Token-based AI Credits: effective Jun 1, 2026. Per-turn chart uses input+output only; session totals include cache tokens." : mode === "request" ? "Request-based: active before Jun 1, 2026. Cost = multiplier \xD7 $0.04 per user prompt. Models marked 0\xD7 (e.g. GPT-4.1) are free under this model." : "Annual plan request-based: for annual-plan holders staying on old billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June.",
-        codexSessions.length > 0 && " Codex sessions use token-based pricing regardless of the Copilot billing model selected above."
+        codexSessions.length > 0 && " Codex sessions use token-based pricing regardless of the Copilot billing model selected above.",
+        claudeSessions.length > 0 && " Claude sessions use Anthropic API token-based pricing regardless of the Copilot billing model selected above."
       ] }),
       /* @__PURE__ */ u4("div", { id: "cost-known-gaps", style: "margin-top:24px;padding-top:16px;border-top:1px solid var(--vscode-panel-border);font-size:11px;color:var(--muted);line-height:1.7", children: [
         /* @__PURE__ */ u4("strong", { style: "color:var(--foreground);font-size:12px", children: "Known gaps" }),
@@ -4224,6 +4254,26 @@
               ". The official Codex rate card (",
               /* @__PURE__ */ u4("code", { children: "help.openai.com" }),
               ") may list additional model aliases not yet captured here."
+            ] })
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("div", { style: "margin-top:12px", children: [
+          /* @__PURE__ */ u4("span", { style: "font-size:10px;text-transform:uppercase;letter-spacing:.4px", children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("claude_code") + ";vertical-align:middle;margin-right:4px" }),
+            "Claude"
+          ] }),
+          /* @__PURE__ */ u4("ul", { style: "margin:4px 0 0;padding-left:18px", children: [
+            /* @__PURE__ */ u4("li", { children: "Cache write TTL cannot be determined from telemetry. Claude Code uses 5-minute prompt caches by default (1.25\xD7 input rate); if 1-hour caches are active (2\xD7 input rate), cost will be underestimated by ~37%." }),
+            /* @__PURE__ */ u4("li", { children: [
+              "Fast mode (",
+              /* @__PURE__ */ u4("code", { children: "/fast" }),
+              "): Opus fast-mode requests are billed at $30 input / $150 output per MTok \u2014 6\xD7 the standard Opus rate. The model ID in telemetry does not indicate fast mode, so fast-mode sessions are costed at the standard Opus rate and will be significantly underestimated."
+            ] }),
+            /* @__PURE__ */ u4("li", { children: "Opus 4.7 tokenizer change (from Apr 16, 2026) generates up to 35% more tokens for the same text. Per-token prices are unchanged; sessions before and after this date are not directly cost-comparable." }),
+            /* @__PURE__ */ u4("li", { children: [
+              "Models not in the rate table are shown as ",
+              /* @__PURE__ */ u4("strong", { children: "~$?" }),
+              ". Older Claude models (claude-3-5-sonnet, claude-3-opus, etc.) may appear in imported historical sessions."
             ] })
           ] })
         ] })
