@@ -1,4 +1,4 @@
-# Configure OpenAI Codex to send OTLP telemetry to AgentLens.
+# Configure Codex to send OTLP telemetry to AgentLens.
 # Safe to re-run: if an [otel] section already exists, the script exits without changes.
 #
 # Usage:
@@ -13,7 +13,7 @@ $ErrorActionPreference = "Stop"
 $Endpoint = "http://localhost:$Port"
 $ConfigPath = Join-Path $env:USERPROFILE ".codex\config.toml"
 
-Write-Host "Configuring OpenAI Codex for AgentLens at $Endpoint..."
+Write-Host "Configuring Codex for AgentLens at $Endpoint..."
 
 if ((Test-Path $ConfigPath) -and (Select-String -Path $ConfigPath -Pattern '^\[otel\]' -Quiet)) {
     Write-Host ""

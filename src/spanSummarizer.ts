@@ -4,7 +4,7 @@
  * Agent-specific parsing lives in src/summarizers/:
  *   copilot.ts  — invoke_agent spans (GitHub Copilot)
  *   claude.ts   — claude_code.interaction spans (Claude Code CLI)
- *   codex.ts    — codex.* spans (OpenAI Codex CLI)
+ *   codex.ts    — codex.* spans (Codex CLI)
  *   helpers.ts  — shared attribute accessors and formatting utilities
  */
 

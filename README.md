@@ -88,13 +88,51 @@ docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
   agentlens/agentlens
 ```
 
-Open <http://localhost:3000> after the container starts. Configure your agents to send telemetry to `http://localhost:4318` — see [Manual Configuration](#manual-configuration) below.
+Open <http://localhost:3000> after the container starts. Use the included setup scripts to configure agents automatically, or see [Manual Configuration](#manual-configuration) for the manual steps.
+
+```bash
+# macOS / Linux
+./scripts/configure-agents.sh
+
+# Windows (PowerShell)
+.\scripts\configure-agents.ps1
+```
 
 ## Configuration
 
 ### Manual Configuration
 
-#### Claude Code Configuration
+Replace `4318` with your custom port if you changed `agentLens.otlpPort`.
+
+#### GitHub Copilot
+
+**VS Code extension** — Add to VS Code User Settings (`Cmd+Shift+P` / `Ctrl+Shift+P` → *Preferences: Open User Settings (JSON)*):
+
+```json
+{
+  "github.copilot.chat.otel.enabled": true,
+  "github.copilot.chat.otel.exporterType": "otlp-http",
+  "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
+}
+```
+
+**Copilot CLI (standalone)** — Add to your shell profile, then open a new terminal:
+
+```bash
+# macOS / Linux — add to ~/.zshrc or ~/.bashrc
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
+```
+
+```powershell
+# Windows — run once in PowerShell (persists across sessions)
+[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
+[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")
+```
+
+---
+
+#### Claude Code
 
 The `claude` CLI and the Claude Code VS Code extension both read from the same settings file. Add the following to the `"env"` block:
 
@@ -131,23 +169,9 @@ If `settings.json` already exists, merge the `env` block — do not replace the 
 
 ---
 
-#### Copilot Configuration
+#### Codex
 
-Add the following to VS Code **User Settings** (`Cmd+Shift+P` / `Ctrl+Shift+P` → *Preferences: Open User Settings (JSON)*). These settings work the same on macOS, Linux, and Windows.
-
-```json
-{
-  "github.copilot.chat.otel.enabled": true,
-  "github.copilot.chat.otel.exporterType": "otlp-http",
-  "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
-}
-```
-
----
-
-#### Codex Configuration
-
-Add an `[otel]` section to the Codex config file. Restart any running Codex sessions after saving.
+The CLI and VS Code extension both read the same config file. Add an `[otel]` section:
 
 - **macOS/Linux:** `~/.codex/config.toml`
 - **Windows:** `%USERPROFILE%\.codex\config.toml`
@@ -169,36 +193,6 @@ If `config.toml` already has an `[otel]` section, add only the missing keys. Aft
 
 ---
 
-#### VS Code Integrated Terminal
-
-If the Claude Code CLI runs inside VS Code's integrated terminal and traces are not appearing, add the env vars directly to VS Code's terminal environment. Use the key matching your OS in VS Code User Settings:
-
-```jsonc
-// macOS:
-"terminal.integrated.env.osx": {
-  "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-  "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
-  "OTEL_TRACES_EXPORTER": "otlp",
-  "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
-  "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
-  "OTEL_LOG_TOOL_DETAILS": "1",
-  "OTEL_LOG_TOOL_CONTENT": "1",
-  "OTEL_LOG_USER_PROMPTS": "1"
-}
-// Linux: use "terminal.integrated.env.linux": { ... }
-// Windows: use "terminal.integrated.env.windows": { ... }
-```
-
-Troubleshooting: open the **AgentLens** output channel (*View → Output → AgentLens*) to confirm spans are arriving. Check that your shell profile does not override `OTEL_EXPORTER_OTLP_ENDPOINT`.
-
-#### Quick Verification
-
-- **Claude (macOS/Linux):** `echo $OTEL_EXPORTER_OTLP_ENDPOINT` — should print `http://localhost:4318`
-- **Claude (Windows cmd):** `echo %OTEL_EXPORTER_OTLP_ENDPOINT%` · PowerShell: `$env:OTEL_EXPORTER_OTLP_ENDPOINT`
-- **Copilot:** confirm `github.copilot.chat.otel.enabled` is `true` in VS Code User Settings
-- **Codex (macOS/Linux):** `cat ~/.codex/config.toml` and confirm the `[otel]` section
-- **Codex (Windows):** `type %USERPROFILE%\.codex\config.toml`
-
 ### Auto-configuration
 
 When the VS Code extension activates, AgentLens automatically writes the required telemetry config for each detected agent — no manual steps needed. After first install, **restart any running agent sessions** to pick up the new config.
@@ -207,7 +201,7 @@ When the VS Code extension activates, AgentLens automatically writes the require
 | --- | --- |
 | Claude Code (CLI + VS Code extension) | `~/.claude/settings.json` (macOS/Linux) · `%USERPROFILE%\.claude\settings.json` (Windows) |
 | GitHub Copilot (VS Code extension) | VS Code User Settings via VS Code API — same on all platforms |
-| OpenAI Codex CLI | `~/.codex/config.toml` (macOS/Linux) · `%USERPROFILE%\.codex\config.toml` (Windows) |
+| Codex CLI | `~/.codex/config.toml` (macOS/Linux) · `%USERPROFILE%\.codex\config.toml` (Windows) |
 
 If auto-configuration fails or you need to verify what was written, use the [Manual Configuration](#manual-configuration) instructions above.
 
@@ -366,4 +360,4 @@ MIT
 
 ## Disclaimer
 
-AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / OpenAI Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
+AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.

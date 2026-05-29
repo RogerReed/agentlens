@@ -113,7 +113,7 @@ const AGENT_OTEL_SHAPES: Array<{
     gaps: 'The three OTEL_LOG_* env vars are not enabled by default — without them, tool arguments are absent, prompt text is omitted, and file diff content is unavailable. Cache token data is only present when using a model that supports prompt caching.',
   },
   {
-    agent: 'OpenAI Codex',
+    agent: 'Codex',
     format: 'Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to ~/.codex/config.toml also emits timing spans to /v1/traces. Both the CLI and the VS Code extension read the same config file.',
     coverage: 'With the recommended configuration (log_user_prompt = true and both exporters set): prompt text, token counts, model name, TTFT, tool names, tool arguments, tool results, and span timing are all present.',
     gaps: 'Trace and Timeline tabs have less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without trace_exporter, span waterfall data is limited.',
@@ -230,7 +230,7 @@ function ConfigSection() {
             <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>claude</code> session and start a new one.</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">OpenAI Codex</td>
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Codex</td>
             <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one.</td>
           </tr>
           <tr>
@@ -261,7 +261,7 @@ function ConfigSection() {
             <td style="padding:4px 0;vertical-align:top">Reload the VS Code window (<em>Reload Window</em> from the Command Palette).</td>
           </tr>
           <tr>
-            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">OpenAI Codex</td>
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Codex</td>
             <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one, or reload the VS Code window if using the Codex extension.</td>
           </tr>
         </tbody>
@@ -329,7 +329,7 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
 
   const codexSection = (
     <div style="margin-bottom:4px">
-      <h4 style={h4Style}>OpenAI Codex</h4>
+      <h4 style={h4Style}>Codex</h4>
       <p style={mutedP}>The CLI and VS Code extension both read the same file. Add an <code style={codeStyle}>[otel]</code> section:</p>
       {pathNote('~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml')}
       <pre style={preStyle}>{`[otel]
@@ -528,7 +528,7 @@ export function Help() {
       <ViewsSection />
       <GlossarySection />
       <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">
-        <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / OpenAI Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
+        <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
       </p>
     </div>
   )

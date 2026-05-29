@@ -5,7 +5,7 @@
 # Usage:
 #   ./scripts/configure-agents.sh                      # configure all (Claude + Codex)
 #   ./scripts/configure-agents.sh --agent claude       # Claude Code only
-#   ./scripts/configure-agents.sh --agent codex        # OpenAI Codex only
+#   ./scripts/configure-agents.sh --agent codex        # Codex only
 #   ./scripts/configure-agents.sh --port 4319          # custom port
 #   ./scripts/configure-agents.sh --agent claude --port 4319
 
@@ -99,10 +99,10 @@ PYEOF
   echo "  Restart: CLI — exit session and reopen | VS Code — Reload Window"
 }
 
-# ── OpenAI Codex ───────────────────────────────────────────────────────────────
+# ── Codex ───────────────────────────────────────────────────────────────
 
 configure_codex() {
-  echo "Configuring OpenAI Codex..."
+  echo "Configuring Codex..."
   local config="$HOME/.codex/config.toml"
 
   if [ -f "$config" ] && grep -q '^\[otel\]' "$config" 2>/dev/null; then

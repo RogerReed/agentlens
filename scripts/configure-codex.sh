@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Configure OpenAI Codex to send OTLP telemetry to AgentLens.
+# Configure Codex to send OTLP telemetry to AgentLens.
 # Safe to re-run: if an [otel] section already exists, the script exits without changes.
 #
 # Usage:
@@ -13,7 +13,7 @@ PORT=${1:-${AGENTLENS_PORT:-4318}}
 ENDPOINT="http://localhost:${PORT}"
 CONFIG="$HOME/.codex/config.toml"
 
-echo "Configuring OpenAI Codex for AgentLens at ${ENDPOINT}..."
+echo "Configuring Codex for AgentLens at ${ENDPOINT}..."
 
 if [ -f "$CONFIG" ] && grep -q '^\[otel\]' "$CONFIG" 2>/dev/null; then
   echo ""

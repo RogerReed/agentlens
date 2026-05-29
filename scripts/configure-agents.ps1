@@ -4,7 +4,7 @@
 # Usage:
 #   .\scripts\configure-agents.ps1                        # configure all (Claude + Codex)
 #   .\scripts\configure-agents.ps1 -Agent claude          # Claude Code only
-#   .\scripts\configure-agents.ps1 -Agent codex           # OpenAI Codex only
+#   .\scripts\configure-agents.ps1 -Agent codex           # Codex only
 #   .\scripts\configure-agents.ps1 -Port 4319             # custom port
 #   .\scripts\configure-agents.ps1 -Agent claude -Port 4319
 
@@ -69,10 +69,10 @@ function Configure-Claude {
     Write-Host "  Restart: CLI — exit session and reopen | VS Code — Reload Window"
 }
 
-# ── OpenAI Codex ───────────────────────────────────────────────────────────────
+# ── Codex ───────────────────────────────────────────────────────────────
 
 function Configure-Codex {
-    Write-Host "Configuring OpenAI Codex..."
+    Write-Host "Configuring Codex..."
     $ConfigPath = Join-Path $env:USERPROFILE ".codex\config.toml"
 
     if ((Test-Path $ConfigPath) -and (Select-String -Path $ConfigPath -Pattern '^\[otel\]' -Quiet)) {
