@@ -30,7 +30,7 @@ export interface SessionSummaryCard {
 }
 
 export interface TimelineEntry {
-  type: 'llm' | 'tool' | 'background'
+  type: 'llm' | 'tool' | 'user_input' | 'background'
   spanId: string
   label: string
   thinking?: string
@@ -44,6 +44,7 @@ export interface TimelineEntry {
   resultSummary?: string
   fullResult?: string
   toolInput?: string
+  decision?: string
   isError: boolean
   errorMessage?: string
   timestamp: string

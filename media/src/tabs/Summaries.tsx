@@ -172,11 +172,13 @@ function StepRow({ step, idx, sessIdx, sessionDur }: { step: Step; idx: number; 
   let badgeLabel: string, barColor: string
   if (entry.type === 'llm') { badgeLabel = 'LLM'; barColor = 'var(--accent)' }
   else if (entry.type === 'tool') { badgeLabel = 'TOOL'; barColor = '#B8E986' }
+  else if (entry.type === 'user_input') { badgeLabel = 'USER'; barColor = '#F5A623' }
   else { badgeLabel = 'BG'; barColor = 'var(--muted)' }
   if (entry.isError) barColor = 'var(--error)'
 
   const rowLabel = entry.type === 'llm' ? formatLlmLabel(entry)
     : entry.type === 'tool' ? formatToolLabel(entry) + (formatToolResult(entry) ? ' → ' + formatToolResult(entry) : '')
+    : entry.type === 'user_input' ? (entry.decision && entry.decision !== 'unknown' ? `${entry.label} (${entry.decision})` : entry.label)
     : entry.label || ''
 
   const left = sessionDur > 0 ? (step.offsetMs / sessionDur * 100) : 0

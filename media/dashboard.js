@@ -4633,12 +4633,15 @@
     } else if (entry.type === "tool") {
       badgeLabel = "TOOL";
       barColor = "#B8E986";
+    } else if (entry.type === "user_input") {
+      badgeLabel = "USER";
+      barColor = "#F5A623";
     } else {
       badgeLabel = "BG";
       barColor = "var(--muted)";
     }
     if (entry.isError) barColor = "var(--error)";
-    const rowLabel = entry.type === "llm" ? formatLlmLabel(entry) : entry.type === "tool" ? formatToolLabel(entry) + (formatToolResult(entry) ? " \u2192 " + formatToolResult(entry) : "") : entry.label || "";
+    const rowLabel = entry.type === "llm" ? formatLlmLabel(entry) : entry.type === "tool" ? formatToolLabel(entry) + (formatToolResult(entry) ? " \u2192 " + formatToolResult(entry) : "") : entry.type === "user_input" ? entry.decision && entry.decision !== "unknown" ? `${entry.label} (${entry.decision})` : entry.label : entry.label || "";
     const left = sessionDur > 0 ? step.offsetMs / sessionDur * 100 : 0;
     const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100;
     return /* @__PURE__ */ u4(S, { children: [
