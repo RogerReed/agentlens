@@ -181,17 +181,6 @@ Each entry uses this format:
 
 When **Write prompts file** is off (default), triggering an automation shows a notification with a **Copy Prompt** button instead — click it to copy the prompt to your clipboard, then paste into your agent.
 
-### Enabling Write prompts file
-
-1. Open the **Automation** tab in the dashboard
-2. Enable any automation rule (e.g. Loop Breaker, Turn Limit Wrap-up)
-3. Toggle **Write prompts file** on
-4. When the threshold is crossed during a live session, the prompt is written automatically and a notification confirms the filename
-
-### Automations only fire on real-time sessions
-
-Automations evaluate only sessions with activity in the last 2 minutes. Historical sessions visible in the dashboard do not trigger automations even if they meet a threshold — changing the session filter will not cause old sessions to fire.
-
 ## Commands
 
 Open the VS Code Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for **AgentLens**:
