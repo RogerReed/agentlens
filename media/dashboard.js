@@ -1880,10 +1880,70 @@
     "terminal.type",
     "gen_ai.tool.type",
     "gen_ai.tool.description",
-    "otel.trace_id"
+    "otel.trace_id",
+    // Rendered separately as a formatted "Response" block
+    "gen_ai.output.messages"
   ]);
+  function extractLlmResponseText(span) {
+    const raw = String(getAttr(span, "gen_ai.output.messages") ?? "");
+    if (!raw) return null;
+    try {
+      const msgs = JSON.parse(raw);
+      for (const msg of msgs) {
+        if (msg.role !== "assistant") continue;
+        const blocks = msg.content ?? msg.parts ?? [];
+        for (const b4 of blocks) {
+          if (b4.type === "text" && typeof b4.text === "string" && b4.text.trim()) {
+            return b4.text;
+          }
+        }
+      }
+    } catch {
+    }
+    return null;
+  }
+  function extractLlmToolCalls(span) {
+    const raw = String(getAttr(span, "gen_ai.output.messages") ?? "");
+    if (!raw) return [];
+    try {
+      const msgs = JSON.parse(raw);
+      const names = [];
+      for (const msg of msgs) {
+        if (msg.role !== "assistant") continue;
+        const blocks = msg.content ?? msg.parts ?? [];
+        for (const b4 of blocks) {
+          if ((b4.type === "tool_use" || b4.type === "tool_call") && b4.name) {
+            names.push(b4.name);
+          }
+        }
+      }
+      return names;
+    } catch {
+      return [];
+    }
+  }
+  function isLlmSpan(span) {
+    const name = span.name ?? "";
+    return name === "claude_code.llm_request" || name.startsWith("chat ");
+  }
   function extractSpanSummary(span) {
     const name = span.name ?? "";
+    if (isLlmSpan(span)) {
+      const responseText = extractLlmResponseText(span);
+      if (responseText) {
+        const snippet = responseText.trim().replace(/\s+/g, " ");
+        return snippet.length > 100 ? snippet.slice(0, 100) + "\u2026" : snippet;
+      }
+      const model = String(getAttr(span, "gen_ai.request.model") ?? getAttr(span, "model") ?? "");
+      const stop = String(getAttr(span, "stop_reason") ?? getAttr(span, "gen_ai.response.finish_reasons") ?? "");
+      const inTok = Number(getAttr(span, "input_tokens") ?? 0);
+      const outTok = Number(getAttr(span, "output_tokens") ?? 0);
+      const parts = [];
+      if (model) parts.push(model);
+      if (stop) parts.push(stop);
+      if (inTok || outTok) parts.push(inTok.toLocaleString() + " in \u2192 " + outTok.toLocaleString() + " out");
+      return parts.length > 0 ? parts.join(" \xB7 ") : null;
+    }
     if (name === "claude_code.tool") {
       const tool = String(getAttr(span, "tool_name") ?? "");
       const cmd = String(getAttr(span, "full_command") ?? "");
@@ -4862,6 +4922,7 @@
     const isExpanded = expandedSpanIds.has(span.spanId);
     const [localOpen, setLocalOpen] = d2(isExpanded);
     const [showSuppressed, setShowSuppressed] = d2(false);
+    const [showFullResponse, setShowFullResponse] = d2(false);
     const st = nanoToMs(span.startTime), en = nanoToMs(span.endTime);
     const dur = en - st;
     const left = minStart > 0 && st > 0 ? (st - minStart) / traceRange * 100 : 0;
@@ -4937,6 +4998,50 @@
             /* @__PURE__ */ u4("span", { class: "wf-detail-val", style: "white-space:pre-wrap;word-break:break-all", children: dl.v })
           ] }, dl.k))
         ] }),
+        isLlmSpan(span) && (() => {
+          const responseText = extractLlmResponseText(span);
+          const toolCalls2 = extractLlmToolCalls(span);
+          const inTok = Number(getAttr(span, "input_tokens") ?? 0);
+          const outTok = Number(getAttr(span, "output_tokens") ?? 0);
+          const hasContent = responseText || toolCalls2.length > 0 || inTok > 0;
+          if (!hasContent) return null;
+          const PREVIEW_LEN = 600;
+          const isLong = (responseText?.length ?? 0) > PREVIEW_LEN;
+          return /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border);margin-top:4px;padding-top:4px", children: [
+            /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
+              /* @__PURE__ */ u4("span", { class: "wf-detail-key", style: "color:var(--accent);font-weight:600", children: "Response" }),
+              /* @__PURE__ */ u4("span", { class: "wf-detail-val", style: "color:var(--muted);font-size:10px", children: inTok > 0 && /* @__PURE__ */ u4(S, { children: [
+                inTok.toLocaleString(),
+                " in \u2192 ",
+                outTok.toLocaleString(),
+                " out"
+              ] }) })
+            ] }),
+            toolCalls2.length > 0 && /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
+              /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: "Tool calls" }),
+              /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: toolCalls2.join(", ") })
+            ] }),
+            responseText && /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "align-items:flex-start", children: [
+              /* @__PURE__ */ u4("span", { class: "wf-detail-key", style: "padding-top:2px", children: "Text" }),
+              /* @__PURE__ */ u4("span", { class: "wf-detail-val", style: "white-space:pre-wrap;word-break:break-word;font-size:11px", children: [
+                showFullResponse ? responseText : responseText.slice(0, PREVIEW_LEN),
+                isLong && !showFullResponse && /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2026" }),
+                isLong && /* @__PURE__ */ u4(
+                  "button",
+                  {
+                    class: "sw-show-full-btn",
+                    style: "display:block;margin-top:4px",
+                    onClick: (e4) => {
+                      e4.stopPropagation();
+                      setShowFullResponse((v4) => !v4);
+                    },
+                    children: showFullResponse ? "Collapse" : "Show full response"
+                  }
+                )
+              ] })
+            ] })
+          ] });
+        })(),
         normalRows.length > 0 && normalRows.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
           /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
           /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })

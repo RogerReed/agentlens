@@ -9,6 +9,7 @@ import {
   buildSpanTree, isSessionSpan, getSessionUserRequest, extractUserRequest,
   spanTypeBadge, getSessionGlobalNumber, getCodexSessionId, getAttr,
   extractSpanSummary, SPAN_ATTR_HIGHLIGHT, SPAN_ATTR_SUPPRESS,
+  isLlmSpan, extractLlmResponseText, extractLlmToolCalls,
 } from '../utils'
 import type { Span, SessionSummaryCard } from '../types'
 
@@ -26,6 +27,7 @@ function SpanRow({ span, minStart, traceRange, depth }: {
   const isExpanded = expandedSpanIds.has(span.spanId)
   const [localOpen, setLocalOpen] = useState(isExpanded)
   const [showSuppressed, setShowSuppressed] = useState(false)
+  const [showFullResponse, setShowFullResponse] = useState(false)
 
   const st = nanoToMs(span.startTime), en = nanoToMs(span.endTime)
   const dur = en - st
@@ -121,6 +123,50 @@ function SpanRow({ span, minStart, traceRange, depth }: {
             ))}
           </>
         )}
+        {isLlmSpan(span) && (() => {
+          const responseText = extractLlmResponseText(span)
+          const toolCalls = extractLlmToolCalls(span)
+          const inTok = Number(getAttr(span, 'input_tokens') ?? 0)
+          const outTok = Number(getAttr(span, 'output_tokens') ?? 0)
+          const hasContent = responseText || toolCalls.length > 0 || inTok > 0
+          if (!hasContent) return null
+          const PREVIEW_LEN = 600
+          const isLong = (responseText?.length ?? 0) > PREVIEW_LEN
+          return (
+            <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">
+              <div class="wf-detail-row">
+                <span class="wf-detail-key" style="color:var(--accent);font-weight:600">Response</span>
+                <span class="wf-detail-val" style="color:var(--muted);font-size:10px">
+                  {inTok > 0 && <>{inTok.toLocaleString()} in → {outTok.toLocaleString()} out</>}
+                </span>
+              </div>
+              {toolCalls.length > 0 && (
+                <div class="wf-detail-row">
+                  <span class="wf-detail-key">Tool calls</span>
+                  <span class="wf-detail-val">{toolCalls.join(', ')}</span>
+                </div>
+              )}
+              {responseText && (
+                <div class="wf-detail-row" style="align-items:flex-start">
+                  <span class="wf-detail-key" style="padding-top:2px">Text</span>
+                  <span class="wf-detail-val" style="white-space:pre-wrap;word-break:break-word;font-size:11px">
+                    {showFullResponse ? responseText : responseText.slice(0, PREVIEW_LEN)}
+                    {isLong && !showFullResponse && <span style="color:var(--muted)">…</span>}
+                    {isLong && (
+                      <button
+                        class="sw-show-full-btn"
+                        style="display:block;margin-top:4px"
+                        onClick={e => { e.stopPropagation(); setShowFullResponse(v => !v) }}
+                      >
+                        {showFullResponse ? 'Collapse' : 'Show full response'}
+                      </button>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+          )
+        })()}
         {normalRows.length > 0 && normalRows.map(dl => (
           <div key={dl.k} class="wf-detail-row">
             <span class="wf-detail-key">{dl.k}</span>

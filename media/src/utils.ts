@@ -234,12 +234,88 @@ export const SPAN_ATTR_SUPPRESS = new Set([
   'thread.id', 'thread.name', 'target', 'busy_ns', 'idle_ns',
   'terminal.type', 'gen_ai.tool.type', 'gen_ai.tool.description',
   'otel.trace_id',
+  // Rendered separately as a formatted "Response" block
+  'gen_ai.output.messages',
 ])
+
+interface OutputBlock {
+  type: 'text' | 'tool_use' | 'tool_call' | string
+  text?: string
+  name?: string
+}
+interface OutputMessage {
+  role?: string
+  content?: OutputBlock[]
+  parts?: OutputBlock[]
+}
+
+/** Parses gen_ai.output.messages and returns the first assistant text block, or null. */
+export function extractLlmResponseText(span: Span): string | null {
+  const raw = String(getAttr(span, 'gen_ai.output.messages') ?? '')
+  if (!raw) return null
+  try {
+    const msgs = JSON.parse(raw) as OutputMessage[]
+    for (const msg of msgs) {
+      if (msg.role !== 'assistant') continue
+      const blocks: OutputBlock[] = msg.content ?? msg.parts ?? []
+      for (const b of blocks) {
+        if (b.type === 'text' && typeof b.text === 'string' && b.text.trim()) {
+          return b.text
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  return null
+}
+
+/** Returns tool names called in the response, or empty array. */
+export function extractLlmToolCalls(span: Span): string[] {
+  const raw = String(getAttr(span, 'gen_ai.output.messages') ?? '')
+  if (!raw) return []
+  try {
+    const msgs = JSON.parse(raw) as OutputMessage[]
+    const names: string[] = []
+    for (const msg of msgs) {
+      if (msg.role !== 'assistant') continue
+      const blocks: OutputBlock[] = msg.content ?? msg.parts ?? []
+      for (const b of blocks) {
+        if ((b.type === 'tool_use' || b.type === 'tool_call') && b.name) {
+          names.push(b.name)
+        }
+      }
+    }
+    return names
+  } catch { return [] }
+}
+
+/** Returns true if this span is an LLM turn from any agent. */
+export function isLlmSpan(span: Span): boolean {
+  const name = span.name ?? ''
+  return name === 'claude_code.llm_request' || name.startsWith('chat ')
+}
 
 // Returns a human-readable one-line detail describing what a tool span did,
 // or null when no useful detail is available.
 export function extractSpanSummary(span: Span): string | null {
   const name = span.name ?? ''
+
+  // LLM turns — show model + outcome + token counts, or response text snippet
+  if (isLlmSpan(span)) {
+    const responseText = extractLlmResponseText(span)
+    if (responseText) {
+      const snippet = responseText.trim().replace(/\s+/g, ' ')
+      return snippet.length > 100 ? snippet.slice(0, 100) + '…' : snippet
+    }
+    const model = String(getAttr(span, 'gen_ai.request.model') ?? getAttr(span, 'model') ?? '')
+    const stop = String(getAttr(span, 'stop_reason') ?? getAttr(span, 'gen_ai.response.finish_reasons') ?? '')
+    const inTok = Number(getAttr(span, 'input_tokens') ?? 0)
+    const outTok = Number(getAttr(span, 'output_tokens') ?? 0)
+    const parts: string[] = []
+    if (model) parts.push(model)
+    if (stop) parts.push(stop)
+    if (inTok || outTok) parts.push(inTok.toLocaleString() + ' in → ' + outTok.toLocaleString() + ' out')
+    return parts.length > 0 ? parts.join(' · ') : null
+  }
 
   // Claude Code: claude_code.tool carries tool_name + full_command
   if (name === 'claude_code.tool') {
