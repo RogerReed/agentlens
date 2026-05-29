@@ -103,10 +103,11 @@ function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: 
     const toolParts = (entry.label ?? '').match(/^(\S+)\s*([\s\S]*)$/)
     const tName = toolParts ? toolParts[1] : entry.label
     const tArgs = toolParts ? toolParts[2] : ''
-    // toolInput is either a raw command string (e.g. Bash full_command) or a JSON args object.
-    const isRawCommand = entry.toolInput && !entry.toolInput.trimStart().startsWith('{')
-    const inputHeading = isRawCommand ? 'Command' : 'Arguments'
-    const inputText = isRawCommand ? entry.toolInput : (tArgs || entry.toolInput || '')
+    // toolInput is a raw command, a file path, or a JSON args object.
+    const isRaw = entry.toolInput && !entry.toolInput.trimStart().startsWith('{')
+    const isFilePath = isRaw && (entry.toolInput!.startsWith('/') || entry.toolInput!.startsWith('~') || /^[A-Za-z]:[/\\]/.test(entry.toolInput!))
+    const inputHeading = !isRaw ? 'Arguments' : isFilePath ? 'File' : 'Command'
+    const inputText = isRaw ? entry.toolInput : (tArgs || entry.toolInput || '')
     const resultText = entry.fullResult || entry.resultSummary || ''
     return (
       <>
@@ -118,6 +119,12 @@ function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: 
           </div>
         )}
         <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
+        {entry.decision && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">Decision</div>
+            <div class="sw-detail-value" style={entry.decision === 'rejected' ? 'color:var(--error)' : 'color:#8ec96b'}>{entry.decision}</div>
+          </div>
+        )}
         {resultText && <LongTextSection heading="Result" text={resultText} id={'sw-result-' + sessIdx + '-' + idx} isJson />}
         {entry.isError && <div class="sw-detail-section"><div class="sw-detail-heading err">Error</div><div class="sw-detail-value err">This step failed</div></div>}
         {entry.timestamp && <div class="sw-detail-section"><div class="sw-detail-heading">Timestamp</div><div class="sw-detail-value sw-detail-muted">{entry.timestamp}</div></div>}
@@ -188,11 +195,15 @@ function StepRow({ step, idx, sessIdx, sessionDur }: { step: Step; idx: number; 
     : entry.type === 'tool' ? formatToolLabel(entry) + (formatToolResult(entry) ? ' → ' + formatToolResult(entry) : '')
     : entry.label || ''
 
-  // Show a subtitle for tool entries when toolInput is a raw command string (not JSON args).
-  // JSON args are already surfaced via formatToolLabel; raw strings (e.g. Bash full_command) are not.
-  const toolSubtitle = entry.type === 'tool' && entry.toolInput && !entry.toolInput.trimStart().startsWith('{')
-    ? (entry.toolInput.length > 90 ? entry.toolInput.slice(0, 90) + '…' : entry.toolInput)
-    : null
+  // Show a subtitle for tool entries when toolInput is a raw string (not JSON args).
+  // For file paths show just the basename; for shell commands show the full command truncated.
+  const toolSubtitle = (() => {
+    if (entry.type !== 'tool' || !entry.toolInput || entry.toolInput.trimStart().startsWith('{')) return null
+    const input = entry.toolInput
+    const isFilePath = input.startsWith('/') || input.startsWith('~') || /^[A-Za-z]:[/\\]/.test(input)
+    if (isFilePath) return input.split('/').pop() || input
+    return input.length > 90 ? input.slice(0, 90) + '…' : input
+  })()
 
   const left = sessionDur > 0 ? (step.offsetMs / sessionDur * 100) : 0
   const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100

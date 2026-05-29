@@ -44,6 +44,7 @@ export interface TimelineEntry {
   resultSummary?: string
   fullResult?: string
   toolInput?: string
+  decision?: string
   isError: boolean
   errorMessage?: string
   timestamp: string

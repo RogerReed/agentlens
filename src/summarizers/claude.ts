@@ -143,7 +143,8 @@ export function buildClaudeSessions(
         const argsStr = getAttrStr(child, 'tool_input')
           || getAttrStr(child, 'input')
           || getAttrStr(child, 'gen_ai.tool.call.arguments')
-          || getAttrStr(child, 'full_command')
+          || getAttrStr(child, 'full_command')   // Bash: raw shell command
+          || getAttrStr(child, 'file_path')       // Read/Edit/Write: file path
         let foundChangedPath = false
         const toolEditDetails: EditDetail[] = []
         if (argsStr) {
@@ -202,12 +203,21 @@ export function buildClaudeSessions(
           missingChangedFilePathCalls++
         }
 
+        // Capture permission decision from blocked_on_user child span.
+        // Only surface when non-trivial (not "unknown" = auto-approved).
+        const blockedChild = traceSpans.find(s =>
+          s.parentSpanId === child.spanId && s.name === 'claude_code.tool.blocked_on_user'
+        )
+        const rawDecision = blockedChild ? getAttrStr(blockedChild, 'decision') : null
+        const decision = rawDecision && rawDecision !== 'unknown' ? rawDecision : undefined
+
         return {
           type: 'tool' as const,
           spanId: child.spanId,
           label: toolName,
           durationMs: childDur || getAttrInt(child, 'duration_ms'),
           toolInput: argsStr || undefined,
+          decision,
           isError,
           errorMessage: isError ? (child.status?.message || undefined) : undefined,
           timestamp: ts,

@@ -4709,9 +4709,10 @@
       const toolParts = (entry.label ?? "").match(/^(\S+)\s*([\s\S]*)$/);
       const tName = toolParts ? toolParts[1] : entry.label;
       const tArgs = toolParts ? toolParts[2] : "";
-      const isRawCommand = entry.toolInput && !entry.toolInput.trimStart().startsWith("{");
-      const inputHeading = isRawCommand ? "Command" : "Arguments";
-      const inputText = isRawCommand ? entry.toolInput : tArgs || entry.toolInput || "";
+      const isRaw = entry.toolInput && !entry.toolInput.trimStart().startsWith("{");
+      const isFilePath = isRaw && (entry.toolInput.startsWith("/") || entry.toolInput.startsWith("~") || /^[A-Za-z]:[/\\]/.test(entry.toolInput));
+      const inputHeading = !isRaw ? "Arguments" : isFilePath ? "File" : "Command";
+      const inputText = isRaw ? entry.toolInput : tArgs || entry.toolInput || "";
       const resultText = entry.fullResult || entry.resultSummary || "";
       return /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
@@ -4725,6 +4726,10 @@
         /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
           /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
           /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
+        ] }),
+        entry.decision && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Decision" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", style: entry.decision === "rejected" ? "color:var(--error)" : "color:#8ec96b", children: entry.decision })
         ] }),
         resultText && /* @__PURE__ */ u4(LongTextSection, { heading: "Result", text: resultText, id: "sw-result-" + sessIdx + "-" + idx, isJson: true }),
         entry.isError && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
@@ -4783,7 +4788,13 @@
     }
     if (entry.isError) barColor = "var(--error)";
     const rowLabel = entry.type === "llm" ? formatLlmLabel(entry) : entry.type === "tool" ? formatToolLabel(entry) + (formatToolResult(entry) ? " \u2192 " + formatToolResult(entry) : "") : entry.label || "";
-    const toolSubtitle = entry.type === "tool" && entry.toolInput && !entry.toolInput.trimStart().startsWith("{") ? entry.toolInput.length > 90 ? entry.toolInput.slice(0, 90) + "\u2026" : entry.toolInput : null;
+    const toolSubtitle = (() => {
+      if (entry.type !== "tool" || !entry.toolInput || entry.toolInput.trimStart().startsWith("{")) return null;
+      const input = entry.toolInput;
+      const isFilePath = input.startsWith("/") || input.startsWith("~") || /^[A-Za-z]:[/\\]/.test(input);
+      if (isFilePath) return input.split("/").pop() || input;
+      return input.length > 90 ? input.slice(0, 90) + "\u2026" : input;
+    })();
     const left = sessionDur > 0 ? step.offsetMs / sessionDur * 100 : 0;
     const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100;
     return /* @__PURE__ */ u4(S, { children: [
