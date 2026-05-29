@@ -57,14 +57,16 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 - **Telemetry Collection** — Built-in OpenTelemetry receiver captures traces and logs from Copilot, Claude Code, and Codex — no external infrastructure needed
 - **Session Dashboard** — See inside every agent run: context growth, tool calls, token usage, latency, errors, and file changes across interactive real-time panels
-- **Cost Estimation** — Estimates session cost for Copilot (three billing models) and Codex, with a per-session bar chart and cross-session cost table
+- **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, with a per-session bar chart and cross-session cost table
 - **Recommendations & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns — with suggested prompts to correct course
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat tool calls — per-agent or shared
 - **Session Replay** — Export spans to JSON and replay any past session into the dashboard without the original agent running
 
 ## Cost Estimation
 
-The **Cost** tab estimates the dollar cost of Copilot and Codex sessions. Three Copilot billing models are supported via a toggle:
+The **Cost** tab estimates the dollar cost of Copilot, Claude Code, and Codex sessions.
+
+**Copilot** supports three billing models via a toggle:
 
 | Mode | Who it applies to |
 | ---- | ----------------- |
@@ -72,11 +74,13 @@ The **Cost** tab estimates the dollar cost of Copilot and Codex sessions. Three 
 | **Request-based** | All plans before Jun 1, 2026 — multiplier × $0.04 per user-initiated prompt |
 | **Annual plan request-based** | Annual-plan holders staying on request billing after Jun 1, 2026 — same formula, significantly higher multipliers |
 
-The tab shows a per-session cost bar chart and a cross-session cost table that respects the active session filter. Included models (GPT-4.1, GPT-5 mini) show $0 under token-based billing, consistent with Copilot's pricing docs. Codex uses token-based pricing.
+**Claude Code** and **Codex** always use token-based pricing — no toggle required. Claude Code is billed against the Anthropic API at standard per-token rates (input, cache write, cache read, output) depending on model (Opus, Sonnet, or Haiku). Codex is billed against the OpenAI API.
 
-All figures are estimates — not your actual bill. Rates are sourced from GitHub's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
+The tab shows a per-session cost bar chart and a cross-session cost table with per-agent subtotals and a combined total when sessions from multiple agents are present. Included Copilot models (GPT-4.1, GPT-5 mini) show $0 under token-based billing.
 
-Known gaps are listed at the bottom of the Cost tab, including long-context surcharges (not applied) and the session turn count proxy used for request-based billing.
+All figures are estimates — not your actual bill. Rates are sourced from each provider's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
+
+Known gaps are listed at the bottom of the Cost tab per agent, including cache TTL ambiguity and fast-mode underestimation for Claude, long-context surcharges for Copilot and Codex, and the session turn count proxy used for Copilot request-based billing.
 
 ## Replaying Exported Spans
 
