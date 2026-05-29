@@ -5,7 +5,7 @@
 
 ![AgentLens demo](media/demo.gif)
 
-**Local** observability that makes AI agent sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. AgentLens captures OpenTelemetry traces from your agents and surfaces context growth, tool usage, token consumption, latency, errors, and file changes in real time — then helps you prompt your agents on inefficiencies to improve interactions.
+Local observability that makes AI agent sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. AgentLens captures OpenTelemetry traces from your agents and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable recommendations in real time — then helps you prompt your agents on inefficiencies to improve interactions.
 
 ## Getting Started
 
