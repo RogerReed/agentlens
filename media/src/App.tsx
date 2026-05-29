@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import { signal } from '@preact/signals'
 import { zipSync, strToU8 } from 'fflate'
 import {
@@ -32,22 +32,22 @@ import { Automation, checkAutomations } from './tabs/Automation'
 const sidebarOpen = signal(true)
 
 const TABS = [
-  { id: 'efficiency',      label: 'Efficiency',      title: 'Per-session metrics and token usage breakdown.' },
-  { id: 'cost',            label: 'Cost',            title: 'Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing.' },
-  { id: 'recommendations', label: 'Recommendations', title: 'Actionable insights and recommendations for improving prompt efficiency and reducing token waste.' },
-  { id: 'alerts',          label: 'Alerts',          title: 'Configurable alerts for context window usage, error rates, session length, and other efficiency signals.' },
-  { id: 'automation',      label: 'Automation',      title: 'Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed.' },
-  { id: 'tokens',          label: 'Tokens',          title: 'Token consumption aggregated by span name and per session, sorted from highest to lowest.' },
-  { id: 'latency',         label: 'Latency',         title: 'Span durations as a color-coded grid, helping identify which operations are consistently slow.' },
-  { id: 'summaries',       label: 'Summaries',       title: 'A high-level, human-readable timeline of each session — LLM calls with their decisions, tool calls with arguments, and token usage.' },
-  { id: 'traces',          label: 'Traces',          title: 'Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing.' },
-  { id: 'files',           label: 'Files',           title: 'Files created or modified by the agent, organized by session with inline diffs.' },
-  { id: 'flow',            label: 'Flow',            title: 'LLM turns and tool calls visualized as a semantic graph — one node per turn, one per unique tool, edges weighted by call frequency.' },
-  { id: 'agents',          label: 'Agents',          title: 'Copilot, Claude, and Codex — session counts, token usage, tools, and latency broken down by agent source.' },
-  { id: 'tools',           label: 'Tools',           title: 'Tool call distribution broken down by tool name, with token usage and performance stats per tool.' },
-  { id: 'errors',          label: 'Errors',          title: 'All spans that completed with an error status. Click any item to expand its full details and attributes.' },
-  { id: 'export',          label: 'Export',          title: 'Export raw or redacted OTEL span data as JSON files.' },
-  { id: 'help',            label: 'Help',            title: 'Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard.' },
+  { id: 'efficiency',      label: 'Efficiency',      primary: true,  title: 'Per-session metrics and token usage breakdown.' },
+  { id: 'cost',            label: 'Cost',            primary: true,  title: 'Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing.' },
+  { id: 'summaries',       label: 'Summaries',       primary: true,  title: 'A high-level, human-readable timeline of each session — LLM calls with their decisions, tool calls with arguments, and token usage.' },
+  { id: 'recommendations', label: 'Recommendations', primary: true,  title: 'Actionable insights and recommendations for improving prompt efficiency and reducing token waste.' },
+  { id: 'agents',          label: 'Agents',          primary: false, title: 'Copilot, Claude, and Codex — session counts, token usage, tools, and latency broken down by agent source.' },
+  { id: 'alerts',          label: 'Alerts',          primary: false, title: 'Configurable alerts for context window usage, error rates, session length, and other efficiency signals.' },
+  { id: 'automation',      label: 'Automation',      primary: false, title: 'Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed.' },
+  { id: 'errors',          label: 'Errors',          primary: false, title: 'All spans that completed with an error status. Click any item to expand its full details and attributes.' },
+  { id: 'files',           label: 'Files',           primary: false, title: 'Files created or modified by the agent, organized by session with inline diffs.' },
+  { id: 'flow',            label: 'Flow',            primary: false, title: 'LLM turns and tool calls visualized as a semantic graph — one node per turn, one per unique tool, edges weighted by call frequency.' },
+  { id: 'latency',         label: 'Latency',         primary: false, title: 'Span durations as a color-coded grid, helping identify which operations are consistently slow.' },
+  { id: 'tokens',          label: 'Tokens',          primary: false, title: 'Token consumption aggregated by span name and per session, sorted from highest to lowest.' },
+  { id: 'tools',           label: 'Tools',           primary: false, title: 'Tool call distribution broken down by tool name, with token usage and performance stats per tool.' },
+  { id: 'traces',          label: 'Traces',          primary: false, title: 'Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing.' },
+  { id: 'export',          label: 'Export',          primary: true,  title: 'Export raw or redacted OTEL span data as JSON files.' },
+  { id: 'help',            label: 'Help',            primary: true,  title: 'Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard.' },
 ]
 
 // Build minimal SessionSummaryCard objects for Claude traces that have llm_request/tool
@@ -433,11 +433,10 @@ export function App() {
         >
           {sidebarOpen.value ? '◄' : '►'}
         </button>
-        {TABS.map(t =>
-          t.id === 'alerts'
-            ? <AlertsTab key="alerts" />
-            : <Tab key={t.id} id={t.id} label={t.label} />
+        {TABS.filter(t => t.primary).map(t =>
+          <Tab key={t.id} id={t.id} label={t.label} />
         )}
+        <MoreDropdown />
       </div>
 
       <div class="panel active">
@@ -464,19 +463,61 @@ function Tab({ id, label }: { id: string; label: string; title?: string }) {
   )
 }
 
-function AlertsTab() {
-  const isActive = activeTab.value === 'alerts'
-  const _s = displaySessions.value  // subscribe so badge count stays current
+function AlertsBadge() {
+  const _s = displaySessions.value
   const count = computeAlertCount()
+  return count > 0
+    ? <span style="color:var(--error);font-weight:700">Alerts ⚠ {count}</span>
+    : <>Alerts</>
+}
+
+function MoreDropdown() {
+  const [open, setOpen] = useState(false)
+  const activeId = normalizeTabId(activeTab.value)
+  const secondaryTabs = TABS.filter(t => !t.primary)
+  const activeSecondary = secondaryTabs.find(t => t.id === activeId)
+
+  useEffect(() => {
+    if (!open) return
+    const close = () => setOpen(false)
+    const closeOnEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('click', close)
+    document.addEventListener('keydown', closeOnEsc)
+    return () => {
+      document.removeEventListener('click', close)
+      document.removeEventListener('keydown', closeOnEsc)
+    }
+  }, [open])
+
   return (
-    <button
-      class={'tab' + (isActive ? ' active' : '')}
-      data-tab="alerts"
-      onClick={() => { activeTab.value = 'alerts' }}
-    >
-      {count > 0
-        ? <span style="color:var(--error);font-weight:700">Alerts ⚠ {count}</span>
-        : 'Alerts'}
-    </button>
+    <div style="position:relative">
+      <button
+        class={'tab' + (activeSecondary ? ' active' : '')}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={(e) => { e.stopPropagation(); setOpen(o => !o) }}
+      >
+        {activeSecondary ? activeSecondary.label : 'More'} ▾
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          style="position:absolute;top:100%;right:0;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:4px;min-width:160px;box-shadow:0 4px 12px rgba(0,0,0,0.2)"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {secondaryTabs.map(t => (
+            <button
+              key={t.id}
+              class={'tab-dropdown-item' + (activeId === t.id ? ' active' : '')}
+              role="option"
+              aria-selected={activeId === t.id}
+              onClick={() => { activeTab.value = t.id; setOpen(false) }}
+            >
+              {t.id === 'alerts' ? <AlertsBadge /> : t.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
