@@ -22,6 +22,11 @@ function fmtCredits(credits: number): string {
   return credits.toFixed(1)
 }
 
+function sessionCostMode(session: SessionSummaryCard, mode: PricingMode): PricingMode {
+  // Codex is always token-based; the mode toggle only applies to Copilot
+  return session.source === 'codex' ? 'token' : mode
+}
+
 // ── Per-session cost bar chart ─────────────────────────────────────────────────
 
 function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode: PricingMode }) {
@@ -32,7 +37,7 @@ function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode
     if (!canvas) return
 
     const data = sessions.map((sess, idx) => {
-      const cost = calcSessionCost(sess, mode)
+      const cost = calcSessionCost(sess, sessionCostMode(sess, mode))
       return { cost: cost.totalUsd, unknown: cost.modelUnknown, session: getSessionGlobalNumber(sess) || (idx + 1), source: sess.source }
     }).reverse()
 
@@ -111,12 +116,8 @@ export function Cost() {
   const [mode, setMode] = useState<PricingMode>('token')
 
   const copilotSessions = sessions.filter(s => s.source === 'copilot')
-
-  const scopeNote = (
-    <div style="font-size:11px;color:var(--muted);background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:7px 10px;margin-bottom:12px;line-height:1.5">
-      Cost estimation is currently implemented for <strong>Copilot</strong> sessions only. Claude and Codex support coming soon.
-    </div>
-  )
+  const codexSessions = sessions.filter(s => s.source === 'codex')
+  const pricedSessions = sessions.filter(s => s.source === 'copilot' || s.source === 'codex')
 
   const disclaimer = (
     <div style="font-size:11px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:8px 10px;margin-bottom:16px;line-height:1.6;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
@@ -125,60 +126,72 @@ export function Cost() {
     </div>
   )
 
-  if (copilotSessions.length === 0) {
+  if (pricedSessions.length === 0) {
     return (
       <div id="cost-content">
-        {scopeNote}
         {disclaimer}
-        <div class="empty-state">No Copilot sessions recorded — start a Copilot chat session to see cost estimates</div>
+        <div class="empty-state">No Copilot or Codex sessions recorded — start a session to see cost estimates</div>
       </div>
     )
   }
 
-  const costs = copilotSessions.map(s => ({ session: s, cost: calcSessionCost(s, mode) }))
-  const totalUsd = costs.reduce((sum, c) => sum + c.cost.totalUsd, 0)
-  const totalCredits = totalUsd / 0.01
-  const anyUnknown = costs.some(c => c.cost.modelUnknown)
+  const copilotCosts = copilotSessions.map(s => ({ session: s, cost: calcSessionCost(s, mode) }))
+  const codexCosts = codexSessions.map(s => ({ session: s, cost: calcSessionCost(s, 'token') }))
+  const allCosts = pricedSessions.map(s => ({ session: s, cost: calcSessionCost(s, sessionCostMode(s, mode)) }))
 
-  const sessionRows = costs.slice().reverse()
+  const copilotTotalUsd = copilotCosts.reduce((sum, c) => sum + c.cost.totalUsd, 0)
+  const copilotTotalCredits = copilotTotalUsd / 0.01
+  const copilotAnyUnknown = copilotCosts.some(c => c.cost.modelUnknown)
+  const codexTotalUsd = codexCosts.reduce((sum, c) => sum + c.cost.totalUsd, 0)
+  const codexAnyUnknown = codexCosts.some(c => c.cost.modelUnknown)
+
+  const sessionRows = allCosts.slice().sort((a, b) => {
+    const na = getSessionGlobalNumber(a.session) ?? 0
+    const nb = getSessionGlobalNumber(b.session) ?? 0
+    return nb - na
+  })
+
+  const showCreditsCol = mode === 'token'
 
   return (
     <div id="cost-content">
-      {scopeNote}
       {disclaimer}
-      {/* Mode toggle */}
+      {/* Pricing model labels */}
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">
-          <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;background:' + getAgentColor('copilot') + ';vertical-align:middle;margin-right:5px'} />
-          Copilot — pricing model
-        </span>
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          <button
-            class={'tab-mini' + (mode === 'token' ? ' active' : '')}
-            onClick={() => setMode('token')}
-            title="Token-based AI Credits billing, effective Jun 1, 2026"
-          >Token-based (from Jun 1, 2026)</button>
-          <button
-            class={'tab-mini' + (mode === 'request' ? ' active' : '')}
-            onClick={() => setMode('request')}
-            title="Request-based billing with model multipliers, active before Jun 1, 2026"
-          >Request-based (pre-Jun 1, 2026)</button>
-          <button
-            class={'tab-mini' + (mode === 'request-annual' ? ' active' : '')}
-            onClick={() => setMode('request-annual')}
-            title="Annual plan holders staying on request billing after Jun 1, 2026 face significantly higher multipliers"
-          >Annual plan request-based (post-Jun 1, 2026)</button>
-        </div>
+        {copilotSessions.length > 0 && (<>
+          <span style="font-size:11px;color:var(--muted)">
+            <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;background:' + getAgentColor('copilot') + ';vertical-align:middle;margin-right:5px'} />
+            Copilot — Select pricing model
+          </span>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button
+              class={'tab-mini' + (mode === 'token' ? ' active' : '')}
+              onClick={() => setMode('token')}
+              title="Token-based AI Credits billing, effective Jun 1, 2026"
+            >Token-based (from Jun 1, 2026)</button>
+            <button
+              class={'tab-mini' + (mode === 'request' ? ' active' : '')}
+              onClick={() => setMode('request')}
+              title="Request-based billing with model multipliers, active before Jun 1, 2026"
+            >Request-based (pre-Jun 1, 2026)</button>
+            <button
+              class={'tab-mini' + (mode === 'request-annual' ? ' active' : '')}
+              onClick={() => setMode('request-annual')}
+              title="Annual plan holders staying on request billing after Jun 1, 2026 face significantly higher multipliers"
+            >Annual plan request-based (post-Jun 1, 2026)</button>
+          </div>
+        </>)}
+        {codexSessions.length > 0 && (
+          <span style="font-size:11px;color:var(--muted)">
+            <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;background:' + getAgentColor('codex') + ';vertical-align:middle;margin-right:5px'} />
+            Codex — Always uses token-based pricing
+          </span>
+        )}
       </div>
 
       {/* Per-session cost bar chart */}
       <h3 style="margin:0 0 8px;font-size:13px;color:var(--muted)">ESTIMATED COST PER SESSION</h3>
-      <div style="display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)">
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#00EAFF;vertical-align:middle;margin-right:3px" />Copilot</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#FFB085;vertical-align:middle;margin-right:3px" />Claude</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#F0FF42;vertical-align:middle;margin-right:3px" />Codex</span>
-      </div>
-      <CostBarChart sessions={copilotSessions} mode={mode} />
+      <CostBarChart sessions={pricedSessions} mode={mode} />
 
       {/* Session cost table */}
       <h3 style="margin:24px 0 8px;font-size:13px;color:var(--muted)">SESSION COST TABLE</h3>
@@ -194,13 +207,14 @@ export function Cost() {
               <th style="padding:4px 8px;text-align:right">Output tok</th>
               <th style="padding:4px 8px;text-align:right">Cache read</th>
               <th style="padding:4px 8px;text-align:right">Est. cost</th>
-              {mode === 'token' && <th style="padding:4px 8px;text-align:right" data-tip="Copilot AI Credits (1 credit = $0.01)">Credits</th>}
+              {showCreditsCol && <th style="padding:4px 8px;text-align:right" data-tip="Copilot AI Credits (1 credit = $0.01); not applicable to Codex">AI Credits</th>}
             </tr>
           </thead>
           <tbody>
             {sessionRows.map(({ session: s, cost }) => {
               const num = getSessionGlobalNumber(s)
               const rawInput = Math.max(0, s.inputTokens - s.cacheReadTokens - s.cacheCreateTokens)
+              const isCopilot = s.source === 'copilot'
               return (
                 <tr key={s.sessionId} style="border-bottom:1px solid var(--vscode-panel-border)">
                   <td style="padding:4px 8px;color:var(--muted)">{num}</td>
@@ -218,9 +232,9 @@ export function Cost() {
                       ? <span style="color:var(--muted)" data-tip={'Model "' + s.model + '" not in rate table — add rates in pricing.ts'}>~$?</span>
                       : fmtUsd(cost.totalUsd)}
                   </td>
-                  {mode === 'token' && (
+                  {showCreditsCol && (
                     <td style="padding:4px 8px;text-align:right;color:var(--muted)">
-                      {cost.modelUnknown ? '?' : fmtCredits(cost.aiCredits)}
+                      {!isCopilot ? '—' : cost.modelUnknown ? '?' : fmtCredits(cost.aiCredits)}
                     </td>
                   )}
                 </tr>
@@ -228,11 +242,33 @@ export function Cost() {
             })}
           </tbody>
           <tfoot>
-            <tr style="border-top:2px solid var(--vscode-panel-border);font-weight:600">
-              <td colSpan={7} style="padding:6px 8px;text-align:right;color:var(--muted)">Total ({copilotSessions.length} Copilot session{copilotSessions.length !== 1 ? 's' : ''})</td>
-              <td style="padding:6px 8px;text-align:right">{anyUnknown ? '~' : ''}{fmtUsd(totalUsd)}</td>
-              {mode === 'token' && <td style="padding:6px 8px;text-align:right;color:var(--muted)">{anyUnknown ? '~' : ''}{fmtCredits(totalCredits)}</td>}
-            </tr>
+            {copilotSessions.length > 0 && (
+              <tr style="border-top:1px solid var(--vscode-panel-border)">
+                <td colSpan={7} style="padding:5px 8px;text-align:right;color:var(--muted);font-size:10px">
+                  Copilot ({copilotSessions.length} session{copilotSessions.length !== 1 ? 's' : ''})
+                </td>
+                <td style="padding:5px 8px;text-align:right;font-weight:600">{copilotAnyUnknown ? '~' : ''}{fmtUsd(copilotTotalUsd)}</td>
+                {showCreditsCol && <td style="padding:5px 8px;text-align:right;color:var(--muted)">{copilotAnyUnknown ? '~' : ''}{fmtCredits(copilotTotalCredits)}</td>}
+              </tr>
+            )}
+            {codexSessions.length > 0 && (
+              <tr style="border-top:1px solid var(--vscode-panel-border)">
+                <td colSpan={7} style="padding:5px 8px;text-align:right;color:var(--muted);font-size:10px">
+                  Codex ({codexSessions.length} session{codexSessions.length !== 1 ? 's' : ''})
+                </td>
+                <td style="padding:5px 8px;text-align:right;font-weight:600">{codexAnyUnknown ? '~' : ''}{fmtUsd(codexTotalUsd)}</td>
+                {showCreditsCol && <td style="padding:5px 8px;text-align:right;color:var(--muted)">—</td>}
+              </tr>
+            )}
+            {copilotSessions.length > 0 && codexSessions.length > 0 && (
+              <tr style="border-top:2px solid var(--vscode-panel-border);font-weight:600">
+                <td colSpan={7} style="padding:6px 8px;text-align:right;color:var(--muted)">
+                  Total ({pricedSessions.length} session{pricedSessions.length !== 1 ? 's' : ''})
+                </td>
+                <td style="padding:6px 8px;text-align:right">{(copilotAnyUnknown || codexAnyUnknown) ? '~' : ''}{fmtUsd(copilotTotalUsd + codexTotalUsd)}</td>
+                {showCreditsCol && <td style="padding:6px 8px;text-align:right;color:var(--muted)">—</td>}
+              </tr>
+            )}
           </tfoot>
         </table>
       </div>
@@ -244,6 +280,7 @@ export function Cost() {
           : mode === 'request'
             ? 'Request-based: active before Jun 1, 2026. Cost = multiplier × $0.04 per user prompt. Models marked 0× (e.g. GPT-4.1) are free under this model.'
             : 'Annual plan request-based: for annual-plan holders staying on old billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June.'}
+        {codexSessions.length > 0 && ' Codex sessions use token-based pricing regardless of the Copilot billing model selected above.'}
       </div>
 
       {/* Known gaps */}
@@ -258,6 +295,17 @@ export function Cost() {
             <li>Long-context surcharges are not applied — GPT-5.4 (prompts &gt;272K tokens) and Gemini 2.5 Pro / 3.1 Pro (prompts &gt;200K tokens) have higher rates above those thresholds, which require per-prompt token counts not available in session telemetry.</li>
             <li>Models not in the rate table are shown as <strong>~$?</strong> — this can happen when GitHub releases a new model after the last rate update, or when the model ID in telemetry doesn't match the published name.</li>
             <li>Request-based cost uses session turn count as a proxy for billable prompts, which may not match exactly for all session shapes.</li>
+          </ul>
+        </div>
+        <div style="margin-top:12px">
+          <span style="font-size:10px;text-transform:uppercase;letter-spacing:.4px">
+            <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor('codex') + ';vertical-align:middle;margin-right:4px'} />
+            Codex
+          </span>
+          <ul style="margin:4px 0 0;padding-left:18px">
+            <li>Long-context surcharges are not applied — GPT-5.5 has a higher-rate tier above an unconfirmed token threshold.</li>
+            <li>Reasoning tokens (<code>codex.usage.reasoning_output_tokens</code>) are included in output token counts and billed at the standard output rate. A separate reasoning rate has not been confirmed from official sources.</li>
+            <li>Models not in the rate table are shown as <strong>~$?</strong>. The official Codex rate card (<code>help.openai.com</code>) may list additional model aliases not yet captured here.</li>
           </ul>
         </div>
       </div>

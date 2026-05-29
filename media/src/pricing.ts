@@ -2,7 +2,7 @@
 // Token rates (post Jun 1, 2026):        https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
 // Request multipliers (pre Jun 1, 2026): https://docs.github.com/en/copilot/concepts/billing/copilot-requests
 // Annual-plan multipliers (post Jun 1):  https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans
-export const PRICING_LAST_UPDATED = '2026-05-27'
+export const PRICING_LAST_UPDATED = '2026-05-28'
 
 // Three billing modes:
 //   'token'          — new token-based AI Credits billing, effective Jun 1, 2026
@@ -43,7 +43,10 @@ const RATES: Record<string, ModelRates> = {
   'gpt-5.4':             { inputPerMTok: 2.50,  cacheReadPerMTok: 0.25,   cacheWritePerMTok: 0, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 6 },  // long-context surcharge (>272K tokens) not implemented
   'gpt-5.4-mini':        { inputPerMTok: 0.75,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 4.50,  multiplier: 0.33, multiplierAnnualPostJun1: 6 },
   'gpt-5.4-nano':        { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0, outputPerMTok: 1.25,  multiplier: 0.25, multiplierAnnualPostJun1: 0.25 },
-  'gpt-5.5':             { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, multiplier: 7.5,  multiplierAnnualPostJun1: 7.5 },  // TBD per docs
+  'gpt-5.5':             { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, multiplier: 7.5,  multiplierAnnualPostJun1: 7.5 },  // TBD per docs; long-context surcharge (>unknown threshold) not implemented
+  // ── Codex-only models ──────────────────────────────────────────────────────────────────────────
+  // codex-mini-latest: fine-tuned o4-mini; 75% cache discount (not the usual 90%); deprecated
+  'codex-mini-latest':   { inputPerMTok: 1.50,  cacheReadPerMTok: 0.375,  cacheWritePerMTok: 0, outputPerMTok: 6.00,  multiplier: 0,    multiplierAnnualPostJun1: 0 },
   // ── Anthropic ──────────────────────────────────────────────────────────────────────────────────
   'claude-haiku-4-5':      { inputPerMTok: 1.00, cacheReadPerMTok: 0.10, cacheWritePerMTok: 1.25, outputPerMTok: 5.00,  multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
   'claude-sonnet-4':       { inputPerMTok: 3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok: 3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 1 },
