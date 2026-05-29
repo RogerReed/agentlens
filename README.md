@@ -60,6 +60,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - **Cost Estimation** — Estimates session cost for Copilot (three billing models) and Codex, with a per-session bar chart and cross-session cost table
 - **Recommendations & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns — with suggested prompts to correct course
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat tool calls — per-agent or shared
+- **Session Replay** — Export spans to JSON and replay any past session into the dashboard without the original agent running
 
 ## Cost Estimation
 
@@ -76,6 +77,16 @@ The tab shows a per-session cost bar chart and a cross-session cost table that r
 All figures are estimates — not your actual bill. Rates are sourced from GitHub's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
 
 Known gaps are listed at the bottom of the Cost tab, including long-context surcharges (not applied) and the session turn count proxy used for request-based billing.
+
+## Replaying Exported Spans
+
+The **Export** tab writes span files to your workspace root — `export_*.json` for full data or `export_redacted_*.json` with prompt text, tool inputs, and tool results replaced with `[redacted]`. Replay either to re-examine a past session without the original agent running:
+
+```bash
+pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json
+```
+
+Spans are sent to port `4318` — the VS Code extension or standalone server must be running. Pass `--speed N` to pace the replay proportionally to the original session timing.
 
 ## Recommendations & Malfunction Detection
 
@@ -174,16 +185,6 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
 
 `log_user_prompt = true` includes your typed prompt; without it sessions show `[session in progress]`. `exporter` sends log events; `trace_exporter` sends trace spans. Both point at the same endpoint. If `config.toml` already has an `[otel]` section, add only the missing keys.
 
-## Replaying Exported Spans
-
-The **Export** tab writes span files to your workspace root — `export_*.json` for full data or `export_redacted_*.json` with prompt text, tool inputs, and tool results replaced with `[redacted]`. Replay either to re-examine a past session without the original agent running:
-
-```bash
-pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json
-```
-
-Spans are sent to port `4318` — the VS Code extension or standalone server must be running. Pass `--speed N` to pace the replay proportionally to the original session timing.
-
 ## Standalone Mode Options
 
 AgentLens runs as a standalone web server outside VS Code — useful for CI, remote machines, or when you prefer a browser tab.
@@ -255,7 +256,7 @@ Each entry uses this format:
 
 When **Write prompts file** is off (default), triggering an automation shows a notification with a **Copy Prompt** button instead — click it to copy the prompt to your clipboard, then paste into your agent.
 
-## Commands
+## VS Code Commands
 
 Open the VS Code Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for **AgentLens**:
 
