@@ -103,11 +103,20 @@ function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: 
     const toolParts = (entry.label ?? '').match(/^(\S+)\s*([\s\S]*)$/)
     const tName = toolParts ? toolParts[1] : entry.label
     const tArgs = toolParts ? toolParts[2] : ''
+    // toolInput is either a raw command string (e.g. Bash full_command) or a JSON args object.
+    const isRawCommand = entry.toolInput && !entry.toolInput.trimStart().startsWith('{')
+    const inputHeading = isRawCommand ? 'Command' : 'Arguments'
+    const inputText = isRawCommand ? entry.toolInput : (tArgs || entry.toolInput || '')
     const resultText = entry.fullResult || entry.resultSummary || ''
     return (
       <>
         <div class="sw-detail-section"><div class="sw-detail-heading">Tool</div><div class="sw-detail-value"><code>{tName}</code></div></div>
-        {tArgs && <div class="sw-detail-section"><div class="sw-detail-heading">Arguments</div><div class="sw-detail-value"><code>{tArgs}</code></div></div>}
+        {inputText && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">{inputHeading}</div>
+            <div class="sw-detail-value"><code style="white-space:pre-wrap;word-break:break-all">{inputText}</code></div>
+          </div>
+        )}
         <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
         {resultText && <LongTextSection heading="Result" text={resultText} id={'sw-result-' + sessIdx + '-' + idx} isJson />}
         {entry.isError && <div class="sw-detail-section"><div class="sw-detail-heading err">Error</div><div class="sw-detail-value err">This step failed</div></div>}
@@ -179,17 +188,26 @@ function StepRow({ step, idx, sessIdx, sessionDur }: { step: Step; idx: number; 
     : entry.type === 'tool' ? formatToolLabel(entry) + (formatToolResult(entry) ? ' → ' + formatToolResult(entry) : '')
     : entry.label || ''
 
+  // Show a subtitle for tool entries when toolInput is a raw command string (not JSON args).
+  // JSON args are already surfaced via formatToolLabel; raw strings (e.g. Bash full_command) are not.
+  const toolSubtitle = entry.type === 'tool' && entry.toolInput && !entry.toolInput.trimStart().startsWith('{')
+    ? (entry.toolInput.length > 90 ? entry.toolInput.slice(0, 90) + '…' : entry.toolInput)
+    : null
+
   const left = sessionDur > 0 ? (step.offsetMs / sessionDur * 100) : 0
   const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100
 
   return (
     <>
       <div class="wf-row" onClick={() => setOpen(v => !v)}>
-        <div class="wf-label" title={rowLabel}>
+        <div class="wf-label" title={toolSubtitle ? rowLabel + ' — ' + toolSubtitle : rowLabel}>
           <span class="wf-indent" />
           <span class="sw-chevron">{open ? '▼' : '▶'}</span>
           <span class="wf-type-badge" style={'background:' + barColor + ';color:#000'}>{badgeLabel}</span>
-          <span class="wf-name">{rowLabel}</span>
+          <span style="display:inline-flex;flex-direction:column;min-width:0">
+            <span class="wf-name">{rowLabel}</span>
+            {toolSubtitle && <span style="font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px">{toolSubtitle}</span>}
+          </span>
         </div>
         <div class="wf-bar-area">
           <div class="wf-bar" style={`left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`}>

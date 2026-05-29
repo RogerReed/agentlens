@@ -4709,15 +4709,18 @@
       const toolParts = (entry.label ?? "").match(/^(\S+)\s*([\s\S]*)$/);
       const tName = toolParts ? toolParts[1] : entry.label;
       const tArgs = toolParts ? toolParts[2] : "";
+      const isRawCommand = entry.toolInput && !entry.toolInput.trimStart().startsWith("{");
+      const inputHeading = isRawCommand ? "Command" : "Arguments";
+      const inputText = isRawCommand ? entry.toolInput : tArgs || entry.toolInput || "";
       const resultText = entry.fullResult || entry.resultSummary || "";
       return /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
           /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Tool" }),
           /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: /* @__PURE__ */ u4("code", { children: tName }) })
         ] }),
-        tArgs && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Arguments" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: /* @__PURE__ */ u4("code", { children: tArgs }) })
+        inputText && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: inputHeading }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: /* @__PURE__ */ u4("code", { style: "white-space:pre-wrap;word-break:break-all", children: inputText }) })
         ] }),
         /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
           /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
@@ -4780,15 +4783,19 @@
     }
     if (entry.isError) barColor = "var(--error)";
     const rowLabel = entry.type === "llm" ? formatLlmLabel(entry) : entry.type === "tool" ? formatToolLabel(entry) + (formatToolResult(entry) ? " \u2192 " + formatToolResult(entry) : "") : entry.label || "";
+    const toolSubtitle = entry.type === "tool" && entry.toolInput && !entry.toolInput.trimStart().startsWith("{") ? entry.toolInput.length > 90 ? entry.toolInput.slice(0, 90) + "\u2026" : entry.toolInput : null;
     const left = sessionDur > 0 ? step.offsetMs / sessionDur * 100 : 0;
     const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100;
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("div", { class: "wf-row", onClick: () => setOpen((v4) => !v4), children: [
-        /* @__PURE__ */ u4("div", { class: "wf-label", title: rowLabel, children: [
+        /* @__PURE__ */ u4("div", { class: "wf-label", title: toolSubtitle ? rowLabel + " \u2014 " + toolSubtitle : rowLabel, children: [
           /* @__PURE__ */ u4("span", { class: "wf-indent" }),
           /* @__PURE__ */ u4("span", { class: "sw-chevron", children: open ? "\u25BC" : "\u25B6" }),
           /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + barColor + ";color:#000", children: badgeLabel }),
-          /* @__PURE__ */ u4("span", { class: "wf-name", children: rowLabel })
+          /* @__PURE__ */ u4("span", { style: "display:inline-flex;flex-direction:column;min-width:0", children: [
+            /* @__PURE__ */ u4("span", { class: "wf-name", children: rowLabel }),
+            toolSubtitle && /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px", children: toolSubtitle })
+          ] })
         ] }),
         /* @__PURE__ */ u4("div", { class: "wf-bar-area", children: /* @__PURE__ */ u4("div", { class: "wf-bar", style: `left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`, children: /* @__PURE__ */ u4("div", { class: "wf-bar-inner", style: "background:" + barColor + ";opacity:" + (entry.isError ? "1" : "0.7") }) }) }),
         /* @__PURE__ */ u4("div", { class: "wf-info", children: [

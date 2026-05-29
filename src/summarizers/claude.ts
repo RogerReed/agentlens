@@ -143,6 +143,7 @@ export function buildClaudeSessions(
         const argsStr = getAttrStr(child, 'tool_input')
           || getAttrStr(child, 'input')
           || getAttrStr(child, 'gen_ai.tool.call.arguments')
+          || getAttrStr(child, 'full_command')
         let foundChangedPath = false
         const toolEditDetails: EditDetail[] = []
         if (argsStr) {
