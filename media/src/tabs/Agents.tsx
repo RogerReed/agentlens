@@ -100,7 +100,7 @@ export function Agents() {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
         <AgentCol label="GitHub Copilot" accent="#00EAFF" stats={copStats} />
         <AgentCol label="Claude" accent="#FFB085" stats={cldStats} />
-        <AgentCol label="OpenAI Codex" accent="#F0FF42" stats={cdxStats} />
+        <AgentCol label="Codex" accent="#F0FF42" stats={cdxStats} />
       </div>
     </div>
   )

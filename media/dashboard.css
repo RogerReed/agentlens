@@ -1519,6 +1519,14 @@ body {
   color: var(--fg);
   line-height: 1.5;
 }
+.help-section a {
+  color: var(--vscode-textLink-foreground, var(--accent));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.help-section a:hover {
+  color: var(--vscode-textLink-activeForeground, var(--accent));
+}
 
 /* media/src/styles/efficiency.css */
 .eff-metrics-row {

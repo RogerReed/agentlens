@@ -12,7 +12,7 @@ const VIEWS: [string, string][] = [
   ['Agents',          'Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table.'],
   ['Traces',          'Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing.'],
   ['Tokens',          'Token consumption aggregated by span name and per session, sorted from highest to lowest.'],
-  ['Cost',            'Estimated session cost for Copilot sessions. Supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Shows a per-session bar chart and a cross-session cost table. Estimates only — not your actual bill.'],
+  ['Cost',            'Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cost table. Estimates only — not your actual bill.'],
   ['Tools',           'Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool.'],
   ['Timeline',        'All spans in chronological order as a vertical event list. Click any item to expand its attributes as formatted JSON.'],
   ['Latency',         'Span durations as a color-coded grid, helping identify which operations are consistently slow.'],
@@ -23,7 +23,7 @@ const VIEWS: [string, string][] = [
 
 const TERMS: [string, string][] = [
   ['Agent Loop / Malfunction', 'A behavioral pattern in which an AI agent is stuck, oscillating, or spiraling into unproductive work. AgentLens detects five patterns: Tool Call Deadlock, State Corruption Spiral, Hallucination Amplification Loop, Ambiguous Success / Escalating Scope, and Infinite Loop — Context Accumulation.'],
-  ['Agent',                  'The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that processes your prompts, reasons about tasks, and invokes tools to accomplish work.'],
+  ['Agent',                  'The AI coding assistant (e.g. GitHub Copilot, Claude Code, Codex) that receives your prompt, reasons about the task, and decides which tools to use. It manages the workflow, breaks down tasks, and may call the underlying LLM multiple times per session to complete a single request. The agent is the orchestrator; the LLM is the engine it drives.'],
   ['Avg Input/Call',         'Average number of input tokens sent to the language model per LLM call. Lower means leaner prompts. Under 10K is lean; 10-30K is normal; 30K+ suggests large instruction files, verbose tool definitions, or accumulated context bloat.'],
   ['Avg Turns/Session',      'Average number of LLM round-trips per session. Lower is more efficient. 1-3 turns is typical for simple tasks; 5+ may indicate the agent is struggling or the prompt needs more specifics.'],
   ['Background Span',        'A span that runs outside the main request/response cycle — e.g., telemetry uploads, extension lifecycle events, or periodic health checks.'],
@@ -34,7 +34,7 @@ const TERMS: [string, string][] = [
   ['Files Changed',          'Unique files that were created or modified by the agent during the current data collection period.'],
   ['Input Tokens',           'The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt.'],
   ['Loop Signal',            'A behavioral signal in the Recommendations tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a ↺ icon.'],
-  ['LLM',                    'Large Language Model — the AI model (e.g., GPT-4, Claude) that the agent calls to reason, generate text, or decide which tools to use.'],
+  ['LLM',                    'Large Language Model. The underlying AI model (e.g. GPT-4o, Claude Sonnet) that generates text, answers questions, or produces code. The agent sends requests to the LLM as needed; the model itself does not manage tools or workflow. It is the engine that generates language and code for the agent to act on.'],
   ['LLM Call',               'A single request-response cycle to the language model. One session typically includes multiple LLM calls as the agent iterates.'],
   ['OTLP',                   'OpenTelemetry Protocol — the standard format used to collect and transmit telemetry from AI agents to this extension. AgentLens accepts trace spans and log-derived events.'],
   ['Outcome',                'How a session concluded: "text" means the agent responded with a text answer; "tool" means the last action was a tool call.'],
@@ -56,6 +56,10 @@ const TERMS: [string, string][] = [
   ['TTFT',                   'Time to First Token — the latency between sending a prompt and receiving the first token of the response.'],
   ['Waterfall',              'A visualization where spans are displayed as horizontal bars on a time axis, with nesting depth shown by indentation.'],
 ]
+
+function termId(term: string): string {
+  return 'gl-' + term.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+}
 
 const HELP_SECTIONS = {
   overview: {
@@ -98,9 +102,9 @@ const AGENT_OTEL_SHAPES: Array<{
 }> = [
   {
     agent: 'Copilot',
-    format: 'OpenTelemetry trace spans with a clean single-trace hierarchy. Each conversation is one trace; LLM calls and tool calls are child spans nested under a session root. No extra configuration needed.',
-    coverage: 'Prompt text, token counts (input, output), model name, TTFT, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
-    gaps: 'Cache token data (read/create) is not part of Copilot\'s telemetry. No additional configuration unlocks further data — what Copilot exposes is already fully available.',
+    format: 'OpenTelemetry <a href="#gl-trace">trace</a> <a href="#gl-span">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
+    coverage: 'Prompt text, token counts (<a href="#gl-input-tokens">input</a>, <a href="#gl-output-tokens">output</a>), model name, <a href="#gl-ttft">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
+    gaps: '<a href="#gl-cache-read-tokens">Cache</a> token data (read/create) is not part of Copilot\'s telemetry. No additional configuration unlocks further data — what Copilot exposes is already fully available.',
   },
   {
     agent: 'Claude Code',
@@ -109,8 +113,8 @@ const AGENT_OTEL_SHAPES: Array<{
     gaps: 'The three OTEL_LOG_* env vars are not enabled by default — without them, tool arguments are absent, prompt text is omitted, and file diff content is unavailable. Cache token data is only present when using a model that supports prompt caching.',
   },
   {
-    agent: 'Codex CLI',
-    format: 'Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to config also emits timing spans to /v1/traces.',
+    agent: 'Codex',
+    format: 'Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to ~/.codex/config.toml also emits timing spans to /v1/traces. Both the CLI and the VS Code extension read the same config file.',
     coverage: 'With the recommended configuration (log_user_prompt = true and both exporters set): prompt text, token counts, model name, TTFT, tool names, tool arguments, tool results, and span timing are all present.',
     gaps: 'Trace and Timeline tabs have less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without trace_exporter, span waterfall data is limited.',
   },
@@ -187,70 +191,126 @@ function OverviewSection() {
       )}
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
-        <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 16px', marginBottom: 18 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 600, margin: '0 0 6px', color: 'var(--fg,inherit)' }}>Agent vs LLM Model</h4>
-          <p style={{ fontSize: 13, margin: 0 }}><strong>Agent:</strong> The AI coding assistant (e.g. GitHub Copilot, Claude, Codex) that receives your prompt, reasons about the task, and decides which tools to use. The agent manages the workflow, breaks down tasks, and may call the LLM multiple times per session.</p>
-          <p style={{ fontSize: 13, margin: 0, marginTop: 6 }}><strong>LLM Model:</strong> The underlying Large Language Model (e.g. GPT-4, Claude 3) that generates text, answers questions, or provides code. The agent sends requests to the LLM model as needed, but the model itself does not manage tools or workflow.</p>
-          <p style={{ fontSize: 12, color: 'var(--muted)', margin: '8px 0 0' }}><em>In short: The <strong>agent</strong> is the smart assistant orchestrating your work; the <strong>LLM model</strong> is the engine that generates language and code for the agent.</em></p>
-        </div>
-        <p><strong>AgentLens</strong> is a VS Code extension that captures and visualizes the OpenTelemetry (OTLP) traces emitted by AI coding agents like GitHub Copilot, Claude, and Codex. It runs a lightweight local collector that receives trace data in real time, then presents it through an interactive dashboard so you can understand exactly what happens behind the scenes when you use an AI agent.</p>
-        <p>Use AgentLens to:</p>
-        <ul>
-          <li><strong>Monitor efficiency</strong> — see token usage, cache hit rates, time-to-first-token, and actionable insights about prompt waste.</li>
-          <li><strong>Debug sessions</strong> — inspect every LLM call, tool invocation, and their arguments/results in a human-readable timeline.</li>
-          <li><strong>Trace performance</strong> — view raw OTLP spans as waterfalls with full parent-child nesting and exact timing.</li>
-          <li><strong>Analyze tool usage</strong> — see which tools the agent calls most and how tokens are distributed across operations.</li>
-        </ul>
-        <p>Data is collected locally and never leaves your machine. Clear it at any time with the <em>Clear All Data</em> button.</p>
+        <p><strong>AgentLens</strong> is a local observability dashboard for AI coding <a href="#gl-agent">agents</a> — GitHub Copilot, Claude Code, and Codex. It captures the <a href="#gl-otlp">OpenTelemetry (OTLP)</a> traces each agent emits and surfaces them through an interactive dashboard showing <a href="#gl-tokens">token</a> usage, cost, latency, <a href="#gl-tool-call">tool calls</a>, file changes, <a href="#gl-cache-hit-rate">cache</a> performance, and <a href="#gl-agent-loop-malfunction">loop</a> detection in real time. All data stays on your machine. Available as a VS Code extension or a standalone Docker image.</p>
       </div>
     </div>
   )
 }
 
 function ConfigSection() {
+  const standalone = window.__STANDALONE__ === true
   const kbdStyle = 'font-size:11px;background:var(--panel-bg);padding:1px 5px;border-radius:3px;border:1px solid var(--border)'
   const pathNote = (mac: string, win: string) => (
     <p style="font-size:11px;color:var(--muted);margin:0 0 6px">
       macOS/Linux: <code style={codeStyle}>{mac}</code> &nbsp;·&nbsp; Windows: <code style={codeStyle}>{win}</code>
     </p>
   )
-  return (
-    <div class="help-section" id="help-config">
-      <h3 class="help-heading">{HELP_SECTIONS.config.heading}</h3>
-      <p style={mutedP}>AgentLens auto-configures supported agents on activation. If auto-config fails, or you prefer to configure manually, use the instructions below. Replace <code style={codeStyle}>4318</code> with your custom port if you changed <em>agentLens.otlpPort</em>.</p>
 
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>Auto-configuration</h4>
-        <p style={mutedP}>On activation, AgentLens automatically writes the required telemetry config for each supported agent. This happens both when running as a VS Code extension and when running as the standalone server.</p>
-        <table style="font-size:12px;border-collapse:collapse;width:100%;margin-bottom:8px">
-          <thead><tr style="border-bottom:1px solid var(--border)">
-            <th style="text-align:left;padding:4px 10px 4px 0;color:var(--fg)">Agent</th>
-            <th style="text-align:left;padding:4px 10px 4px 0;color:var(--fg)">Config location</th>
-          </tr></thead>
-          <tbody style="color:var(--muted)">
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">GitHub Copilot</td><td>VS Code User Settings (via VS Code API — same on all platforms)</td></tr>
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">Claude Code</td><td><code style={codeStyle}>~/.claude/settings.json</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.claude\settings.json</code> (Windows)</td></tr>
-            <tr><td style="padding:4px 10px 4px 0;vertical-align:top">OpenAI Codex CLI</td><td><code style={codeStyle}>~/.codex/config.toml</code> (macOS/Linux)<br/><code style={codeStyle}>%USERPROFILE%\.codex\config.toml</code> (Windows)</td></tr>
-          </tbody>
-        </table>
-        <p style="font-size:11px;color:var(--muted);margin:0">After first install, <strong>restart any running agent sessions</strong> to pick up the new config.</p>
-      </div>
+  // ── "Not seeing any data?" callout ──────────────────────────────────────────
+  const callout = standalone ? (
+    <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
+      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 6px">Run the setup script once to configure agents automatically, then restart each agent.</p>
+      <pre style="font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre">{`# macOS / Linux — make executable (once), then run:
+chmod +x scripts/configure-agents.sh
+./scripts/configure-agents.sh             # all agents
+./scripts/configure-agents.sh --agent claude
+./scripts/configure-agents.sh --agent codex
+./scripts/configure-agents.sh --agent copilot
 
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>GitHub Copilot — VS Code Extension</h4>
-        <p style={mutedP}>Add the following to VS Code <strong>User Settings</strong> (<kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Preferences: Open User Settings (JSON)</em>). These settings work the same on macOS, Linux, and Windows.</p>
-        <pre style={preStyle}>{`{
+# Windows (PowerShell) — if blocked, allow scripts first (once):
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\\scripts\\configure-agents.ps1
+.\\scripts\\configure-agents.ps1 -Agent claude
+.\\scripts\\configure-agents.ps1 -Agent codex
+.\\scripts\\configure-agents.ps1 -Agent copilot`}</pre>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart each <a href="#gl-agent">agent</a> after running the script:</p>
+      <table style="font-size:11px;border-collapse:collapse;width:100%">
+        <tbody style="color:var(--muted)">
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code</td>
+            <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>claude</code> session and start a new one.</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Codex</td>
+            <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one.</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Copilot CLI</td>
+            <td style="padding:4px 0;vertical-align:top">Open a new terminal (or restart your shell) to pick up the env vars, then run <code style={codeStyle}>copilot</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Start a short <a href="#gl-session">session</a> and check whether a session card appears in the sidebar to confirm data is arriving.</p>
+    </div>
+  ) : (
+    <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
+      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">AgentLens automatically configures all supported agents on first activation. Just restart each <a href="#gl-agent">agent</a> once — <a href="#gl-session">sessions</a> will start appearing immediately.</p>
+      <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart after AgentLens activates:</p>
+      <table style="font-size:11px;border-collapse:collapse;width:100%">
+        <tbody style="color:var(--muted)">
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">GitHub Copilot</td>
+            <td style="padding:4px 0;vertical-align:top"><kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Reload Window</em> to restart the VS Code extension host.</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code (CLI)</td>
+            <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>claude</code> session and start a new one.</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code (VS Code)</td>
+            <td style="padding:4px 0;vertical-align:top">Reload the VS Code window (<em>Reload Window</em> from the Command Palette).</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Codex</td>
+            <td style="padding:4px 0;vertical-align:top">Exit any running <code style={codeStyle}>codex</code> session and start a new one, or reload the VS Code window if using the Codex extension.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Open the <em>AgentLens</em> output channel (<em>View → Output → AgentLens</em>) to confirm spans are arriving.</p>
+    </div>
+  )
+
+  // ── Manual config sections ───────────────────────────────────────────────────
+  const portNote = (
+    <p style={mutedP}>Manual configuration — replace <code style={codeStyle}>4318</code> with your custom port if you changed <em>agentLens.otlpPort</em>.</p>
+  )
+
+  // GitHub Copilot: show VS Code settings in extension mode, CLI env vars in standalone
+  const copilotSection = (
+    <div style="margin-bottom:20px">
+      <h4 style={h4Style}>GitHub Copilot</h4>
+      {standalone ? (
+        <>
+          <p style={mutedP}>Set these environment variables so they are available when you run <code style={codeStyle}>copilot</code>. The configure script updates your shell profile automatically; or set them manually.</p>
+          <pre style={preStyle}>{`# macOS / Linux — add to ~/.zshrc or ~/.bashrc, then: source ~/.zshrc
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
+
+# Windows — run once in PowerShell (persists across sessions):
+[System.Environment]::SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4318", "User")
+[System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")`}</pre>
+        </>
+      ) : (
+        <>
+          <p style={mutedP}>Add to VS Code <strong>User Settings</strong> (<kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Preferences: Open User Settings (JSON)</em>):</p>
+          <pre style={preStyle}>{`{
   "github.copilot.chat.otel.enabled": true,
   "github.copilot.chat.otel.exporterType": "otlp-http",
   "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4318"
 }`}</pre>
-      </div>
+        </>
+      )}
+    </div>
+  )
 
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>Claude Code — CLI and VS Code Extension</h4>
-        <p style={mutedP}>The <code style={codeStyle}>claude</code> CLI and the Claude Code VS Code extension both read from the same settings file. Add the following to the <code style={codeStyle}>"env"</code> block:</p>
-        {pathNote('~/.claude/settings.json', '%USERPROFILE%\\.claude\\settings.json')}
-        <pre style={preStyle}>{`{
+  const claudeSection = (
+    <div style="margin-bottom:20px">
+      <h4 style={h4Style}>Claude Code</h4>
+      <p style={mutedP}>The CLI and VS Code extension both read the same file. Add to the <code style={codeStyle}>"env"</code> block:</p>
+      {pathNote('~/.claude/settings.json', '%USERPROFILE%\\.claude\\settings.json')}
+      <pre style={preStyle}>{`{
   "env": {
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
@@ -262,66 +322,42 @@ function ConfigSection() {
     "OTEL_LOG_USER_PROMPTS": "1"
   }
 }`}</pre>
-        <p style="font-size:11px;color:var(--muted);margin-top:6px">
-          <strong>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1</strong> enables span-level tracing: without it Claude only emits aggregate metrics, so turns and LLM calls are indistinguishable and cache token breakdowns are unavailable.{' '}
-          <strong>OTEL_LOG_TOOL_DETAILS=1</strong> unlocks tool call records (tool name + file path).{' '}
-          <strong>OTEL_LOG_TOOL_CONTENT=1</strong> includes full file contents and terminal output — needed for Summaries tool outputs and Files tab diffs.{' '}
-          <strong>OTEL_LOG_USER_PROMPTS=1</strong> includes your typed prompt; without it sessions show <code style={codeStyle}>[N chars — prompt not included]</code>.
-        </p>
-      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
+        <strong>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1</strong> enables span-level tracing — without it <a href="#gl-turn">turns</a> and <a href="#gl-llm-call">LLM calls</a> are indistinguishable and cache token breakdowns are unavailable.{' '}
+        The three <strong>OTEL_LOG_*</strong> vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt.
+      </p>
+    </div>
+  )
 
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>OpenAI Codex CLI</h4>
-        <p style={mutedP}>Add an <code style={codeStyle}>[otel]</code> section to the Codex config file. Restart any running Codex sessions after saving.</p>
-        {pathNote('~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml')}
-        <pre style={preStyle}>{`[otel]
+  const codexSection = (
+    <div style="margin-bottom:4px">
+      <h4 style={h4Style}>Codex</h4>
+      <p style={mutedP}>The CLI and VS Code extension both read the same file. Add an <code style={codeStyle}>[otel]</code> section:</p>
+      {pathNote('~/.codex/config.toml', '%USERPROFILE%\\.codex\\config.toml')}
+      <pre style={preStyle}>{`[otel]
 log_user_prompt = true
 exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }
 trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = "json" } }`}</pre>
-        <p style="font-size:11px;color:var(--muted);margin-top:6px">
-          <strong>log_user_prompt=true</strong> includes your typed prompt; without it sessions show <code style={codeStyle}>[session in progress]</code>.{' '}
-          <code style={codeStyle}>exporter</code> sends log events (<code style={codeStyle}>/v1/logs</code>);{' '}
-          <code style={codeStyle}>trace_exporter</code> sends trace spans (<code style={codeStyle}>/v1/traces</code>). Both point at the same endpoint but cover different OTLP signal types.
-        </p>
-      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
+        <strong>log_user_prompt=true</strong> includes your typed prompt; without it sessions show <code style={codeStyle}>[session in progress]</code>.{' '}
+        <code style={codeStyle}>exporter</code> sends log events; <code style={codeStyle}>trace_exporter</code> sends <a href="#gl-span">trace spans</a>. Both point at the same endpoint.
+      </p>
+    </div>
+  )
 
-      <div style="margin-bottom:20px">
-        <h4 style={h4Style}>VS Code Integrated Terminal</h4>
-        <p style={mutedP}>If the Claude Code CLI runs inside VS Code's integrated terminal and traces are not appearing, add the env vars directly to VS Code's terminal environment. Use the key matching your OS:</p>
-        <pre style={preStyle}>{`// macOS — add to VS Code User Settings (JSON):
-"terminal.integrated.env.osx": {
-  "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-  "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
-  "OTEL_TRACES_EXPORTER": "otlp",
-  "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
-  "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
-  "OTEL_LOG_TOOL_DETAILS": "1",
-  "OTEL_LOG_TOOL_CONTENT": "1",
-  "OTEL_LOG_USER_PROMPTS": "1"
-}
+  const manualHeading = (
+    <h4 style="font-size:13px;font-weight:600;margin:20px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border);color:var(--fg)">Manual Configuration</h4>
+  )
 
-// Linux — same keys, different top-level key:
-"terminal.integrated.env.linux": { ... }
-
-// Windows — same keys, different top-level key:
-"terminal.integrated.env.windows": { ... }`}</pre>
-        <ul style="font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:6px 0 0">
-          <li>Open the <strong>AgentLens</strong> output channel (<em>View → Output → AgentLens</em>) to confirm spans are arriving.</li>
-          <li>Check that your shell profile does not override <code style={codeStyle}>OTEL_EXPORTER_OTLP_ENDPOINT</code>.</li>
-          <li>Confirm the collector is running on the correct port.</li>
-        </ul>
-      </div>
-
-      <div style="margin-bottom:4px">
-        <h4 style={h4Style}>Quick Verification</h4>
-        <ul style="font-size:12px;color:var(--muted);line-height:1.9;padding-left:18px;margin:0">
-          <li><strong>Copilot:</strong> confirm <code style={codeStyle}>github.copilot.chat.otel.enabled</code> is <code style={codeStyle}>true</code> in VS Code User Settings.</li>
-          <li><strong>Claude (macOS/Linux):</strong> run <code style={codeStyle}>echo $OTEL_EXPORTER_OTLP_ENDPOINT</code> — should print <code style={codeStyle}>http://localhost:4318</code>.</li>
-          <li><strong>Claude (Windows cmd):</strong> run <code style={codeStyle}>echo %OTEL_EXPORTER_OTLP_ENDPOINT%</code>; in PowerShell: <code style={codeStyle}>$env:OTEL_EXPORTER_OTLP_ENDPOINT</code>.</li>
-          <li><strong>Codex (macOS/Linux):</strong> run <code style={codeStyle}>cat ~/.codex/config.toml</code> and confirm the <code style={codeStyle}>[otel]</code> section.</li>
-          <li><strong>Codex (Windows):</strong> run <code style={codeStyle}>type %USERPROFILE%\.codex\config.toml</code>.</li>
-        </ul>
-      </div>
+  return (
+    <div class="help-section" id="help-config">
+      <h3 class="help-heading">{HELP_SECTIONS.config.heading}</h3>
+      {callout}
+      {manualHeading}
+      {portNote}
+      {copilotSection}
+      {claudeSection}
+      {codexSection}
     </div>
   )
 }
@@ -331,20 +367,20 @@ function AgentOtelSection() {
     <div class="help-section" id="help-otel">
       <h3 class="help-heading">{HELP_SECTIONS.otel.heading}</h3>
       <div class="help-overview-body">
-        <p>AgentLens normalizes three different OTEL shapes into one dashboard model. The shared model is a prompt-to-response session with LLM turns, tool calls, token usage, timing, errors, and files, but the raw data arrives differently for each agent.</p>
+        <p>AgentLens normalizes three different <a href="#gl-otlp">OTEL</a> shapes into one dashboard model. The shared model is a prompt-to-response <a href="#gl-session">session</a> with <a href="#gl-turn">LLM turns</a>, <a href="#gl-tool-call">tool calls</a>, <a href="#gl-tokens">token</a> usage, timing, errors, and files, but the raw data arrives differently for each agent.</p>
         <div class="glossary">
           {AGENT_OTEL_SHAPES.map(row => (
             <div class="glossary-item" style="flex-direction:column;gap:6px">
               <dt class="glossary-term">{row.agent}</dt>
               <dd class="glossary-def" style="display:block">
-                <p style="margin:0 0 6px"><strong style="color:var(--fg)">Format: </strong>{row.format}</p>
-                <p style="margin:0 0 6px"><strong style="color:var(--fg)">What's included: </strong>{row.coverage}</p>
-                <p style="margin:0"><strong style="color:var(--fg)">Gaps: </strong>{row.gaps}</p>
+                <p style="margin:0 0 6px"><strong style="color:var(--fg)">Format: </strong><span dangerouslySetInnerHTML={{ __html: row.format }} /></p>
+                <p style="margin:0 0 6px"><strong style="color:var(--fg)">What's included: </strong><span dangerouslySetInnerHTML={{ __html: row.coverage }} /></p>
+                <p style="margin:0"><strong style="color:var(--fg)">Gaps: </strong><span dangerouslySetInnerHTML={{ __html: row.gaps }} /></p>
               </dd>
             </div>
           ))}
         </div>
-        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side.</p>
+        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: <a href="#gl-trace">Traces</a> and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side.</p>
       </div>
     </div>
   )
@@ -355,7 +391,7 @@ function InsightsSection() {
     <div class="help-section" id="help-insights">
       <h3 class="help-heading">{HELP_SECTIONS.insights.heading}</h3>
       <div class="help-overview-body">
-        <p>The <strong>Recommendations</strong> tab surfaces efficiency insights for token waste, cache patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer turns and fewer tokens on the same work.</p>
+        <p>The <strong>Recommendations</strong> tab surfaces efficiency insights for <a href="#gl-tokens">token</a> waste, <a href="#gl-cache-hit-rate">cache</a> patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer <a href="#gl-turn">turns</a> and fewer tokens on the same work.</p>
         <div class="glossary">
           <InsightBlock id="help-context-bloat" title="Context Bloat"
             why="Every LLM turn receives the full conversation so far. When tool results are large — full file reads, wide search outputs — the context balloons quickly. Instruction files that repeat the same guidance across turns are another common cause."
@@ -413,7 +449,7 @@ function LoopsSection() {
     <div class="help-section" id="help-loops">
       <h3 class="help-heading">{HELP_SECTIONS.loops.heading}</h3>
       <div class="help-overview-body">
-        <p>Loop signals are behavioral patterns indicating the agent is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity.</p>
+        <p><a href="#gl-loop-signal">Loop signals</a> are behavioral patterns indicating the <a href="#gl-agent">agent</a> is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity.</p>
         <div class="glossary">
           <LoopBlock id="help-tool-deadlock" title="Tool Call Deadlock"            why="The same tool call — identical name and arguments — was executed 5+ times. The agent is not retaining the result, likely lost in a long context."
             example={`The agent ran <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">read_file src/types.ts</code> eight times in one session.`}
@@ -435,7 +471,7 @@ function LoopsSection() {
             steps={`<li>Add explicit stopping conditions.</li><li>Avoid open-ended phrasing — name specific functions and files.</li><li>Specify scope: <em>"Only change files in src/auth/"</em>.</li><li>Monitor the context growth chart for steep rises.</li>`}
             impact="A 5-step prompt vs. a 90-step session saves 85 tool calls — a 5–20x token reduction."
           />
-          <LoopBlock id="help-context-accumulation" title="Infinite Loop — Context Accumulation"            why="Input tokens grew by 30,000+ across 4+ calls while output-to-input ratio collapsed by 70%+. The agent is consuming context while producing less output."
+          <LoopBlock id="help-context-accumulation" title="Infinite Loop — Context Accumulation"            why={`<a href="#gl-input-tokens">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`}
             example="First call: 8K in → 600 out (7.5%). Last call: 65K in → 80 out (0.12%). Five turns reading the same files without edits."
             steps={`<li>Stop immediately — cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Summaries tab to review what was accomplished.</li>`}
             impact="Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."
@@ -470,7 +506,7 @@ function GlossarySection() {
       <h3 class="help-heading">{HELP_SECTIONS.glossary.heading}</h3>
       <div class="glossary">
         {TERMS.map(([term, def]) => (
-          <div class="glossary-item">
+          <div class="glossary-item" id={termId(term)} style="scroll-margin-top:44px">
             <dt class="glossary-term">{term}</dt>
             <dd class="glossary-def">{def}</dd>
           </div>
@@ -494,7 +530,7 @@ export function Help() {
       <ViewsSection />
       <GlossarySection />
       <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">
-        <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / OpenAI Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
+        <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
       </p>
     </div>
   )
