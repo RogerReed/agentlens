@@ -84,8 +84,6 @@ export async function autoConfigureClaudeCode(port: number): Promise<ConfigResul
     OTEL_TRACES_EXPORTER: 'otlp',
     OTEL_EXPORTER_OTLP_PROTOCOL: 'http/json',
     OTEL_EXPORTER_OTLP_ENDPOINT: `http://localhost:${port}`,
-    OTEL_SEMCONV_STABILITY_OPT_IN: 'gen_ai_latest_experimental',
-    OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: 'SPAN_AND_EVENT',
     OTEL_LOG_TOOL_DETAILS: '1',
     OTEL_LOG_TOOL_CONTENT: '1',
     OTEL_LOG_USER_PROMPTS: '1',
@@ -94,6 +92,8 @@ export async function autoConfigureClaudeCode(port: number): Promise<ConfigResul
   const staleKeys = [
     'OTEL_EXPORTER_OTLP_TRACES_PROTOCOL',
     'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT',
+    'OTEL_SEMCONV_STABILITY_OPT_IN',
+    'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT',
   ]
 
   try {
