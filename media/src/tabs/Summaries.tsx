@@ -69,6 +69,8 @@ function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: 
   const entry = step.entry
 
   if (entry.type === 'llm') {
+    const PREVIEW_LEN = 400
+    const isLongResponse = (entry.responseText?.length ?? 0) > PREVIEW_LEN
     return (
       <>
         <div class="sw-detail-section"><div class="sw-detail-heading">Model</div><div class="sw-detail-value">{entry.model || 'unknown'}</div></div>
@@ -79,21 +81,31 @@ function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: 
               <span class="sw-token-in">{(entry.inputTokens ?? 0).toLocaleString()} input</span>
               <span class="sw-token-arrow"> → </span>
               <span class="sw-token-out">{(entry.outputTokens ?? 0).toLocaleString()} output</span>
-              {entry.responseText && (
-                <button class="sw-show-full-btn" style="margin-left:8px" onClick={() => setShowOutput(v => !v)}>
-                  {showOutput ? 'hide output' : 'view output'}
-                </button>
-              )}
             </div>
           </div>
         )}
-        {showOutput && entry.responseText && <LongTextSection heading="Output" text={entry.responseText} id={'sw-output-' + sessIdx + '-' + idx} />}
+        {entry.responseText && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">
+              Response
+              {isLongResponse && (
+                <button class="sw-show-full-btn" style="margin-left:8px" onClick={() => setShowOutput(v => !v)}>
+                  {showOutput ? 'Collapse' : 'Show full response'}
+                </button>
+              )}
+            </div>
+            <div class="sw-detail-value" style="white-space:pre-wrap;word-break:break-word;font-size:11px">
+              {showOutput ? entry.responseText : entry.responseText.slice(0, PREVIEW_LEN)}
+              {isLongResponse && !showOutput && <span style="color:var(--muted)">…</span>}
+            </div>
+          </div>
+        )}
+        {entry.thinking && <LongTextSection heading="Reasoning" text={entry.thinking} id={'sw-thinking-' + sessIdx + '-' + idx} />}
         {(entry.ttft ?? 0) > 0 && (
           <div class="sw-detail-section"><div class="sw-detail-heading">Time to First Token</div><div class="sw-detail-value">{formatMs(entry.ttft!)}</div></div>
         )}
         <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
-        {entry.action && <div class="sw-detail-section"><div class="sw-detail-heading">Decision</div><div class="sw-detail-value">{entry.action}</div></div>}
-        {entry.thinking && <div class="sw-detail-section"><div class="sw-detail-heading">Reasoning</div><div class="sw-detail-thinking" style="white-space:pre-wrap">{entry.thinking}</div></div>}
+        {entry.action && <div class="sw-detail-section"><div class="sw-detail-heading">Stop reason</div><div class="sw-detail-value">{entry.action}</div></div>}
         {entry.timestamp && <div class="sw-detail-section"><div class="sw-detail-heading">Timestamp</div><div class="sw-detail-value sw-detail-muted">{entry.timestamp}</div></div>}
       </>
     )

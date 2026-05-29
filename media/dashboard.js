@@ -4662,6 +4662,8 @@
     const [showOutput, setShowOutput] = d2(false);
     const entry = step.entry;
     if (entry.type === "llm") {
+      const PREVIEW_LEN = 400;
+      const isLongResponse = (entry.responseText?.length ?? 0) > PREVIEW_LEN;
       return /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
           /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Model" }),
@@ -4678,11 +4680,20 @@
             /* @__PURE__ */ u4("span", { class: "sw-token-out", children: [
               (entry.outputTokens ?? 0).toLocaleString(),
               " output"
-            ] }),
-            entry.responseText && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setShowOutput((v4) => !v4), children: showOutput ? "hide output" : "view output" })
+            ] })
           ] })
         ] }),
-        showOutput && entry.responseText && /* @__PURE__ */ u4(LongTextSection, { heading: "Output", text: entry.responseText, id: "sw-output-" + sessIdx + "-" + idx }),
+        entry.responseText && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: [
+            "Response",
+            isLongResponse && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setShowOutput((v4) => !v4), children: showOutput ? "Collapse" : "Show full response" })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", style: "white-space:pre-wrap;word-break:break-word;font-size:11px", children: [
+            showOutput ? entry.responseText : entry.responseText.slice(0, PREVIEW_LEN),
+            isLongResponse && !showOutput && /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2026" })
+          ] })
+        ] }),
+        entry.thinking && /* @__PURE__ */ u4(LongTextSection, { heading: "Reasoning", text: entry.thinking, id: "sw-thinking-" + sessIdx + "-" + idx }),
         (entry.ttft ?? 0) > 0 && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
           /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Time to First Token" }),
           /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(entry.ttft) })
@@ -4692,12 +4703,8 @@
           /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
         ] }),
         entry.action && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Decision" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Stop reason" }),
           /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.action })
-        ] }),
-        entry.thinking && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Reasoning" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-thinking", style: "white-space:pre-wrap", children: entry.thinking })
         ] }),
         entry.timestamp && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
           /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Timestamp" }),
