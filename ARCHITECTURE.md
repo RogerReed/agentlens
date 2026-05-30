@@ -230,7 +230,7 @@ Each agent uses a different span structure. The summarizers normalise these into
 
 ```mermaid
 graph TB
-    subgraph Copilot — buildCopilotSessions
+    subgraph copilot["Copilot - buildCopilotSessions"]
         CP_ROOT[invoke_agent span<br/>root of session]
         CP_LLM[chat gpt-4.1 span<br/>type: llm<br/>tokens · model · TTFT<br/>output messages JSON]
         CP_TOOL[execute_tool span<br/>type: tool<br/>gen_ai.tool.name<br/>gen_ai.tool.call.arguments]
@@ -238,15 +238,15 @@ graph TB
         CP_ROOT --> CP_TOOL
     end
 
-    subgraph Claude — buildClaudeSessions
-        CC_ROOT[claude_code.interaction<br/>root — may be synthetic]
+    subgraph claude["Claude - buildClaudeSessions"]
+        CC_ROOT[claude_code.interaction<br/>root - may be synthetic]
         CC_LLM[claude_code.llm_request<br/>type: llm<br/>input/output/cache tokens<br/>ttft_ms · stop_reason]
         CC_TOOL[claude_code.tool<br/>type: tool<br/>tool_name · file_path]
         CC_ROOT --> CC_LLM
         CC_ROOT --> CC_TOOL
     end
 
-    subgraph Codex — buildCodexSessions
+    subgraph codex["Codex - buildCodexSessions"]
         CX_PROMPT[codex.user_prompt<br/>session boundary]
         CX_LLM[codex.sse_event / codex.completion<br/>type: llm · token counts]
         CX_TOOL[exec_command / apply_patch<br/>type: tool]
@@ -330,16 +330,16 @@ Large string fields (`responseText`, `thinking`, `toolInput`, `fullResult`, `old
 
 ```mermaid
 graph TD
-    subgraph src/database/
-        SCH[schema.ts<br/>SCHEMA_SQL — CREATE TABLE statements]
-        DBT[db.ts<br/>AgentLensDb — opens DB, applies<br/>schema + migrations, save/dispose]
-        WRI[writer.ts<br/>DatabaseWriter — enqueue/drain/clearAll<br/>Computes cost_usd at write time]
-        REA[reader.ts<br/>DatabaseReader — listSessions<br/>queryDailyStats · queryLifetimeStats<br/>searchSessions · queryBurnRate<br/>loadSessionTimeline · loadBlob]
-        MIG[migration.ts<br/>migrateGlobalStateToSqlite<br/>One-time globalState → SQLite]
-        RET[retention.ts<br/>runRetention — DELETE old sessions<br/>Evict orphaned blob files]
+    subgraph srcdb["src/database/"]
+        SCH[schema.ts<br/>SCHEMA_SQL - CREATE TABLE statements]
+        DBT[db.ts<br/>AgentLensDb - opens DB, applies<br/>schema + migrations, save/dispose]
+        WRI[writer.ts<br/>DatabaseWriter - enqueue/drain/clearAll<br/>Computes cost_usd at write time]
+        REA[reader.ts<br/>DatabaseReader - listSessions<br/>queryDailyStats · queryLifetimeStats<br/>searchSessions · queryBurnRate<br/>loadSessionTimeline · loadBlob]
+        MIG[migration.ts<br/>migrateGlobalStateToSqlite<br/>One-time globalState to SQLite]
+        RET[retention.ts<br/>runRetention - DELETE old sessions<br/>Evict orphaned blob files]
     end
 
-    subgraph src/
+    subgraph srcroot["src/"]
         PRI[pricing.ts<br/>lookupRates · calcTokenCostUsd<br/>contextWindowTokens per model]
         REPO[sessionRepository.ts<br/>SessionRepository<br/>Merges DB + live window<br/>Single access point for session data]
     end
@@ -436,7 +436,7 @@ classDiagram
     class SessionSummaryCard {
         +sessionId: string
         +traceId: string
-        +source: copilot | claude_code | codex
+        +source: copilot, claude_code, codex
         +userRequest: string
         +model: string
         +turns: number
@@ -461,7 +461,7 @@ classDiagram
     }
 
     class TimelineEntry {
-        +type: llm | tool | background
+        +type: llm, tool, background
         +spanId: string
         +label: string
         +model?: string
@@ -525,21 +525,21 @@ The dashboard is a Preact application bundled into `media/dashboard.js`. It uses
 
 ```mermaid
 graph TD
-    subgraph Core data — set by DashboardPanel messages
-        SIG_SUM[sessionSummary<br/>Signal&lt;FullSummary | null&gt;]
-        SIG_TOOLS[toolCalls<br/>Signal&lt;Record&gt;]
-        SIG_TL[sessionTimelines<br/>Signal&lt;Record&lt;sessionId, TimelineEntry[]&gt;&gt;]
-        SIG_BLOB[blobCache<br/>Signal&lt;Record&lt;spanId:field, string&gt;&gt;]
-        SIG_DS[dailyStats<br/>Signal&lt;DailyStatRow[]&gt;]
-        SIG_LS[lifetimeStats<br/>Signal&lt;LifetimeStats | null&gt;]
-        SIG_BR[burnRateData<br/>Signal&lt;BurnRateData | null&gt;]
-        SIG_SR[searchResults<br/>Signal&lt;SearchResultData | null&gt;]
+    subgraph coredata["Core data - set by DashboardPanel"]
+        SIG_SUM[sessionSummary<br/>FullSummary or null]
+        SIG_TOOLS[toolCalls<br/>Record of string to number]
+        SIG_TL[sessionTimelines<br/>sessionId to TimelineEntry array]
+        SIG_BLOB[blobCache<br/>spanId:field to string]
+        SIG_DS[dailyStats<br/>DailyStatRow array]
+        SIG_LS[lifetimeStats<br/>LifetimeStats or null]
+        SIG_BR[burnRateData<br/>BurnRateData or null]
+        SIG_SR[searchResults<br/>SearchResultData or null]
     end
 
-    subgraph UI controls
-        SIG_LIM[sessionLimit<br/>Signal&lt;number&gt; = 10]
-        SIG_AGT[selectedAgentFilter<br/>Signal&lt;AgentFilter&gt; = all]
-        SIG_TAB[activeTab<br/>Signal&lt;string&gt; = efficiency]
+    subgraph uicontrols["UI controls"]
+        SIG_LIM[sessionLimit<br/>number, default 10]
+        SIG_AGT[selectedAgentFilter<br/>AgentFilter, default all]
+        SIG_TAB[activeTab<br/>string, default efficiency]
     end
 
     subgraph Computed
@@ -628,29 +628,29 @@ Cost is computed in two places:
 
 ```mermaid
 flowchart TD
-    subgraph Extension host — write time
+    subgraph exthost["Extension host - write time"]
         CARD[SessionSummaryCard] --> PRI_EXT[src/pricing.ts<br/>calcTokenCostUsd]
         PRI_EXT --> DB_COST[sessions.cost_usd<br/>stored in SQLite]
     end
 
-    subgraph Browser — display time
+    subgraph browser["Browser - display time"]
         ENTRY[TimelineEntry<br/>model · tokens] --> LR[lookupRates<br/>normalise + prefix match]
         LR --> RATES{Rates found?}
         RATES -- no  --> ZERO[cost=0, modelUnknown=true]
         RATES -- yes --> MODE{PricingMode}
-        MODE -- token --> TC[calcTokenCost<br/>input/cacheRead/cacheWrite/output<br/>× per-MTok rate ÷ 1,000,000]
-        MODE -- request --> RC[calcRequestCost<br/>turns × multiplier × $0.04]
-        MODE -- request-annual --> RA[calcRequestCost<br/>turns × multiplierAnnualPostJun1 × $0.04]
-        TC --> ENTRY_COST[calcEntryCost → Flow tooltip]
-        TC --> SESS_COST[calcSessionCost → Cost tab table]
+        MODE -- token --> TC[calcTokenCost<br/>input/cacheRead/cacheWrite/output<br/>per-MTok rate / 1,000,000]
+        MODE -- request --> RC[calcRequestCost<br/>turns x multiplier x $0.04]
+        MODE -- request-annual --> RA[calcRequestCost<br/>turns x multiplierAnnualPostJun1 x $0.04]
+        TC --> ENTRY_COST[calcEntryCost - Flow tooltip]
+        TC --> SESS_COST[calcSessionCost - Cost tab table]
         RC --> SESS_COST
         RA --> SESS_COST
     end
 
-    subgraph Analytics — query time
+    subgraph analytics["Analytics - query time"]
         DB_COST --> AGG[queryDailyStats<br/>SUM cost_usd GROUP BY day]
         DB_COST --> LIFE[queryLifetimeStats<br/>SUM cost_usd]
-        DB_COST --> BURN[queryBurnRate<br/>tokensPerMinute × costPerToken × 60]
+        DB_COST --> BURN[queryBurnRate<br/>tokensPerMinute x costPerToken x 60]
     end
 ```
 
@@ -678,7 +678,7 @@ flowchart TD
 
     CC_CFG --> CC_KEYS["env block:<br/>CLAUDE_CODE_ENABLE_TELEMETRY=1<br/>OTEL_TRACES_EXPORTER=otlp<br/>OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:{port}<br/>OTELlog flags for tool details + user prompts<br/><br/>Stop hook → pending-prompt.txt"]
 
-    CX_CFG --> CX_KEYS["[otel]<br/>log_user_prompt = true<br/>exporter = {otlp-http = {endpoint=...}}<br/>trace_exporter = {otlp-http = {endpoint=...}}"]
+    CX_CFG --> CX_KEYS["toml otel section:<br/>log_user_prompt = true<br/>exporter otlp-http endpoint=...<br/>trace_exporter otlp-http endpoint=..."]
 
     CC_KEYS --> RESTART[Requires Claude Code restart]
     CX_KEYS --> RESTART
