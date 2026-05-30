@@ -5,6 +5,7 @@ import {
 import {
   formatMs, formatCompact, syntaxHighlightJson, getSessionGlobalNumber,
   getAgentDotHtml, formatLlmLabel, formatToolLabel, formatToolResult,
+  sessionDateKey, formatDayLabel,
 } from '../utils'
 import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry, BackgroundSpanSummary } from '../types'
@@ -355,6 +356,35 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
   )
 }
 
+function DayGroup({ label, sessions, focusedId }: {
+  label: string
+  sessions: SessionSummaryCard[]
+  focusedId: string | null
+}) {
+  const [collapsed, setCollapsed] = useState(false)
+  return (
+    <div style="margin-bottom:4px">
+      <div
+        style="display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;user-select:none;border-bottom:1px solid var(--vscode-panel-border)"
+        onClick={() => setCollapsed(c => !c)}
+      >
+        <span style="font-size:10px;color:var(--muted)">{collapsed ? '▶' : '▼'}</span>
+        <span style="font-size:12px;font-weight:600;color:var(--foreground)">{label}</span>
+        <span style="font-size:10px;color:var(--muted)">{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
+      </div>
+      {!collapsed && sessions.map((sess, idx) => (
+        <SessionBlock
+          key={sess.traceId + idx}
+          sess={sess}
+          sessIdx={idx}
+          totalCount={sessions.length}
+          isFirst={idx === 0 && focusedId === null}
+        />
+      ))}
+    </div>
+  )
+}
+
 export function Traces() {
   const base = rangedSessions.value
   const summary = sessionSummary.value
@@ -376,6 +406,18 @@ export function Traces() {
   const totalToolCalls = sessionsToShow.reduce((s, sess) => s + sess.totalToolCalls, 0)
   const totalTokens = sessionsToShow.reduce((s, sess) => s + sess.inputTokens + sess.outputTokens, 0)
 
+  // Group sessions by calendar day (newest day first)
+  const dayGroups: Array<{ key: string; label: string; sessions: typeof sessionsToShow }> = []
+  sessionsToShow.forEach(sess => {
+    const dk = sessionDateKey(sess) || 'unknown'
+    const last = dayGroups[dayGroups.length - 1]
+    if (last && last.key === dk) {
+      last.sessions.push(sess)
+    } else {
+      dayGroups.push({ key: dk, label: dk === 'unknown' ? 'Unknown date' : formatDayLabel(dk), sessions: [sess] })
+    }
+  })
+
   return (
     <div id="summary-traces-content">
       <div class="tab-stats">
@@ -384,22 +426,13 @@ export function Traces() {
         <div><strong class="tab-stat-val">{totalToolCalls}</strong> tool calls</div>
         <div><strong class="tab-stat-val">{formatCompact(totalTokens)}</strong> tokens</div>
       </div>
-      <div style="font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)">
-        Each agent exposes different OTEL data — some fields may be missing or estimated. See the Traces tab for raw span-level detail.
-      </div>
       <div class="waterfall">
-        {sessionsToShow.map((sess, idx) => (
-          <SessionBlock
-            key={sess.traceId + idx}
-            sess={sess}
-            sessIdx={idx}
-            totalCount={sessionsToShow.length}
-            isFirst={idx === 0}
-          />
-        ))}
         {sessionsToShow.length === 0 && (
-          <div class="empty-state">No sessions to display</div>
+          <div class="empty-state">No sessions in this time range</div>
         )}
+        {dayGroups.map(group => (
+          <DayGroup key={group.key} label={group.label} sessions={group.sessions} focusedId={focusedId} />
+        ))}
       </div>
       {summary.backgroundSpans?.length > 0 && (
         <BgSummaryBlock bgSpans={summary.backgroundSpans} />

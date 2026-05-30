@@ -1159,6 +1159,38 @@
   function getAllSessionsChronological() {
     return sessionSummary.value?.sessions ?? [];
   }
+  function formatSessionTime(sess) {
+    if (!sess?.startTime) return "\u2014";
+    const d5 = new Date(sess.startTime);
+    if (isNaN(d5.getTime())) return "\u2014";
+    const ageMs = Date.now() - d5.getTime();
+    if (ageMs < 6e4) return "just now";
+    if (ageMs < 36e5) return `${Math.round(ageMs / 6e4)}m ago`;
+    if (ageMs < 864e5) return `${Math.round(ageMs / 36e5)}h ago`;
+    if (ageMs < 7 * 864e5) {
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const hhmm2 = d5.toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit", hour12: false });
+      return `${days[d5.getDay()]} \xB7 ${hhmm2}`;
+    }
+    const mmdd = d5.toLocaleDateString("en", { month: "short", day: "numeric" });
+    const hhmm = d5.toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit", hour12: false });
+    return `${mmdd} \xB7 ${hhmm}`;
+  }
+  function sessionDateKey(sess) {
+    if (!sess?.startTime) return "";
+    const d5 = new Date(sess.startTime);
+    return isNaN(d5.getTime()) ? "" : d5.toISOString().slice(0, 10);
+  }
+  function formatDayLabel(isoDate) {
+    const d5 = /* @__PURE__ */ new Date(isoDate + "T00:00:00");
+    const today = /* @__PURE__ */ new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = today.getTime() - d5.getTime();
+    if (diff < 864e5) return "Today";
+    if (diff < 2 * 864e5) return "Yesterday";
+    if (diff < 7 * 864e5) return d5.toLocaleDateString("en", { weekday: "long" });
+    return d5.toLocaleDateString("en", { month: "short", day: "numeric", year: diff > 365 * 864e5 ? "numeric" : void 0 });
+  }
   function getSessionGlobalNumber(sess) {
     const all = getAllSessionsChronological();
     if (!sess || all.length === 0) return 0;
@@ -1620,105 +1652,101 @@
   }
 
   // media/src/tabs/Efficiency.tsx
-  function ContextGrowthChart({ sessions, timelines }) {
+  function ContextSparkline({ sess, points, isFocused }) {
     const canvasRef = A2(null);
+    const color = getAgentColor(sess.source);
+    const timeLabel = formatSessionTime(sess);
     y2(() => {
       const canvas = canvasRef.current;
-      if (!canvas) return;
-      const seriesData = [];
-      let globalMax = 0, globalMin = Infinity, globalMaxPoints = 0;
-      sessions.forEach((sess, idx) => {
-        const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
-        if (llmEntries.length < 1) return;
-        const points = llmEntries.map((e4) => e4.inputTokens ?? 0);
-        const max = Math.max(...points), min = Math.min(...points);
-        if (max > globalMax) globalMax = max;
-        if (min < globalMin) globalMin = min;
-        if (points.length > globalMaxPoints) globalMaxPoints = points.length;
-        const sessionNum = getSessionGlobalNumber(sess) || idx + 1;
-        seriesData.push({ label: "" + sessionNum, points, color: getAgentColor(sess.source) || COLORS[idx % COLORS.length] });
-      });
-      if (seriesData.length === 0) {
-        canvas.style.display = "none";
-        return;
-      }
-      canvas.style.display = "block";
-      const dataRange = globalMax - globalMin;
-      const adjRange = dataRange === 0 ? globalMax * 0.1 || 1 : dataRange;
-      const yPad = adjRange * 0.1;
-      const yMin = Math.max(0, globalMin - yPad), yMax = globalMax + yPad;
+      if (!canvas || points.length === 0) return;
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
+      if (!rect.width) return;
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       const ctx = canvas.getContext("2d");
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const w5 = rect.width, h5 = rect.height;
-      ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 40, bottom: 24, left: 64 };
-      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
-      const cs = getComputedStyle(document.body);
-      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
-      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
-      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
-      ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 0.5;
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const y5 = pad.top + chartH * i4 / 4;
-        ctx.beginPath();
-        ctx.moveTo(pad.left, y5);
-        ctx.lineTo(pad.left + chartW, y5);
-        ctx.stroke();
-      }
-      ctx.fillStyle = textColor;
-      ctx.font = fontStr;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const val = yMax - (yMax - yMin) * i4 / 4;
-        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
-      }
-      ctx.save();
-      ctx.translate(10, pad.top + chartH / 2);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillStyle = textColor;
-      ctx.font = fontStr;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("Input Tokens", 0, 0);
-      ctx.restore();
-      ctx.fillStyle = textColor;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillText("Turns (LLM Calls)", pad.left + chartW / 2, pad.top + chartH + 10);
-      seriesData.forEach((series) => {
-        const pts = series.points;
-        const lastX = pad.left + (pts.length - 1) / Math.max(globalMaxPoints - 1, 1) * chartW;
-        const lastY = pad.top + chartH - (pts[pts.length - 1] - yMin) / (yMax - yMin) * chartH;
-        if (pts.length >= 2) {
-          ctx.beginPath();
-          for (let j4 = 0; j4 < pts.length; j4++) {
-            const x4 = pad.left + j4 / Math.max(globalMaxPoints - 1, 1) * chartW;
-            const y5 = pad.top + chartH - (pts[j4] - yMin) / (yMax - yMin) * chartH;
-            j4 === 0 ? ctx.moveTo(x4, y5) : ctx.lineTo(x4, y5);
-          }
-          ctx.strokeStyle = series.color;
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-        }
-        ctx.beginPath();
-        ctx.arc(lastX, lastY, pts.length === 1 ? 5 : 3, 0, Math.PI * 2);
-        ctx.fillStyle = series.color;
-        ctx.fill();
-        ctx.fillStyle = series.color;
-        ctx.font = "bold 10px sans-serif";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "middle";
-        ctx.fillText(series.label, lastX + (pts.length === 1 ? 9 : 5), lastY);
+      ctx.scale(dpr, dpr);
+      const W = rect.width, H2 = rect.height;
+      ctx.clearRect(0, 0, W, H2);
+      const pad = { top: 4, right: 4, bottom: 4, left: 4 };
+      const cW = W - pad.left - pad.right;
+      const cH = H2 - pad.top - pad.bottom;
+      const maxY = Math.max(...points) || 1;
+      const minY = Math.min(...points);
+      const range = maxY - minY || maxY * 0.1 || 1;
+      ctx.beginPath();
+      points.forEach((p5, i4) => {
+        const x4 = pad.left + (points.length === 1 ? cW / 2 : i4 / (points.length - 1) * cW);
+        const y5 = pad.top + cH - (p5 - minY) / range * cH;
+        i4 === 0 ? ctx.moveTo(x4, y5) : ctx.lineTo(x4, y5);
       });
+      ctx.strokeStyle = color + (isFocused ? "ff" : "cc");
+      ctx.lineWidth = isFocused ? 2 : 1.5;
+      ctx.stroke();
+      const lastX = pad.left + (points.length === 1 ? cW / 2 : cW);
+      ctx.lineTo(lastX, pad.top + cH);
+      ctx.lineTo(pad.left, pad.top + cH);
+      ctx.closePath();
+      ctx.fillStyle = color + "22";
+      ctx.fill();
+      const dotX = pad.left + (points.length === 1 ? cW / 2 : cW);
+      const dotY = pad.top + cH - (points[points.length - 1] - minY) / range * cH;
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
     });
-    return /* @__PURE__ */ u4("canvas", { ref: canvasRef, id: "context-growth-chart", style: "width:100%;height:180px;display:block" });
+    return /* @__PURE__ */ u4(
+      "div",
+      {
+        style: [
+          "cursor:pointer;border-radius:4px;padding:4px 6px 2px;",
+          isFocused ? "outline:2px solid var(--vscode-focusBorder,#007fd4);background:rgba(55,148,255,0.08)" : "background:var(--vscode-editor-background)"
+        ].join(""),
+        onClick: () => {
+          focusedSessionId.value = isFocused ? null : sess.sessionId;
+        },
+        title: `${timeLabel} \u2014 ${formatCompact(Math.max(...points))} max input tok \xB7 ${points.length} turn${points.length !== 1 ? "s" : ""}`,
+        children: [
+          /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:52px;display:block" }),
+          /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);text-align:center;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis", children: timeLabel })
+        ]
+      }
+    );
+  }
+  function ContextGrowthChart({ sessions, timelines }) {
+    const sessionsWithPoints = sessions.map((sess) => {
+      const entries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+      return { sess, points: entries.map((e4) => e4.inputTokens ?? 0) };
+    }).filter((s4) => s4.points.length >= 1).slice().reverse();
+    if (sessionsWithPoints.length === 0) return null;
+    const focusedId = focusedSessionId.value;
+    if (sessionsWithPoints.length === 1) {
+      const { sess, points } = sessionsWithPoints[0];
+      return /* @__PURE__ */ u4("div", { children: [
+        /* @__PURE__ */ u4(ContextSparkline, { sess, points, isFocused: focusedId === sess.sessionId }),
+        /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-top:2px", children: [
+          formatSessionTime(sess),
+          " \xB7 ",
+          points.length,
+          " turn",
+          points.length !== 1 ? "s" : "",
+          " \xB7 peak ",
+          formatCompact(Math.max(...points)),
+          " input tok"
+        ] })
+      ] });
+    }
+    const cols = sessionsWithPoints.length <= 4 ? sessionsWithPoints.length : sessionsWithPoints.length <= 8 ? 4 : sessionsWithPoints.length <= 16 ? 5 : 6;
+    return /* @__PURE__ */ u4("div", { style: `display:grid;grid-template-columns:repeat(${cols},1fr);gap:4px`, children: sessionsWithPoints.map(({ sess, points }) => /* @__PURE__ */ u4(
+      ContextSparkline,
+      {
+        sess,
+        points,
+        isFocused: focusedId === sess.sessionId
+      },
+      sess.sessionId
+    )) });
   }
   var HELP_TOOLTIPS = {
     "help-tool-failures": "Failures come from guessed file paths or unavailable commands. Provide exact paths and tell the agent which tools and runtimes are available.",
@@ -1750,7 +1778,7 @@
     ] }) }) });
   }
   function SessionRow({ sess, idx, heat, expanded, onToggle }) {
-    const realIdx = getSessionGlobalNumber(sess) || idx + 1;
+    const timeLabel = formatSessionTime(sess);
     const cacheRate = sess.inputTokens > 0 ? (sess.cacheReadTokens / sess.inputTokens * 100).toFixed(0) : "\u2014";
     const agentDotColor = getAgentColor(sess.source);
     const isFocused = focusedSessionId.value === sess.sessionId;
@@ -1765,11 +1793,10 @@
     }
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("tr", { style: "background:" + (rowBg || "transparent") + ";cursor:pointer" + (isFocused ? ";outline:1px solid var(--vscode-focusBorder,#007fd4)" : ""), onClick: handleRowClick, children: [
-        /* @__PURE__ */ u4("td", { style: "text-align:center;font-weight:bold;white-space:nowrap", children: [
-          /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);margin-right:3px", children: expanded ? "\u25BC" : "\u25B6" }),
-          realIdx,
-          " ",
-          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + agentDotColor + ";vertical-align:middle" })
+        /* @__PURE__ */ u4("td", { style: "text-align:left;white-space:nowrap;min-width:100px", children: [
+          /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);margin-right:4px", children: expanded ? "\u25BC" : "\u25B6" }),
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + agentDotColor + ";vertical-align:middle;margin-right:4px" }),
+          /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--foreground)", children: timeLabel })
         ] }),
         /* @__PURE__ */ u4("td", { style: "text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: sess.userRequest, children: [
           (sess.userRequest ?? "").slice(0, 60),
@@ -1806,32 +1833,59 @@
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
-      const sessionData = sessions.map((sess, idx) => {
-        const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0;
-        const num = getSessionGlobalNumber(sess) || idx + 1;
-        return input + output > 0 ? { session: num, input, output, source: sess.source } : null;
-      }).filter(Boolean).reverse();
-      if (sessionData.length === 0) {
+      const useDaily = sessions.length > CHART_MAX;
+      let bars;
+      if (useDaily) {
+        const byDay = /* @__PURE__ */ new Map();
+        sessions.forEach((sess) => {
+          if (!sess.startTime) return;
+          const day = sess.startTime.slice(0, 10);
+          const existing = byDay.get(day);
+          if (existing) {
+            existing.input += sess.inputTokens;
+            existing.output += sess.outputTokens;
+          } else {
+            byDay.set(day, {
+              label: day.slice(5),
+              // "MM-DD"
+              input: sess.inputTokens,
+              output: sess.outputTokens,
+              source: sess.source,
+              timeMs: (/* @__PURE__ */ new Date(day + "T00:00:00")).getTime()
+            });
+          }
+        });
+        bars = [...byDay.values()].sort((a4, b4) => a4.timeMs - b4.timeMs);
+      } else {
+        bars = [...sessions].reverse().map((sess) => ({
+          label: formatSessionTime(sess),
+          input: sess.inputTokens,
+          output: sess.outputTokens,
+          source: sess.source,
+          timeMs: sess.startTime ? new Date(sess.startTime).getTime() : 0
+        }));
+      }
+      bars = bars.filter((b4) => b4.input + b4.output > 0);
+      if (bars.length === 0) {
         canvas.style.display = "none";
         return;
       }
       canvas.style.display = "block";
       const dpr = window.devicePixelRatio || 1;
-      const drect = canvas.getBoundingClientRect();
-      canvas.width = drect.width * dpr;
-      canvas.height = drect.height * dpr;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
       const ctx = canvas.getContext("2d");
       ctx.scale(dpr, dpr);
-      const w5 = drect.width, h5 = drect.height;
+      const w5 = rect.width, h5 = rect.height;
       ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 44, bottom: 34, left: 44 };
+      const pad = { top: 8, right: 44, bottom: 40, left: 44 };
       const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
-      const maxIn = Math.max(...sessionData.map((s4) => s4.input)) || 1;
-      const maxOut = Math.max(...sessionData.map((s4) => s4.output)) || 1;
+      const maxIn = Math.max(...bars.map((b4) => b4.input)) || 1;
+      const maxOut = Math.max(...bars.map((b4) => b4.output)) || 1;
       const cs = getComputedStyle(document.body);
       const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
       const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
-      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      const fontStr = "9px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
       ctx.strokeStyle = gridColor;
       ctx.lineWidth = 0.5;
       for (let i4 = 0; i4 <= 4; i4++) {
@@ -1855,33 +1909,39 @@
         const val = maxOut * (4 - i4) / 4;
         if (val > 0) ctx.fillText(formatCompact(val), pad.left + chartW + 4, pad.top + chartH * i4 / 4);
       }
-      const barGap = 8;
-      const sl = sessionData.length;
-      const groupWidth = Math.max(12, (chartW - barGap * (sl + 1)) / sl);
-      const halfBar = groupWidth / 2;
-      const totalBarsW = sl * groupWidth + (sl + 1) * barGap;
-      const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap;
+      const n3 = bars.length;
+      const minT = bars[0].timeMs, maxT = bars[n3 - 1].timeMs;
+      const timeSpan = maxT - minT || 1;
+      const minBarW = 6, maxBarW = 28;
+      const barW = Math.max(minBarW, Math.min(maxBarW, chartW / (n3 * 1.6)));
+      const halfBar = barW / 2;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      sessionData.forEach((s4, i4) => {
-        const x4 = offsetX + i4 * (groupWidth + barGap);
-        const inH = s4.input / maxIn * chartH;
+      const labelEvery = Math.ceil(n3 / Math.max(1, Math.floor(chartW / 40)));
+      bars.forEach((b4, i4) => {
+        const tFrac = n3 === 1 ? 0.5 : (b4.timeMs - minT) / timeSpan;
+        const cx = pad.left + tFrac * chartW;
+        const inH = b4.input / maxIn * chartH;
         ctx.fillStyle = "#FFB74D";
-        ctx.fillRect(x4, pad.top + chartH - inH, halfBar, inH);
-        const outH = s4.output / maxOut * chartH;
+        ctx.fillRect(cx - halfBar, pad.top + chartH - inH, halfBar, inH);
+        const outH = b4.output / maxOut * chartH;
         ctx.fillStyle = "#81C784";
-        ctx.fillRect(x4 + halfBar, pad.top + chartH - outH, halfBar, outH);
-        ctx.fillStyle = textColor;
-        ctx.fillText("" + s4.session, x4 + groupWidth / 2, pad.top + chartH + 4);
+        ctx.fillRect(cx, pad.top + chartH - outH, halfBar, outH);
+        if (i4 % labelEvery === 0 || i4 === n3 - 1) {
+          ctx.fillStyle = textColor;
+          ctx.font = fontStr;
+          const lbl = useDaily ? b4.label : b4.timeMs > 0 ? new Date(b4.timeMs).toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
+          ctx.fillText(lbl, cx, pad.top + chartH + 4);
+        }
         ctx.beginPath();
-        ctx.arc(x4 + groupWidth / 2, pad.top + chartH + 18, 3, 0, Math.PI * 2);
-        ctx.fillStyle = getAgentColor(s4.source);
+        ctx.arc(cx, pad.top + chartH + 24, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = getAgentColor(b4.source);
         ctx.fill();
       });
     });
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:200px;display:block" }),
-      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
+      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 earlier \xB7 time \xB7 later \u2192" })
     ] });
   }
   function Efficiency() {
@@ -1942,11 +2002,10 @@
       (sess) => (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0).length >= 1
     );
     const totalSessionCount = sessionSummary.value?.sessions?.length ?? breakdownSessions.length;
-    const cappedChart = breakdownSessions.slice(0, CHART_MAX);
+    const cappedChart = breakdownSessions;
     return /* @__PURE__ */ u4("div", { id: "efficiency-content", children: [
       sessionsWithGrowth.length > 0 && /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:24px 0 4px;font-size:13px;color:var(--muted)", "data-tip": "Input tokens per LLM call within each session. Rising lines show context accumulation; a sharp drop indicates compaction.", children: "CONTEXT GROWTH PER SESSION" }),
-        /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-bottom:6px", children: breakdownSessions.length > CHART_MAX ? `Showing ${CHART_MAX} most recent of ${totalSessionCount} sessions` : null }),
         /* @__PURE__ */ u4(ContextGrowthChart, { sessions: cappedChart, timelines })
       ] }),
       breakdownSessions.length > 0 && /* @__PURE__ */ u4(S, { children: [
@@ -1975,7 +2034,7 @@
         ] }),
         /* @__PURE__ */ u4("table", { class: "tool-insights-table", children: [
           /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("th", { style: "text-align:center", "data-tip": "Session number", children: "#" }),
+            /* @__PURE__ */ u4("th", { style: "text-align:left;min-width:100px", "data-tip": "Session start time \u2014 click a row to focus it in Traces and Flow", children: "Time" }),
             /* @__PURE__ */ u4("th", { style: "text-align:left", "data-tip": "The user prompt that started this session", children: "Prompt" }),
             /* @__PURE__ */ u4("th", { style: "text-align:left", "data-tip": "LLM model used", children: "Model" }),
             /* @__PURE__ */ u4("th", { style: "text-align:left", "data-tip": "Conversation thread ID \u2014 groups multiple sessions from the same chat thread. Copilot and Codex report this; Claude sessions are standalone with no conversation wrapper.", children: "Conv ID" }),
@@ -2018,13 +2077,13 @@
         ] })
       ] }),
       displaySess.length > 0 && /* @__PURE__ */ u4("div", { style: "margin-top:32px", children: [
-        /* @__PURE__ */ u4("h3", { style: "margin:0 0 4px;font-size:13px;color:var(--muted)", children: "TOKEN USAGE PER SESSION" }),
+        /* @__PURE__ */ u4("h3", { style: "margin:0 0 4px;font-size:13px;color:var(--muted)", children: [
+          "TOKEN USAGE \u2014 ",
+          displaySess.length > CHART_MAX ? "DAILY TOTALS" : "PER SESSION"
+        ] }),
         displaySess.length > CHART_MAX && /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-bottom:4px", children: [
-          "Showing ",
-          CHART_MAX,
-          " of ",
           displaySess.length,
-          " sessions"
+          " sessions aggregated by day \u2014 narrow the time range to see individual sessions"
         ] }),
         /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
           /* @__PURE__ */ u4("span", { children: [
@@ -2036,7 +2095,7 @@
             " Output"
           ] })
         ] }),
-        /* @__PURE__ */ u4(SessionTokenChart, { sessions: displaySess.slice(0, CHART_MAX) })
+        /* @__PURE__ */ u4(SessionTokenChart, { sessions: displaySess })
       ] })
     ] });
   }
@@ -3886,6 +3945,37 @@
       ] }) })
     ] });
   }
+  function DayGroup({ label, sessions, focusedId }) {
+    const [collapsed, setCollapsed] = d2(false);
+    return /* @__PURE__ */ u4("div", { style: "margin-bottom:4px", children: [
+      /* @__PURE__ */ u4(
+        "div",
+        {
+          style: "display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;user-select:none;border-bottom:1px solid var(--vscode-panel-border)",
+          onClick: () => setCollapsed((c4) => !c4),
+          children: [
+            /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted)", children: collapsed ? "\u25B6" : "\u25BC" }),
+            /* @__PURE__ */ u4("span", { style: "font-size:12px;font-weight:600;color:var(--foreground)", children: label }),
+            /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted)", children: [
+              sessions.length,
+              " session",
+              sessions.length !== 1 ? "s" : ""
+            ] })
+          ]
+        }
+      ),
+      !collapsed && sessions.map((sess, idx) => /* @__PURE__ */ u4(
+        SessionBlock,
+        {
+          sess,
+          sessIdx: idx,
+          totalCount: sessions.length,
+          isFirst: idx === 0 && focusedId === null
+        },
+        sess.traceId + idx
+      ))
+    ] });
+  }
   function Traces() {
     const base = rangedSessions.value;
     const summary = sessionSummary.value;
@@ -3902,6 +3992,16 @@
     const totalLlmCalls = sessionsToShow.reduce((s4, sess) => s4 + sess.totalLlmCalls, 0);
     const totalToolCalls = sessionsToShow.reduce((s4, sess) => s4 + sess.totalToolCalls, 0);
     const totalTokens = sessionsToShow.reduce((s4, sess) => s4 + sess.inputTokens + sess.outputTokens, 0);
+    const dayGroups = [];
+    sessionsToShow.forEach((sess) => {
+      const dk = sessionDateKey(sess) || "unknown";
+      const last = dayGroups[dayGroups.length - 1];
+      if (last && last.key === dk) {
+        last.sessions.push(sess);
+      } else {
+        dayGroups.push({ key: dk, label: dk === "unknown" ? "Unknown date" : formatDayLabel(dk), sessions: [sess] });
+      }
+    });
     return /* @__PURE__ */ u4("div", { id: "summary-traces-content", children: [
       /* @__PURE__ */ u4("div", { class: "tab-stats", children: [
         /* @__PURE__ */ u4("div", { children: [
@@ -3921,19 +4021,9 @@
           " tokens"
         ] })
       ] }),
-      /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)", children: "Each agent exposes different OTEL data \u2014 some fields may be missing or estimated. See the Traces tab for raw span-level detail." }),
       /* @__PURE__ */ u4("div", { class: "waterfall", children: [
-        sessionsToShow.map((sess, idx) => /* @__PURE__ */ u4(
-          SessionBlock,
-          {
-            sess,
-            sessIdx: idx,
-            totalCount: sessionsToShow.length,
-            isFirst: idx === 0
-          },
-          sess.traceId + idx
-        )),
-        sessionsToShow.length === 0 && /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions to display" })
+        sessionsToShow.length === 0 && /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions in this time range" }),
+        dayGroups.map((group) => /* @__PURE__ */ u4(DayGroup, { label: group.label, sessions: group.sessions, focusedId }, group.key))
       ] }),
       summary.backgroundSpans?.length > 0 && /* @__PURE__ */ u4(BgSummaryBlock, { bgSpans: summary.backgroundSpans })
     ] });
@@ -4065,7 +4155,7 @@
                 getAgentSourceLabel(s4.source)
               ] }),
               /* @__PURE__ */ u4("td", { style: "padding:4px 8px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: s4.userRequest, children: s4.userRequest || /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-style:italic", children: "\u2014" }) }),
-              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;color:var(--muted);font-size:10px;white-space:nowrap", children: s4.startTime ? new Date(s4.startTime).toLocaleString() : "\u2014" }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;color:var(--muted);font-size:10px;white-space:nowrap", children: formatSessionTime(s4) }),
               /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(s4.inputTokens + s4.outputTokens) }),
               /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: formatMs(s4.durationMs) }),
               /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: s4.errors > 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--vscode-charts-red,#e57373)", children: s4.errors }) : /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2014" }) })
@@ -4395,13 +4485,13 @@
     if (sessions.length === 0) {
       return /* @__PURE__ */ u4("div", { id: "flow-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
     }
-    const allSessions = sessions.map((sess, idx) => {
-      const num = getSessionGlobalNumber(sess) || idx + 1;
+    const allSessions = sessions.map((sess) => {
+      const time = formatSessionTime(sess);
       const src = getAgentSourceLabel(sess.source);
       const turns = sess.totalLlmCalls ?? 0;
-      const tools = sess.totalToolCalls ?? 0;
+      const snippet = sess.userRequest ? sess.userRequest.length > 35 ? sess.userRequest.slice(0, 35) + "\u2026" : sess.userRequest : "";
       return {
-        label: `${num} \xB7 ${src} \xB7 ${turns} turns \xB7 ${tools} tool calls`,
+        label: snippet ? `${time} \xB7 ${src} \xB7 "${snippet}"` : `${time} \xB7 ${src} \xB7 ${turns} turns`,
         sess
       };
     });

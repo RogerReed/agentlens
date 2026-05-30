@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { rangedSessions, sessionTimelines, focusedSessionId, vscode } from '../state'
-import { getSessionGlobalNumber, getAgentSourceLabel, formatMs } from '../utils'
+import { getSessionGlobalNumber, getAgentSourceLabel, formatMs, formatSessionTime } from '../utils'
 import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry } from '../types'
 
@@ -146,13 +146,13 @@ export function Flow() {
     return <div id="flow-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
   }
 
-  const allSessions = sessions.map((sess, idx) => {
-    const num = getSessionGlobalNumber(sess) || (idx + 1)
+  const allSessions = sessions.map(sess => {
+    const time = formatSessionTime(sess)
     const src = getAgentSourceLabel(sess.source)
     const turns = sess.totalLlmCalls ?? 0
-    const tools = sess.totalToolCalls ?? 0
+    const snippet = sess.userRequest ? (sess.userRequest.length > 35 ? sess.userRequest.slice(0, 35) + '…' : sess.userRequest) : ''
     return {
-      label: `${num} · ${src} · ${turns} turns · ${tools} tool calls`,
+      label: snippet ? `${time} · ${src} · "${snippet}"` : `${time} · ${src} · ${turns} turns`,
       sess,
     }
   })

@@ -388,6 +388,44 @@ export function getAllSessionsChronological(): SessionSummaryCard[] {
   return sessionSummary.value?.sessions ?? []
 }
 
+// Human-readable session timestamp — used everywhere instead of session numbers.
+// Recent: "42m ago", "3h ago". Older: "May 29 · 14:23".
+export function formatSessionTime(sess: { startTime?: string }): string {
+  if (!sess?.startTime) return '—'
+  const d = new Date(sess.startTime)
+  if (isNaN(d.getTime())) return '—'
+  const ageMs = Date.now() - d.getTime()
+  if (ageMs < 60_000)        return 'just now'
+  if (ageMs < 3_600_000)     return `${Math.round(ageMs / 60_000)}m ago`
+  if (ageMs < 86_400_000)    return `${Math.round(ageMs / 3_600_000)}h ago`
+  if (ageMs < 7 * 86_400_000) {
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    const hhmm = d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })
+    return `${days[d.getDay()]} · ${hhmm}`
+  }
+  const mmdd = d.toLocaleDateString('en', { month: 'short', day: 'numeric' })
+  const hhmm = d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })
+  return `${mmdd} · ${hhmm}`
+}
+
+// ISO date string "YYYY-MM-DD" for a session's start time.
+export function sessionDateKey(sess: { startTime?: string }): string {
+  if (!sess?.startTime) return ''
+  const d = new Date(sess.startTime)
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10)
+}
+
+// Friendly day label for grouping sessions.
+export function formatDayLabel(isoDate: string): string {
+  const d = new Date(isoDate + 'T00:00:00')
+  const today = new Date(); today.setHours(0,0,0,0)
+  const diff = today.getTime() - d.getTime()
+  if (diff < 86_400_000)       return 'Today'
+  if (diff < 2 * 86_400_000)   return 'Yesterday'
+  if (diff < 7 * 86_400_000)   return d.toLocaleDateString('en', { weekday: 'long' })
+  return d.toLocaleDateString('en', { month: 'short', day: 'numeric', year: diff > 365 * 86_400_000 ? 'numeric' : undefined })
+}
+
 export function getSessionGlobalNumber(sess: SessionSummaryCard): number {
   const all = getAllSessionsChronological()
   if (!sess || all.length === 0) return 0

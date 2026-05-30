@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'preact/hooks'
 import { searchResults, vscode } from '../state'
-import { getAgentColor, getAgentSourceLabel, formatCompact, formatMs } from '../utils'
+import { getAgentColor, getAgentSourceLabel, formatCompact, formatMs, formatSessionTime } from '../utils'
 import type { SearchQuery } from '../types'
 
 const DATE_PRESETS: Array<{ label: string; sinceMs: number | null }> = [
@@ -134,7 +134,7 @@ export function SessionSearch() {
                       {s.userRequest || <span style="color:var(--muted);font-style:italic">—</span>}
                     </td>
                     <td style="padding:4px 8px;color:var(--muted);font-size:10px;white-space:nowrap">
-                      {s.startTime ? new Date(s.startTime).toLocaleString() : '—'}
+                      {formatSessionTime(s)}
                     </td>
                     <td style="padding:4px 8px;text-align:right">{formatCompact(s.inputTokens + s.outputTokens)}</td>
                     <td style="padding:4px 8px;text-align:right;color:var(--muted)">{formatMs(s.durationMs)}</td>
