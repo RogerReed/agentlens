@@ -6,11 +6,15 @@ import { SidebarPanel } from './sidebarPanel'
 import { DashboardPanel } from './dashboardPanel'
 import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } from './autoConfig'
 import { exportSpans, exportSpansRedacted } from './exportData'
-import { openDatabase } from './database/db'
+import { openDatabase, AgentLensDb } from './database/db'
+import { DatabaseWriter } from './database/writer'
+import { summarizeSpans } from './spanSummarizer'
 
 let collector: OtlpCollector | undefined
 let store: SessionStore | undefined
 let outputChannel: vscode.OutputChannel | undefined
+let agentLensDb: AgentLensDb | undefined
+let writer: DatabaseWriter | undefined
 
 function probePort(port: number, path: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -47,11 +51,11 @@ export async function activate(context: vscode.ExtensionContext) {
   outputChannel.appendLine('AgentLens activating...')
 
   try {
-    const db = await openDatabase(
+    agentLensDb = await openDatabase(
       context.globalStorageUri.fsPath,
       context.extensionUri.fsPath,
     )
-    context.subscriptions.push(db)
+    context.subscriptions.push(agentLensDb)
     outputChannel.appendLine('AgentLens database initialized.')
   } catch (err) {
     outputChannel.appendLine(`Failed to initialize database: ${err}`)
@@ -63,6 +67,21 @@ export async function activate(context: vscode.ExtensionContext) {
     outputChannel.appendLine(`Failed to initialize session store: ${err}`)
     vscode.window.showErrorMessage('AgentLens: Failed to initialize session store.')
     return
+  }
+
+  if (agentLensDb) {
+    writer = new DatabaseWriter(agentLensDb.raw, context.globalStorageUri, (msg) => outputChannel!.appendLine(msg))
+    context.subscriptions.push(
+      store.onUpdate((traceId) => {
+        if (!traceId || !writer) { return }
+        const { sessions } = summarizeSpans(store!.getSpans())
+        const card = sessions.find(s => s.traceId === traceId)
+        if (card) {
+          const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.toString() ?? ''
+          writer.enqueue(card, workspace)
+        }
+      })
+    )
   }
 
   // Start local OTLP receiver
@@ -139,6 +158,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('agentLens.clearSessions', () => {
       store!.clear()
+      writer?.clearAll()
       provider.refresh()
       vscode.window.showInformationMessage('AgentLens: session data cleared')
     })
@@ -283,7 +303,6 @@ async function notifySetupRequired(
 
 export async function deactivate() {
   DashboardPanel.disposePanel()
-  if (collector) {
-    await collector.stop()
-  }
+  if (collector) { await collector.stop() }
+  if (writer) { await writer.drain() }
 }

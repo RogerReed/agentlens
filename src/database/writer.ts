@@ -1,0 +1,226 @@
+import * as vscode from 'vscode'
+import type { SessionSummaryCard, TimelineEntry, EditDetail } from '../summarizers/summarizerTypes'
+
+// Strings below this length are kept inline in the DB row rather than written to a blob file.
+const BLOB_MIN_LENGTH = 512
+
+// Minimal sql.js surface needed for write operations.
+interface WriteableDb {
+  run(sql: string, params?: unknown[]): void
+  exec(sql: string): Array<{ columns: string[]; values: unknown[][] }>
+}
+
+export class DatabaseWriter {
+  private readonly pending = new Map<string, { card: SessionSummaryCard; workspace: string }>()
+  private drainPromise: Promise<void> = Promise.resolve()
+  private writing = false
+
+  constructor(
+    private readonly db: WriteableDb,
+    private readonly storageUri: vscode.Uri,
+    private readonly log: (msg: string) => void,
+  ) {}
+
+  enqueue(card: SessionSummaryCard, workspace: string): void {
+    this.pending.set(card.sessionId, { card, workspace })
+    if (!this.writing) {
+      this.drainPromise = this._drain()
+    }
+  }
+
+  async drain(): Promise<void> {
+    return this.drainPromise
+  }
+
+  clearAll(): void {
+    try {
+      // Delete order respects FK constraints (child tables first).
+      // CASCADE would handle it, but explicit order is clearer.
+      this.db.run('DELETE FROM edit_details')
+      this.db.run('DELETE FROM timeline_entries')
+      this.db.run('DELETE FROM sessions')
+    } catch (err) {
+      this.log(`DatabaseWriter.clearAll error: ${err}`)
+    }
+  }
+
+  dispose(): void {
+    void this.drain()
+  }
+
+  private async _drain(): Promise<void> {
+    this.writing = true
+    while (this.pending.size > 0) {
+      const batch = [...this.pending.entries()]
+      this.pending.clear()
+      for (const [, { card, workspace }] of batch) {
+        await this._writeOnce(card, workspace).catch(err => {
+          this.log(`DatabaseWriter write error for session ${card.sessionId}: ${err}`)
+        })
+      }
+    }
+    this.writing = false
+  }
+
+  private async _writeOnce(card: SessionSummaryCard, workspace: string): Promise<void> {
+    this.db.run('BEGIN')
+    try {
+      this._writeSessionRow(card, workspace)
+      // Delete-then-reinsert: no stable PK on timeline_entries to upsert against.
+      // CASCADE on the FK handles edit_details cleanup.
+      this.db.run('DELETE FROM timeline_entries WHERE session_id = ?', [card.sessionId])
+
+      for (let i = 0; i < card.timeline.length; i++) {
+        const entry = card.timeline[i]
+        this._writeTimelineEntry(card.sessionId, entry, i)
+        const rows = this.db.exec('SELECT last_insert_rowid()')
+        const entryId = rows[0]?.values[0]?.[0] as number ?? 0
+
+        if (entry.editDetails) {
+          for (const ed of entry.editDetails) {
+            this._writeEditDetail(entryId, ed)
+          }
+        }
+      }
+      this.db.run('COMMIT')
+    } catch (err) {
+      try { this.db.run('ROLLBACK') } catch { /* ignore rollback errors */ }
+      throw err
+    }
+
+    // Blob writes are async and intentionally outside the transaction.
+    for (const entry of card.timeline) {
+      await this._writeBlobsForEntry(entry)
+    }
+  }
+
+  private _writeSessionRow(card: SessionSummaryCard, workspace: string): void {
+    // Fields not yet present on SessionSummaryCard are noted below.
+    this.db.run(
+      `INSERT OR REPLACE INTO sessions (
+        session_id, trace_id, source, workspace, project_path, model,
+        start_time, duration_ms, turns, input_tokens, output_tokens,
+        cache_read_tokens, cache_create_tokens, cache_hit_rate,
+        total_tool_calls, total_llm_calls, errors, outcome,
+        is_sidechain, speed, user_request, tool_counts, loop_signals,
+        files_read, files_changed, files_searched, files_changed_note
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        card.sessionId,
+        card.traceId,
+        card.source,
+        workspace,
+        null,           // project_path — not yet on SessionSummaryCard
+        card.model,
+        Date.parse(card.startTime) || 0,
+        card.durationMs,
+        card.turns,
+        card.inputTokens,
+        card.outputTokens,
+        card.cacheReadTokens,
+        card.cacheCreateTokens,
+        card.cacheHitRate,
+        card.totalToolCalls,
+        card.totalLlmCalls,
+        card.errors,
+        card.outcome,
+        0,              // is_sidechain — not yet on SessionSummaryCard
+        null,           // speed — not yet on SessionSummaryCard
+        card.userRequest,
+        JSON.stringify(card.toolCounts),
+        JSON.stringify(card.loopSignals),
+        JSON.stringify(card.filesRead),
+        JSON.stringify(card.filesChanged),
+        JSON.stringify(card.filesSearched),
+        card.filesChangedNote ?? null,
+      ]
+    )
+  }
+
+  private _writeTimelineEntry(sessionId: string, entry: TimelineEntry, position: number): void {
+    const hasBlob = [entry.responseText, entry.thinking, entry.toolInput, entry.fullResult]
+      .some(v => v && v.length >= BLOB_MIN_LENGTH)
+
+    this.db.run(
+      `INSERT INTO timeline_entries (
+        session_id, span_id, position, type, label, model,
+        input_tokens, output_tokens, ttft, duration_ms, action, decision,
+        is_error, error_message, timestamp, has_blob
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        sessionId,
+        entry.spanId,
+        position,
+        entry.type,
+        entry.label,
+        entry.model ?? null,
+        entry.inputTokens ?? null,
+        entry.outputTokens ?? null,
+        entry.ttft ?? null,
+        entry.durationMs,
+        entry.action ?? null,
+        entry.decision ?? null,
+        entry.isError ? 1 : 0,
+        entry.errorMessage ?? null,
+        entry.timestamp,
+        hasBlob ? 1 : 0,
+      ]
+    )
+  }
+
+  private _writeEditDetail(timelineEntryId: number, ed: EditDetail): void {
+    const hasBlob = [ed.oldString, ed.newString, ed.content]
+      .some(v => v && v.length >= BLOB_MIN_LENGTH)
+
+    this.db.run(
+      `INSERT INTO edit_details (timeline_entry_id, file_path, tool_name, has_blob)
+       VALUES (?,?,?,?)`,
+      [timelineEntryId, ed.filePath, ed.toolName ?? null, hasBlob ? 1 : 0]
+    )
+  }
+
+  private async _writeBlobsForEntry(entry: TimelineEntry): Promise<void> {
+    const entryFields: Array<[string | undefined, string]> = [
+      [entry.responseText, `${entry.spanId}-response.txt`],
+      [entry.thinking,     `${entry.spanId}-thinking.txt`],
+      [entry.toolInput,    `${entry.spanId}-tool-input.txt`],
+      [entry.fullResult,   `${entry.spanId}-full-result.txt`],
+    ]
+    for (const [value, filename] of entryFields) {
+      if (value && value.length >= BLOB_MIN_LENGTH) {
+        await this._writeBlob(filename, value)
+      }
+    }
+
+    if (entry.editDetails) {
+      for (let i = 0; i < entry.editDetails.length; i++) {
+        const ed = entry.editDetails[i]
+        const editId = `${entry.spanId}-${i}`
+        const edFields: Array<[string | undefined, string]> = [
+          [ed.oldString,              `${editId}-old.txt`],
+          [ed.newString ?? ed.content, `${editId}-new.txt`],
+        ]
+        for (const [value, filename] of edFields) {
+          if (value && value.length >= BLOB_MIN_LENGTH) {
+            await this._writeBlob(filename, value)
+          }
+        }
+      }
+    }
+  }
+
+  private async _writeBlob(filename: string, content: string): Promise<void> {
+    const fileUri = vscode.Uri.joinPath(this.storageUri, 'blobs', filename)
+    try {
+      await vscode.workspace.fs.stat(fileUri)
+      return  // already exists; span content is immutable
+    } catch {
+      // file absent — proceed to write
+    }
+    try {
+      await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'))
+    } catch (err) {
+      this.log(`DatabaseWriter: blob write failed for ${filename}: ${err}`)
+    }
+  }
+}

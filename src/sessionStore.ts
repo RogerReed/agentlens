@@ -6,9 +6,9 @@ export type { Span, SessionSummary } from './types'
 export class SessionStore {
   private spans: Span[] = []
   private summary: SessionSummary = this.emptySummary()
-  private onUpdateCallbacks: Array<() => void> = []
+  private onUpdateCallbacks: Array<(traceId?: string) => void> = []
 
-  onUpdate(fn: () => void): { dispose(): void } {
+  onUpdate(fn: (traceId?: string) => void): { dispose(): void } {
     this.onUpdateCallbacks.push(fn)
     return { dispose: () => {
       const i = this.onUpdateCallbacks.indexOf(fn)
@@ -16,8 +16,8 @@ export class SessionStore {
     }}
   }
 
-  private notifyUpdate(): void {
-    for (const fn of this.onUpdateCallbacks) { fn() }
+  private notifyUpdate(traceId?: string): void {
+    for (const fn of this.onUpdateCallbacks) { fn(traceId) }
   }
 
   constructor(
@@ -34,7 +34,7 @@ export class SessionStore {
     this.spans.push(span)
     this.updateSummary(span)
     this.context.globalState.update('agentLens.spans', this.spans)
-    this.notifyUpdate()
+    this.notifyUpdate(span.traceId)
   }
 
   private updateSummary(span: Span) {
@@ -145,7 +145,7 @@ export class SessionStore {
     } else {
       span.attributes.push({ key, value: { stringValue: value } })
     }
-    this.notifyUpdate()
+    this.notifyUpdate(traceId)
     return true
   }
   
