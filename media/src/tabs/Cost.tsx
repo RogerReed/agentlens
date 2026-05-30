@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks'
 import { useEffect, useRef } from 'preact/hooks'
 import { displaySessions, rangedSessions, dailyStats, lifetimeStats, selectedAgentFilter, timeRange, makeTimeRange } from '../state'
 import type { TimePreset } from '../state'
-import { getAgentColor, getSessionGlobalNumber, formatCompact, getAgentSourceLabel } from '../utils'
+import { getAgentColor, getSessionGlobalNumber, formatCompact, getAgentSourceLabel, formatSessionTimeShort } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { PRICING_LAST_UPDATED } from '../pricing'
 import type { PricingMode } from '../sessionMetrics'
@@ -205,10 +205,10 @@ function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const data = sessions.map((sess, idx) => {
+    const data = sessions.map(sess => {
       const cost = calcSessionCost(sess, sessionCostMode(sess, mode))
-      return { cost: cost.totalUsd, unknown: cost.modelUnknown, session: getSessionGlobalNumber(sess) || (idx + 1), source: sess.source }
-    }).reverse()
+      return { cost: cost.totalUsd, unknown: cost.modelUnknown, label: formatSessionTimeShort(sess), source: sess.source }
+    }).reverse()  // oldest → newest left → right
 
     const maxCost = Math.max(...data.map(d => d.cost), 0.0001)
 
@@ -260,7 +260,7 @@ function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode
         ctx.fillRect(x, y, barW, barH)
       }
       ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'top'
-      ctx.fillText(String(d.session), x + barW / 2, pad.top + chartH + 4)
+      ctx.fillText(d.label, x + barW / 2, pad.top + chartH + 4)
       if (d.unknown) {
         ctx.fillStyle = '#999'; ctx.textBaseline = 'bottom'
         ctx.fillText('?', x + barW / 2, pad.top + chartH - 3)
@@ -271,7 +271,7 @@ function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode
   return (
     <>
       <canvas ref={canvasRef} style="width:100%;height:180px;display:block" />
-      <div class="heatmap-axis-label">← Session (latest to earliest) →</div>
+      <div class="heatmap-axis-label">← older · sessions · newer →</div>
     </>
   )
 }
@@ -318,11 +318,10 @@ export function Cost() {
   const claudeTotalUsd = claudeCosts.reduce((sum, c) => sum + c.cost.totalUsd, 0)
   const claudeAnyUnknown = claudeCosts.some(c => c.cost.modelUnknown)
 
-  const sessionRows = allCosts.slice().sort((a, b) => {
-    const na = getSessionGlobalNumber(a.session) ?? 0
-    const nb = getSessionGlobalNumber(b.session) ?? 0
-    return nb - na
-  })
+  // Sort newest first
+  const sessionRows = allCosts.slice().sort((a, b) =>
+    Date.parse(b.session.startTime || '0') - Date.parse(a.session.startTime || '0')
+  )
 
   const showCreditsCol = mode === 'token'
 
@@ -405,7 +404,7 @@ export function Cost() {
         <table style="width:100%;border-collapse:collapse;font-size:11px">
           <thead>
             <tr style="border-bottom:1px solid var(--vscode-panel-border);color:var(--muted);text-align:left">
-              <th style="padding:4px 8px">#</th>
+              <th style="padding:4px 8px">Time</th>
               <th style="padding:4px 8px">Agent</th>
               <th style="padding:4px 8px">Model</th>
               <th style="padding:4px 8px;text-align:right">Turns</th>
@@ -418,12 +417,12 @@ export function Cost() {
           </thead>
           <tbody>
             {sessionRows.map(({ session: s, cost }) => {
-              const num = getSessionGlobalNumber(s)
+              const num = formatSessionTimeShort(s)
               const rawInput = Math.max(0, s.inputTokens - s.cacheReadTokens - s.cacheCreateTokens)
               const isCopilot = s.source === 'copilot'
               return (
                 <tr key={s.sessionId} style="border-bottom:1px solid var(--vscode-panel-border)">
-                  <td style="padding:4px 8px;color:var(--muted)">{num}</td>
+                  <td style="padding:4px 8px;color:var(--muted);white-space:nowrap;font-size:10px">{num}</td>
                   <td style="padding:4px 8px">
                     <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor(s.source) + ';margin-right:5px;vertical-align:middle'} />
                     {getAgentSourceLabel(s.source)}

@@ -388,31 +388,54 @@ export function getAllSessionsChronological(): SessionSummaryCard[] {
   return sessionSummary.value?.sessions ?? []
 }
 
-// Absolute session timestamp to-the-second — the primary session identifier.
-// Today's sessions: "14:23:07". Older: "May 29, 14:23:07". Different year: "2025-05-29 14:23:07".
+// Canonical session timestamp: "YYYY-MM-DD HH:MM:SS" — used as the primary session identifier.
 export function formatSessionTime(sess: { startTime?: string }): string {
   if (!sess?.startTime) return '—'
   const d = new Date(sess.startTime)
   if (isNaN(d.getTime())) return '—'
-  const hms = d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-  const now = new Date()
-  if (d.getFullYear() !== now.getFullYear()) {
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${hms}`
-  }
-  if (d.toDateString() === now.toDateString()) return hms
-  const mmdd = d.toLocaleDateString('en', { month: 'short', day: 'numeric' })
-  return `${mmdd}, ${hms}`
+  return tsFormat(d)
 }
 
-// Compact timestamp for chart axis labels — no seconds, abbreviated.
+// Full ISO-like format for any Date.
+function tsFormat(d: Date): string {
+  const p = (n: number, w = 2) => String(n).padStart(w, '0')
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
+// Compact chart-axis label — drops date when within today, drops seconds for wider ranges.
 export function formatSessionTimeShort(sess: { startTime?: string }): string {
   if (!sess?.startTime) return '—'
   const d = new Date(sess.startTime)
   if (isNaN(d.getTime())) return '—'
-  const hm = d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })
+  const p = (n: number) => String(n).padStart(2, '0')
   const now = new Date()
-  if (d.toDateString() === now.toDateString()) return hm
-  return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${hm}`
+  if (d.toDateString() === now.toDateString()) return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+  return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+// Format an epoch ms value as a compact time/date label for chart axes.
+export function formatAxisTick(epochMs: number, spanMs: number): string {
+  const d = new Date(epochMs)
+  const p = (n: number) => String(n).padStart(2, '0')
+  if (spanMs < 86_400_000)         return `${p(d.getHours())}:${p(d.getMinutes())}`
+  if (spanMs < 7 * 86_400_000)     return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+  return `${p(d.getMonth()+1)}-${p(d.getDate())}`
+}
+
+// Generate 4-6 evenly-spaced tick positions for a time axis.
+export function generateTimeTicks(xMin: number, xMax: number): number[] {
+  const span = xMax - xMin
+  const intervals = [
+    60_000, 5*60_000, 10*60_000, 15*60_000, 30*60_000,
+    3600_000, 3*3600_000, 6*3600_000, 12*3600_000,
+    86_400_000, 2*86_400_000, 7*86_400_000,
+  ]
+  const target = span / 5
+  const interval = intervals.find(i => i >= target) ?? intervals[intervals.length - 1]
+  const start = Math.ceil(xMin / interval) * interval
+  const ticks: number[] = []
+  for (let t = start; t <= xMax; t += interval) ticks.push(t)
+  return ticks
 }
 
 // ISO date string "YYYY-MM-DD" for a session's start time.

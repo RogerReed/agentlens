@@ -249,11 +249,11 @@ export function App() {
   )
 }
 
-const AGENT_FILTER_OPTIONS: Array<{ value: AgentFilter; label: string }> = [
-  { value: 'all',        label: 'All' },
-  { value: 'copilot',    label: 'Copilot' },
-  { value: 'claude_code',label: 'Claude' },
-  { value: 'codex',      label: 'Codex' },
+const AGENT_FILTER_OPTIONS: Array<{ value: AgentFilter; label: string; color: string }> = [
+  { value: 'all',        label: 'All',     color: 'var(--vscode-descriptionForeground,#888)' },
+  { value: 'copilot',    label: 'Copilot', color: '#00EAFF' },
+  { value: 'claude_code',label: 'Claude',  color: '#FFB085' },
+  { value: 'codex',      label: 'Codex',   color: '#F0FF42' },
 ]
 
 function TimeRangePicker() {
@@ -317,36 +317,34 @@ function TimeRangePicker() {
       {/* Divider */}
       <span style="width:1px;height:14px;background:var(--border);margin:0 8px;flex-shrink:0" />
 
-      {/* Agent filter */}
-      <div style="display:flex;gap:1px">
-        {AGENT_FILTER_OPTIONS.map(o => (
-          <button
-            key={o.value}
-            onClick={() => { selectedAgentFilter.value = o.value }}
-            style={[
-              'padding:2px 7px;font-size:11px;cursor:pointer;border:none;border-radius:3px;transition:background 0.1s',
-              agent === o.value
-                ? 'background:var(--vscode-button-secondaryBackground,rgba(255,255,255,.12));color:var(--foreground);font-weight:600'
-                : 'background:transparent;color:var(--muted)',
-            ].join(';')}
-          >{o.label}</button>
-        ))}
+      {/* Agent filter — colored pills */}
+      <div style="display:flex;gap:4px;align-items:center">
+        {AGENT_FILTER_OPTIONS.map(o => {
+          const active = agent === o.value
+          return (
+            <button
+              key={o.value}
+              onClick={() => { selectedAgentFilter.value = o.value }}
+              style={[
+                'padding:2px 9px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;',
+                `border:1.5px solid ${o.color};`,
+                active
+                  ? `background:${o.color}33;color:${o.color};font-weight:600`
+                  : 'background:transparent;color:var(--muted)',
+              ].join('')}
+            >{o.label}</button>
+          )
+        })}
       </div>
 
-      {/* Session count badge */}
-      <span style="margin-left:8px;font-size:10px;color:var(--muted);white-space:nowrap">
-        {loading
-          ? <span style="opacity:0.6">loading…</span>
-          : isActive
-            ? <span>{count}{total && total > count ? ` of ${total}` : ''} session{count !== 1 ? 's' : ''}</span>
-            : <span>{count} session{count !== 1 ? 's' : ''}</span>}
-      </span>
+      {/* Loading indicator */}
+      {loading && <span style="margin-left:8px;font-size:10px;color:var(--muted);opacity:0.6">loading…</span>}
 
       {/* Refresh button for non-live ranges */}
-      {isActive && (
+      {isActive && !loading && (
         <button
           onClick={() => fireSearch(makeTimeRange(range.preset))}
-          style="margin-left:4px;padding:2px 5px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-radius:3px"
+          style="margin-left:6px;padding:2px 5px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-radius:3px"
           title="Refresh this time range"
         >↻</button>
       )}
