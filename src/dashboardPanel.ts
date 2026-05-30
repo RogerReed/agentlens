@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
-import { SessionStore } from './sessionStore'
 import { SidebarPanel } from './sidebarPanel'
-import { summarizeSpans } from './spanSummarizer'
+import { SessionRepository } from './sessionRepository'
 
 export class DashboardPanel {
   public static currentPanel: DashboardPanel | undefined
@@ -9,7 +8,7 @@ export class DashboardPanel {
   private disposables: vscode.Disposable[] = []
   private pendingUpdate: ReturnType<typeof setTimeout> | undefined
 
-  static show(context: vscode.ExtensionContext, store: SessionStore, sidebarProvider?: SidebarPanel) {
+  static show(context: vscode.ExtensionContext, repo: SessionRepository, sidebarProvider?: SidebarPanel) {
     if (DashboardPanel.currentPanel) {
       DashboardPanel.currentPanel.panel.reveal()
       DashboardPanel.currentPanel.update()
@@ -25,25 +24,26 @@ export class DashboardPanel {
         localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
       }
     )
-    DashboardPanel.currentPanel = new DashboardPanel(panel, context, store, sidebarProvider)
+    DashboardPanel.currentPanel = new DashboardPanel(panel, context, repo, sidebarProvider)
+  }
+
+  static setRepository(repo: SessionRepository) {
+    if (DashboardPanel.currentPanel) {
+      DashboardPanel.currentPanel.repo = repo
+      DashboardPanel.currentPanel.update()
+    }
   }
 
   static switchToTab(tab: string) {
-    if (DashboardPanel.currentPanel) {
-      DashboardPanel.currentPanel.panel.webview.postMessage({ type: 'switchTab', tab })
-    }
+    DashboardPanel.currentPanel?.panel.webview.postMessage({ type: 'switchTab', tab })
   }
 
   static sendFilter(agentFilter?: string, sessionLimit?: number) {
-    if (DashboardPanel.currentPanel) {
-      DashboardPanel.currentPanel.panel.webview.postMessage({ type: 'setFilter', agentFilter, sessionLimit })
-    }
+    DashboardPanel.currentPanel?.panel.webview.postMessage({ type: 'setFilter', agentFilter, sessionLimit })
   }
 
   static sendClearAll() {
-    if (DashboardPanel.currentPanel) {
-      DashboardPanel.currentPanel.panel.webview.postMessage({ type: 'clearAll' })
-    }
+    DashboardPanel.currentPanel?.panel.webview.postMessage({ type: 'clearAll' })
   }
 
   static disposePanel() {
@@ -53,22 +53,32 @@ export class DashboardPanel {
   private constructor(
     panel: vscode.WebviewPanel,
     private context: vscode.ExtensionContext,
-    private store: SessionStore,
+    private repo: SessionRepository,
     private sidebarProvider?: SidebarPanel
   ) {
     this.panel = panel
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables)
     this.panel.webview.html = this.getHtml()
 
-    this.panel.webview.onDidReceiveMessage(msg => {
+    this.panel.webview.onDidReceiveMessage(async msg => {
       if (msg.type === 'clearAll') {
         vscode.commands.executeCommand('agentLens.clearSessions')
         this.update()
+      } else if (msg.type === 'loadSessionDetail' && msg.sessionId) {
+        const timeline = this.repo.loadSessionTimeline(msg.sessionId as string)
+        this.panel.webview.postMessage({ type: 'sessionDetail', sessionId: msg.sessionId, timeline })
+      } else if (msg.type === 'loadBlob' && msg.spanId && msg.field) {
+        const content = await this.repo.loadBlob(
+          msg.spanId as string,
+          msg.field as 'response' | 'thinking' | 'tool-input' | 'full-result' | 'edit-old' | 'edit-new',
+          msg.editIndex as number | undefined,
+        )
+        this.panel.webview.postMessage({ type: 'blobContent', spanId: msg.spanId, field: msg.field, content })
       } else if (msg.type === 'askAI' && msg.prompt) {
         const prompt = `AgentLens detected the following efficiency issue in my workspace. Help me fix it:\n\n${msg.prompt}`
         openAIChat(prompt, msg.agent)
       } else if (msg.type === 'alert' && msg.label) {
-        handleAlertNotification(msg as { label: string; detail?: string; severity: string }, context, store, sidebarProvider)
+        handleAlertNotification(msg as { label: string; detail?: string; severity: string }, context, repo, sidebarProvider)
       } else if (msg.type === 'automation' && msg.prompt) {
         handleAutomation(msg as { label: string; writePromptsFile: boolean; agent: string; sessionTitle: string; prompt: string })
       } else if (msg.type === 'openFile' && msg.filePath) {
@@ -89,8 +99,7 @@ export class DashboardPanel {
       }
     }, null, this.disposables)
 
-    // Push updates within 300ms of new spans arriving; fall back to 10s heartbeat.
-    const pushDisposable = store.onUpdate(() => this.scheduleUpdate())
+    const pushDisposable = repo.onUpdate(() => this.scheduleUpdate())
     this.disposables.push(pushDisposable)
     const interval = setInterval(() => this.update(), 10000)
     this.disposables.push({ dispose: () => clearInterval(interval) })
@@ -105,15 +114,14 @@ export class DashboardPanel {
   }
 
   update() {
-    const spans = this.store.getSpans()
-    const summary = this.store.getSummary()
-    let sessionSummary
-    try {
-      sessionSummary = summarizeSpans(spans)
-    } catch {
-      sessionSummary = null
-    }
-    this.panel.webview.postMessage({ type: 'update', spans, summary, sessionSummary })
+    const sessions = this.repo.listSessions()
+    const summary = this.repo.store_.getSummary()
+    // Build a FullSummary-shaped object from the merged session list.
+    // timeline[] are empty here — the frontend requests them lazily via loadSessionDetail.
+    const sessionSummary = sessions.length > 0
+      ? { sessions, backgroundSpans: [], efficiency: buildEfficiency(sessions) }
+      : null
+    this.panel.webview.postMessage({ type: 'update', summary, sessionSummary })
   }
 
   private dispose() {
@@ -130,37 +138,20 @@ export class DashboardPanel {
   }
 
   private getHtml(): string {
-    const summary = this.store.getSummary()
+    const summary = this.repo.store_.getSummary()
     const cssUri = this.getWebviewUri('dashboard.css')
     const jsUri = this.getWebviewUri('dashboard.js')
     const mascotUri = this.getWebviewUri('help-mascot.png')
     const nonce = getNonce()
 
-    let sessionSummaryJson: string
-    try {
-      sessionSummaryJson = safeJsonForScript(summarizeSpans(this.store.getSpans()))
-    } catch {
-      sessionSummaryJson = 'null'
-    }
-
-    let spansJson: string
-    try {
-      spansJson = safeJsonForScript(this.store.getSpans())
-    } catch {
-      spansJson = '[]'
-    }
-
-    let toolCallsJson: string
-    try {
-      toolCallsJson = safeJsonForScript(summary.toolCalls)
-    } catch {
-      toolCallsJson = '{}'
-    }
+    const sessions = this.repo.listSessions()
+    const sessionSummary = sessions.length > 0
+      ? { sessions, backgroundSpans: [], efficiency: buildEfficiency(sessions) }
+      : null
 
     const initialData = `<script nonce="${nonce}">
-        window.__INITIAL_SPANS__ = ${spansJson};
-        window.__INITIAL_TOOL_CALLS__ = ${toolCallsJson};
-        window.__INITIAL_SESSION_SUMMARY__ = ${sessionSummaryJson};
+        window.__INITIAL_TOOL_CALLS__ = ${safeJsonForScript(summary.toolCalls)};
+        window.__INITIAL_SESSION_SUMMARY__ = ${safeJsonForScript(sessionSummary)};
         window.__MASCOT_URI__ = ${safeJsonForScript(mascotUri.toString())};
       </script>`
 
@@ -181,10 +172,34 @@ export class DashboardPanel {
   }
 }
 
+// ── Efficiency stub ───────────────────────────────────────────────────────────
+
+import type { SessionSummaryCard } from './summarizers/summarizerTypes'
+
+function buildEfficiency(sessions: SessionSummaryCard[]) {
+  const totalInput = sessions.reduce((a, s) => a + s.inputTokens, 0)
+  const totalOutput = sessions.reduce((a, s) => a + s.outputTokens, 0)
+  const totalLlm = sessions.reduce((a, s) => a + s.totalLlmCalls, 0)
+  return {
+    totalInputTokens: totalInput,
+    totalOutputTokens: totalOutput,
+    totalLlmCalls: totalLlm,
+    avgInputPerCall: totalLlm > 0 ? Math.round(totalInput / totalLlm) : 0,
+    avgTtft: 0,
+    cacheHitRate: sessions.length > 0
+      ? sessions.reduce((a, s) => a + s.cacheHitRate, 0) / sessions.length : 0,
+    toolDefWaste: 0,
+    sysInstructionWaste: 0,
+    topTokenConsumers: [],
+  }
+}
+
+// ── Alert / automation helpers (unchanged) ────────────────────────────────────
+
 async function handleAlertNotification(
   msg: { label: string; detail?: string; severity: string },
   context: vscode.ExtensionContext,
-  store: SessionStore,
+  repo: SessionRepository,
   sidebarProvider?: SidebarPanel
 ): Promise<void> {
   const text = `AgentLens: ${msg.label}${msg.detail ? ' — ' + msg.detail : ''}`
@@ -198,7 +213,7 @@ async function handleAlertNotification(
   }
   promise.then(action => {
     if (action === 'View Alerts') {
-      DashboardPanel.show(context, store, sidebarProvider)
+      DashboardPanel.show(context, repo, sidebarProvider)
       DashboardPanel.switchToTab('alerts')
     }
   })
@@ -210,7 +225,6 @@ async function openAIChat(prompt: string, agent?: string): Promise<void> {
     const cmd = ['github.copilot.chat.open', 'workbench.action.chat.open'].find(c => commands.includes(c))
     if (cmd) { vscode.commands.executeCommand(cmd, { query: prompt }); return }
   }
-  // Claude, Codex, and Copilot fallback — user explicitly clicked, so clipboard write is their intent
   await vscode.env.clipboard.writeText(prompt)
   const label = agent === 'claude_code' ? 'Claude' : agent === 'codex' ? 'Codex' : 'AI'
   vscode.window.showInformationMessage(`AgentLens: Prompt copied — paste into your ${label} session.`)
@@ -251,7 +265,6 @@ async function handleAutomation(msg: { label: string; writePromptsFile: boolean;
     return
   }
 
-  // writePromptsFile off: show notification with manual Copy Prompt button only
   const action = await vscode.window.showWarningMessage(
     `AgentLens [${msg.label}]: "${snippet}"`,
     { modal: false },
@@ -273,11 +286,9 @@ function getNonce(): string {
   return nonce
 }
 
-/** Escape JSON for safe embedding inside a <script> tag */
 function safeJsonForScript(data: unknown): string {
   return JSON.stringify(data)
     .replace(/<\//g, '<\\/')
     .replace(/<!--/g, '<\\!--')
     .replace(/\$\{/g, '\\${')
 }
-

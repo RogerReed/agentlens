@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { Span, SpanAttribute, SessionSummary } from './types'
+import { nanoToMs } from './summarizers/helpers'
 
 export type { Span, SessionSummary } from './types'
 
@@ -7,6 +8,9 @@ export class SessionStore {
   private spans: Span[] = []
   private summary: SessionSummary = this.emptySummary()
   private onUpdateCallbacks: Array<(traceId?: string) => void> = []
+  // Rolling window: spans older than this are dropped from memory once their
+  // sessions have been persisted to SQLite by the phase-2 writer.
+  private readonly SPAN_WINDOW_MS = 5 * 60 * 1000
 
   onUpdate(fn: (traceId?: string) => void): { dispose(): void } {
     this.onUpdateCallbacks.push(fn)
@@ -21,20 +25,23 @@ export class SessionStore {
   }
 
   constructor(
-    private context: vscode.ExtensionContext,
-  ) {
-    // Persist across reloads
-    const saved = context.globalState.get<Span[]>('agentLens.spans', [])
-    this.spans = saved
-    this.recomputeSummary()
-  }
+    _context: vscode.ExtensionContext,
+  ) {}
 
   addSpan(span: Span) {
     if (span.receivedAt === undefined) { span.receivedAt = Date.now() }
     this.spans.push(span)
     this.updateSummary(span)
-    this.context.globalState.update('agentLens.spans', this.spans)
+    this.trimSpans()
     this.notifyUpdate(span.traceId)
+  }
+
+  private trimSpans(): void {
+    const cutoff = Date.now() - this.SPAN_WINDOW_MS
+    this.spans = this.spans.filter(s => {
+      const ms = s.receivedAt ?? nanoToMs(s.startTime)
+      return ms === 0 || ms > cutoff
+    })
   }
 
   private updateSummary(span: Span) {
@@ -149,23 +156,9 @@ export class SessionStore {
     return true
   }
   
-  syncFromGlobalState() {
-    const saved = this.context.globalState.get<Span[]>('agentLens.spans', [])
-    if (saved.length === this.spans.length) { return }
-    this.spans = saved
-    this.recomputeSummary()
-    this.notifyUpdate()
-  }
-
   clear() {
     this.spans = []
     this.summary = this.emptySummary()
-    this.context.globalState.update('agentLens.spans', [])
-  }
-
-  private recomputeSummary() {
-    this.summary = this.emptySummary()
-    this.spans.forEach(s => this.updateSummary(s))
   }
 
   private emptySummary(): SessionSummary {

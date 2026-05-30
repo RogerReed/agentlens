@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks'
-import { displaySpans, displaySessions, vscode } from '../state'
+import { displaySessions, vscode } from '../state'
 
 function send(type: string) {
   if (vscode) {
@@ -14,7 +14,6 @@ export function Export() {
   const [redactedDone, setRedactedDone] = useState(false)
   const standalone = !!(window as { __STANDALONE__?: boolean }).__STANDALONE__
 
-  const spanCount = displaySpans.value.length
   const sessionCount = displaySessions.value.length
 
   const doExport = () => {
@@ -29,12 +28,12 @@ export function Export() {
     setTimeout(() => setRedactedDone(false), 3000)
   }
 
-  const empty = spanCount === 0
+  const empty = sessionCount === 0
 
   return (
     <div id="export-content">
       <div class="export-meta">
-        {sessionCount} session{sessionCount !== 1 ? 's' : ''} · {spanCount} span{spanCount !== 1 ? 's' : ''}
+        {sessionCount} session{sessionCount !== 1 ? 's' : ''}
         {standalone && <span class="export-meta-mode"> · browser download</span>}
         {!standalone && <span class="export-meta-mode"> · written to workspace root</span>}
       </div>

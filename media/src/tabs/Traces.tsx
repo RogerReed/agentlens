@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import {
-  displaySessions, sessionSummary,
+  displaySessions, sessionSummary, sessionTimelines, vscode,
 } from '../state'
 import {
   formatMs, formatCompact, syntaxHighlightJson, getSessionGlobalNumber,
@@ -282,7 +282,20 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
   const sessionStartMs = sess.startTime ? new Date(sess.startTime).getTime() : 0
   let sessionDur = sess.durationMs || 1
 
-  const steps: Step[] = (sess.timeline ?? []).map(entry => {
+  const timelines = sessionTimelines.value
+  const loadedTimeline = timelines[sess.sessionId]
+  const isLoading = !collapsed && loadedTimeline === undefined
+
+  const toggle = () => {
+    const opening = collapsed
+    setCollapsed(v => !v)
+    if (opening && loadedTimeline === undefined) {
+      if (vscode) vscode.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
+    }
+  }
+
+  const timeline = loadedTimeline ?? sess.timeline ?? []
+  const steps: Step[] = timeline.map(entry => {
     const entryStart = entry.timestamp ? new Date(entry.timestamp).getTime() : 0
     const offset = sessionStartMs > 0 && entryStart > 0 ? entryStart - sessionStartMs : 0
     return { entry, offsetMs: Math.max(offset, 0), durationMs: entry.durationMs || 0 }
@@ -299,7 +312,7 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
 
   return (
     <div class="wf-trace-group">
-      <div class="wf-trace-header" onClick={() => setCollapsed(v => !v)}>
+      <div class="wf-trace-header" onClick={toggle}>
         <span>
           <span class="wf-header-chevron">{collapsed ? '▶' : '▼'}</span>
           <strong>{sessionNum}</strong>{' '}
@@ -325,10 +338,16 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
       )}
       {!collapsed && (
         <div class="wf-trace-body">
-          <div class="wf-time-ruler">
-            {Array.from({ length: 6 }, (_, t) => <span key={t}>{formatMs(sessionDur * t / 5)}</span>)}
-          </div>
-          {steps.map((step, si) => <StepRow key={step.entry.spanId + si} step={step} idx={si} sessIdx={sessIdx} sessionDur={sessionDur} sessionModel={sess.model ?? ''} />)}
+          {isLoading ? (
+            <div style="padding:12px 16px;font-size:11px;color:var(--muted)">Loading timeline…</div>
+          ) : (
+            <>
+              <div class="wf-time-ruler">
+                {Array.from({ length: 6 }, (_, t) => <span key={t}>{formatMs(sessionDur * t / 5)}</span>)}
+              </div>
+              {steps.map((step, si) => <StepRow key={step.entry.spanId + si} step={step} idx={si} sessIdx={sessIdx} sessionDur={sessionDur} sessionModel={sess.model ?? ''} />)}
+            </>
+          )}
         </div>
       )}
     </div>

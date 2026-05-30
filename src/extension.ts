@@ -1,3 +1,5 @@
+import * as fs from 'fs'
+import * as path from 'path'
 import * as http from 'http'
 import * as vscode from 'vscode'
 import { OtlpCollector } from './otlpCollector'
@@ -7,7 +9,10 @@ import { DashboardPanel } from './dashboardPanel'
 import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } from './autoConfig'
 import { exportSpans, exportSpansRedacted } from './exportData'
 import { openDatabase, AgentLensDb } from './database/db'
+import { DatabaseReader, openReadonlySnapshot } from './database/reader'
 import { DatabaseWriter } from './database/writer'
+import { migrateGlobalStateToSqlite } from './database/migration'
+import { SessionRepository } from './sessionRepository'
 import { summarizeSpans } from './spanSummarizer'
 
 let collector: OtlpCollector | undefined
@@ -15,10 +20,34 @@ let store: SessionStore | undefined
 let outputChannel: vscode.OutputChannel | undefined
 let agentLensDb: AgentLensDb | undefined
 let writer: DatabaseWriter | undefined
+let repository: SessionRepository | undefined
 
-function probePort(port: number, path: string): Promise<boolean> {
+// ── Cross-window sync ────────────────────────────────────────────────────────
+
+const LAST_WRITE_FILENAME = 'last-write.json'
+
+function writeLastWriteSignal(storageUri: vscode.Uri): void {
+  try {
+    const filePath = path.join(storageUri.fsPath, LAST_WRITE_FILENAME)
+    fs.writeFileSync(filePath, JSON.stringify({ lastWriteMs: Date.now() }))
+  } catch { /* non-fatal */ }
+}
+
+function readLastWriteMs(storageUri: vscode.Uri): number {
+  try {
+    const filePath = path.join(storageUri.fsPath, LAST_WRITE_FILENAME)
+    const raw = fs.readFileSync(filePath, 'utf8')
+    return (JSON.parse(raw) as { lastWriteMs: number }).lastWriteMs ?? 0
+  } catch {
+    return 0
+  }
+}
+
+// ── Port detection ────────────────────────────────────────────────────────────
+
+function probePort(port: number, probePath: string): Promise<boolean> {
   return new Promise((resolve) => {
-    const req = http.get(`http://127.0.0.1:${port}${path}`, (res) => {
+    const req = http.get(`http://127.0.0.1:${port}${probePath}`, (res) => {
       const chunks: Buffer[] = []
       res.on('data', (chunk: Buffer) => chunks.push(chunk))
       res.on('end', () => {
@@ -45,11 +74,14 @@ async function detectPortOwner(port: number): Promise<'plugin' | 'standalone' | 
   return 'foreign'
 }
 
+// ── Activate ─────────────────────────────────────────────────────────────────
+
 export async function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel('AgentLens')
   context.subscriptions.push(outputChannel)
-  outputChannel.appendLine('AgentLens activating...')
+  outputChannel.appendLine('AgentLens activating…')
 
+  // ── Database ────────────────────────────────────────────────────────────────
   try {
     agentLensDb = await openDatabase(
       context.globalStorageUri.fsPath,
@@ -61,6 +93,7 @@ export async function activate(context: vscode.ExtensionContext) {
     outputChannel.appendLine(`Failed to initialize database: ${err}`)
   }
 
+  // ── Session store ────────────────────────────────────────────────────────────
   try {
     store = new SessionStore(context)
   } catch (err) {
@@ -69,26 +102,36 @@ export async function activate(context: vscode.ExtensionContext) {
     return
   }
 
+  // ── Writer + reader + repository ─────────────────────────────────────────────
   if (agentLensDb) {
-    writer = new DatabaseWriter(agentLensDb.raw, context.globalStorageUri, (msg) => outputChannel!.appendLine(msg))
+    const log = (msg: string) => outputChannel!.appendLine(msg)
+    writer = new DatabaseWriter(agentLensDb.raw, context.globalStorageUri, log)
+    const reader = new DatabaseReader(agentLensDb.raw, context.globalStorageUri)
+    repository = new SessionRepository(reader, writer, store)
+
+    // Run one-time migration before registering the onUpdate subscriber.
+    await migrateGlobalStateToSqlite(context, writer, log)
+
     context.subscriptions.push(
       store.onUpdate((traceId) => {
-        if (!traceId || !writer) { return }
+        if (!traceId || !writer || !repository) return
         const { sessions } = summarizeSpans(store!.getSpans())
         const card = sessions.find(s => s.traceId === traceId)
         if (card) {
           const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.toString() ?? ''
           writer.enqueue(card, workspace)
+          // After drain, save DB to disk and write the cross-window signal.
+          void writer.drain().then(() => {
+            agentLensDb?.save()
+            writeLastWriteSignal(context.globalStorageUri)
+          })
         }
       })
     )
   }
 
-  // Start local OTLP receiver
-  const port = vscode.workspace
-    .getConfiguration('agentLens')
-    .get<number>('otlpPort', 4318)
-
+  // ── Collector ────────────────────────────────────────────────────────────────
+  const port = vscode.workspace.getConfiguration('agentLens').get<number>('otlpPort', 4318)
   collector = new OtlpCollector(port, store, outputChannel)
   let collectorFailed = false
   try {
@@ -108,14 +151,13 @@ export async function activate(context: vscode.ExtensionContext) {
           `AgentLens: Port ${port} is already in use by another application. Change the agentLens.otlpPort setting to use a different port.`
         )
       }
-      // owner === 'plugin': another VSCode window has it — silent fallback, existing behavior
     } else {
       outputChannel.appendLine(`Failed to start OTLP collector on port ${port}: ${err}`)
     }
     collector = undefined
   }
 
-  // Auto-configure Copilot, Claude Code, and Codex to send traces to our collector
+  // ── Auto-configure agents ────────────────────────────────────────────────────
   const [copilotResult, claudeResult, codexResult] = await Promise.all([
     autoConfigureCopilot(port),
     autoConfigureClaudeCode(port),
@@ -141,25 +183,49 @@ export async function activate(context: vscode.ExtensionContext) {
     )
   }
 
-  // Register sidebar webview
-  const provider = new SidebarPanel(store, context.extensionUri)
+  // ── Panels ───────────────────────────────────────────────────────────────────
+  const repo = repository ?? fallbackRepository(store)
+  const provider = new SidebarPanel(repo, context.extensionUri)
+
   if (collectorFailed) {
-    const pollTimer = setInterval(() => store!.syncFromGlobalState(), 2000)
+    // Non-collector window: poll the last-write signal; refresh from DB snapshot when it changes.
+    let lastKnownWriteMs = readLastWriteMs(context.globalStorageUri)
+    const pollTimer = setInterval(() => {
+      const latest = readLastWriteMs(context.globalStorageUri)
+      if (latest > lastKnownWriteMs) {
+        lastKnownWriteMs = latest
+        // Re-open a fresh snapshot of the DB written by the collector window.
+        const snapshotReader = openReadonlySnapshot(
+          context.globalStorageUri.fsPath,
+          context.globalStorageUri,
+        )
+        if (snapshotReader && store) {
+          const snapshotWriter = writer ?? new DatabaseWriter(agentLensDb!.raw, context.globalStorageUri, () => {})
+          repository = new SessionRepository(snapshotReader, snapshotWriter, store)
+          provider.setRepository(repository)
+          DashboardPanel.setRepository(repository)
+          provider.refresh()
+        }
+      }
+    }, 2000)
     context.subscriptions.push({ dispose: () => clearInterval(pollTimer) })
   }
+
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      'agentLens.dashboard',
-      provider
-    )
+    vscode.window.registerWebviewViewProvider('agentLens.dashboard', provider)
   )
 
-  // Commands
+  // ── Commands ─────────────────────────────────────────────────────────────────
   context.subscriptions.push(
-    vscode.commands.registerCommand('agentLens.clearSessions', () => {
+    vscode.commands.registerCommand('agentLens.clearSessions', async () => {
       store!.clear()
       writer?.clearAll()
+      if (repository) {
+        await repository.clearBlobs(context.globalStorageUri)
+      }
+      await context.globalState.update('agentLens.dbMigrationVersion', 0)
       provider.refresh()
+      DashboardPanel.sendClearAll()
       vscode.window.showInformationMessage('AgentLens: session data cleared')
     })
   )
@@ -167,7 +233,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('agentLens.openDashboard', () => {
       vscode.commands.executeCommand('workbench.view.extension.agent-lens')
-      DashboardPanel.show(context, store!, provider)
+      DashboardPanel.show(context, repo, provider)
     })
   )
 
@@ -176,10 +242,9 @@ export async function activate(context: vscode.ExtensionContext) {
       const spans = store!.getSpans()
       outputChannel!.clear()
       outputChannel!.appendLine('=== AgentLens span attribute dump ===')
-      outputChannel!.appendLine(`Total spans: ${spans.length}`)
+      outputChannel!.appendLine(`Total spans in window: ${spans.length}`)
       outputChannel!.appendLine('')
 
-      // Show all unique span names
       const names = [...new Set(spans.map(s => s.name))].sort()
       outputChannel!.appendLine(`Span names seen: ${names.join(', ')}`)
       outputChannel!.appendLine('')
@@ -195,19 +260,17 @@ export async function activate(context: vscode.ExtensionContext) {
         outputChannel!.appendLine('')
       }
 
-      // For Codex: show ONE example of every span type (so we see user_prompt, conversation_starts, sse_event, etc.)
-      outputChannel!.appendLine('--- Codex span types (one example each) ---')
       const codexByType = new Map<string, typeof spans[0]>()
       for (const s of spans) {
         if (s.name.startsWith('codex.') && !codexByType.has(s.name)) codexByType.set(s.name, s)
       }
+      outputChannel!.appendLine('--- Codex span types (one example each) ---')
       for (const s of codexByType.values()) dumpSpan(s)
 
-      // For Claude: last few LLM + tool spans
-      outputChannel!.appendLine('--- Claude LLM + tool spans (last 5 each) ---')
       const claudeSpans = spans.filter(s =>
         s.name === 'claude_code.llm_request' || s.name === 'claude_code.tool' || s.name === 'claude_code.tool_result'
       ).slice(-5)
+      outputChannel!.appendLine('--- Claude LLM + tool spans (last 5 each) ---')
       for (const s of claudeSpans) dumpSpan(s)
 
       outputChannel!.show(true)
@@ -239,7 +302,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('agentLens.exportDataRedacted', () => runExport(exportSpansRedacted))
   )
 
-  // Status bar item
+  // ── Status bar ───────────────────────────────────────────────────────────────
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
   statusBar.command = 'agentLens.openDashboard'
   statusBar.tooltip = 'Open AgentLens Dashboard'
@@ -248,14 +311,11 @@ export async function activate(context: vscode.ExtensionContext) {
   function updateStatusBar() {
     if (collectorFailed) {
       statusBar.text = '$(graph) AgentLens — syncing'
-      statusBar.color = undefined
-      statusBar.backgroundColor = undefined
-      statusBar.tooltip = `AgentLens is syncing from the collector running in another window`
     } else {
       statusBar.text = '$(graph) AgentLens'
-      statusBar.color = undefined
-      statusBar.backgroundColor = undefined
     }
+    statusBar.color = undefined
+    statusBar.backgroundColor = undefined
     statusBar.show()
   }
 
@@ -263,15 +323,28 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(store.onUpdate(updateStatusBar))
 
   if (collectorFailed) {
-    outputChannel.appendLine(`AgentLens syncing — collector already running in another window`)
+    outputChannel.appendLine('AgentLens syncing — collector already running in another window')
   } else {
     vscode.window.showInformationMessage(`AgentLens active — listening on port ${port}`)
     outputChannel.appendLine(`AgentLens active — OTLP collector listening on port ${port}`)
   }
   outputChannel.show(true)
 
-  // Fire-and-forget: notification must not block plugin registration above
   notifySetupRequired(context, copilotResult.changed, claudeResult.changed, codexResult.changed)
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Minimal repository shim used when the DB is unavailable. */
+function fallbackRepository(store: SessionStore): SessionRepository {
+  const noop = {
+    run: () => {},
+    exec: () => [],
+  }
+  const noopStorageUri = vscode.Uri.file('/tmp')
+  const fakeReader = new DatabaseReader(noop, noopStorageUri)
+  const fakeWriter = new DatabaseWriter(noop, noopStorageUri, () => {})
+  return new SessionRepository(fakeReader, fakeWriter, store)
 }
 
 async function notifySetupRequired(
@@ -300,6 +373,8 @@ async function notifySetupRequired(
     vscode.commands.executeCommand('workbench.action.reloadWindow')
   }
 }
+
+// ── Deactivate ────────────────────────────────────────────────────────────────
 
 export async function deactivate() {
   DashboardPanel.disposePanel()

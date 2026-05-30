@@ -1004,712 +1004,93 @@
     if (1 === _3.push(this)) (l.requestAnimationFrame || q2)(x3);
   }
 
-  // node_modules/.pnpm/fflate@0.8.3/node_modules/fflate/esm/browser.js
-  var u8 = Uint8Array;
-  var u16 = Uint16Array;
-  var i32 = Int32Array;
-  var fleb = new u8([
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    1,
-    1,
-    1,
-    2,
-    2,
-    2,
-    2,
-    3,
-    3,
-    3,
-    3,
-    4,
-    4,
-    4,
-    4,
-    5,
-    5,
-    5,
-    5,
-    0,
-    /* unused */
-    0,
-    0,
-    /* impossible */
-    0
-  ]);
-  var fdeb = new u8([
-    0,
-    0,
-    0,
-    0,
-    1,
-    1,
-    2,
-    2,
-    3,
-    3,
-    4,
-    4,
-    5,
-    5,
-    6,
-    6,
-    7,
-    7,
-    8,
-    8,
-    9,
-    9,
-    10,
-    10,
-    11,
-    11,
-    12,
-    12,
-    13,
-    13,
-    /* unused */
-    0,
-    0
-  ]);
-  var clim = new u8([16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]);
-  var freb = function(eb, start) {
-    var b4 = new u16(31);
-    for (var i4 = 0; i4 < 31; ++i4) {
-      b4[i4] = start += 1 << eb[i4 - 1];
-    }
-    var r5 = new i32(b4[30]);
-    for (var i4 = 1; i4 < 30; ++i4) {
-      for (var j4 = b4[i4]; j4 < b4[i4 + 1]; ++j4) {
-        r5[j4] = j4 - b4[i4] << 5 | i4;
-      }
-    }
-    return { b: b4, r: r5 };
-  };
-  var _a = freb(fleb, 2);
-  var fl = _a.b;
-  var revfl = _a.r;
-  fl[28] = 258, revfl[258] = 28;
-  var _b = freb(fdeb, 0);
-  var fd = _b.b;
-  var revfd = _b.r;
-  var rev = new u16(32768);
-  for (i4 = 0; i4 < 32768; ++i4) {
-    x4 = (i4 & 43690) >> 1 | (i4 & 21845) << 1;
-    x4 = (x4 & 52428) >> 2 | (x4 & 13107) << 2;
-    x4 = (x4 & 61680) >> 4 | (x4 & 3855) << 4;
-    rev[i4] = ((x4 & 65280) >> 8 | (x4 & 255) << 8) >> 1;
-  }
-  var x4;
-  var i4;
-  var hMap = (function(cd, mb, r5) {
-    var s4 = cd.length;
-    var i4 = 0;
-    var l5 = new u16(mb);
-    for (; i4 < s4; ++i4) {
-      if (cd[i4])
-        ++l5[cd[i4] - 1];
-    }
-    var le = new u16(mb);
-    for (i4 = 1; i4 < mb; ++i4) {
-      le[i4] = le[i4 - 1] + l5[i4 - 1] << 1;
-    }
-    var co;
-    if (r5) {
-      co = new u16(1 << mb);
-      var rvb = 15 - mb;
-      for (i4 = 0; i4 < s4; ++i4) {
-        if (cd[i4]) {
-          var sv = i4 << 4 | cd[i4];
-          var r_1 = mb - cd[i4];
-          var v4 = le[cd[i4] - 1]++ << r_1;
-          for (var m4 = v4 | (1 << r_1) - 1; v4 <= m4; ++v4) {
-            co[rev[v4] >> rvb] = sv;
-          }
-        }
-      }
-    } else {
-      co = new u16(s4);
-      for (i4 = 0; i4 < s4; ++i4) {
-        if (cd[i4]) {
-          co[i4] = rev[le[cd[i4] - 1]++] >> 15 - cd[i4];
-        }
-      }
-    }
-    return co;
-  });
-  var flt = new u8(288);
-  for (i4 = 0; i4 < 144; ++i4)
-    flt[i4] = 8;
-  var i4;
-  for (i4 = 144; i4 < 256; ++i4)
-    flt[i4] = 9;
-  var i4;
-  for (i4 = 256; i4 < 280; ++i4)
-    flt[i4] = 7;
-  var i4;
-  for (i4 = 280; i4 < 288; ++i4)
-    flt[i4] = 8;
-  var i4;
-  var fdt = new u8(32);
-  for (i4 = 0; i4 < 32; ++i4)
-    fdt[i4] = 5;
-  var i4;
-  var flm = /* @__PURE__ */ hMap(flt, 9, 0);
-  var fdm = /* @__PURE__ */ hMap(fdt, 5, 0);
-  var shft = function(p5) {
-    return (p5 + 7) / 8 | 0;
-  };
-  var slc = function(v4, s4, e4) {
-    if (s4 == null || s4 < 0)
-      s4 = 0;
-    if (e4 == null || e4 > v4.length)
-      e4 = v4.length;
-    return new u8(v4.subarray(s4, e4));
-  };
-  var ec = [
-    "unexpected EOF",
-    "invalid block type",
-    "invalid length/literal",
-    "invalid distance",
-    "stream finished",
-    "no stream handler",
-    ,
-    // determined by compression function
-    "no callback",
-    "invalid UTF-8 data",
-    "extra field too long",
-    "date not in range 1980-2099",
-    "filename too long",
-    "stream finishing",
-    "invalid zip data"
-    // determined by unknown compression method
-  ];
-  var err = function(ind, msg, nt) {
-    var e4 = new Error(msg || ec[ind]);
-    e4.code = ind;
-    if (Error.captureStackTrace)
-      Error.captureStackTrace(e4, err);
-    if (!nt)
-      throw e4;
-    return e4;
-  };
-  var wbits = function(d5, p5, v4) {
-    v4 <<= p5 & 7;
-    var o4 = p5 / 8 | 0;
-    d5[o4] |= v4;
-    d5[o4 + 1] |= v4 >> 8;
-  };
-  var wbits16 = function(d5, p5, v4) {
-    v4 <<= p5 & 7;
-    var o4 = p5 / 8 | 0;
-    d5[o4] |= v4;
-    d5[o4 + 1] |= v4 >> 8;
-    d5[o4 + 2] |= v4 >> 16;
-  };
-  var hTree = function(d5, mb) {
-    var t4 = [];
-    for (var i4 = 0; i4 < d5.length; ++i4) {
-      if (d5[i4])
-        t4.push({ s: i4, f: d5[i4] });
-    }
-    var s4 = t4.length;
-    var t22 = t4.slice();
-    if (!s4)
-      return { t: et, l: 0 };
-    if (s4 == 1) {
-      var v4 = new u8(t4[0].s + 1);
-      v4[t4[0].s] = 1;
-      return { t: v4, l: 1 };
-    }
-    t4.sort(function(a4, b4) {
-      return a4.f - b4.f;
-    });
-    t4.push({ s: -1, f: 25001 });
-    var l5 = t4[0], r5 = t4[1], i0 = 0, i1 = 1, i22 = 2;
-    t4[0] = { s: -1, f: l5.f + r5.f, l: l5, r: r5 };
-    while (i1 != s4 - 1) {
-      l5 = t4[t4[i0].f < t4[i22].f ? i0++ : i22++];
-      r5 = t4[i0 != i1 && t4[i0].f < t4[i22].f ? i0++ : i22++];
-      t4[i1++] = { s: -1, f: l5.f + r5.f, l: l5, r: r5 };
-    }
-    var maxSym = t22[0].s;
-    for (var i4 = 1; i4 < s4; ++i4) {
-      if (t22[i4].s > maxSym)
-        maxSym = t22[i4].s;
-    }
-    var tr = new u16(maxSym + 1);
-    var mbt = ln(t4[i1 - 1], tr, 0);
-    if (mbt > mb) {
-      var i4 = 0, dt = 0;
-      var lft = mbt - mb, cst = 1 << lft;
-      t22.sort(function(a4, b4) {
-        return tr[b4.s] - tr[a4.s] || a4.f - b4.f;
-      });
-      for (; i4 < s4; ++i4) {
-        var i2_1 = t22[i4].s;
-        if (tr[i2_1] > mb) {
-          dt += cst - (1 << mbt - tr[i2_1]);
-          tr[i2_1] = mb;
-        } else
-          break;
-      }
-      dt >>= lft;
-      while (dt > 0) {
-        var i2_2 = t22[i4].s;
-        if (tr[i2_2] < mb)
-          dt -= 1 << mb - tr[i2_2]++ - 1;
-        else
-          ++i4;
-      }
-      for (; i4 >= 0 && dt; --i4) {
-        var i2_3 = t22[i4].s;
-        if (tr[i2_3] == mb) {
-          --tr[i2_3];
-          ++dt;
-        }
-      }
-      mbt = mb;
-    }
-    return { t: new u8(tr), l: mbt };
-  };
-  var ln = function(n3, l5, d5) {
-    return n3.s == -1 ? Math.max(ln(n3.l, l5, d5 + 1), ln(n3.r, l5, d5 + 1)) : l5[n3.s] = d5;
-  };
-  var lc = function(c4) {
-    var s4 = c4.length;
-    while (s4 && !c4[--s4])
-      ;
-    var cl = new u16(++s4);
-    var cli = 0, cln = c4[0], cls = 1;
-    var w5 = function(v4) {
-      cl[cli++] = v4;
-    };
-    for (var i4 = 1; i4 <= s4; ++i4) {
-      if (c4[i4] == cln && i4 != s4)
-        ++cls;
-      else {
-        if (!cln && cls > 2) {
-          for (; cls > 138; cls -= 138)
-            w5(32754);
-          if (cls > 2) {
-            w5(cls > 10 ? cls - 11 << 5 | 28690 : cls - 3 << 5 | 12305);
-            cls = 0;
-          }
-        } else if (cls > 3) {
-          w5(cln), --cls;
-          for (; cls > 6; cls -= 6)
-            w5(8304);
-          if (cls > 2)
-            w5(cls - 3 << 5 | 8208), cls = 0;
-        }
-        while (cls--)
-          w5(cln);
-        cls = 1;
-        cln = c4[i4];
-      }
-    }
-    return { c: cl.subarray(0, cli), n: s4 };
-  };
-  var clen = function(cf, cl) {
-    var l5 = 0;
-    for (var i4 = 0; i4 < cl.length; ++i4)
-      l5 += cf[i4] * cl[i4];
-    return l5;
-  };
-  var wfblk = function(out, pos, dat) {
-    var s4 = dat.length;
-    var o4 = shft(pos + 2);
-    out[o4] = s4 & 255;
-    out[o4 + 1] = s4 >> 8;
-    out[o4 + 2] = out[o4] ^ 255;
-    out[o4 + 3] = out[o4 + 1] ^ 255;
-    for (var i4 = 0; i4 < s4; ++i4)
-      out[o4 + i4 + 4] = dat[i4];
-    return (o4 + 4 + s4) * 8;
-  };
-  var wblk = function(dat, out, final, syms, lf, df, eb, li, bs, bl, p5) {
-    wbits(out, p5++, final);
-    ++lf[256];
-    var _a2 = hTree(lf, 15), dlt = _a2.t, mlb = _a2.l;
-    var _b2 = hTree(df, 15), ddt = _b2.t, mdb = _b2.l;
-    var _c = lc(dlt), lclt = _c.c, nlc = _c.n;
-    var _d = lc(ddt), lcdt = _d.c, ndc = _d.n;
-    var lcfreq = new u16(19);
-    for (var i4 = 0; i4 < lclt.length; ++i4)
-      ++lcfreq[lclt[i4] & 31];
-    for (var i4 = 0; i4 < lcdt.length; ++i4)
-      ++lcfreq[lcdt[i4] & 31];
-    var _e = hTree(lcfreq, 7), lct = _e.t, mlcb = _e.l;
-    var nlcc = 19;
-    for (; nlcc > 4 && !lct[clim[nlcc - 1]]; --nlcc)
-      ;
-    var flen = bl + 5 << 3;
-    var ftlen = clen(lf, flt) + clen(df, fdt) + eb;
-    var dtlen = clen(lf, dlt) + clen(df, ddt) + eb + 14 + 3 * nlcc + clen(lcfreq, lct) + 2 * lcfreq[16] + 3 * lcfreq[17] + 7 * lcfreq[18];
-    if (bs >= 0 && flen <= ftlen && flen <= dtlen)
-      return wfblk(out, p5, dat.subarray(bs, bs + bl));
-    var lm, ll, dm, dl;
-    wbits(out, p5, 1 + (dtlen < ftlen)), p5 += 2;
-    if (dtlen < ftlen) {
-      lm = hMap(dlt, mlb, 0), ll = dlt, dm = hMap(ddt, mdb, 0), dl = ddt;
-      var llm = hMap(lct, mlcb, 0);
-      wbits(out, p5, nlc - 257);
-      wbits(out, p5 + 5, ndc - 1);
-      wbits(out, p5 + 10, nlcc - 4);
-      p5 += 14;
-      for (var i4 = 0; i4 < nlcc; ++i4)
-        wbits(out, p5 + 3 * i4, lct[clim[i4]]);
-      p5 += 3 * nlcc;
-      var lcts = [lclt, lcdt];
-      for (var it = 0; it < 2; ++it) {
-        var clct = lcts[it];
-        for (var i4 = 0; i4 < clct.length; ++i4) {
-          var len = clct[i4] & 31;
-          wbits(out, p5, llm[len]), p5 += lct[len];
-          if (len > 15)
-            wbits(out, p5, clct[i4] >> 5 & 127), p5 += clct[i4] >> 12;
-        }
-      }
-    } else {
-      lm = flm, ll = flt, dm = fdm, dl = fdt;
-    }
-    for (var i4 = 0; i4 < li; ++i4) {
-      var sym = syms[i4];
-      if (sym > 255) {
-        var len = sym >> 18 & 31;
-        wbits16(out, p5, lm[len + 257]), p5 += ll[len + 257];
-        if (len > 7)
-          wbits(out, p5, sym >> 23 & 31), p5 += fleb[len];
-        var dst = sym & 31;
-        wbits16(out, p5, dm[dst]), p5 += dl[dst];
-        if (dst > 3)
-          wbits16(out, p5, sym >> 5 & 8191), p5 += fdeb[dst];
-      } else {
-        wbits16(out, p5, lm[sym]), p5 += ll[sym];
-      }
-    }
-    wbits16(out, p5, lm[256]);
-    return p5 + ll[256];
-  };
-  var deo = /* @__PURE__ */ new i32([65540, 131080, 131088, 131104, 262176, 1048704, 1048832, 2114560, 2117632]);
-  var et = /* @__PURE__ */ new u8(0);
-  var dflt = function(dat, lvl, plvl, pre, post, st) {
-    var s4 = st.z || dat.length;
-    var o4 = new u8(pre + s4 + 5 * (1 + Math.ceil(s4 / 7e3)) + post);
-    var w5 = o4.subarray(pre, o4.length - post);
-    var lst = st.l;
-    var pos = (st.r || 0) & 7;
-    if (lvl) {
-      if (pos)
-        w5[0] = st.r >> 3;
-      var opt = deo[lvl - 1];
-      var n3 = opt >> 13, c4 = opt & 8191;
-      var msk_1 = (1 << plvl) - 1;
-      var prev = st.p || new u16(32768), head = st.h || new u16(msk_1 + 1);
-      var bs1_1 = Math.ceil(plvl / 3), bs2_1 = 2 * bs1_1;
-      var hsh = function(i5) {
-        return (dat[i5] ^ dat[i5 + 1] << bs1_1 ^ dat[i5 + 2] << bs2_1) & msk_1;
-      };
-      var syms = new i32(25e3);
-      var lf = new u16(288), df = new u16(32);
-      var lc_1 = 0, eb = 0, i4 = st.i || 0, li = 0, wi = st.w || 0, bs = 0;
-      for (; i4 + 2 < s4; ++i4) {
-        var hv = hsh(i4);
-        var imod = i4 & 32767, pimod = head[hv];
-        prev[imod] = pimod;
-        head[hv] = imod;
-        if (wi <= i4) {
-          var rem = s4 - i4;
-          if ((lc_1 > 7e3 || li > 24576) && (rem > 423 || !lst)) {
-            pos = wblk(dat, w5, 0, syms, lf, df, eb, li, bs, i4 - bs, pos);
-            li = lc_1 = eb = 0, bs = i4;
-            for (var j4 = 0; j4 < 286; ++j4)
-              lf[j4] = 0;
-            for (var j4 = 0; j4 < 30; ++j4)
-              df[j4] = 0;
-          }
-          var l5 = 2, d5 = 0, ch_1 = c4, dif = imod - pimod & 32767;
-          if (rem > 2 && hv == hsh(i4 - dif)) {
-            var maxn = Math.min(n3, rem) - 1;
-            var maxd = Math.min(32767, i4);
-            var ml = Math.min(258, rem);
-            while (dif <= maxd && --ch_1 && imod != pimod) {
-              if (dat[i4 + l5] == dat[i4 + l5 - dif]) {
-                var nl = 0;
-                for (; nl < ml && dat[i4 + nl] == dat[i4 + nl - dif]; ++nl)
-                  ;
-                if (nl > l5) {
-                  l5 = nl, d5 = dif;
-                  if (nl > maxn)
-                    break;
-                  var mmd = Math.min(dif, nl - 2);
-                  var md = 0;
-                  for (var j4 = 0; j4 < mmd; ++j4) {
-                    var ti = i4 - dif + j4 & 32767;
-                    var pti = prev[ti];
-                    var cd = ti - pti & 32767;
-                    if (cd > md)
-                      md = cd, pimod = ti;
-                  }
-                }
-              }
-              imod = pimod, pimod = prev[imod];
-              dif += imod - pimod & 32767;
-            }
-          }
-          if (d5) {
-            syms[li++] = 268435456 | revfl[l5] << 18 | revfd[d5];
-            var lin = revfl[l5] & 31, din = revfd[d5] & 31;
-            eb += fleb[lin] + fdeb[din];
-            ++lf[257 + lin];
-            ++df[din];
-            wi = i4 + l5;
-            ++lc_1;
-          } else {
-            syms[li++] = dat[i4];
-            ++lf[dat[i4]];
-          }
-        }
-      }
-      for (i4 = Math.max(i4, wi); i4 < s4; ++i4) {
-        syms[li++] = dat[i4];
-        ++lf[dat[i4]];
-      }
-      pos = wblk(dat, w5, lst, syms, lf, df, eb, li, bs, i4 - bs, pos);
-      if (!lst) {
-        st.r = pos & 7 | w5[pos / 8 | 0] << 3;
-        pos -= 7;
-        st.h = head, st.p = prev, st.i = i4, st.w = wi;
-      }
-    } else {
-      for (var i4 = st.w || 0; i4 < s4 + lst; i4 += 65535) {
-        var e4 = i4 + 65535;
-        if (e4 >= s4) {
-          w5[pos / 8 | 0] = lst;
-          e4 = s4;
-        }
-        pos = wfblk(w5, pos + 1, dat.subarray(i4, e4));
-      }
-      st.i = s4;
-    }
-    return slc(o4, 0, pre + shft(pos) + post);
-  };
-  var crct = /* @__PURE__ */ (function() {
-    var t4 = new Int32Array(256);
-    for (var i4 = 0; i4 < 256; ++i4) {
-      var c4 = i4, k3 = 9;
-      while (--k3)
-        c4 = (c4 & 1 && -306674912) ^ c4 >>> 1;
-      t4[i4] = c4;
-    }
-    return t4;
-  })();
-  var crc = function() {
-    var c4 = -1;
+  // media/src/state.ts
+  function makeSetSignal() {
+    const s4 = y3(/* @__PURE__ */ new Set());
     return {
-      p: function(d5) {
-        var cr = c4;
-        for (var i4 = 0; i4 < d5.length; ++i4)
-          cr = crct[cr & 255 ^ d5[i4]] ^ cr >>> 8;
-        c4 = cr;
+      get value() {
+        return s4.value;
       },
-      d: function() {
-        return ~c4;
+      peek() {
+        return s4.peek();
+      },
+      has(item) {
+        return s4.value.has(item);
+      },
+      add(item) {
+        const n3 = new Set(s4.value);
+        n3.add(item);
+        s4.value = n3;
+      },
+      delete(item) {
+        const n3 = new Set(s4.value);
+        n3.delete(item);
+        s4.value = n3;
+      },
+      toggle(item) {
+        const n3 = new Set(s4.value);
+        n3.has(item) ? n3.delete(item) : n3.add(item);
+        s4.value = n3;
+      },
+      clear() {
+        s4.value = /* @__PURE__ */ new Set();
+      },
+      get size() {
+        return s4.value.size;
       }
     };
-  };
-  var dopt = function(dat, opt, pre, post, st) {
-    if (!st) {
-      st = { l: 1 };
-      if (opt.dictionary) {
-        var dict = opt.dictionary.subarray(-32768);
-        var newDat = new u8(dict.length + dat.length);
-        newDat.set(dict);
-        newDat.set(dat, dict.length);
-        dat = newDat;
-        st.w = dict.length;
-      }
-    }
-    return dflt(dat, opt.level == null ? 6 : opt.level, opt.mem == null ? st.l ? Math.ceil(Math.max(8, Math.min(13, Math.log(dat.length))) * 1.5) : 20 : 12 + opt.mem, pre, post, st);
-  };
-  var mrg = function(a4, b4) {
-    var o4 = {};
-    for (var k3 in a4)
-      o4[k3] = a4[k3];
-    for (var k3 in b4)
-      o4[k3] = b4[k3];
-    return o4;
-  };
-  var wbytes = function(d5, b4, v4) {
-    for (; v4; ++b4)
-      d5[b4] = v4, v4 >>>= 8;
-  };
-  function deflateSync(data, opts) {
-    return dopt(data, opts || {}, 0, 0);
   }
-  var fltn = function(d5, p5, t4, o4) {
-    for (var k3 in d5) {
-      var val = d5[k3], n3 = p5 + k3, op = o4;
-      if (Array.isArray(val))
-        op = mrg(o4, val[1]), val = val[0];
-      if (ArrayBuffer.isView(val))
-        t4[n3] = [val, op];
-      else {
-        t4[n3 += "/"] = [new u8(0), op];
-        fltn(val, n3, t4, o4);
-      }
-    }
-  };
-  var te = typeof TextEncoder != "undefined" && /* @__PURE__ */ new TextEncoder();
-  var td = typeof TextDecoder != "undefined" && /* @__PURE__ */ new TextDecoder();
-  var tds = 0;
-  try {
-    td.decode(et, { stream: true });
-    tds = 1;
-  } catch (e4) {
+  var sessionSummary = y3(window.__INITIAL_SESSION_SUMMARY__ ?? null);
+  var toolCalls = y3(window.__INITIAL_TOOL_CALLS__ ?? {});
+  var sessionTimelines = y3({});
+  var blobCache = y3({});
+  var sessionLimit = y3(10);
+  var selectedAgentFilter = y3("all");
+  var insightFilter = y3("all");
+  var activeTab = y3("efficiency");
+  var swRetainedSessions = y3([]);
+  var swLastSessionCount = y3(0);
+  var dismissedSpanIds = makeSetSignal();
+  var lastSeenTraceIds = makeSetSignal();
+  var ignoredInsightKeys = makeSetSignal();
+  var vscode = null;
+  function setVscode(api) {
+    vscode = api;
   }
-  function strToU8(str, latin1) {
-    if (latin1) {
-      var ar_1 = new u8(str.length);
-      for (var i4 = 0; i4 < str.length; ++i4)
-        ar_1[i4] = str.charCodeAt(i4);
-      return ar_1;
-    }
-    if (te)
-      return te.encode(str);
-    var l5 = str.length;
-    var ar = new u8(str.length + (str.length >> 1));
-    var ai = 0;
-    var w5 = function(v4) {
-      ar[ai++] = v4;
+  var COLORS = [
+    "#4fc3f7",
+    "#81c784",
+    "#ffb74d",
+    "#e57373",
+    "#ba68c8",
+    "#4dd0e1",
+    "#fff176",
+    "#a1887f",
+    "#90a4ae",
+    "#f06292",
+    "#aed581",
+    "#7986cb"
+  ];
+  var agentFilteredSessions = g2(() => {
+    const all = sessionSummary.value?.sessions ?? [];
+    const filter = selectedAgentFilter.value;
+    if (filter === "all") return all;
+    return all.filter((s4) => s4.source === filter);
+  });
+  var displaySessions = g2(() => {
+    const all = agentFilteredSessions.value;
+    const limit = sessionLimit.value;
+    if (limit >= all.length) return all;
+    return all.slice(all.length - limit);
+  });
+  var agentPresence = g2(() => {
+    const sessions = displaySessions.value;
+    return {
+      claude: sessions.some((s4) => s4.source === "claude_code"),
+      copilot: sessions.some((s4) => s4.source === "copilot"),
+      codex: sessions.some((s4) => s4.source === "codex")
     };
-    for (var i4 = 0; i4 < l5; ++i4) {
-      if (ai + 5 > ar.length) {
-        var n3 = new u8(ai + 8 + (l5 - i4 << 1));
-        n3.set(ar);
-        ar = n3;
-      }
-      var c4 = str.charCodeAt(i4);
-      if (c4 < 128 || latin1)
-        w5(c4);
-      else if (c4 < 2048)
-        w5(192 | c4 >> 6), w5(128 | c4 & 63);
-      else if (c4 > 55295 && c4 < 57344)
-        c4 = 65536 + (c4 & 1023 << 10) | str.charCodeAt(++i4) & 1023, w5(240 | c4 >> 18), w5(128 | c4 >> 12 & 63), w5(128 | c4 >> 6 & 63), w5(128 | c4 & 63);
-      else
-        w5(224 | c4 >> 12), w5(128 | c4 >> 6 & 63), w5(128 | c4 & 63);
-    }
-    return slc(ar, 0, ai);
-  }
-  var exfl = function(ex) {
-    var le = 0;
-    if (ex) {
-      for (var k3 in ex) {
-        var l5 = ex[k3].length;
-        if (l5 > 65535)
-          err(9);
-        le += l5 + 4;
-      }
-    }
-    return le;
-  };
-  var wzh = function(d5, b4, f5, fn, u5, c4, ce, co) {
-    var fl2 = fn.length, ex = f5.extra, col = co && co.length;
-    var exl = exfl(ex);
-    wbytes(d5, b4, ce != null ? 33639248 : 67324752), b4 += 4;
-    if (ce != null)
-      d5[b4++] = 20, d5[b4++] = f5.os;
-    d5[b4] = 20, b4 += 2;
-    d5[b4++] = f5.flag << 1 | (c4 < 0 && 8), d5[b4++] = u5 && 8;
-    d5[b4++] = f5.compression & 255, d5[b4++] = f5.compression >> 8;
-    var dt = new Date(f5.mtime == null ? Date.now() : f5.mtime), y5 = dt.getFullYear() - 1980;
-    if (y5 < 0 || y5 > 119)
-      err(10);
-    wbytes(d5, b4, y5 << 25 | dt.getMonth() + 1 << 21 | dt.getDate() << 16 | dt.getHours() << 11 | dt.getMinutes() << 5 | dt.getSeconds() >> 1), b4 += 4;
-    if (c4 != -1) {
-      wbytes(d5, b4, f5.crc);
-      wbytes(d5, b4 + 4, c4 < 0 ? -c4 - 2 : c4);
-      wbytes(d5, b4 + 8, f5.size);
-    }
-    wbytes(d5, b4 + 12, fl2);
-    wbytes(d5, b4 + 14, exl), b4 += 16;
-    if (ce != null) {
-      wbytes(d5, b4, col);
-      wbytes(d5, b4 + 6, f5.attrs);
-      wbytes(d5, b4 + 10, ce), b4 += 14;
-    }
-    d5.set(fn, b4);
-    b4 += fl2;
-    if (exl) {
-      for (var k3 in ex) {
-        var exf = ex[k3], l5 = exf.length;
-        wbytes(d5, b4, +k3);
-        wbytes(d5, b4 + 2, l5);
-        d5.set(exf, b4 + 4), b4 += 4 + l5;
-      }
-    }
-    if (col)
-      d5.set(co, b4), b4 += col;
-    return b4;
-  };
-  var wzf = function(o4, b4, c4, d5, e4) {
-    wbytes(o4, b4, 101010256);
-    wbytes(o4, b4 + 8, c4);
-    wbytes(o4, b4 + 10, c4);
-    wbytes(o4, b4 + 12, d5);
-    wbytes(o4, b4 + 16, e4);
-  };
-  function zipSync(data, opts) {
-    if (!opts)
-      opts = {};
-    var r5 = {};
-    var files = [];
-    fltn(data, "", r5, opts);
-    var o4 = 0;
-    var tot = 0;
-    for (var fn in r5) {
-      var _a2 = r5[fn], file = _a2[0], p5 = _a2[1];
-      var compression = p5.level == 0 ? 0 : 8;
-      var f5 = strToU8(fn), s4 = f5.length;
-      var com = p5.comment, m4 = com && strToU8(com), ms = m4 && m4.length;
-      var exl = exfl(p5.extra);
-      if (s4 > 65535)
-        err(11);
-      var d5 = compression ? deflateSync(file, p5) : file, l5 = d5.length;
-      var c4 = crc();
-      c4.p(file);
-      files.push(mrg(p5, {
-        size: file.length,
-        crc: c4.d(),
-        c: d5,
-        f: f5,
-        m: m4,
-        u: s4 != fn.length || m4 && com.length != ms,
-        o: o4,
-        compression
-      }));
-      o4 += 30 + s4 + exl + l5;
-      tot += 76 + 2 * (s4 + exl) + (ms || 0) + l5;
-    }
-    var out = new u8(tot + 22), oe = o4, cdl = tot - o4;
-    for (var i4 = 0; i4 < files.length; ++i4) {
-      var f5 = files[i4];
-      wzh(out, f5.o, f5, f5.f, f5.u, f5.c.length);
-      var badd = 30 + f5.f.length + exfl(f5.extra);
-      out.set(f5.c, f5.o + badd);
-      wzh(out, o4, f5, f5.f, f5.u, f5.c.length, f5.o, f5.m), o4 += 16 + badd + (f5.m ? f5.m.length : 0);
-    }
-    wzf(out, o4, files.length, cdl, oe);
-    return out;
-  }
+  });
 
   // media/src/utils.ts
   function esc(s4) {
@@ -1721,24 +1102,6 @@
   function syntaxHighlightJson(jsonStr) {
     return esc(jsonStr).replace(/("(?:\\.|[^"\\])*")\s*:/g, '<span class="json-key">$1</span>:').replace(/:\s*("(?:\\.|[^"\\])*")/g, (_m, val) => ': <span class="json-string">' + val + "</span>").replace(/:\s*(\d+(?:\.\d+)?)/g, ': <span class="json-number">$1</span>').replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>').replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
   }
-  function nanoToMs(n3) {
-    try {
-      return Number(BigInt(n3 ?? 0) / BigInt(1e6));
-    } catch {
-      return parseInt(String(n3)) / 1e6 || 0;
-    }
-  }
-  function timestampToMs(value) {
-    if (value === void 0 || value === null || value === "") return 0;
-    if (typeof value === "number") return value;
-    const raw = String(value);
-    if (/^\d+$/.test(raw)) return nanoToMs(raw);
-    const parsed = Date.parse(raw);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  function sessionStartMs(session) {
-    return timestampToMs(session.startTime);
-  }
   function formatMs(ms) {
     if (ms < 1) return "<1ms";
     if (ms < 1e3) return ms.toFixed(0) + "ms";
@@ -1748,78 +1111,6 @@
   }
   function formatCompact(n3) {
     return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(n3);
-  }
-  function getAttr(span, key) {
-    const a4 = (span.attributes ?? []).find((x4) => x4.key === key);
-    if (!a4) return null;
-    const v4 = a4.value;
-    return v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue ?? null;
-  }
-  function intAttr(attrs, key) {
-    const a4 = attrs.find((x4) => x4.key === key);
-    if (!a4) return 0;
-    return parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? 0)) || 0;
-  }
-  function getInputTokens(span) {
-    const attrs = span.attributes ?? [];
-    const genAiBase = intAttr(attrs, "gen_ai.usage.input_tokens");
-    const genAiCache = intAttr(attrs, "gen_ai.usage.cache_read.input_tokens") + intAttr(attrs, "gen_ai.usage.cache_creation.input_tokens");
-    if (genAiBase > 0 || genAiCache > 0) return genAiBase + genAiCache;
-    return intAttr(attrs, "input_tokens") + intAttr(attrs, "prompt_tokens") + intAttr(attrs, "cache_read_tokens") + intAttr(attrs, "cache_creation_tokens") + intAttr(attrs, "input_token_count") + intAttr(attrs, "cached_token_count") + intAttr(attrs, "codex.turn.token_usage.input_tokens") + intAttr(attrs, "codex.turn.token_usage.cached_input_tokens");
-  }
-  function getOutputTokens(span) {
-    const attrs = span.attributes ?? [];
-    return intAttr(attrs, "gen_ai.usage.output_tokens") || intAttr(attrs, "output_tokens") || intAttr(attrs, "completion_tokens") || intAttr(attrs, "output_token_count") + intAttr(attrs, "reasoning_token_count") || intAttr(attrs, "codex.turn.token_usage.output_tokens");
-  }
-  function getTokenCount(span) {
-    let total = 0;
-    let foundTotal = false;
-    for (const a4 of span.attributes ?? []) {
-      if (/total.?tokens/i.test(a4.key)) {
-        total = parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? a4.value.doubleValue)) || 0;
-        foundTotal = true;
-      }
-    }
-    if (foundTotal) return total;
-    return getInputTokens(span) + getOutputTokens(span);
-  }
-  function isSessionSpan(name) {
-    return name.indexOf("invoke_agent") === 0 || name === "claude_code.interaction" || name === "codex.user_prompt" || name === "codex.prompt" || name === "codex.user_message" || name === "codex.session_start";
-  }
-  function isLlmSpanName(name) {
-    return name.indexOf("chat") === 0 || name === "claude_code.llm_request" || name === "handle_responses" || name === "codex.stream_event" || name === "codex.api_request" || name === "codex.completion" || name === "codex.response" || name === "codex.sse_event";
-  }
-  function isToolSpanName(name) {
-    return name.indexOf("execute_tool") === 0 || name === "claude_code.tool" || name === "exec_command" || name.indexOf("codex.tool") === 0;
-  }
-  function inferSpanSource(span) {
-    const name = span?.name ? String(span.name) : "";
-    if (name.indexOf("claude_code.") === 0) return "claude_code";
-    if (name.indexOf("codex.") === 0) return "codex";
-    if (getCodexSessionId(span)) return "codex";
-    if (name.indexOf("invoke_agent") === 0 || name.indexOf("chat") === 0 || name.indexOf("execute_tool") === 0) return "copilot";
-    return null;
-  }
-  function getCodexSessionId(span) {
-    const explicit = getAttr(span, "codex.session.id");
-    if (explicit) return String(explicit);
-    const conversationId = getAttr(span, "thread.id") ?? getAttr(span, "thread_id") ?? getAttr(span, "conversation.id") ?? getAttr(span, "conversation_id") ?? getAttr(span, "codex.conversation.id");
-    const turnId = getAttr(span, "turn.id") ?? getAttr(span, "turn_id") ?? getAttr(span, "codex.turn.id");
-    if (conversationId && turnId) {
-      return "codex:" + String(conversationId) + ":" + String(turnId);
-    }
-    return "";
-  }
-  function spanTypeBadge(span) {
-    const n3 = (span.name ?? "").toLowerCase();
-    const otelName = String(getAttr(span, "otel.name") ?? "").toLowerCase();
-    if (getInputTokens(span) > 0 || getOutputTokens(span) > 0 || isLlmSpanName(span.name ?? "") || n3 === "handle_responses") return { label: "LLM", color: "var(--accent)" };
-    if (n3.includes("llm") || n3.includes("chat") || n3.includes("completion")) return { label: "LLM", color: "var(--accent)" };
-    if (isToolSpanName(span.name ?? "") || n3.includes("tool")) return { label: "TOOL", color: "#B8E986" };
-    if (n3.includes("agent") || n3.includes("session") || n3.includes("turn") || otelName.includes("session_task")) return { label: "AGENT", color: "#C49CFF" };
-    if (n3.includes("embed")) return { label: "EMBED", color: "#FF85A1" };
-    if (n3.includes("search") || n3.includes("retrieve")) return { label: "RAG", color: "#85E0D0" };
-    return { label: "SPAN", color: "var(--muted)" };
   }
   function getAgentSourceLabel(source) {
     if (source === "claude_code") return "Claude";
@@ -1948,108 +1239,6 @@
     if (rs === "no list") return "none";
     return rs;
   }
-
-  // media/src/state.ts
-  function makeSetSignal() {
-    const s4 = y3(/* @__PURE__ */ new Set());
-    return {
-      get value() {
-        return s4.value;
-      },
-      peek() {
-        return s4.peek();
-      },
-      has(item) {
-        return s4.value.has(item);
-      },
-      add(item) {
-        const n3 = new Set(s4.value);
-        n3.add(item);
-        s4.value = n3;
-      },
-      delete(item) {
-        const n3 = new Set(s4.value);
-        n3.delete(item);
-        s4.value = n3;
-      },
-      toggle(item) {
-        const n3 = new Set(s4.value);
-        n3.has(item) ? n3.delete(item) : n3.add(item);
-        s4.value = n3;
-      },
-      clear() {
-        s4.value = /* @__PURE__ */ new Set();
-      },
-      get size() {
-        return s4.value.size;
-      }
-    };
-  }
-  var spans = y3(window.__INITIAL_SPANS__ ?? []);
-  var sessionSummary = y3(window.__INITIAL_SESSION_SUMMARY__ ?? null);
-  var toolCalls = y3(window.__INITIAL_TOOL_CALLS__ ?? {});
-  var sessionLimit = y3(10);
-  var selectedAgentFilter = y3("all");
-  var insightFilter = y3("all");
-  var activeTab = y3("efficiency");
-  var swRetainedSessions = y3([]);
-  var swLastSessionCount = y3(0);
-  var dismissedSpanIds = makeSetSignal();
-  var lastSeenTraceIds = makeSetSignal();
-  var ignoredInsightKeys = makeSetSignal();
-  var vscode = null;
-  function setVscode(api) {
-    vscode = api;
-  }
-  var COLORS = [
-    "#4fc3f7",
-    "#81c784",
-    "#ffb74d",
-    "#e57373",
-    "#ba68c8",
-    "#4dd0e1",
-    "#fff176",
-    "#a1887f",
-    "#90a4ae",
-    "#f06292",
-    "#aed581",
-    "#7986cb"
-  ];
-  var agentFilteredSessions = g2(() => {
-    const all = sessionSummary.value?.sessions ?? [];
-    const filter = selectedAgentFilter.value;
-    if (filter === "all") return all;
-    return all.filter((s4) => s4.source === filter);
-  });
-  var displaySessions = g2(() => {
-    const all = agentFilteredSessions.value;
-    const limit = sessionLimit.value;
-    if (limit >= all.length) return all;
-    return all.slice(all.length - limit);
-  });
-  var displaySpans = g2(() => {
-    const ds = displaySessions.value;
-    if (!ds.length) {
-      const filter = selectedAgentFilter.value;
-      if (filter === "all") return spans.value;
-      return spans.value.filter((s4) => inferSpanSource(s4) === filter);
-    }
-    const traceIds = new Set(ds.map((s4) => s4.traceId).filter(Boolean));
-    if (traceIds.size === 0) {
-      const filter = selectedAgentFilter.value;
-      if (filter === "all") return spans.value;
-      return spans.value.filter((s4) => inferSpanSource(s4) === filter);
-    }
-    return spans.value.filter((s4) => traceIds.has(s4.traceId));
-  });
-  var agentPresence = g2(() => {
-    const sessions = displaySessions.value;
-    return {
-      claude: sessions.some((s4) => s4.source === "claude_code"),
-      copilot: sessions.some((s4) => s4.source === "copilot"),
-      codex: sessions.some((s4) => s4.source === "codex")
-    };
-  });
 
   // node_modules/.pnpm/preact@10.29.1/node_modules/preact/jsx-runtime/dist/jsxRuntime.module.js
   var f4 = 0;
@@ -3713,14 +2902,6 @@
   }
 
   // media/src/tabs/Tokens.tsx
-  function getOutputTokenCount(span) {
-    let output = 0;
-    (span.attributes ?? []).forEach((a4) => {
-      if (/output.?tokens|completion.?tokens/i.test(a4.key))
-        output = parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? a4.value.doubleValue)) || 0;
-    });
-    return output;
-  }
   function SessionChart({ sessions }) {
     const canvasRef = A2(null);
     y2(() => {
@@ -3729,20 +2910,9 @@
       const rect = canvas.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
       const sessionData = sessions.map((sess, idx) => {
-        const totalIn = sess.inputTokens ?? 0, totalOut = sess.outputTokens ?? 0;
-        const inputs = [], outputs = [];
-        (sess.timeline ?? []).forEach((e4) => {
-          if (e4.type === "llm" && ((e4.inputTokens ?? 0) > 0 || (e4.outputTokens ?? 0) > 0)) {
-            inputs.push(e4.inputTokens ?? 0);
-            outputs.push(e4.outputTokens ?? 0);
-          }
-        });
-        if (inputs.length === 0 && (totalIn > 0 || totalOut > 0)) {
-          inputs.push(totalIn);
-          outputs.push(totalOut);
-        }
+        const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0;
         const num = getSessionGlobalNumber(sess) || idx + 1;
-        return totalIn + totalOut > 0 ? { session: num, tokens: totalIn + totalOut, inputTokens: inputs, outputTokens: outputs, source: sess.source } : null;
+        return input + output > 0 ? { session: num, input, output, source: sess.source } : null;
       }).filter(Boolean).reverse();
       if (sessionData.length === 0) {
         canvas.style.display = "none";
@@ -3759,13 +2929,8 @@
       ctx.clearRect(0, 0, w5, h5);
       const pad = { top: 8, right: 44, bottom: 34, left: 44 };
       const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
-      const sessionTotals = sessionData.map((d5) => {
-        const input = d5.inputTokens.reduce((a4, b4) => a4 + b4, 0);
-        const output = d5.outputTokens.reduce((a4, b4) => a4 + b4, 0);
-        return { input, output, session: d5.session, source: d5.source };
-      });
-      const maxIn = Math.max(...sessionTotals.map((s4) => s4.input)) || 1;
-      const maxOut = Math.max(...sessionTotals.map((s4) => s4.output)) || 1;
+      const maxIn = Math.max(...sessionData.map((s4) => s4.input)) || 1;
+      const maxOut = Math.max(...sessionData.map((s4) => s4.output)) || 1;
       const cs = getComputedStyle(document.body);
       const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
       const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
@@ -3801,16 +2966,14 @@
       const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      sessionTotals.forEach((s4, i4) => {
+      sessionData.forEach((s4, i4) => {
         const x4 = offsetX + i4 * (groupWidth + barGap);
         const inH = s4.input / maxIn * chartH;
-        const inY = pad.top + chartH - inH;
         ctx.fillStyle = "#FFB74D";
-        ctx.fillRect(x4, inY, halfBar, inH);
+        ctx.fillRect(x4, pad.top + chartH - inH, halfBar, inH);
         const outH = s4.output / maxOut * chartH;
-        const outY = pad.top + chartH - outH;
         ctx.fillStyle = "#81C784";
-        ctx.fillRect(x4 + halfBar, outY, halfBar, outH);
+        ctx.fillRect(x4 + halfBar, pad.top + chartH - outH, halfBar, outH);
         ctx.fillStyle = textColor;
         ctx.fillText("" + s4.session, x4 + groupWidth / 2, pad.top + chartH + 4);
         ctx.beginPath();
@@ -3831,35 +2994,19 @@
     return "Agent";
   }
   function Tokens() {
-    const spans2 = displaySpans.value;
     const sessions = displaySessions.value;
-    const byName = {};
-    if (sessions.length > 0) {
-      sessions.forEach((sess) => {
-        ;
-        (sess.timeline ?? []).forEach((entry) => {
-          const tokens = (entry.inputTokens ?? 0) + (entry.outputTokens ?? 0);
-          if (tokens <= 0) {
-            return;
-          }
-          const name = entry.type === "llm" ? entry.model || `${agentLabel(sess.source)} LLM` : `${agentLabel(sess.source)} ${entry.label}`;
-          if (!byName[name]) byName[name] = { tokens: 0, count: 0 };
-          byName[name].tokens += tokens;
-          byName[name].count++;
-        });
-      });
-    } else {
-      const tokenSpans = spans2.filter((s4) => getTokenCount(s4) > 0 && !isSessionSpan(s4.name));
-      tokenSpans.forEach((s4) => {
-        if (!byName[s4.name]) byName[s4.name] = { tokens: 0, count: 0 };
-        byName[s4.name].tokens += getTokenCount(s4);
-        byName[s4.name].count++;
-      });
-    }
-    if (Object.keys(byName).length === 0) {
+    if (sessions.length === 0) {
       return /* @__PURE__ */ u4("div", { id: "tokens-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
     }
-    const _totalOutput = spans2.reduce((s4, sp) => s4 + getOutputTokenCount(sp), 0);
+    const byName = {};
+    sessions.forEach((sess) => {
+      const key = sess.model ? `${agentLabel(sess.source)}: ${sess.model}` : agentLabel(sess.source);
+      const tokens = (sess.inputTokens ?? 0) + (sess.outputTokens ?? 0);
+      if (tokens <= 0) return;
+      if (!byName[key]) byName[key] = { tokens: 0, count: 0 };
+      byName[key].tokens += tokens;
+      byName[key].count++;
+    });
     const data = Object.entries(byName).map(([name, v4]) => ({ name, ...v4 })).sort((a4, b4) => b4.tokens - a4.tokens);
     const maxTokensBar = data.length > 0 ? data[0].tokens : 1;
     return /* @__PURE__ */ u4("div", { id: "tokens-content", children: [
@@ -3877,22 +3024,21 @@
         ] }),
         /* @__PURE__ */ u4(SessionChart, { sessions })
       ] }),
-      /* @__PURE__ */ u4("h3", { style: "margin:32px 0 12px;font-size:13px;color:var(--muted)", children: "TOKENS BY SPAN TYPE" }),
+      /* @__PURE__ */ u4("h3", { style: "margin:32px 0 12px;font-size:13px;color:var(--muted)", children: "TOKENS BY MODEL / AGENT" }),
       /* @__PURE__ */ u4("div", { class: "bar-chart-container", style: "margin-top:32px", children: [
         /* @__PURE__ */ u4("div", { class: "bar-chart", children: data.slice(0, 20).map((d5) => {
           const h5 = Math.max(d5.tokens / maxTokensBar * 180, 2);
-          const label = d5.name.split("/").pop() ?? d5.name;
-          const countLabel = d5.count > 1 ? ` (${d5.count}\xD7)` : "";
+          const countLabel = d5.count > 1 ? ` (${d5.count} sessions)` : "";
           return /* @__PURE__ */ u4("div", { class: "bar-col", children: [
             /* @__PURE__ */ u4("div", { class: "bar-value", children: d5.tokens.toLocaleString() }),
             /* @__PURE__ */ u4("div", { class: "bar-rect", style: "height:" + h5 + "px", title: `${d5.name}: ${d5.tokens.toLocaleString()} tokens${countLabel}` }),
             /* @__PURE__ */ u4("div", { class: "bar-label", children: [
-              label,
+              d5.name,
               countLabel
             ] })
           ] }, d5.name);
         }) }),
-        /* @__PURE__ */ u4("div", { class: "axis-label", children: "Token consumption by operation type (top 20, aggregated)" })
+        /* @__PURE__ */ u4("div", { class: "axis-label", children: "Token consumption by model (aggregated across sessions)" })
       ] })
     ] });
   }
@@ -4267,119 +3413,55 @@
       const ctx = canvas.getContext("2d");
       ctx.scale(dpr, dpr);
       const w5 = rect.width, h5 = rect.height;
-      ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 44, bottom: 34, left: 44 };
+      const pad = { top: 8, right: 12, bottom: 34, left: 56 };
       const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
       const maxTtft = Math.max(...barData.map((d5) => d5.ttft)) || 1;
       const cs = getComputedStyle(document.body);
-      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
       const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
       const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
-      ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 0.5;
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const y5 = pad.top + chartH * i4 / 4;
-        ctx.beginPath();
-        ctx.moveTo(pad.left, y5);
-        ctx.lineTo(pad.left + chartW, y5);
-        ctx.stroke();
-      }
-      ctx.fillStyle = textColor;
       ctx.font = fontStr;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillStyle = textColor;
+      const barW = Math.max(8, (chartW - 4 * (barData.length + 1)) / barData.length);
+      barData.forEach((d5, i4) => {
+        const x4 = pad.left + i4 * (barW + 4);
+        const barH = d5.ttft / maxTtft * chartH;
+        ctx.fillStyle = "#4fc3f7";
+        ctx.fillRect(x4, pad.top + chartH - barH, barW, barH);
+        ctx.fillStyle = textColor;
+        ctx.fillText("" + d5.session, x4 + barW / 2, pad.top + chartH + 4);
+      });
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
       for (let i4 = 0; i4 <= 4; i4++) {
         const val = maxTtft * (4 - i4) / 4;
-        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
+        ctx.fillText(val > 1e3 ? (val / 1e3).toFixed(1) + "s" : val.toFixed(0) + "ms", pad.left - 4, pad.top + chartH * i4 / 4);
       }
-      const barGap = 8;
-      const sl = barData.length;
-      const barWidth = Math.max(12, (chartW - barGap * (sl + 1)) / sl);
-      const totalBarsW = sl * barWidth + (sl + 1) * barGap;
-      const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      barData.forEach((d5, i4) => {
-        const x4 = offsetX + i4 * (barWidth + barGap);
-        const barH = d5.ttft / maxTtft * chartH;
-        const barY = pad.top + chartH - barH;
-        ctx.fillStyle = getAgentColor(d5.source);
-        ctx.fillRect(x4, barY, barWidth, barH);
-        ctx.fillStyle = textColor;
-        ctx.font = fontStr;
-        ctx.fillText("" + d5.session, x4 + barWidth / 2, pad.top + chartH + 4);
-      });
     });
     return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:200px;display:block" }),
+      /* @__PURE__ */ u4("canvas", { ref: canvasRef, id: "ttft-chart", style: "width:100%;height:160px;display:block" }),
       /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
     ] });
   }
   function Latency() {
-    const spans2 = displaySpans.value;
     const sessions = displaySessions.value;
-    if (spans2.length === 0) {
+    if (sessions.length === 0) {
       return /* @__PURE__ */ u4("div", { id: "latency-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
     }
-    let displayGroups;
-    if (sessions.length === 0) {
-      displayGroups = [{ label: "1", spans: spans2 }];
-    } else {
-      displayGroups = sessions.map((sess, idx) => ({
-        label: "" + (getSessionGlobalNumber(sess) || idx + 1),
-        source: sess.source,
-        spans: spans2.filter((s4) => s4.traceId === sess.traceId)
-      }));
-    }
-    displayGroups.reverse();
-    if (displayGroups.length > 20) displayGroups = displayGroups.slice(0, 20);
-    const nameSet = /* @__PURE__ */ new Set();
-    spans2.forEach((s4) => nameSet.add(s4.name.split("/")[0] ?? s4.name));
-    let names = Array.from(nameSet);
-    names.sort((a4, b4) => {
-      const aA = isSessionSpan(a4) ? 0 : 1;
-      const bA = isSessionSpan(b4) ? 0 : 1;
-      if (aA !== bA) return aA - bA;
-      return a4.localeCompare(b4);
-    });
-    names = names.filter(
-      (name) => displayGroups.some((g4) => g4.spans.some((s4) => {
-        const sName = s4.name.split("/")[0] ?? s4.name;
-        if (sName !== name) return false;
-        return nanoToMs(s4.endTime) - nanoToMs(s4.startTime) > 0;
-      }))
-    );
-    const grid = {};
-    let maxDur = 0;
-    names.forEach((name) => {
-      grid[name] = displayGroups.map((g4) => {
-        let best = 0;
-        g4.spans.forEach((s4) => {
-          const sName = s4.name.split("/")[0] ?? s4.name;
-          if (sName === name) {
-            const dur = nanoToMs(s4.endTime) - nanoToMs(s4.startTime);
-            if (dur > best) best = dur;
-          }
-        });
-        if (best > maxDur) maxDur = best;
-        return best;
-      });
-    });
-    maxDur = maxDur || 1;
-    const slowest = names.map((name) => ({ name, dur: Math.max(...grid[name]) })).filter((x4) => x4.dur > 0).sort((a4, b4) => b4.dur - a4.dur);
-    const _consistentlySlow = slowest.filter((s4) => {
-      const allDurs = grid[s4.name].filter((d5) => d5 > 0);
-      if (allDurs.length < 2) return false;
-      const avg = allDurs.reduce((sum, d5) => sum + d5, 0) / allDurs.length;
-      return avg > maxDur * 0.5;
-    });
+    const displayGroups = sessions.slice().reverse().slice(0, 20).map((sess, idx) => ({
+      label: "" + (getSessionGlobalNumber(sess) || idx + 1),
+      source: sess.source,
+      durationMs: sess.durationMs
+    }));
+    const maxDur = Math.max(...displayGroups.map((g4) => g4.durationMs)) || 1;
     const sessionsWithTtft = sessions.filter((s4) => (s4.timeline ?? []).some((e4) => e4.type === "llm" && (e4.ttft ?? 0) > 0));
     return /* @__PURE__ */ u4("div", { id: "latency-content", children: [
       sessionsWithTtft.length > 0 && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:0 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Time to first token per session, broken out by agent. Each dot is one session. A rising trend indicates model load or growing context is increasing response start latency.", children: "TIME TO FIRST TOKEN" }),
+        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:0 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Average time to first token per session.", children: "TIME TO FIRST TOKEN" }),
         /* @__PURE__ */ u4(TtftChart, { sessions })
       ] }),
-      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", children: "SPAN DURATION HEATMAP" }),
+      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", children: "SESSION DURATION" }),
       /* @__PURE__ */ u4("div", { class: "heatmap", children: [
         /* @__PURE__ */ u4("table", { style: "border-collapse:collapse", children: [
           /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
@@ -4389,23 +3471,22 @@
               g4.source && /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getAgentDotHtml(g4.source) } })
             ] }) }, gi))
           ] }) }),
-          /* @__PURE__ */ u4("tbody", { children: names.map((name) => /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("td", { class: "heatmap-row-label", children: name }),
-            grid[name].map((dur, idx) => {
-              const intensity = dur / maxDur;
+          /* @__PURE__ */ u4("tbody", { children: /* @__PURE__ */ u4("tr", { children: [
+            /* @__PURE__ */ u4("td", { class: "heatmap-row-label", children: "Session" }),
+            displayGroups.map((g4, idx) => {
+              const intensity = g4.durationMs / maxDur;
               const r5 = Math.round(79 + intensity * 176);
-              const g4 = Math.round(195 - intensity * 130);
+              const gr = Math.round(195 - intensity * 130);
               const bl = Math.round(247 - intensity * 180);
-              const bg = dur > 0 ? `rgb(${r5},${g4},${bl})` : "transparent";
-              return /* @__PURE__ */ u4("td", { style: "text-align:center;width:32px;min-width:32px;padding:2px 4px", children: /* @__PURE__ */ u4("div", { class: "heatmap-cell", style: "background:" + bg, children: dur > 0 && /* @__PURE__ */ u4("span", { class: "htip", children: [
-                name,
-                " session ",
-                displayGroups[idx].label,
+              const bg = g4.durationMs > 0 ? `rgb(${r5},${gr},${bl})` : "transparent";
+              return /* @__PURE__ */ u4("td", { style: "text-align:center;width:32px;min-width:32px;padding:2px 4px", children: /* @__PURE__ */ u4("div", { class: "heatmap-cell", style: "background:" + bg, children: g4.durationMs > 0 && /* @__PURE__ */ u4("span", { class: "htip", children: [
+                "Session ",
+                g4.label,
                 ": ",
-                formatMs(dur)
+                formatMs(g4.durationMs)
               ] }) }) }, idx);
             })
-          ] }, name)) })
+          ] }) })
         ] }),
         /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" }),
         /* @__PURE__ */ u4("div", { class: "heatmap-legend", children: [
@@ -4668,11 +3749,22 @@
     const [promptExpanded, setPromptExpanded] = d2(false);
     const isLongPrompt = (sess.userRequest?.length ?? 0) > 100;
     const sessionNum = getSessionGlobalNumber(sess) || totalCount - sessIdx;
-    const sessionStartMs2 = sess.startTime ? new Date(sess.startTime).getTime() : 0;
+    const sessionStartMs = sess.startTime ? new Date(sess.startTime).getTime() : 0;
     let sessionDur = sess.durationMs || 1;
-    const steps = (sess.timeline ?? []).map((entry) => {
+    const timelines = sessionTimelines.value;
+    const loadedTimeline = timelines[sess.sessionId];
+    const isLoading = !collapsed && loadedTimeline === void 0;
+    const toggle = () => {
+      const opening = collapsed;
+      setCollapsed((v4) => !v4);
+      if (opening && loadedTimeline === void 0) {
+        if (vscode) vscode.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
+      }
+    };
+    const timeline = loadedTimeline ?? sess.timeline ?? [];
+    const steps = timeline.map((entry) => {
       const entryStart = entry.timestamp ? new Date(entry.timestamp).getTime() : 0;
-      const offset = sessionStartMs2 > 0 && entryStart > 0 ? entryStart - sessionStartMs2 : 0;
+      const offset = sessionStartMs > 0 && entryStart > 0 ? entryStart - sessionStartMs : 0;
       return { entry, offsetMs: Math.max(offset, 0), durationMs: entry.durationMs || 0 };
     });
     if (steps.length > 0) {
@@ -4683,7 +3775,7 @@
     const errorCount = sess.errors || 0;
     const outcomeLabel = sess.outcome === "text_response" ? "Responded" : sess.outcome === "tool_calls" ? "Tool calls" : null;
     return /* @__PURE__ */ u4("div", { class: "wf-trace-group", children: [
-      /* @__PURE__ */ u4("div", { class: "wf-trace-header", onClick: () => setCollapsed((v4) => !v4), children: [
+      /* @__PURE__ */ u4("div", { class: "wf-trace-header", onClick: toggle, children: [
         /* @__PURE__ */ u4("span", { children: [
           /* @__PURE__ */ u4("span", { class: "wf-header-chevron", children: collapsed ? "\u25B6" : "\u25BC" }),
           /* @__PURE__ */ u4("strong", { children: sessionNum }),
@@ -4717,10 +3809,10 @@
         ] })
       ] }),
       promptExpanded && /* @__PURE__ */ u4("div", { style: "padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word", children: sess.userRequest }),
-      !collapsed && /* @__PURE__ */ u4("div", { class: "wf-trace-body", children: [
+      !collapsed && /* @__PURE__ */ u4("div", { class: "wf-trace-body", children: isLoading ? /* @__PURE__ */ u4("div", { style: "padding:12px 16px;font-size:11px;color:var(--muted)", children: "Loading timeline\u2026" }) : /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("div", { class: "wf-time-ruler", children: Array.from({ length: 6 }, (_4, t4) => /* @__PURE__ */ u4("span", { children: formatMs(sessionDur * t4 / 5) }, t4)) }),
         steps.map((step, si) => /* @__PURE__ */ u4(StepRow, { step, idx: si, sessIdx, sessionDur, sessionModel: sess.model ?? "" }, step.entry.spanId + si))
-      ] })
+      ] }) })
     ] });
   }
   function Traces() {
@@ -5784,66 +4876,31 @@
   }
 
   // media/src/tabs/Tools.tsx
-  function getInputTokenCount(span) {
-    let input = 0;
-    (span?.attributes ?? []).forEach((a4) => {
-      if (/input.?tokens|prompt.?tokens/i.test(a4.key))
-        input = parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? a4.value.doubleValue)) || 0;
-    });
-    return input;
-  }
-  function getOutputTokenCount2(span) {
-    let output = 0;
-    (span?.attributes ?? []).forEach((a4) => {
-      if (/output.?tokens|completion.?tokens/i.test(a4.key))
-        output = parseInt(String(a4.value.intValue ?? a4.value.stringValue ?? a4.value.doubleValue)) || 0;
-    });
-    return output;
-  }
   function Tools() {
-    const spans2 = displaySpans.value;
     const sessions = displaySessions.value;
-    const traceSourceMap = {};
-    sessions.forEach((sess) => {
-      if (sess.traceId && sess.source) traceSourceMap[sess.traceId] = sess.source;
-    });
+    if (sessions.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "tools-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+    }
     const counts = {};
-    const toolTokens = {};
-    const toolDurations = {};
     const toolErrors = {};
     const toolAgents = {};
-    spans2.forEach((s4) => {
-      if (s4.name?.includes("tool")) {
-        const name = s4.name;
-        counts[name] = (counts[name] ?? 0) + 1;
-        if (!toolTokens[name]) toolTokens[name] = { input: 0, output: 0 };
-        toolTokens[name].input += getInputTokenCount(s4);
-        toolTokens[name].output += getOutputTokenCount2(s4);
-        if (!toolDurations[name]) toolDurations[name] = [];
-        const dur = nanoToMs(s4.endTime) - nanoToMs(s4.startTime);
-        if (dur > 0) toolDurations[name].push(dur);
-        if (s4.status?.code === 2) toolErrors[name] = (toolErrors[name] ?? 0) + 1;
-        const src = s4.traceId && traceSourceMap[s4.traceId] || inferSpanSource(s4) || null;
-        if (src) {
-          if (!toolAgents[name]) toolAgents[name] = {};
-          toolAgents[name][src] = true;
-        }
+    sessions.forEach((sess) => {
+      Object.entries(sess.toolCounts ?? {}).forEach(([tool, count]) => {
+        counts[tool] = (counts[tool] ?? 0) + count;
+        if (!toolAgents[tool]) toolAgents[tool] = {};
+        toolAgents[tool][sess.source] = true;
+      });
+      if (sess.errors > 0) {
+        Object.keys(sess.toolCounts ?? {}).forEach((tool) => {
+          toolErrors[tool] = toolErrors[tool] ?? 0;
+        });
       }
     });
     const entries = Object.entries(counts).sort((a4, b4) => b4[1] - a4[1]);
     if (entries.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "tools-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
+      return /* @__PURE__ */ u4("div", { id: "tools-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No tool calls recorded yet" }) });
     }
     const total = entries.reduce((sum, e4) => sum + e4[1], 0);
-    const _totalErrors = entries.reduce((s4, e4) => s4 + (toolErrors[e4[0]] ?? 0), 0);
-    const _failedTools = entries.filter((e4) => (toolErrors[e4[0]] ?? 0) > 0);
-    const _mostUsed = entries[0];
-    const mostTokens = entries.slice().sort((a4, b4) => {
-      const tA = toolTokens[a4[0]] ? toolTokens[a4[0]].input + toolTokens[a4[0]].output : 0;
-      const tB = toolTokens[b4[0]] ? toolTokens[b4[0]].input + toolTokens[b4[0]].output : 0;
-      return tB - tA;
-    })[0];
-    const _mostTokVal = mostTokens && toolTokens[mostTokens[0]] ? toolTokens[mostTokens[0]].input + toolTokens[mostTokens[0]].output : 0;
     const r5 = 80, cx = 100, cy = 100, sw = 30;
     const angleOffset = -Math.PI / 2;
     let currentAngle = angleOffset;
@@ -5861,7 +4918,6 @@
       currentAngle += sliceAngle;
       return { name: e4[0], count: e4[1], pct, color, startA, endA: currentAngle };
     });
-    let grandErrors = 0;
     return /* @__PURE__ */ u4("div", { id: "tools-content", children: [
       /* @__PURE__ */ u4("h3", { style: "margin:0 0 16px;font-size:13px;color:var(--muted)", children: "TOOL CALL DISTRIBUTION" }),
       /* @__PURE__ */ u4("div", { class: "donut-container", children: [
@@ -5884,34 +4940,30 @@
           ] })
         ] }, sl.name)) })
       ] }),
-      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", children: "TOOL TOKEN USAGE & PERFORMANCE" }),
+      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", children: "TOOL CALL BREAKDOWN" }),
       /* @__PURE__ */ u4("table", { class: "tool-insights-table", children: [
         /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
           /* @__PURE__ */ u4("th", { children: "Tool" }),
           /* @__PURE__ */ u4("th", { children: "Calls" }),
-          /* @__PURE__ */ u4("th", { children: "Errors" }),
-          /* @__PURE__ */ u4("th", { children: "Avg Duration" })
+          /* @__PURE__ */ u4("th", { children: "% of Total" }),
+          /* @__PURE__ */ u4("th", { children: "Agents" })
         ] }) }),
         /* @__PURE__ */ u4("tbody", { children: entries.map(([name, callCount]) => {
-          const durations = toolDurations[name] ?? [];
-          const errCount = toolErrors[name] ?? 0;
-          grandErrors += errCount;
-          const avgDur = durations.length > 0 ? durations.reduce((s4, d5) => s4 + d5, 0) / durations.length : 0;
           const agents = toolAgents[name] ? Object.keys(toolAgents[name]) : [];
           return /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("td", { children: [
-              agents.map((a4) => /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + getAgentColor(a4) + ";vertical-align:middle;margin-right:4px", title: getAgentSourceLabel(a4) }, a4)),
-              name
-            ] }),
+            /* @__PURE__ */ u4("td", { children: name }),
             /* @__PURE__ */ u4("td", { class: "right", children: callCount }),
-            /* @__PURE__ */ u4("td", { style: "text-align:right" + (errCount > 0 ? ";color:var(--error)" : ""), children: errCount }),
-            /* @__PURE__ */ u4("td", { class: "right", children: avgDur > 0 ? formatMs(avgDur) : "\u2014" })
+            /* @__PURE__ */ u4("td", { class: "right", children: [
+              (callCount / total * 100).toFixed(1),
+              "%"
+            ] }),
+            /* @__PURE__ */ u4("td", { children: agents.map((a4) => /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + getAgentColor(a4) + ";vertical-align:middle;margin-right:4px", title: getAgentSourceLabel(a4) }, a4)) })
           ] }, name);
         }) }),
         /* @__PURE__ */ u4("tfoot", { children: /* @__PURE__ */ u4("tr", { children: [
           /* @__PURE__ */ u4("td", { children: /* @__PURE__ */ u4("strong", { children: "Total" }) }),
           /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: total }) }),
-          /* @__PURE__ */ u4("td", { style: "text-align:right" + (grandErrors > 0 ? ";color:var(--error)" : ""), children: /* @__PURE__ */ u4("strong", { children: grandErrors }) }),
+          /* @__PURE__ */ u4("td", {}),
           /* @__PURE__ */ u4("td", {})
         ] }) })
       ] })
@@ -5919,63 +4971,90 @@
   }
 
   // media/src/tabs/Errors.tsx
-  function ErrorItem({ span, source }) {
+  function requestTimeline(sessionId) {
+    if (vscode) {
+      vscode.postMessage({ type: "loadSessionDetail", sessionId });
+    }
+  }
+  function ErrorEntry({ entry }) {
     const [open, setOpen] = d2(false);
-    const st = nanoToMs(span.startTime);
-    const en = nanoToMs(span.endTime);
-    const dur = en - st;
-    const badge = spanTypeBadge(span);
-    const statusMsg = span.status?.message ?? "";
-    const dotColor = source ? getAgentColor(source) : null;
-    const detailLines = [
-      { k: "Span Name", v: span.name ?? "\u2014" },
-      { k: "Span ID", v: span.spanId ?? "\u2014" },
-      { k: "Trace ID", v: span.traceId ?? "\u2014" },
-      ...span.parentSpanId ? [{ k: "Parent Span ID", v: span.parentSpanId }] : [],
-      { k: "Start Time", v: st > 0 ? new Date(st).toISOString() : "\u2014" },
-      { k: "End Time", v: en > 0 ? new Date(en).toISOString() : "\u2014" },
-      { k: "Duration", v: dur > 0 ? formatMs(dur) : "\u2014" },
-      ...(span.attributes ?? []).map((a4) => {
-        const v4 = a4.value;
-        const display = v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue;
-        return { k: a4.key, v: String(display ?? JSON.stringify(v4)) };
-      })
-    ];
-    return /* @__PURE__ */ u4("div", { class: clsx_default("error-item", { open }), children: [
-      /* @__PURE__ */ u4("div", { class: "error-item-header", onClick: () => setOpen((o4) => !o4), "data-error-id": span.spanId, children: [
+    return /* @__PURE__ */ u4("div", { class: "error-item", style: "margin-left:12px;margin-bottom:4px", children: [
+      /* @__PURE__ */ u4("div", { class: "error-item-header", onClick: () => setOpen((o4) => !o4), style: "cursor:pointer", children: [
         /* @__PURE__ */ u4("span", { class: "error-chevron", children: open ? "\u25BC" : "\u25B6" }),
-        /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + badge.color + ";color:#000", children: badge.label }),
-        /* @__PURE__ */ u4("span", { class: "error-name", children: [
-          dotColor && /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + dotColor + ";vertical-align:middle;margin-right:4px", title: source ? getAgentSourceLabel(source) : "" }),
-          span.name
-        ] }),
-        /* @__PURE__ */ u4("span", { class: "error-dur", children: formatMs(dur) }),
-        st > 0 && /* @__PURE__ */ u4("span", { class: "error-time", children: new Date(st).toLocaleTimeString() })
+        /* @__PURE__ */ u4("span", { style: "font-size:11px;font-weight:600", children: entry.label }),
+        entry.durationMs > 0 && /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-left:8px", children: [
+          entry.durationMs,
+          "ms"
+        ] })
       ] }),
-      /* @__PURE__ */ u4("div", { class: clsx_default("error-detail", { open }), children: [
-        statusMsg && /* @__PURE__ */ u4("div", { class: "error-message", children: statusMsg }),
-        detailLines.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
-          /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
-          /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
-        ] }, dl.k))
+      open && entry.errorMessage && /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "padding-left:20px;margin-top:4px", children: [
+        /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: "Message" }),
+        /* @__PURE__ */ u4("span", { class: "wf-detail-val", style: "color:var(--error)", children: entry.errorMessage })
+      ] }),
+      open && entry.timestamp && /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "padding-left:20px", children: [
+        /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: "Time" }),
+        /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: entry.timestamp })
+      ] })
+    ] });
+  }
+  function SessionErrorGroup({ sess }) {
+    const [open, setOpen] = d2(false);
+    const timelines = sessionTimelines.value;
+    const timeline = timelines[sess.sessionId];
+    const errorEntries = timeline?.filter((e4) => e4.isError) ?? [];
+    const dotColor = getAgentColor(sess.source);
+    const toggle = () => {
+      if (!open && !timeline) {
+        requestTimeline(sess.sessionId);
+      }
+      setOpen((o4) => !o4);
+    };
+    return /* @__PURE__ */ u4("div", { class: "error-item", style: "margin-bottom:8px", children: [
+      /* @__PURE__ */ u4("div", { class: "error-item-header", onClick: toggle, style: "cursor:pointer", children: [
+        /* @__PURE__ */ u4("span", { class: "error-chevron", children: open ? "\u25BC" : "\u25B6" }),
+        /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + dotColor + ";margin-right:6px;vertical-align:middle", title: getAgentSourceLabel(sess.source) }),
+        /* @__PURE__ */ u4("span", { class: "error-name", children: sess.userRequest || "[session]" }),
+        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--error);margin-left:auto;white-space:nowrap", children: [
+          sess.errors,
+          " error",
+          sess.errors !== 1 ? "s" : ""
+        ] }),
+        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-left:8px", children: [
+          "#",
+          getSessionGlobalNumber(sess) || sess.sessionId.slice(0, 8)
+        ] })
+      ] }),
+      open && /* @__PURE__ */ u4("div", { style: "padding-top:4px", children: [
+        !timeline && /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding-left:20px", children: "Loading timeline\u2026" }),
+        timeline && errorEntries.length === 0 && /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding-left:20px", children: "No individual error entries found in timeline." }),
+        errorEntries.map((e4, i4) => /* @__PURE__ */ u4(ErrorEntry, { entry: e4 }, e4.spanId + i4))
       ] })
     ] });
   }
   function Errors() {
-    const spans2 = displaySpans.value;
     const sessions = displaySessions.value;
-    const traceSourceMap = {};
-    sessions.forEach((sess) => {
-      if (sess.traceId && sess.source) traceSourceMap[sess.traceId] = sess.source;
-    });
-    const errorSpans = spans2.filter((s4) => s4.status?.code === 2).sort((a4, b4) => nanoToMs(b4.startTime) - nanoToMs(a4.startTime));
-    if (errorSpans.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "errors-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No errors recorded" }) });
+    const errorSessions = sessions.filter((s4) => s4.errors > 0);
+    if (sessions.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "errors-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
     }
-    return /* @__PURE__ */ u4("div", { id: "errors-content", children: /* @__PURE__ */ u4("div", { class: "error-list", children: errorSpans.map((s4) => {
-      const src = s4.traceId && traceSourceMap[s4.traceId] || inferSpanSource(s4) || null;
-      return /* @__PURE__ */ u4(ErrorItem, { span: s4, source: src }, s4.spanId);
-    }) }) });
+    if (errorSessions.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "errors-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No errors recorded in the current session window" }) });
+    }
+    return /* @__PURE__ */ u4("div", { id: "errors-content", children: [
+      /* @__PURE__ */ u4("div", { class: "tab-stats", style: "margin-bottom:12px", children: [
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val err", children: errorSessions.reduce((a4, s4) => a4 + s4.errors, 0) }),
+          " total errors"
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: errorSessions.length }),
+          " session",
+          errorSessions.length !== 1 ? "s" : "",
+          " affected"
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: "errors-list", children: errorSessions.map((sess) => /* @__PURE__ */ u4(SessionErrorGroup, { sess }, sess.sessionId)) })
+    ] });
   }
 
   // media/src/tabs/Export.tsx
@@ -5990,7 +5069,6 @@
     const [rawDone, setRawDone] = d2(false);
     const [redactedDone, setRedactedDone] = d2(false);
     const standalone = !!window.__STANDALONE__;
-    const spanCount = displaySpans.value.length;
     const sessionCount = displaySessions.value.length;
     const doExport = () => {
       send("exportSessionData");
@@ -6002,16 +5080,12 @@
       setRedactedDone(true);
       setTimeout(() => setRedactedDone(false), 3e3);
     };
-    const empty = spanCount === 0;
+    const empty = sessionCount === 0;
     return /* @__PURE__ */ u4("div", { id: "export-content", children: [
       /* @__PURE__ */ u4("div", { class: "export-meta", children: [
         sessionCount,
         " session",
         sessionCount !== 1 ? "s" : "",
-        " \xB7 ",
-        spanCount,
-        " span",
-        spanCount !== 1 ? "s" : "",
         standalone && /* @__PURE__ */ u4("span", { class: "export-meta-mode", children: " \xB7 browser download" }),
         !standalone && /* @__PURE__ */ u4("span", { class: "export-meta-mode", children: " \xB7 written to workspace root" })
       ] }),
@@ -7298,115 +6372,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     { id: "export", label: "Export", primary: true, title: "Export raw or redacted OTEL span data as JSON files." },
     { id: "help", label: "Help", primary: true, title: "Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard." }
   ];
-  function fillMissingClaudeSessions(summary, allSpans) {
-    if (!summary) return null;
-    const sessionTraceIds = new Set(summary.sessions.map((s4) => s4.traceId).filter(Boolean));
-    const claudeTraceMap = {};
-    for (const span of allSpans) {
-      if (!span.traceId || sessionTraceIds.has(span.traceId)) continue;
-      if (span.name !== "claude_code.llm_request" && span.name !== "claude_code.tool") continue;
-      if (!claudeTraceMap[span.traceId]) claudeTraceMap[span.traceId] = [];
-      claudeTraceMap[span.traceId].push(span);
-    }
-    const traceIds = Object.keys(claudeTraceMap);
-    if (traceIds.length === 0) return summary;
-    const attrStr = (span, key) => {
-      const a4 = (span.attributes ?? []).find((x4) => x4.key === key);
-      return String(a4?.value?.stringValue ?? a4?.value?.intValue ?? a4?.value?.doubleValue ?? "");
-    };
-    const attrInt = (span, key) => {
-      const a4 = (span.attributes ?? []).find((x4) => x4.key === key);
-      return parseInt(String(a4?.value?.intValue ?? a4?.value?.stringValue ?? 0)) || 0;
-    };
-    const newSessions = traceIds.map((traceId) => {
-      const traceSpans = claudeTraceMap[traceId];
-      const llmSpans = traceSpans.filter((s4) => s4.name === "claude_code.llm_request");
-      const toolSpans = traceSpans.filter((s4) => s4.name === "claude_code.tool");
-      const allSorted = [...traceSpans].sort((a4, b4) => (a4.startTime ?? "0") < (b4.startTime ?? "0") ? -1 : 1);
-      let inputTokens = 0, outputTokens = 0, cacheReadTokens = 0, cacheCreateTokens = 0;
-      let model = "";
-      for (const s4 of llmSpans) {
-        inputTokens += attrInt(s4, "input_tokens");
-        outputTokens += attrInt(s4, "output_tokens");
-        cacheReadTokens += attrInt(s4, "cache_read_tokens");
-        cacheCreateTokens += attrInt(s4, "cache_creation_tokens");
-        const m4 = attrStr(s4, "gen_ai.request.model") || attrStr(s4, "model");
-        if (m4) model = m4;
-      }
-      const totalInput = inputTokens + cacheReadTokens + cacheCreateTokens;
-      const timeline = [...llmSpans, ...toolSpans].sort((a4, b4) => (a4.startTime ?? "0") < (b4.startTime ?? "0") ? -1 : 1).map((s4) => {
-        const st = nanoToMs(s4.startTime), en = nanoToMs(s4.endTime);
-        const dur = Math.max(en - st, 0);
-        if (s4.name === "claude_code.llm_request") {
-          const inTok = attrInt(s4, "input_tokens") + attrInt(s4, "cache_read_tokens") + attrInt(s4, "cache_creation_tokens");
-          const llmModel = attrStr(s4, "gen_ai.request.model") || attrStr(s4, "model");
-          const stopReason = attrStr(s4, "stop_reason");
-          return {
-            type: "llm",
-            spanId: s4.spanId,
-            label: llmModel || "LLM",
-            model: llmModel,
-            inputTokens: inTok,
-            outputTokens: attrInt(s4, "output_tokens"),
-            ttft: attrInt(s4, "ttft_ms"),
-            durationMs: dur,
-            action: stopReason === "tool_use" ? "called tools" : stopReason === "end_turn" ? "text response" : stopReason || "unknown",
-            isError: s4.status?.code === 2,
-            errorMessage: s4.status?.code === 2 ? s4.status?.message || void 0 : void 0,
-            timestamp: st > 0 ? new Date(st).toISOString() : ""
-          };
-        } else {
-          const toolName2 = attrStr(s4, "tool_name") || s4.name;
-          return {
-            type: "tool",
-            spanId: s4.spanId,
-            label: toolName2,
-            durationMs: dur,
-            toolInput: attrStr(s4, "tool_input") || attrStr(s4, "input") || void 0,
-            isError: s4.status?.code === 2,
-            errorMessage: s4.status?.code === 2 ? s4.status?.message || void 0 : void 0,
-            timestamp: st > 0 ? new Date(st).toISOString() : ""
-          };
-        }
-      });
-      const toolCounts = {};
-      for (const s4 of toolSpans) {
-        const tn = attrStr(s4, "tool_name") || s4.name;
-        toolCounts[tn] = (toolCounts[tn] || 0) + 1;
-      }
-      const startMs = nanoToMs(allSorted[0]?.startTime);
-      const endMs = nanoToMs(allSorted[allSorted.length - 1]?.endTime);
-      return {
-        sessionId: `synth-${traceId.slice(0, 12)}`,
-        traceId,
-        source: "claude_code",
-        userRequest: "[session in progress]",
-        model,
-        turns: llmSpans.length,
-        inputTokens: totalInput,
-        outputTokens,
-        cacheReadTokens,
-        cacheCreateTokens,
-        cacheHitRate: totalInput > 0 ? cacheReadTokens / totalInput : 0,
-        durationMs: endMs - startMs,
-        startTime: startMs > 0 ? new Date(startMs).toISOString() : "",
-        filesRead: [],
-        filesSearched: [],
-        filesChanged: [],
-        filesChangedNote: "Session in progress \u2014 file changes will appear when the interaction completes.",
-        toolCounts,
-        totalToolCalls: toolSpans.length,
-        totalLlmCalls: llmSpans.length,
-        errors: traceSpans.filter((s4) => s4.status?.code === 2).length,
-        outcome: "unknown",
-        timeline,
-        backgroundSpans: [],
-        loopSignals: []
-      };
-    });
-    const combined = [...summary.sessions, ...newSessions].sort((a4, b4) => sessionStartMs(a4) - sessionStartMs(b4));
-    return { ...summary, sessions: combined };
-  }
   function ActivePanel() {
     const tab = normalizeTabId(activeTab.value);
     switch (tab) {
@@ -7449,86 +6414,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   }
   function App() {
     y2(() => {
-      const exportHandler = (e4) => {
-        const type = e4.data?.type;
-        if (type !== "exportSessionData" && type !== "exportSessionDataRedacted") return;
-        if (!window.__STANDALONE__) return;
-        const redact = type === "exportSessionDataRedacted";
-        const allSpans = spans.value;
-        const sessions = displaySessions.value;
-        const _now = /* @__PURE__ */ new Date();
-        const _pad = (n3) => n3.toString().padStart(2, "0");
-        const timestamp = `${_now.getFullYear()}${_pad(_now.getMonth() + 1)}${_pad(_now.getDate())}_${_pad(_now.getHours())}${_pad(_now.getMinutes())}${_pad(_now.getSeconds())}`;
-        const prefix = redact ? "export_redacted" : "export";
-        const REDACT_CONTENT = /* @__PURE__ */ new Set([
-          "gen_ai.prompt",
-          "gen_ai.completion",
-          "llm.prompts",
-          "llm.completions",
-          "tool_input",
-          "tool_result",
-          "user_prompt",
-          "system_prompt",
-          "input",
-          "output"
-        ]);
-        const REDACT_PII = /* @__PURE__ */ new Set([
-          "user.id",
-          "user.name",
-          "user.email",
-          "user.username",
-          "enduser.id",
-          "enduser.name",
-          "enduser.email",
-          "organization.id",
-          "organization.name",
-          "github.copilot.user",
-          "github.user"
-        ]);
-        const shouldRedact = (key) => REDACT_CONTENT.has(key) || REDACT_PII.has(key) || key.endsWith(".content") || key.includes("prompt") || key.includes("tool_input") || key.includes("tool_result") || key.startsWith("user.") || key.startsWith("enduser.") || key.startsWith("organization.");
-        const traceAgent = {};
-        for (const s4 of sessions) {
-          const agent = s4.source === "claude_code" ? "claude" : s4.source || "unknown";
-          if (s4.traceId) traceAgent[s4.traceId] = agent;
-        }
-        const groups = {};
-        for (const span of allSpans) {
-          const agent = traceAgent[span.traceId];
-          if (!agent) continue;
-          const attrs = Array.isArray(span.attributes) ? span.attributes : [];
-          const rawPath = attrs.find((a4) => a4.key === "_agentlens.collector_path")?.value?.stringValue || "";
-          const endpoint = rawPath ? rawPath.replace(/^\//, "").replace(/\//g, "-") : "main";
-          const key = `${endpoint}__${agent}`;
-          if (!groups[key]) groups[key] = [];
-          const exportSpan = redact ? { ...span, attributes: attrs.map((a4) => shouldRedact(a4.key) ? { key: a4.key, value: { stringValue: "[redacted]" } } : a4) } : span;
-          groups[key].push(exportSpan);
-        }
-        const triggerDownload = (blob2, filename) => {
-          const url = URL.createObjectURL(blob2);
-          const a4 = document.createElement("a");
-          a4.href = url;
-          a4.download = filename;
-          document.body.appendChild(a4);
-          a4.click();
-          setTimeout(() => {
-            document.body.removeChild(a4);
-            URL.revokeObjectURL(url);
-          }, 100);
-        };
-        const groupEntries = Object.entries(groups);
-        if (groupEntries.length === 0) return;
-        const files = {};
-        for (const [key, groupSpans] of groupEntries) {
-          const [endpoint, agent] = key.split("__");
-          files[`${prefix}_${agent}_${endpoint}_${timestamp}.json`] = strToU8(JSON.stringify(groupSpans, null, 2));
-        }
-        const blob = new Blob([zipSync(files)], { type: "application/zip" });
-        triggerDownload(blob, `agentlens_${prefix}_${timestamp}.zip`);
-      };
-      window.addEventListener("message", exportHandler);
-      return () => window.removeEventListener("message", exportHandler);
-    }, []);
-    y2(() => {
       let tipEl = null;
       function show(e4) {
         const target = e4.target.closest("[data-tip]");
@@ -7567,21 +6452,12 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       };
     }, []);
     y2(() => {
-      if (spans.value.length > 0) {
-        const supplemented = fillMissingClaudeSessions(sessionSummary.value, spans.value);
-        if (supplemented) sessionSummary.value = supplemented;
-      }
-    }, []);
-    y2(() => {
       let initialLoadDone = false;
       const handler = (e4) => {
         const msg = e4.data;
         if (msg.type === "update") {
-          spans.value = msg.spans ?? [];
           if (msg.summary?.toolCalls) toolCalls.value = msg.summary.toolCalls;
-          const incomingSummary = msg.sessionSummary ?? sessionSummary.value;
-          const supplemented = fillMissingClaudeSessions(incomingSummary, spans.value);
-          if (supplemented) sessionSummary.value = supplemented;
+          sessionSummary.value = msg.sessionSummary ?? sessionSummary.value;
           if (!initialLoadDone) {
             initialLoadDone = true;
             setTimeout(() => {
@@ -7600,6 +6476,13 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
               }
             }, 0);
           }
+        } else if (msg.type === "sessionDetail" && msg.sessionId) {
+          sessionTimelines.value = { ...sessionTimelines.value, [msg.sessionId]: msg.timeline ?? [] };
+        } else if (msg.type === "blobContent" && msg.spanId && msg.field) {
+          const key = `${msg.spanId}:${msg.field}`;
+          if (msg.content != null) {
+            blobCache.value = { ...blobCache.value, [key]: msg.content };
+          }
         } else if (msg.type === "switchTab" && msg.tab) {
           activeTab.value = normalizeTabId(msg.tab);
         } else if (msg.type === "setFilter") {
@@ -7615,9 +6498,10 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             if (sel) sel.value = String(limit);
           }
         } else if (msg.type === "clearAll") {
-          spans.value = [];
           toolCalls.value = {};
           sessionSummary.value = null;
+          sessionTimelines.value = {};
+          blobCache.value = {};
           swRetainedSessions.value = [];
           swLastSessionCount.value = 0;
           dismissedSpanIds.clear();
