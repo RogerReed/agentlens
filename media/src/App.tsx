@@ -6,9 +6,12 @@ import {
   selectedAgentFilter, sessionLimit, activeTab,
   sessionTimelines, blobCache,
   dailyStats, lifetimeStats, burnRateData, searchResults,
+  focusedSessionId,
   vscode, displaySessions,
 } from './state'
 import type { TimelineEntry, AgentFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
+import { getAgentColor, getAgentSourceLabel, getSessionGlobalNumber, formatMs } from './utils'
+import { calcSessionCost, fmtUsd } from './sessionMetrics'
 
 // Tab components
 import { Efficiency } from './tabs/Efficiency'
@@ -197,6 +200,7 @@ export function App() {
         lifetimeStats.value = null
         burnRateData.value = null
         searchResults.value = null
+        focusedSessionId.value = null
       }
     }
     window.addEventListener('message', handler)
@@ -227,12 +231,50 @@ export function App() {
         <MoreDropdown />
       </div>
 
+      <FocusedSessionBar />
       <div class="panel active">
         <ActivePanel />
       </div>
 
       <img id="mascot-img" src="" alt="AgentLens mascot" style="display:none" />
     </>
+  )
+}
+
+function FocusedSessionBar() {
+  const id = focusedSessionId.value
+  if (!id) return null
+  const sessions = sessionSummary.value?.sessions ?? []
+  const sess = sessions.find(s => s.sessionId === id)
+  if (!sess) return null
+
+  const num = getSessionGlobalNumber(sess)
+  const color = getAgentColor(sess.source)
+  const agent = getAgentSourceLabel(sess.source)
+  const cost = calcSessionCost(sess, sess.source === 'copilot' ? 'token' : 'token')
+  const snippet = sess.userRequest ? (sess.userRequest.length > 55 ? sess.userRequest.slice(0, 55) + '…' : sess.userRequest) : null
+  const dateStr = sess.startTime ? new Date(sess.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''
+
+  return (
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);font-size:11px;flex-wrap:wrap;min-height:28px">
+      <span style="font-weight:600;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Focus</span>
+      <span style={`display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0`} />
+      <span style="font-weight:600;white-space:nowrap">#{num}</span>
+      <span style="color:var(--muted);white-space:nowrap">{agent}</span>
+      {sess.model && <span style="color:var(--muted);font-size:10px;white-space:nowrap">{sess.model.split('/').pop()}</span>}
+      {dateStr && <span style="color:var(--muted);white-space:nowrap">{dateStr}</span>}
+      {snippet && <span style="color:var(--foreground);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title={sess.userRequest}>"{snippet}"</span>}
+      <span style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+        {!cost.modelUnknown && cost.totalUsd > 0 && <span style="color:var(--vscode-charts-green,#81c784);font-weight:600">{fmtUsd(cost.totalUsd)}</span>}
+        {sess.errors > 0 && <span style="color:var(--error);font-weight:600">{sess.errors} err</span>}
+        <span style="color:var(--muted)">{formatMs(sess.durationMs)}</span>
+      </span>
+      <span style="display:flex;gap:4px;flex-shrink:0">
+        <button class="tab-mini" onClick={() => { activeTab.value = 'traces' }} title="View timeline for this session">Traces</button>
+        <button class="tab-mini" onClick={() => { activeTab.value = 'flow' }} title="View flow graph for this session">Flow</button>
+        <button style="padding:1px 6px;font-size:11px;cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);line-height:1.4" onClick={() => { focusedSessionId.value = null }} title="Clear focus">×</button>
+      </span>
+    </div>
   )
 }
 

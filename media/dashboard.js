@@ -1005,6 +1005,7 @@
   }
 
   // media/src/state.ts
+  var CHART_MAX = 25;
   var dailyStats = y3([]);
   var lifetimeStats = y3(null);
   var burnRateData = y3(null);
@@ -1048,7 +1049,8 @@
   var toolCalls = y3(window.__INITIAL_TOOL_CALLS__ ?? {});
   var sessionTimelines = y3({});
   var blobCache = y3({});
-  var sessionLimit = y3(10);
+  var focusedSessionId = y3(null);
+  var sessionLimit = y3(25);
   var selectedAgentFilter = y3("all");
   var insightFilter = y3("all");
   var activeTab = y3("efficiency");
@@ -1085,7 +1087,7 @@
     const all = agentFilteredSessions.value;
     const limit = sessionLimit.value;
     if (limit >= all.length) return all;
-    return all.slice(all.length - limit);
+    return all.slice(0, limit);
   });
   var agentPresence = g2(() => {
     const sessions = displaySessions.value;
@@ -1244,6 +1246,341 @@
     return rs;
   }
 
+  // media/src/agentProfiles.ts
+  var AGENT_ORDER = ["copilot", "claude_code", "codex"];
+  var DEFAULT_AGENT_PROFILES = {
+    claude_code: {
+      source: "claude_code",
+      label: "Claude",
+      shortLabel: "CL",
+      color: "#FFB085",
+      contextWindowTokens: 2e5,
+      turnNudge: 80,
+      turnAlert: 150,
+      identicalRepeatNudge: 3,
+      identicalRepeatAlert: 4,
+      consecutiveErrorNudge: 3,
+      consecutiveErrorAlert: 4,
+      activeMinutesAlert: 30
+    },
+    copilot: {
+      source: "copilot",
+      label: "Copilot",
+      shortLabel: "CP",
+      color: "#00EAFF",
+      contextWindowTokens: 128e3,
+      turnNudge: 150,
+      turnAlert: 275,
+      identicalRepeatNudge: 3,
+      identicalRepeatAlert: 5,
+      consecutiveErrorNudge: 3,
+      consecutiveErrorAlert: 5,
+      activeMinutesAlert: 45
+    },
+    codex: {
+      source: "codex",
+      label: "Codex",
+      shortLabel: "CX",
+      color: "#F0FF42",
+      contextWindowTokens: 4e5,
+      turnNudge: 250,
+      turnAlert: 450,
+      identicalRepeatNudge: 4,
+      identicalRepeatAlert: 6,
+      consecutiveErrorNudge: 4,
+      consecutiveErrorAlert: 6,
+      activeMinutesAlert: 60
+    }
+  };
+  var AGENT_PROFILE_FIELD_META = {
+    contextWindowTokens: { label: "Window", unit: "tokens", min: 16e3, max: 1e6, step: 1e3 },
+    turnNudge: { label: "Turn nudge", unit: "turns", min: 10, max: 1e3, step: 5 },
+    turnAlert: { label: "Turn alert", unit: "turns", min: 10, max: 1e3, step: 5 },
+    identicalRepeatNudge: { label: "Repeat nudge", unit: "calls", min: 2, max: 8, step: 1 },
+    identicalRepeatAlert: { label: "Repeat alert", unit: "calls", min: 2, max: 20, step: 1 },
+    consecutiveErrorNudge: { label: "Error nudge", unit: "errors", min: 2, max: 8, step: 1 },
+    consecutiveErrorAlert: { label: "Error alert", unit: "errors", min: 2, max: 20, step: 1 },
+    activeMinutesAlert: { label: "Active alert", unit: "min", min: 5, max: 240, step: 5 }
+  };
+  function cloneDefaultProfiles() {
+    return {
+      claude_code: { ...DEFAULT_AGENT_PROFILES.claude_code },
+      copilot: { ...DEFAULT_AGENT_PROFILES.copilot },
+      codex: { ...DEFAULT_AGENT_PROFILES.codex }
+    };
+  }
+  function validMetricValue(metric, value) {
+    const n3 = Number(value);
+    const meta = AGENT_PROFILE_FIELD_META[metric];
+    if (!Number.isFinite(n3) || n3 < meta.min || n3 > meta.max) return null;
+    return n3;
+  }
+  function getAgentProfiles() {
+    const defaults = cloneDefaultProfiles();
+    try {
+      const stored = localStorage.getItem("agentLens.agentProfiles");
+      if (!stored) return defaults;
+      const saved = JSON.parse(stored);
+      for (const source of AGENT_ORDER) {
+        const profile = saved[source];
+        if (!profile) continue;
+        for (const metric of Object.keys(AGENT_PROFILE_FIELD_META)) {
+          const value = validMetricValue(metric, profile[metric]);
+          if (value !== null) {
+            defaults[source][metric] = value;
+          }
+        }
+      }
+    } catch {
+    }
+    return defaults;
+  }
+  function saveAgentProfiles(profiles) {
+    try {
+      const payload = {};
+      for (const source of AGENT_ORDER) {
+        payload[source] = {};
+        for (const metric of Object.keys(AGENT_PROFILE_FIELD_META)) {
+          payload[source][metric] = profiles[source][metric];
+        }
+      }
+      localStorage.setItem("agentLens.agentProfiles", JSON.stringify(payload));
+    } catch {
+    }
+  }
+  function resetAgentProfiles() {
+    try {
+      localStorage.removeItem("agentLens.agentProfiles");
+    } catch {
+    }
+    return cloneDefaultProfiles();
+  }
+  function resolveAgentProfile(source, profiles = getAgentProfiles()) {
+    if (source && profiles[source]) return profiles[source];
+    return profiles.copilot;
+  }
+
+  // media/src/pricing.ts
+  var PRICING_LAST_UPDATED = "2026-05-28";
+  var RATES = {
+    // ── OpenAI ─────────────────────────────────────────────────────────────────────────────────────
+    //                                                                     token rates ──────────────────────────────────── │ pre-Jun1  │ annual post-Jun1
+    // included models: 0× pre-Jun1 AND $0 in token mode (included in Copilot subscription per footnote 1)
+    "gpt-4.1": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 1 },
+    "gpt-5-mini": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    "gpt-5 mini": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    // older included models kept for historical sessions
+    "gpt-4o": { inputPerMTok: 2.5, cacheReadPerMTok: 1.25, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    "gpt-4o-mini": { inputPerMTok: 0.15, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 0.6, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    // GPT-5.1 family — in annual-plan table but not in new token pricing (request-only models)
+    "gpt-5.1": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    "gpt-5.1-codex": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    "gpt-5.1-codex-mini": { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 4.5, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
+    "gpt-5.1-codex-max": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    // premium models
+    "gpt-5.2": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    "gpt-5.2-codex": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
+    "gpt-5.3-codex": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    "gpt-5.4": { inputPerMTok: 2.5, cacheReadPerMTok: 0.25, cacheWritePerMTok: 0, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    // long-context surcharge (>272K tokens) not implemented
+    "gpt-5.4-mini": { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 4.5, multiplier: 0.33, multiplierAnnualPostJun1: 6 },
+    "gpt-5.4-nano": { inputPerMTok: 0.2, cacheReadPerMTok: 0.02, cacheWritePerMTok: 0, outputPerMTok: 1.25, multiplier: 0.25, multiplierAnnualPostJun1: 0.25 },
+    "gpt-5.5": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 0, outputPerMTok: 30, multiplier: 7.5, multiplierAnnualPostJun1: 7.5 },
+    // TBD per docs; long-context surcharge (>unknown threshold) not implemented
+    // ── Codex-only models ──────────────────────────────────────────────────────────────────────────
+    // codex-mini-latest: fine-tuned o4-mini; 75% cache discount (not the usual 90%); deprecated
+    "codex-mini-latest": { inputPerMTok: 1.5, cacheReadPerMTok: 0.375, cacheWritePerMTok: 0, outputPerMTok: 6, multiplier: 0, multiplierAnnualPostJun1: 0 },
+    // ── Anthropic ──────────────────────────────────────────────────────────────────────────────────
+    // deprecated — for historical Claude Code sessions
+    "claude-opus-4": { inputPerMTok: 15, cacheReadPerMTok: 1.5, cacheWritePerMTok: 18.75, outputPerMTok: 75, multiplier: 0, multiplierAnnualPostJun1: 0 },
+    "claude-opus-4-1": { inputPerMTok: 15, cacheReadPerMTok: 1.5, cacheWritePerMTok: 18.75, outputPerMTok: 75, multiplier: 0, multiplierAnnualPostJun1: 0 },
+    "claude-haiku-3-5": { inputPerMTok: 0.8, cacheReadPerMTok: 0.08, cacheWritePerMTok: 1, outputPerMTok: 4, multiplier: 0, multiplierAnnualPostJun1: 0 },
+    // current
+    "claude-haiku-4-5": { inputPerMTok: 1, cacheReadPerMTok: 0.1, cacheWritePerMTok: 1.25, outputPerMTok: 5, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
+    "claude-sonnet-4": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 1 },
+    "claude-sonnet-4-5": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    "claude-sonnet-4-6": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 9 },
+    "claude-opus-4-5": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 3, multiplierAnnualPostJun1: 15 },
+    "claude-opus-4-6": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 3, multiplierAnnualPostJun1: 27 },
+    "claude-opus-4-7": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 15, multiplierAnnualPostJun1: 27 },
+    // fast mode (/fast toggle in Claude Code) — 6× standard Opus rates; model ID in telemetry does NOT include -fast suffix (known gap)
+    "claude-opus-4-6-fast": { inputPerMTok: 30, cacheReadPerMTok: 3, cacheWritePerMTok: 37.5, outputPerMTok: 150, multiplier: 30, multiplierAnnualPostJun1: 30 },
+    "claude-opus-4-7-fast": { inputPerMTok: 30, cacheReadPerMTok: 3, cacheWritePerMTok: 37.5, outputPerMTok: 150, multiplier: 30, multiplierAnnualPostJun1: 30 },
+    // ── Google ─────────────────────────────────────────────────────────────────────────────────────
+    "gemini-2.5-pro": { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 1, multiplierAnnualPostJun1: 1 },
+    // long-context surcharge (>200K tokens) not implemented
+    "gemini-3-flash": { inputPerMTok: 0.5, cacheReadPerMTok: 0.05, cacheWritePerMTok: 0, outputPerMTok: 3, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
+    "gemini-3-pro": { inputPerMTok: 2, cacheReadPerMTok: 0.2, cacheWritePerMTok: 0, outputPerMTok: 12, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    "gemini-3.1-pro": { inputPerMTok: 2, cacheReadPerMTok: 0.2, cacheWritePerMTok: 0, outputPerMTok: 12, multiplier: 1, multiplierAnnualPostJun1: 6 },
+    // long-context surcharge (>200K tokens) not implemented
+    "gemini-3.5-flash": { inputPerMTok: 1.5, cacheReadPerMTok: 0.15, cacheWritePerMTok: 0, outputPerMTok: 9, multiplier: 14, multiplierAnnualPostJun1: 14 },
+    // ── Fine-tuned ─────────────────────────────────────────────────────────────────────────────────
+    // raptor-mini uses GPT-5 mini pricing per footnote 5 — included ($0) in token mode, same annual multiplier
+    "raptor-mini": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+    "goldeneye": { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 0, multiplierAnnualPostJun1: 0 }
+  };
+  function normalizeModelId(modelId) {
+    return modelId.toLowerCase().replace(/-\d{4}-\d{2}-\d{2}$/, "").replace(/-\d{8}$/, "").trim();
+  }
+  function lookupRates(modelId) {
+    if (!modelId) return null;
+    const normalized = normalizeModelId(modelId);
+    if (RATES[normalized]) return RATES[normalized];
+    for (const key of Object.keys(RATES)) {
+      if (normalized.startsWith(key) || key.startsWith(normalized)) return RATES[key];
+    }
+    return null;
+  }
+  function calcTokenCost(inputTokens, cacheReadTokens, cacheWriteTokens, outputTokens, rates) {
+    return inputTokens / 1e6 * rates.inputPerMTok + cacheReadTokens / 1e6 * rates.cacheReadPerMTok + cacheWriteTokens / 1e6 * rates.cacheWritePerMTok + outputTokens / 1e6 * rates.outputPerMTok;
+  }
+
+  // media/src/sessionMetrics.ts
+  function fmtUsd(usd) {
+    if (usd === 0) return "$0.00";
+    if (usd < 1e-3) return "<$0.001";
+    if (usd < 1) return "$" + usd.toFixed(3);
+    return "$" + usd.toFixed(2);
+  }
+  function calcEntryCost(entry, sessionModel) {
+    const rates = lookupRates(entry.model || sessionModel);
+    if (!rates) return 0;
+    return calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, rates);
+  }
+  function calcSessionCost(session, mode) {
+    const modelId = session.model || "";
+    const rates = lookupRates(modelId);
+    const llmEntries = (session.timeline ?? []).filter((e4) => e4.type === "llm");
+    if (mode === "request" || mode === "request-annual") {
+      const mult = mode === "request-annual" ? rates?.multiplierAnnualPostJun1 ?? 0 : rates?.multiplier ?? 0;
+      if (!rates || mult === 0) {
+        return { totalUsd: 0, aiCredits: 0, byTurn: llmEntries.map(() => 0), modelUnknown: !rates, pricingMode: mode };
+      }
+      const promptCount = session.turns || 1;
+      const totalUsd2 = promptCount * mult * 0.04;
+      const perPrompt = totalUsd2 / promptCount;
+      let cum2 = 0;
+      const byTurn2 = llmEntries.map(() => {
+        cum2 = Math.min(cum2 + perPrompt, totalUsd2);
+        return cum2;
+      });
+      return { totalUsd: totalUsd2, aiCredits: totalUsd2 / 0.01, byTurn: byTurn2, modelUnknown: false, pricingMode: mode };
+    }
+    const rawInput = Math.max(0, session.inputTokens - session.cacheReadTokens - session.cacheCreateTokens);
+    const totalUsd = rates ? calcTokenCost(rawInput, session.cacheReadTokens, session.cacheCreateTokens, session.outputTokens, rates) : 0;
+    let cum = 0;
+    const byTurn = llmEntries.map((entry) => {
+      const entryRates = lookupRates(entry.model || modelId) || rates;
+      if (!entryRates) return cum;
+      cum += calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, entryRates);
+      return cum;
+    });
+    return { totalUsd, aiCredits: totalUsd / 0.01, byTurn, modelUnknown: !rates, pricingMode: mode };
+  }
+  function sessionDisplayName(session) {
+    const req = (session.userRequest ?? "").trim();
+    if (!req || req === "[session in progress]") return "[session in progress]";
+    return req.length > 70 ? req.slice(0, 70) + "..." : req;
+  }
+  function getPeakContextUsage(session, profiles = getAgentProfiles()) {
+    const llmInputs = (session.timeline ?? []).filter((e4) => e4.type === "llm").map((e4) => e4.inputTokens ?? 0).filter((n3) => n3 > 0);
+    const fallback = session.totalLlmCalls > 0 ? Math.round((session.inputTokens ?? 0) / session.totalLlmCalls) : 0;
+    const peakTokens = llmInputs.length > 0 ? Math.max(...llmInputs) : fallback;
+    const contextWindowTokens = resolveAgentProfile(session.source, profiles).contextWindowTokens;
+    return {
+      peakTokens,
+      contextWindowTokens,
+      percent: contextWindowTokens > 0 ? peakTokens / contextWindowTokens * 100 : 0
+    };
+  }
+  function stableJson(value) {
+    if (Array.isArray(value)) return "[" + value.map(stableJson).join(",") + "]";
+    if (value && typeof value === "object") {
+      const obj = value;
+      return "{" + Object.keys(obj).sort().map((k3) => JSON.stringify(k3) + ":" + stableJson(obj[k3])).join(",") + "}";
+    }
+    return JSON.stringify(value);
+  }
+  function normalizeToolInput(input) {
+    const raw = (input ?? "").trim();
+    if (!raw) return "";
+    try {
+      return stableJson(JSON.parse(raw));
+    } catch {
+      return raw.replace(/\s+/g, " ");
+    }
+  }
+  function toolName(entry) {
+    return (entry.label ?? "").trim().split(/\s+/)[0] || "tool";
+  }
+  function changesFiles(entry) {
+    if ((entry.editDetails ?? []).length > 0) return true;
+    const label = (entry.label ?? "").toLowerCase();
+    if (/(apply_patch|replace_string|create_file|edit_notebook|write_file|str_replace|multi_edit)/.test(label)) return true;
+    if (!/(exec|shell|bash|command)/.test(label)) return false;
+    const input = (entry.toolInput ?? "").toLowerCase();
+    return /(apply_patch|sed\s+-i|perl\s+-i|>\s*[\w./~-]|>>\s*[\w./~-]|\btee\b|\btouch\b|\bmv\b|\bcp\b|\brm\b|\bmkdir\b)/.test(input);
+  }
+  function getIdenticalToolRepeat(session) {
+    const counts = /* @__PURE__ */ new Map();
+    let best = null;
+    let fileChangeGeneration = 0;
+    for (const entry of session.timeline ?? []) {
+      if (entry.type === "tool") {
+        const tool = toolName(entry);
+        const normalizedInput = normalizeToolInput(entry.toolInput);
+        const key = tool + "\n" + (normalizedInput || (entry.label ?? "").trim());
+        const current = counts.get(key);
+        const count = current && current.fileChangeGeneration === fileChangeGeneration ? current.count + 1 : 1;
+        counts.set(key, {
+          key,
+          tool,
+          count,
+          display: normalizedInput ? tool + " " + normalizedInput.slice(0, 90) : entry.label ?? tool,
+          fileChangeGeneration
+        });
+        if (count > 1 && (!best || count > best.count)) {
+          best = { key, tool, count, display: normalizedInput ? tool + " " + normalizedInput.slice(0, 90) : entry.label ?? tool };
+        }
+      }
+      if (changesFiles(entry)) {
+        fileChangeGeneration++;
+      }
+    }
+    return best;
+  }
+  function getErrorHealth(session) {
+    const measured = (session.timeline ?? []).filter((e4) => e4.type === "llm" || e4.type === "tool");
+    let maxConsecutive = 0;
+    let current = 0;
+    let errorCount = 0;
+    const recentErrors = [];
+    for (const entry of measured) {
+      if (entry.isError) {
+        errorCount++;
+        current++;
+        maxConsecutive = Math.max(maxConsecutive, current);
+        const msg = entry.errorMessage || entry.label;
+        if (msg) recentErrors.push(msg.slice(0, 140));
+      } else {
+        current = 0;
+      }
+    }
+    const fallbackErrors = Math.max(errorCount, session.errors ?? 0);
+    const measuredSteps = measured.length || (session.totalLlmCalls ?? 0) + (session.totalToolCalls ?? 0);
+    return {
+      errorCount: fallbackErrors,
+      measuredSteps,
+      maxConsecutive,
+      trailingConsecutive: current,
+      failureRate: measuredSteps > 0 ? fallbackErrors / measuredSteps : 0,
+      recentErrors: recentErrors.slice(-3)
+    };
+  }
+  function getActiveComputeMs(session) {
+    return (session.timeline ?? []).filter((e4) => e4.type === "llm" || e4.type === "tool").reduce((sum, entry) => sum + Math.max(entry.durationMs ?? 0, 0), 0);
+  }
+
   // node_modules/.pnpm/preact@10.29.1/node_modules/preact/jsx-runtime/dist/jsxRuntime.module.js
   var f4 = 0;
   function u4(e4, t4, n3, o4, i4, u5) {
@@ -1389,12 +1726,18 @@
     const realIdx = getSessionGlobalNumber(sess) || idx + 1;
     const cacheRate = sess.inputTokens > 0 ? (sess.cacheReadTokens / sess.inputTokens * 100).toFixed(0) : "\u2014";
     const agentDotColor = getAgentColor(sess.source);
+    const isFocused = focusedSessionId.value === sess.sessionId;
     let rowBg = "";
-    if (heat.score > 60) rowBg = "rgba(255,50,50," + (0.15 + Math.min(heat.score - 60, 40) / 40 * 0.25) + ")";
+    if (isFocused) rowBg = "rgba(55,148,255,0.12)";
+    else if (heat.score > 60) rowBg = "rgba(255,50,50," + (0.15 + Math.min(heat.score - 60, 40) / 40 * 0.25) + ")";
     else if (heat.score > 30) rowBg = "rgba(255,140,0," + (0.12 + (heat.score - 30) / 30 * 0.18) + ")";
     else if (heat.score > 10) rowBg = "rgba(255,180,50," + (0.1 + (heat.score - 10) / 20 * 0.15) + ")";
+    function handleRowClick() {
+      focusedSessionId.value = isFocused ? null : sess.sessionId;
+      onToggle();
+    }
     return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("tr", { style: "background:" + (rowBg || "transparent") + ";cursor:pointer", onClick: onToggle, children: [
+      /* @__PURE__ */ u4("tr", { style: "background:" + (rowBg || "transparent") + ";cursor:pointer" + (isFocused ? ";outline:1px solid var(--vscode-focusBorder,#007fd4)" : ""), onClick: handleRowClick, children: [
         /* @__PURE__ */ u4("td", { style: "text-align:center;font-weight:bold;white-space:nowrap", children: [
           /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);margin-right:3px", children: expanded ? "\u25BC" : "\u25B6" }),
           realIdx,
@@ -1571,14 +1914,19 @@
     const sessionsWithGrowth = breakdownSessions.filter(
       (sess) => (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0).length >= 1
     );
+    const totalSessionCount = sessionSummary.value?.sessions?.length ?? breakdownSessions.length;
+    const cappedChart = breakdownSessions.slice(0, CHART_MAX);
     return /* @__PURE__ */ u4("div", { id: "efficiency-content", children: [
       sessionsWithGrowth.length > 0 && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Input tokens sent per LLM call within each session. Rising lines indicate context accumulation. A sharp drop mid-session indicates context compaction. A single dot marks an in-progress session with one LLM call so far.", children: "CONTEXT GROWTH PER SESSION" }),
-        /* @__PURE__ */ u4(ContextGrowthChart, { sessions: breakdownSessions, timelines }),
-        /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);opacity:0.7;margin:4px 0 12px 2px", children: "Suggestion: If the graph appears crowded, consider refining the view by selecting fewer sessions (such as \u201CLast 5\u201D) or filtering by a specific agent to enhance clarity." })
+        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:24px 0 4px;font-size:13px;color:var(--muted)", "data-tip": "Input tokens per LLM call within each session. Rising lines show context accumulation; a sharp drop indicates compaction.", children: "CONTEXT GROWTH PER SESSION" }),
+        /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-bottom:6px", children: breakdownSessions.length > CHART_MAX ? `Showing ${CHART_MAX} most recent of ${totalSessionCount} sessions` : null }),
+        /* @__PURE__ */ u4(ContextGrowthChart, { sessions: cappedChart, timelines })
       ] }),
       breakdownSessions.length > 0 && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Per-session metrics with heat coloring. Warmer colors indicate higher token usage or more errors. Expand a row to see efficiency notes.", children: "SESSION BREAKDOWN" }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:baseline;gap:10px;margin:24px 0 8px", children: [
+          /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:0;font-size:13px;color:var(--muted)", "data-tip": "Per-session metrics with heat coloring. Warmer colors indicate higher token usage or more errors. Click a row to focus it \u2014 Traces and Flow will open to that session.", children: "SESSION BREAKDOWN" }),
+          /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted)", children: breakdownSessions.length < totalSessionCount ? `Showing ${breakdownSessions.length} of ${totalSessionCount} sessions` : `${totalSessionCount} session${totalSessionCount !== 1 ? "s" : ""}` })
+        ] }),
         /* @__PURE__ */ u4("div", { style: "display:flex;gap:16px;margin-bottom:4px;font-size:10px;color:var(--muted);align-items:center", children: [
           /* @__PURE__ */ u4("span", { style: "font-weight:600", children: "Usage:" }),
           /* @__PURE__ */ u4("span", { class: "flex-4", children: [
@@ -1643,7 +1991,14 @@
         ] })
       ] }),
       displaySess.length > 0 && /* @__PURE__ */ u4("div", { style: "margin-top:32px", children: [
-        /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "TOKEN USAGE PER SESSION" }),
+        /* @__PURE__ */ u4("h3", { style: "margin:0 0 4px;font-size:13px;color:var(--muted)", children: "TOKEN USAGE PER SESSION" }),
+        displaySess.length > CHART_MAX && /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-bottom:4px", children: [
+          "Showing ",
+          CHART_MAX,
+          " of ",
+          displaySess.length,
+          " sessions"
+        ] }),
         /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
           /* @__PURE__ */ u4("span", { children: [
             /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" }),
@@ -1654,7 +2009,7 @@
             " Output"
           ] })
         ] }),
-        /* @__PURE__ */ u4(SessionTokenChart, { sessions: displaySess })
+        /* @__PURE__ */ u4(SessionTokenChart, { sessions: displaySess.slice(0, CHART_MAX) })
       ] })
     ] });
   }
@@ -2168,341 +2523,6 @@
       ] }),
       ignoredList.length > 0 && /* @__PURE__ */ u4(IgnoredSection, { insights: ignoredList, sessions })
     ] });
-  }
-
-  // media/src/agentProfiles.ts
-  var AGENT_ORDER = ["copilot", "claude_code", "codex"];
-  var DEFAULT_AGENT_PROFILES = {
-    claude_code: {
-      source: "claude_code",
-      label: "Claude",
-      shortLabel: "CL",
-      color: "#FFB085",
-      contextWindowTokens: 2e5,
-      turnNudge: 80,
-      turnAlert: 150,
-      identicalRepeatNudge: 3,
-      identicalRepeatAlert: 4,
-      consecutiveErrorNudge: 3,
-      consecutiveErrorAlert: 4,
-      activeMinutesAlert: 30
-    },
-    copilot: {
-      source: "copilot",
-      label: "Copilot",
-      shortLabel: "CP",
-      color: "#00EAFF",
-      contextWindowTokens: 128e3,
-      turnNudge: 150,
-      turnAlert: 275,
-      identicalRepeatNudge: 3,
-      identicalRepeatAlert: 5,
-      consecutiveErrorNudge: 3,
-      consecutiveErrorAlert: 5,
-      activeMinutesAlert: 45
-    },
-    codex: {
-      source: "codex",
-      label: "Codex",
-      shortLabel: "CX",
-      color: "#F0FF42",
-      contextWindowTokens: 4e5,
-      turnNudge: 250,
-      turnAlert: 450,
-      identicalRepeatNudge: 4,
-      identicalRepeatAlert: 6,
-      consecutiveErrorNudge: 4,
-      consecutiveErrorAlert: 6,
-      activeMinutesAlert: 60
-    }
-  };
-  var AGENT_PROFILE_FIELD_META = {
-    contextWindowTokens: { label: "Window", unit: "tokens", min: 16e3, max: 1e6, step: 1e3 },
-    turnNudge: { label: "Turn nudge", unit: "turns", min: 10, max: 1e3, step: 5 },
-    turnAlert: { label: "Turn alert", unit: "turns", min: 10, max: 1e3, step: 5 },
-    identicalRepeatNudge: { label: "Repeat nudge", unit: "calls", min: 2, max: 8, step: 1 },
-    identicalRepeatAlert: { label: "Repeat alert", unit: "calls", min: 2, max: 20, step: 1 },
-    consecutiveErrorNudge: { label: "Error nudge", unit: "errors", min: 2, max: 8, step: 1 },
-    consecutiveErrorAlert: { label: "Error alert", unit: "errors", min: 2, max: 20, step: 1 },
-    activeMinutesAlert: { label: "Active alert", unit: "min", min: 5, max: 240, step: 5 }
-  };
-  function cloneDefaultProfiles() {
-    return {
-      claude_code: { ...DEFAULT_AGENT_PROFILES.claude_code },
-      copilot: { ...DEFAULT_AGENT_PROFILES.copilot },
-      codex: { ...DEFAULT_AGENT_PROFILES.codex }
-    };
-  }
-  function validMetricValue(metric, value) {
-    const n3 = Number(value);
-    const meta = AGENT_PROFILE_FIELD_META[metric];
-    if (!Number.isFinite(n3) || n3 < meta.min || n3 > meta.max) return null;
-    return n3;
-  }
-  function getAgentProfiles() {
-    const defaults = cloneDefaultProfiles();
-    try {
-      const stored = localStorage.getItem("agentLens.agentProfiles");
-      if (!stored) return defaults;
-      const saved = JSON.parse(stored);
-      for (const source of AGENT_ORDER) {
-        const profile = saved[source];
-        if (!profile) continue;
-        for (const metric of Object.keys(AGENT_PROFILE_FIELD_META)) {
-          const value = validMetricValue(metric, profile[metric]);
-          if (value !== null) {
-            defaults[source][metric] = value;
-          }
-        }
-      }
-    } catch {
-    }
-    return defaults;
-  }
-  function saveAgentProfiles(profiles) {
-    try {
-      const payload = {};
-      for (const source of AGENT_ORDER) {
-        payload[source] = {};
-        for (const metric of Object.keys(AGENT_PROFILE_FIELD_META)) {
-          payload[source][metric] = profiles[source][metric];
-        }
-      }
-      localStorage.setItem("agentLens.agentProfiles", JSON.stringify(payload));
-    } catch {
-    }
-  }
-  function resetAgentProfiles() {
-    try {
-      localStorage.removeItem("agentLens.agentProfiles");
-    } catch {
-    }
-    return cloneDefaultProfiles();
-  }
-  function resolveAgentProfile(source, profiles = getAgentProfiles()) {
-    if (source && profiles[source]) return profiles[source];
-    return profiles.copilot;
-  }
-
-  // media/src/pricing.ts
-  var PRICING_LAST_UPDATED = "2026-05-28";
-  var RATES = {
-    // ── OpenAI ─────────────────────────────────────────────────────────────────────────────────────
-    //                                                                     token rates ──────────────────────────────────── │ pre-Jun1  │ annual post-Jun1
-    // included models: 0× pre-Jun1 AND $0 in token mode (included in Copilot subscription per footnote 1)
-    "gpt-4.1": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 1 },
-    "gpt-5-mini": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
-    "gpt-5 mini": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
-    // older included models kept for historical sessions
-    "gpt-4o": { inputPerMTok: 2.5, cacheReadPerMTok: 1.25, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
-    "gpt-4o-mini": { inputPerMTok: 0.15, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 0.6, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
-    // GPT-5.1 family — in annual-plan table but not in new token pricing (request-only models)
-    "gpt-5.1": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
-    "gpt-5.1-codex": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
-    "gpt-5.1-codex-mini": { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 4.5, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
-    "gpt-5.1-codex-max": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
-    // premium models
-    "gpt-5.2": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
-    "gpt-5.2-codex": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 3 },
-    "gpt-5.3-codex": { inputPerMTok: 1.75, cacheReadPerMTok: 0.175, cacheWritePerMTok: 0, outputPerMTok: 14, multiplier: 1, multiplierAnnualPostJun1: 6 },
-    "gpt-5.4": { inputPerMTok: 2.5, cacheReadPerMTok: 0.25, cacheWritePerMTok: 0, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 6 },
-    // long-context surcharge (>272K tokens) not implemented
-    "gpt-5.4-mini": { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 4.5, multiplier: 0.33, multiplierAnnualPostJun1: 6 },
-    "gpt-5.4-nano": { inputPerMTok: 0.2, cacheReadPerMTok: 0.02, cacheWritePerMTok: 0, outputPerMTok: 1.25, multiplier: 0.25, multiplierAnnualPostJun1: 0.25 },
-    "gpt-5.5": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 0, outputPerMTok: 30, multiplier: 7.5, multiplierAnnualPostJun1: 7.5 },
-    // TBD per docs; long-context surcharge (>unknown threshold) not implemented
-    // ── Codex-only models ──────────────────────────────────────────────────────────────────────────
-    // codex-mini-latest: fine-tuned o4-mini; 75% cache discount (not the usual 90%); deprecated
-    "codex-mini-latest": { inputPerMTok: 1.5, cacheReadPerMTok: 0.375, cacheWritePerMTok: 0, outputPerMTok: 6, multiplier: 0, multiplierAnnualPostJun1: 0 },
-    // ── Anthropic ──────────────────────────────────────────────────────────────────────────────────
-    // deprecated — for historical Claude Code sessions
-    "claude-opus-4": { inputPerMTok: 15, cacheReadPerMTok: 1.5, cacheWritePerMTok: 18.75, outputPerMTok: 75, multiplier: 0, multiplierAnnualPostJun1: 0 },
-    "claude-opus-4-1": { inputPerMTok: 15, cacheReadPerMTok: 1.5, cacheWritePerMTok: 18.75, outputPerMTok: 75, multiplier: 0, multiplierAnnualPostJun1: 0 },
-    "claude-haiku-3-5": { inputPerMTok: 0.8, cacheReadPerMTok: 0.08, cacheWritePerMTok: 1, outputPerMTok: 4, multiplier: 0, multiplierAnnualPostJun1: 0 },
-    // current
-    "claude-haiku-4-5": { inputPerMTok: 1, cacheReadPerMTok: 0.1, cacheWritePerMTok: 1.25, outputPerMTok: 5, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
-    "claude-sonnet-4": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 1 },
-    "claude-sonnet-4-5": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 6 },
-    "claude-sonnet-4-6": { inputPerMTok: 3, cacheReadPerMTok: 0.3, cacheWritePerMTok: 3.75, outputPerMTok: 15, multiplier: 1, multiplierAnnualPostJun1: 9 },
-    "claude-opus-4-5": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 3, multiplierAnnualPostJun1: 15 },
-    "claude-opus-4-6": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 3, multiplierAnnualPostJun1: 27 },
-    "claude-opus-4-7": { inputPerMTok: 5, cacheReadPerMTok: 0.5, cacheWritePerMTok: 6.25, outputPerMTok: 25, multiplier: 15, multiplierAnnualPostJun1: 27 },
-    // fast mode (/fast toggle in Claude Code) — 6× standard Opus rates; model ID in telemetry does NOT include -fast suffix (known gap)
-    "claude-opus-4-6-fast": { inputPerMTok: 30, cacheReadPerMTok: 3, cacheWritePerMTok: 37.5, outputPerMTok: 150, multiplier: 30, multiplierAnnualPostJun1: 30 },
-    "claude-opus-4-7-fast": { inputPerMTok: 30, cacheReadPerMTok: 3, cacheWritePerMTok: 37.5, outputPerMTok: 150, multiplier: 30, multiplierAnnualPostJun1: 30 },
-    // ── Google ─────────────────────────────────────────────────────────────────────────────────────
-    "gemini-2.5-pro": { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 1, multiplierAnnualPostJun1: 1 },
-    // long-context surcharge (>200K tokens) not implemented
-    "gemini-3-flash": { inputPerMTok: 0.5, cacheReadPerMTok: 0.05, cacheWritePerMTok: 0, outputPerMTok: 3, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
-    "gemini-3-pro": { inputPerMTok: 2, cacheReadPerMTok: 0.2, cacheWritePerMTok: 0, outputPerMTok: 12, multiplier: 1, multiplierAnnualPostJun1: 6 },
-    "gemini-3.1-pro": { inputPerMTok: 2, cacheReadPerMTok: 0.2, cacheWritePerMTok: 0, outputPerMTok: 12, multiplier: 1, multiplierAnnualPostJun1: 6 },
-    // long-context surcharge (>200K tokens) not implemented
-    "gemini-3.5-flash": { inputPerMTok: 1.5, cacheReadPerMTok: 0.15, cacheWritePerMTok: 0, outputPerMTok: 9, multiplier: 14, multiplierAnnualPostJun1: 14 },
-    // ── Fine-tuned ─────────────────────────────────────────────────────────────────────────────────
-    // raptor-mini uses GPT-5 mini pricing per footnote 5 — included ($0) in token mode, same annual multiplier
-    "raptor-mini": { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
-    "goldeneye": { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10, multiplier: 0, multiplierAnnualPostJun1: 0 }
-  };
-  function normalizeModelId(modelId) {
-    return modelId.toLowerCase().replace(/-\d{4}-\d{2}-\d{2}$/, "").replace(/-\d{8}$/, "").trim();
-  }
-  function lookupRates(modelId) {
-    if (!modelId) return null;
-    const normalized = normalizeModelId(modelId);
-    if (RATES[normalized]) return RATES[normalized];
-    for (const key of Object.keys(RATES)) {
-      if (normalized.startsWith(key) || key.startsWith(normalized)) return RATES[key];
-    }
-    return null;
-  }
-  function calcTokenCost(inputTokens, cacheReadTokens, cacheWriteTokens, outputTokens, rates) {
-    return inputTokens / 1e6 * rates.inputPerMTok + cacheReadTokens / 1e6 * rates.cacheReadPerMTok + cacheWriteTokens / 1e6 * rates.cacheWritePerMTok + outputTokens / 1e6 * rates.outputPerMTok;
-  }
-
-  // media/src/sessionMetrics.ts
-  function fmtUsd(usd) {
-    if (usd === 0) return "$0.00";
-    if (usd < 1e-3) return "<$0.001";
-    if (usd < 1) return "$" + usd.toFixed(3);
-    return "$" + usd.toFixed(2);
-  }
-  function calcEntryCost(entry, sessionModel) {
-    const rates = lookupRates(entry.model || sessionModel);
-    if (!rates) return 0;
-    return calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, rates);
-  }
-  function calcSessionCost(session, mode) {
-    const modelId = session.model || "";
-    const rates = lookupRates(modelId);
-    const llmEntries = (session.timeline ?? []).filter((e4) => e4.type === "llm");
-    if (mode === "request" || mode === "request-annual") {
-      const mult = mode === "request-annual" ? rates?.multiplierAnnualPostJun1 ?? 0 : rates?.multiplier ?? 0;
-      if (!rates || mult === 0) {
-        return { totalUsd: 0, aiCredits: 0, byTurn: llmEntries.map(() => 0), modelUnknown: !rates, pricingMode: mode };
-      }
-      const promptCount = session.turns || 1;
-      const totalUsd2 = promptCount * mult * 0.04;
-      const perPrompt = totalUsd2 / promptCount;
-      let cum2 = 0;
-      const byTurn2 = llmEntries.map(() => {
-        cum2 = Math.min(cum2 + perPrompt, totalUsd2);
-        return cum2;
-      });
-      return { totalUsd: totalUsd2, aiCredits: totalUsd2 / 0.01, byTurn: byTurn2, modelUnknown: false, pricingMode: mode };
-    }
-    const rawInput = Math.max(0, session.inputTokens - session.cacheReadTokens - session.cacheCreateTokens);
-    const totalUsd = rates ? calcTokenCost(rawInput, session.cacheReadTokens, session.cacheCreateTokens, session.outputTokens, rates) : 0;
-    let cum = 0;
-    const byTurn = llmEntries.map((entry) => {
-      const entryRates = lookupRates(entry.model || modelId) || rates;
-      if (!entryRates) return cum;
-      cum += calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, entryRates);
-      return cum;
-    });
-    return { totalUsd, aiCredits: totalUsd / 0.01, byTurn, modelUnknown: !rates, pricingMode: mode };
-  }
-  function sessionDisplayName(session) {
-    const req = (session.userRequest ?? "").trim();
-    if (!req || req === "[session in progress]") return "[session in progress]";
-    return req.length > 70 ? req.slice(0, 70) + "..." : req;
-  }
-  function getPeakContextUsage(session, profiles = getAgentProfiles()) {
-    const llmInputs = (session.timeline ?? []).filter((e4) => e4.type === "llm").map((e4) => e4.inputTokens ?? 0).filter((n3) => n3 > 0);
-    const fallback = session.totalLlmCalls > 0 ? Math.round((session.inputTokens ?? 0) / session.totalLlmCalls) : 0;
-    const peakTokens = llmInputs.length > 0 ? Math.max(...llmInputs) : fallback;
-    const contextWindowTokens = resolveAgentProfile(session.source, profiles).contextWindowTokens;
-    return {
-      peakTokens,
-      contextWindowTokens,
-      percent: contextWindowTokens > 0 ? peakTokens / contextWindowTokens * 100 : 0
-    };
-  }
-  function stableJson(value) {
-    if (Array.isArray(value)) return "[" + value.map(stableJson).join(",") + "]";
-    if (value && typeof value === "object") {
-      const obj = value;
-      return "{" + Object.keys(obj).sort().map((k3) => JSON.stringify(k3) + ":" + stableJson(obj[k3])).join(",") + "}";
-    }
-    return JSON.stringify(value);
-  }
-  function normalizeToolInput(input) {
-    const raw = (input ?? "").trim();
-    if (!raw) return "";
-    try {
-      return stableJson(JSON.parse(raw));
-    } catch {
-      return raw.replace(/\s+/g, " ");
-    }
-  }
-  function toolName(entry) {
-    return (entry.label ?? "").trim().split(/\s+/)[0] || "tool";
-  }
-  function changesFiles(entry) {
-    if ((entry.editDetails ?? []).length > 0) return true;
-    const label = (entry.label ?? "").toLowerCase();
-    if (/(apply_patch|replace_string|create_file|edit_notebook|write_file|str_replace|multi_edit)/.test(label)) return true;
-    if (!/(exec|shell|bash|command)/.test(label)) return false;
-    const input = (entry.toolInput ?? "").toLowerCase();
-    return /(apply_patch|sed\s+-i|perl\s+-i|>\s*[\w./~-]|>>\s*[\w./~-]|\btee\b|\btouch\b|\bmv\b|\bcp\b|\brm\b|\bmkdir\b)/.test(input);
-  }
-  function getIdenticalToolRepeat(session) {
-    const counts = /* @__PURE__ */ new Map();
-    let best = null;
-    let fileChangeGeneration = 0;
-    for (const entry of session.timeline ?? []) {
-      if (entry.type === "tool") {
-        const tool = toolName(entry);
-        const normalizedInput = normalizeToolInput(entry.toolInput);
-        const key = tool + "\n" + (normalizedInput || (entry.label ?? "").trim());
-        const current = counts.get(key);
-        const count = current && current.fileChangeGeneration === fileChangeGeneration ? current.count + 1 : 1;
-        counts.set(key, {
-          key,
-          tool,
-          count,
-          display: normalizedInput ? tool + " " + normalizedInput.slice(0, 90) : entry.label ?? tool,
-          fileChangeGeneration
-        });
-        if (count > 1 && (!best || count > best.count)) {
-          best = { key, tool, count, display: normalizedInput ? tool + " " + normalizedInput.slice(0, 90) : entry.label ?? tool };
-        }
-      }
-      if (changesFiles(entry)) {
-        fileChangeGeneration++;
-      }
-    }
-    return best;
-  }
-  function getErrorHealth(session) {
-    const measured = (session.timeline ?? []).filter((e4) => e4.type === "llm" || e4.type === "tool");
-    let maxConsecutive = 0;
-    let current = 0;
-    let errorCount = 0;
-    const recentErrors = [];
-    for (const entry of measured) {
-      if (entry.isError) {
-        errorCount++;
-        current++;
-        maxConsecutive = Math.max(maxConsecutive, current);
-        const msg = entry.errorMessage || entry.label;
-        if (msg) recentErrors.push(msg.slice(0, 140));
-      } else {
-        current = 0;
-      }
-    }
-    const fallbackErrors = Math.max(errorCount, session.errors ?? 0);
-    const measuredSteps = measured.length || (session.totalLlmCalls ?? 0) + (session.totalToolCalls ?? 0);
-    return {
-      errorCount: fallbackErrors,
-      measuredSteps,
-      maxConsecutive,
-      trailingConsecutive: current,
-      failureRate: measuredSteps > 0 ? fallbackErrors / measuredSteps : 0,
-      recentErrors: recentErrors.slice(-3)
-    };
-  }
-  function getActiveComputeMs(session) {
-    return (session.timeline ?? []).filter((e4) => e4.type === "llm" || e4.type === "tool").reduce((sum, entry) => sum + Math.max(entry.durationMs ?? 0, 0), 0);
   }
 
   // media/src/AgentThresholdValues.tsx
@@ -3750,6 +3770,7 @@
   function SessionBlock({ sess, sessIdx, totalCount, isFirst }) {
     const [collapsed, setCollapsed] = d2(!isFirst);
     const [promptExpanded, setPromptExpanded] = d2(false);
+    const isFocused = focusedSessionId.value === sess.sessionId;
     const isLongPrompt = (sess.userRequest?.length ?? 0) > 100;
     const sessionNum = getSessionGlobalNumber(sess) || totalCount - sessIdx;
     const sessionStartMs = sess.startTime ? new Date(sess.startTime).getTime() : 0;
@@ -3777,7 +3798,7 @@
     if (sessionDur <= 0) sessionDur = 1;
     const errorCount = sess.errors || 0;
     const outcomeLabel = sess.outcome === "text_response" ? "Responded" : sess.outcome === "tool_calls" ? "Tool calls" : null;
-    return /* @__PURE__ */ u4("div", { class: "wf-trace-group", children: [
+    return /* @__PURE__ */ u4("div", { id: `trace-session-${sess.sessionId}`, class: "wf-trace-group", style: isFocused ? "outline:2px solid var(--vscode-focusBorder,#007fd4);border-radius:4px;outline-offset:1px" : "", children: [
       /* @__PURE__ */ u4("div", { class: "wf-trace-header", onClick: toggle, children: [
         /* @__PURE__ */ u4("span", { children: [
           /* @__PURE__ */ u4("span", { class: "wf-header-chevron", children: collapsed ? "\u25B6" : "\u25BC" }),
@@ -3821,6 +3842,12 @@
   function Traces() {
     const base = displaySessions.value;
     const summary = sessionSummary.value;
+    const focusedId = focusedSessionId.value;
+    y2(() => {
+      if (!focusedId) return;
+      const el = document.getElementById(`trace-session-${focusedId}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, [focusedId]);
     if (!summary?.sessions?.length) {
       return /* @__PURE__ */ u4("div", { id: "summary-traces-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
     }
@@ -4292,8 +4319,11 @@
   }
   function Flow() {
     const sessions = displaySessions.value;
-    const [selectedIdx, setSelectedIdx] = d2(-1);
     const [isPlaying, setIsPlaying] = d2(false);
+    const focusedId = focusedSessionId.value;
+    const focusedIdx = focusedId ? sessions.findIndex((s4) => s4.sessionId === focusedId) : -1;
+    const [manualIdx, setManualIdx] = d2(-1);
+    const selectedIdx = focusedIdx >= 0 ? focusedIdx : manualIdx;
     const setIsPlayingRef = A2(setIsPlaying);
     setIsPlayingRef.current = setIsPlaying;
     const canvasRef = A2(null);
@@ -4825,7 +4855,7 @@
         canvas.removeEventListener("mouseleave", onMouseLeave);
         canvas.removeEventListener("click", onClick);
       };
-    }, [sessions, clampedIdx, sessionTimelines.value[allSessions[clampedIdx < 0 ? allSessions.length - 1 : clampedIdx]?.sess?.sessionId ?? ""]]);
+    }, [sessions, clampedIdx, focusedId, sessionTimelines.value[allSessions[clampedIdx]?.sess?.sessionId ?? ""]]);
     function handleZoomIn() {
       const c4 = canvasRef.current;
       if (!c4) return;
@@ -4890,13 +4920,29 @@
     return /* @__PURE__ */ u4("div", { id: "flow-content", children: [
       /* @__PURE__ */ u4("div", { class: "flow-controls", style: "margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap", children: [
         /* @__PURE__ */ u4(
-          "select",
+          "button",
           {
-            id: "flow-session-select",
-            class: "toolbar-select",
-            value: clampedIdx,
-            onChange: (e4) => setSelectedIdx(parseInt(e4.target.value) || 0),
-            children: allSessions.map((s4, idx) => /* @__PURE__ */ u4("option", { value: idx, children: s4.label }, idx))
+            class: "flow-btn",
+            disabled: clampedIdx <= 0,
+            onClick: () => setManualIdx(Math.max(0, clampedIdx - 1)),
+            title: "Previous session",
+            children: "\u2039 Prev"
+          }
+        ),
+        /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:120px", title: allSessions[clampedIdx]?.label, children: allSessions[clampedIdx]?.label ?? "\u2014" }),
+        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap", children: [
+          clampedIdx + 1,
+          " / ",
+          allSessions.length
+        ] }),
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            class: "flow-btn",
+            disabled: clampedIdx >= allSessions.length - 1,
+            onClick: () => setManualIdx(Math.min(allSessions.length - 1, clampedIdx + 1)),
+            title: "Next session",
+            children: "Next \u203A"
           }
         ),
         /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleZoomIn, children: "+" }),
@@ -6575,6 +6621,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           lifetimeStats.value = null;
           burnRateData.value = null;
           searchResults.value = null;
+          focusedSessionId.value = null;
         }
       };
       window.addEventListener("message", handler);
@@ -6604,8 +6651,57 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         ),
         /* @__PURE__ */ u4(MoreDropdown, {})
       ] }),
+      /* @__PURE__ */ u4(FocusedSessionBar, {}),
       /* @__PURE__ */ u4("div", { class: "panel active", children: /* @__PURE__ */ u4(ActivePanel, {}) }),
       /* @__PURE__ */ u4("img", { id: "mascot-img", src: "", alt: "AgentLens mascot", style: "display:none" })
+    ] });
+  }
+  function FocusedSessionBar() {
+    const id = focusedSessionId.value;
+    if (!id) return null;
+    const sessions = sessionSummary.value?.sessions ?? [];
+    const sess = sessions.find((s4) => s4.sessionId === id);
+    if (!sess) return null;
+    const num = getSessionGlobalNumber(sess);
+    const color = getAgentColor(sess.source);
+    const agent = getAgentSourceLabel(sess.source);
+    const cost = calcSessionCost(sess, sess.source === "copilot" ? "token" : "token");
+    const snippet = sess.userRequest ? sess.userRequest.length > 55 ? sess.userRequest.slice(0, 55) + "\u2026" : sess.userRequest : null;
+    const dateStr = sess.startTime ? new Date(sess.startTime).toLocaleDateString(void 0, { month: "short", day: "numeric" }) : "";
+    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);font-size:11px;flex-wrap:wrap;min-height:28px", children: [
+      /* @__PURE__ */ u4("span", { style: "font-weight:600;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap", children: "Focus" }),
+      /* @__PURE__ */ u4("span", { style: `display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0` }),
+      /* @__PURE__ */ u4("span", { style: "font-weight:600;white-space:nowrap", children: [
+        "#",
+        num
+      ] }),
+      /* @__PURE__ */ u4("span", { style: "color:var(--muted);white-space:nowrap", children: agent }),
+      sess.model && /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:10px;white-space:nowrap", children: sess.model.split("/").pop() }),
+      dateStr && /* @__PURE__ */ u4("span", { style: "color:var(--muted);white-space:nowrap", children: dateStr }),
+      snippet && /* @__PURE__ */ u4("span", { style: "color:var(--foreground);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: sess.userRequest, children: [
+        '"',
+        snippet,
+        '"'
+      ] }),
+      /* @__PURE__ */ u4("span", { style: "display:flex;gap:4px;align-items:center;flex-shrink:0", children: [
+        !cost.modelUnknown && cost.totalUsd > 0 && /* @__PURE__ */ u4("span", { style: "color:var(--vscode-charts-green,#81c784);font-weight:600", children: fmtUsd(cost.totalUsd) }),
+        sess.errors > 0 && /* @__PURE__ */ u4("span", { style: "color:var(--error);font-weight:600", children: [
+          sess.errors,
+          " err"
+        ] }),
+        /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: formatMs(sess.durationMs) })
+      ] }),
+      /* @__PURE__ */ u4("span", { style: "display:flex;gap:4px;flex-shrink:0", children: [
+        /* @__PURE__ */ u4("button", { class: "tab-mini", onClick: () => {
+          activeTab.value = "traces";
+        }, title: "View timeline for this session", children: "Traces" }),
+        /* @__PURE__ */ u4("button", { class: "tab-mini", onClick: () => {
+          activeTab.value = "flow";
+        }, title: "View flow graph for this session", children: "Flow" }),
+        /* @__PURE__ */ u4("button", { style: "padding:1px 6px;font-size:11px;cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);line-height:1.4", onClick: () => {
+          focusedSessionId.value = null;
+        }, title: "Clear focus", children: "\xD7" })
+      ] })
     ] });
   }
   function Tab({ id, label }) {

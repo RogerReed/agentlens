@@ -5,6 +5,9 @@ import type {
   DailyStatRow, LifetimeStats, BurnRate, Projection,
 } from './types'
 
+// Maximum sessions rendered in any single chart or table
+export const CHART_MAX = 25
+
 // ── Analytics signals ─────────────────────────────────────────────────────────
 
 export const dailyStats = signal<DailyStatRow[]>([])
@@ -54,7 +57,11 @@ export const blobCache = signal<Record<string, string>>({})
 
 // ── UI control signals ────────────────────────────────────────────────────────
 
-export const sessionLimit = signal(10)
+// Focused session — set by clicking any session in any view.
+// Traces and Flow auto-open to it; a context bar shows it across all tabs.
+export const focusedSessionId = signal<string | null>(null)
+
+export const sessionLimit = signal(25)
 export const selectedAgentFilter = signal<AgentFilter>('all')
 export const insightFilter = signal<InsightFilter>('all')
 export const activeTab = signal('efficiency')
@@ -105,7 +112,7 @@ export const displaySessions = computed<SessionSummaryCard[]>(() => {
   const all = agentFilteredSessions.value
   const limit = sessionLimit.value
   if (limit >= all.length) return all
-  return all.slice(all.length - limit)
+  return all.slice(0, limit)   // sessions are newest-first; take the first N (most recent)
 })
 
 export const agentPresence = computed(() => {

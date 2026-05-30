@@ -1,6 +1,6 @@
-import { useState } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 import {
-  displaySessions, sessionSummary, sessionTimelines, vscode,
+  displaySessions, sessionSummary, sessionTimelines, focusedSessionId, vscode,
 } from '../state'
 import {
   formatMs, formatCompact, syntaxHighlightJson, getSessionGlobalNumber,
@@ -276,6 +276,7 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
 }) {
   const [collapsed, setCollapsed] = useState(!isFirst)
   const [promptExpanded, setPromptExpanded] = useState(false)
+  const isFocused = focusedSessionId.value === sess.sessionId
   const isLongPrompt = (sess.userRequest?.length ?? 0) > 100
 
   const sessionNum = getSessionGlobalNumber(sess) || (totalCount - sessIdx)
@@ -311,7 +312,7 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
   const outcomeLabel = sess.outcome === 'text_response' ? 'Responded' : sess.outcome === 'tool_calls' ? 'Tool calls' : null
 
   return (
-    <div class="wf-trace-group">
+    <div id={`trace-session-${sess.sessionId}`} class="wf-trace-group" style={isFocused ? 'outline:2px solid var(--vscode-focusBorder,#007fd4);border-radius:4px;outline-offset:1px' : ''}>
       <div class="wf-trace-header" onClick={toggle}>
         <span>
           <span class="wf-header-chevron">{collapsed ? '▶' : '▼'}</span>
@@ -357,6 +358,14 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
 export function Traces() {
   const base = displaySessions.value
   const summary = sessionSummary.value
+  const focusedId = focusedSessionId.value
+
+  // Scroll to focused session when it changes
+  useEffect(() => {
+    if (!focusedId) return
+    const el = document.getElementById(`trace-session-${focusedId}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [focusedId])
 
   if (!summary?.sessions?.length) {
     return <div id="summary-traces-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>

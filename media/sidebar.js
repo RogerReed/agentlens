@@ -75,13 +75,15 @@
     card.style.display = "";
     const agentLabel = s.source === "claude_code" ? "Claude" : s.source === "codex" ? "Codex" : "Copilot";
     const errHtml = s.errors > 0 ? `<span style="color:var(--vscode-testing-iconFailed,#f44)">${s.errors} err</span>` : "";
+    const snippet = s.userRequest ? s.userRequest.length > 45 ? s.userRequest.slice(0, 45) + "\u2026" : s.userRequest : null;
     body.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
       <span style="color:var(--vscode-descriptionForeground)">${agentLabel}</span>
       <span style="color:var(--vscode-descriptionForeground)">${formatDuration(s.durationMs)}</span>
     </div>
-    <div style="color:var(--vscode-textLink-foreground);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.model || "\u2014"}</div>
-    <div style="display:flex;gap:12px;font-size:10px;color:var(--vscode-descriptionForeground)">
+    ${snippet ? `<div style="font-size:10px;color:var(--vscode-foreground);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0.8">"${snippet}"</div>` : ""}
+    <div style="color:var(--vscode-textLink-foreground);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px">${s.model || "\u2014"}</div>
+    <div style="display:flex;gap:10px;font-size:10px;color:var(--vscode-descriptionForeground)">
       <span>${s.totalLlmCalls} turn${s.totalLlmCalls !== 1 ? "s" : ""}</span>
       <span>${s.totalToolCalls} tool${s.totalToolCalls !== 1 ? "s" : ""}</span>
       ${errHtml}
@@ -92,12 +94,6 @@
   refreshAgentKey(agentSources);
   renderLatestSession(__SIDEBAR_INIT__.latestSession);
   var vscode = acquireVsCodeApi();
-  document.getElementById("sessionLimitSelect")?.addEventListener("change", function() {
-    vscode.postMessage({ type: "setSessionLimit", value: this.value });
-  });
-  document.getElementById("agentFilterSelect")?.addEventListener("change", function() {
-    vscode.postMessage({ type: "setAgentFilter", value: this.value });
-  });
   document.getElementById("clearBtn")?.addEventListener("click", () => {
     vscode.postMessage({ type: "clearAll" });
   });
@@ -130,9 +126,6 @@
       if ("latestSession" in msg) {
         renderLatestSession(msg.latestSession ?? null);
       }
-    } else if (msg.type === "agentFilterChanged") {
-      const sel = document.getElementById("agentFilterSelect");
-      if (sel && msg.value) sel.value = msg.value;
     }
   });
 })();

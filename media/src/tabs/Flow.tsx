@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { displaySessions, sessionTimelines, vscode } from '../state'
+import { displaySessions, sessionTimelines, focusedSessionId, vscode } from '../state'
 import { getSessionGlobalNumber, getAgentSourceLabel, formatMs } from '../utils'
 import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry } from '../types'
@@ -118,8 +118,13 @@ function isInferredTurn(entry: TimelineEntry): boolean {
 
 export function Flow() {
   const sessions = displaySessions.value
-  const [selectedIdx, setSelectedIdx] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
+
+  // Resolve which session to show: focused > last selected > most recent
+  const focusedId = focusedSessionId.value
+  const focusedIdx = focusedId ? sessions.findIndex(s => s.sessionId === focusedId) : -1
+  const [manualIdx, setManualIdx] = useState(-1)
+  const selectedIdx = focusedIdx >= 0 ? focusedIdx : manualIdx
   const setIsPlayingRef = useRef(setIsPlaying)
   setIsPlayingRef.current = setIsPlaying
 
@@ -635,7 +640,7 @@ export function Flow() {
       canvas.removeEventListener('mouseleave', onMouseLeave)
       canvas.removeEventListener('click', onClick)
     }
-  }, [sessions, clampedIdx, sessionTimelines.value[allSessions[clampedIdx < 0 ? allSessions.length - 1 : clampedIdx]?.sess?.sessionId ?? '']])
+  }, [sessions, clampedIdx, focusedId, sessionTimelines.value[allSessions[clampedIdx]?.sess?.sessionId ?? '']])
 
   // ── Controls ─────────────────────────────────────────────────────────────────
 
@@ -681,14 +686,22 @@ export function Flow() {
   return (
     <div id="flow-content">
       <div class="flow-controls" style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select
-          id="flow-session-select"
-          class="toolbar-select"
-          value={clampedIdx}
-          onChange={e => setSelectedIdx(parseInt((e.target as HTMLSelectElement).value) || 0)}
-        >
-          {allSessions.map((s, idx) => <option key={idx} value={idx}>{s.label}</option>)}
-        </select>
+        <button
+          class="flow-btn"
+          disabled={clampedIdx <= 0}
+          onClick={() => setManualIdx(Math.max(0, clampedIdx - 1))}
+          title="Previous session"
+        >‹ Prev</button>
+        <span style="font-size:11px;color:var(--muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:120px" title={allSessions[clampedIdx]?.label}>
+          {allSessions[clampedIdx]?.label ?? '—'}
+        </span>
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap">{clampedIdx + 1} / {allSessions.length}</span>
+        <button
+          class="flow-btn"
+          disabled={clampedIdx >= allSessions.length - 1}
+          onClick={() => setManualIdx(Math.min(allSessions.length - 1, clampedIdx + 1))}
+          title="Next session"
+        >Next ›</button>
         <button class="flow-btn" onClick={handleZoomIn}>+</button>
         <button class="flow-btn" onClick={handleZoomOut}>−</button>
         <button class="flow-btn" onClick={handleReset}>Reset</button>

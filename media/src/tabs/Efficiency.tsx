@@ -1,6 +1,6 @@
 import * as preact from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { sessionSummary, displaySessions, sessionTimelines, burnRateData, COLORS, vscode } from '../state'
+import { sessionSummary, displaySessions, sessionTimelines, burnRateData, focusedSessionId, CHART_MAX, COLORS, vscode } from '../state'
 import {
   getSessionGlobalNumber,
   formatMs, formatCompact, getAgentColor,
@@ -150,15 +150,22 @@ function SessionRow({ sess, idx, heat, expanded, onToggle }: {
   const realIdx = getSessionGlobalNumber(sess) || (idx + 1)
   const cacheRate = sess.inputTokens > 0 ? ((sess.cacheReadTokens / sess.inputTokens) * 100).toFixed(0) : '—'
   const agentDotColor = getAgentColor(sess.source)
+  const isFocused = focusedSessionId.value === sess.sessionId
 
   let rowBg = ''
-  if (heat.score > 60) rowBg = 'rgba(255,50,50,' + (0.15 + Math.min(heat.score - 60, 40) / 40 * 0.25) + ')'
+  if (isFocused) rowBg = 'rgba(55,148,255,0.12)'
+  else if (heat.score > 60) rowBg = 'rgba(255,50,50,' + (0.15 + Math.min(heat.score - 60, 40) / 40 * 0.25) + ')'
   else if (heat.score > 30) rowBg = 'rgba(255,140,0,' + (0.12 + (heat.score - 30) / 30 * 0.18) + ')'
   else if (heat.score > 10) rowBg = 'rgba(255,180,50,' + (0.10 + (heat.score - 10) / 20 * 0.15) + ')'
 
+  function handleRowClick() {
+    focusedSessionId.value = isFocused ? null : sess.sessionId
+    onToggle()
+  }
+
   return (
     <>
-      <tr style={'background:' + (rowBg || 'transparent') + ';cursor:pointer'} onClick={onToggle}>
+      <tr style={'background:' + (rowBg || 'transparent') + ';cursor:pointer' + (isFocused ? ';outline:1px solid var(--vscode-focusBorder,#007fd4)' : '')} onClick={handleRowClick}>
         <td style="text-align:center;font-weight:bold;white-space:nowrap">
           <span style="font-size:9px;color:var(--muted);margin-right:3px">{expanded ? '▼' : '▶'}</span>{realIdx} <span style={'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + agentDotColor + ';vertical-align:middle'} />
         </td>
@@ -317,21 +324,33 @@ export function Efficiency() {
     (timelines[sess.sessionId] ?? sess.timeline ?? []).filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0).length >= 1
   )
 
+  const totalSessionCount = sessionSummary.value?.sessions?.length ?? breakdownSessions.length
+  const cappedChart = breakdownSessions.slice(0, CHART_MAX)
+
   return (
     <div id="efficiency-content">
       {sessionsWithGrowth.length > 0 && (
         <>
-          <h3 class="has-metric-tip" style="margin:24px 0 12px;font-size:13px;color:var(--muted)" data-tip="Input tokens sent per LLM call within each session. Rising lines indicate context accumulation. A sharp drop mid-session indicates context compaction. A single dot marks an in-progress session with one LLM call so far.">CONTEXT GROWTH PER SESSION</h3>
-          <ContextGrowthChart sessions={breakdownSessions} timelines={timelines} />
-          <div style="font-size:10px;color:var(--muted);opacity:0.7;margin:4px 0 12px 2px">
-            Suggestion: If the graph appears crowded, consider refining the view by selecting fewer sessions (such as “Last 5”) or filtering by a specific agent to enhance clarity.
+          <h3 class="has-metric-tip" style="margin:24px 0 4px;font-size:13px;color:var(--muted)" data-tip="Input tokens per LLM call within each session. Rising lines show context accumulation; a sharp drop indicates compaction.">CONTEXT GROWTH PER SESSION</h3>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:6px">
+            {breakdownSessions.length > CHART_MAX
+              ? `Showing ${CHART_MAX} most recent of ${totalSessionCount} sessions`
+              : null}
           </div>
+          <ContextGrowthChart sessions={cappedChart} timelines={timelines} />
         </>
       )}
 
       {breakdownSessions.length > 0 && (
         <>
-          <h3 class="has-metric-tip" style="margin:24px 0 12px;font-size:13px;color:var(--muted)" data-tip="Per-session metrics with heat coloring. Warmer colors indicate higher token usage or more errors. Expand a row to see efficiency notes.">SESSION BREAKDOWN</h3>
+          <div style="display:flex;align-items:baseline;gap:10px;margin:24px 0 8px">
+            <h3 class="has-metric-tip" style="margin:0;font-size:13px;color:var(--muted)" data-tip="Per-session metrics with heat coloring. Warmer colors indicate higher token usage or more errors. Click a row to focus it — Traces and Flow will open to that session.">SESSION BREAKDOWN</h3>
+            <span style="font-size:10px;color:var(--muted)">
+              {breakdownSessions.length < totalSessionCount
+                ? `Showing ${breakdownSessions.length} of ${totalSessionCount} sessions`
+                : `${totalSessionCount} session${totalSessionCount !== 1 ? 's' : ''}`}
+            </span>
+          </div>
           <div style="display:flex;gap:16px;margin-bottom:4px;font-size:10px;color:var(--muted);align-items:center">
             <span style="font-weight:600">Usage:</span>
             <span class="flex-4"><span style="display:inline-block;width:12px;height:10px;border-radius:2px;background:var(--vscode-editorWidget-background,var(--bg));border:1px solid var(--border)"></span> Minimal</span>
@@ -392,12 +411,15 @@ export function Efficiency() {
       {/* Token usage per session */}
       {displaySess.length > 0 && (
         <div style="margin-top:32px">
-          <h3 style="margin:0 0 8px;font-size:13px;color:var(--muted)">TOKEN USAGE PER SESSION</h3>
+          <h3 style="margin:0 0 4px;font-size:13px;color:var(--muted)">TOKEN USAGE PER SESSION</h3>
+          {displaySess.length > CHART_MAX && (
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Showing {CHART_MAX} of {displaySess.length} sessions</div>
+          )}
           <div style="display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)">
             <span><span style="display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" /> Input</span>
             <span><span style="display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" /> Output</span>
           </div>
-          <SessionTokenChart sessions={displaySess} />
+          <SessionTokenChart sessions={displaySess.slice(0, CHART_MAX)} />
         </div>
       )}
 
