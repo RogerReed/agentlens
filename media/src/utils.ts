@@ -388,24 +388,31 @@ export function getAllSessionsChronological(): SessionSummaryCard[] {
   return sessionSummary.value?.sessions ?? []
 }
 
-// Human-readable session timestamp — used everywhere instead of session numbers.
-// Recent: "42m ago", "3h ago". Older: "May 29 · 14:23".
+// Absolute session timestamp to-the-second — the primary session identifier.
+// Today's sessions: "14:23:07". Older: "May 29, 14:23:07". Different year: "2025-05-29 14:23:07".
 export function formatSessionTime(sess: { startTime?: string }): string {
   if (!sess?.startTime) return '—'
   const d = new Date(sess.startTime)
   if (isNaN(d.getTime())) return '—'
-  const ageMs = Date.now() - d.getTime()
-  if (ageMs < 60_000)        return 'just now'
-  if (ageMs < 3_600_000)     return `${Math.round(ageMs / 60_000)}m ago`
-  if (ageMs < 86_400_000)    return `${Math.round(ageMs / 3_600_000)}h ago`
-  if (ageMs < 7 * 86_400_000) {
-    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-    const hhmm = d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })
-    return `${days[d.getDay()]} · ${hhmm}`
+  const hms = d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  const now = new Date()
+  if (d.getFullYear() !== now.getFullYear()) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${hms}`
   }
+  if (d.toDateString() === now.toDateString()) return hms
   const mmdd = d.toLocaleDateString('en', { month: 'short', day: 'numeric' })
-  const hhmm = d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })
-  return `${mmdd} · ${hhmm}`
+  return `${mmdd}, ${hms}`
+}
+
+// Compact timestamp for chart axis labels — no seconds, abbreviated.
+export function formatSessionTimeShort(sess: { startTime?: string }): string {
+  if (!sess?.startTime) return '—'
+  const d = new Date(sess.startTime)
+  if (isNaN(d.getTime())) return '—'
+  const hm = d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })
+  const now = new Date()
+  if (d.toDateString() === now.toDateString()) return hm
+  return `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${hm}`
 }
 
 // ISO date string "YYYY-MM-DD" for a session's start time.
