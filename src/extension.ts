@@ -12,6 +12,7 @@ import { openDatabase, AgentLensDb } from './database/db'
 import { DatabaseReader, openReadonlySnapshot } from './database/reader'
 import { DatabaseWriter } from './database/writer'
 import { migrateGlobalStateToSqlite } from './database/migration'
+import { runRetention } from './database/retention'
 import { SessionRepository } from './sessionRepository'
 import { summarizeSpans } from './spanSummarizer'
 
@@ -111,6 +112,17 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Run one-time migration before registering the onUpdate subscriber.
     await migrateGlobalStateToSqlite(context, writer, log)
+
+    // Initial retention run on activation.
+    const retentionDays = vscode.workspace.getConfiguration('agentLens').get<number>('sessionRetentionDays', 90)
+    await runRetention(agentLensDb.raw, retentionDays, agentLensDb.blobsDir, log)
+
+    // Periodic retention: once per 24 hours while the extension is active.
+    const retentionTimer = setInterval(() => {
+      const days = vscode.workspace.getConfiguration('agentLens').get<number>('sessionRetentionDays', 90)
+      void runRetention(agentLensDb!.raw, days, agentLensDb!.blobsDir, log)
+    }, 24 * 60 * 60 * 1000)
+    context.subscriptions.push({ dispose: () => clearInterval(retentionTimer) })
 
     context.subscriptions.push(
       store.onUpdate((traceId) => {
@@ -227,6 +239,32 @@ export async function activate(context: vscode.ExtensionContext) {
       provider.refresh()
       DashboardPanel.sendClearAll()
       vscode.window.showInformationMessage('AgentLens: session data cleared')
+    })
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('agentLens.showStorageStats', () => {
+      if (!agentLensDb || !repository) {
+        vscode.window.showInformationMessage('AgentLens: database not available')
+        return
+      }
+      const dbPath = path.join(context.globalStorageUri.fsPath, 'agentlens.db')
+      const { dbBytes, blobBytes, blobCount } = repository.getStorageStats(dbPath, agentLensDb.blobsDir)
+      const lifetime = repository.queryLifetimeStats()
+      const toMb = (b: number) => (b / 1_048_576).toFixed(1)
+      const dateRange = lifetime.totalSessions > 0
+        ? `${new Date(lifetime.oldestSessionMs).toISOString().slice(0, 10)} → ${new Date(lifetime.newestSessionMs).toISOString().slice(0, 10)}`
+        : 'no sessions'
+      const retentionDays = vscode.workspace.getConfiguration('agentLens').get<number>('sessionRetentionDays', 90)
+      const msg = [
+        `Database:  ${toMb(dbBytes)} MB  (${lifetime.totalSessions} sessions, ${dateRange})`,
+        `Blobs:     ${toMb(blobBytes)} MB  (${blobCount} files)`,
+        `Total:     ${toMb(dbBytes + blobBytes)} MB`,
+        `Retention: ${retentionDays} days`,
+      ].join('\n')
+      outputChannel!.appendLine('\nAgentLens storage stats:\n' + msg)
+      outputChannel!.show(true)
+      vscode.window.showInformationMessage(`AgentLens storage: ${toMb(dbBytes + blobBytes)} MB total — see Output panel for details.`)
     })
   )
 

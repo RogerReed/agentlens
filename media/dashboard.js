@@ -1005,6 +1005,10 @@
   }
 
   // media/src/state.ts
+  var dailyStats = y3([]);
+  var lifetimeStats = y3(null);
+  var burnRateData = y3(null);
+  var searchResults = y3(null);
   function makeSetSignal() {
     const s4 = y3(/* @__PURE__ */ new Set());
     return {
@@ -1252,7 +1256,7 @@
   }
 
   // media/src/tabs/Efficiency.tsx
-  function ContextGrowthChart({ sessions }) {
+  function ContextGrowthChart({ sessions, timelines }) {
     const canvasRef = A2(null);
     y2(() => {
       const canvas = canvasRef.current;
@@ -1260,7 +1264,7 @@
       const seriesData = [];
       let globalMax = 0, globalMin = Infinity, globalMaxPoints = 0;
       sessions.forEach((sess, idx) => {
-        const llmEntries = (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+        const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
         if (llmEntries.length < 1) return;
         const points = llmEntries.map((e4) => e4.inputTokens ?? 0);
         const max = Math.max(...points), min = Math.min(...points);
@@ -1399,7 +1403,15 @@
         ] }),
         /* @__PURE__ */ u4("td", { style: "text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: sess.userRequest, children: [
           (sess.userRequest ?? "").slice(0, 60),
-          (sess.userRequest ?? "").length > 60 ? "\u2026" : ""
+          (sess.userRequest ?? "").length > 60 ? "\u2026" : "",
+          (() => {
+            const br = burnRateData.value;
+            if (!br || br.sessionId !== sess.sessionId) return null;
+            const tpm = br.burnRate.tokensPerMinute;
+            const cph = br.burnRate.costPerHour;
+            const label = formatCompact(Math.round(tpm)) + " tok/min" + (cph > 1e-3 ? " \xB7 $" + cph.toFixed(2) + "/hr" : "");
+            return /* @__PURE__ */ u4("span", { style: "margin-left:6px;padding:1px 5px;background:var(--vscode-charts-green,#81c784);color:#000;border-radius:3px;font-size:9px;font-weight:600;vertical-align:middle", "data-tip": "Active session burn rate: " + label, children: label });
+          })()
         ] }),
         /* @__PURE__ */ u4("td", { style: "text-align:left;white-space:nowrap;color:var(--muted);font-size:10px", title: sess.model, children: sess.model ? sess.model.split("/").pop() : "\u2014" }),
         /* @__PURE__ */ u4("td", { style: "text-align:left;white-space:nowrap;font-size:10px;font-family:monospace;color:var(--muted)", title: sess.conversationId || "", children: sess.conversationId ? sess.conversationId.slice(0, 8) : "\u2014" }),
@@ -1417,6 +1429,91 @@
       expanded && heat.reasons.length > 0 && /* @__PURE__ */ u4(SessionDiagRow, { reasons: heat.reasons })
     ] });
   }
+  function SessionTokenChart({ sessions }) {
+    const canvasRef = A2(null);
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const sessionData = sessions.map((sess, idx) => {
+        const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0;
+        const num = getSessionGlobalNumber(sess) || idx + 1;
+        return input + output > 0 ? { session: num, input, output, source: sess.source } : null;
+      }).filter(Boolean).reverse();
+      if (sessionData.length === 0) {
+        canvas.style.display = "none";
+        return;
+      }
+      canvas.style.display = "block";
+      const dpr = window.devicePixelRatio || 1;
+      const drect = canvas.getBoundingClientRect();
+      canvas.width = drect.width * dpr;
+      canvas.height = drect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      const w5 = drect.width, h5 = drect.height;
+      ctx.clearRect(0, 0, w5, h5);
+      const pad = { top: 8, right: 44, bottom: 34, left: 44 };
+      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
+      const maxIn = Math.max(...sessionData.map((s4) => s4.input)) || 1;
+      const maxOut = Math.max(...sessionData.map((s4) => s4.output)) || 1;
+      const cs = getComputedStyle(document.body);
+      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
+      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
+      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 0.5;
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const y5 = pad.top + chartH * i4 / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y5);
+        ctx.lineTo(pad.left + chartW, y5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#FFB74D";
+      ctx.font = fontStr;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxIn * (4 - i4) / 4;
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
+      }
+      ctx.fillStyle = "#81C784";
+      ctx.textAlign = "left";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxOut * (4 - i4) / 4;
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left + chartW + 4, pad.top + chartH * i4 / 4);
+      }
+      const barGap = 8;
+      const sl = sessionData.length;
+      const groupWidth = Math.max(12, (chartW - barGap * (sl + 1)) / sl);
+      const halfBar = groupWidth / 2;
+      const totalBarsW = sl * groupWidth + (sl + 1) * barGap;
+      const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      sessionData.forEach((s4, i4) => {
+        const x4 = offsetX + i4 * (groupWidth + barGap);
+        const inH = s4.input / maxIn * chartH;
+        ctx.fillStyle = "#FFB74D";
+        ctx.fillRect(x4, pad.top + chartH - inH, halfBar, inH);
+        const outH = s4.output / maxOut * chartH;
+        ctx.fillStyle = "#81C784";
+        ctx.fillRect(x4 + halfBar, pad.top + chartH - outH, halfBar, outH);
+        ctx.fillStyle = textColor;
+        ctx.fillText("" + s4.session, x4 + groupWidth / 2, pad.top + chartH + 4);
+        ctx.beginPath();
+        ctx.arc(x4 + groupWidth / 2, pad.top + chartH + 18, 3, 0, Math.PI * 2);
+        ctx.fillStyle = getAgentColor(s4.source);
+        ctx.fill();
+      });
+    });
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:200px;display:block" }),
+      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
+    ] });
+  }
   function Efficiency() {
     const summary = sessionSummary.value;
     const [expandedRows, setExpandedRows] = d2(/* @__PURE__ */ new Set([0]));
@@ -1425,6 +1522,12 @@
     }
     const displaySess = displaySessions.value;
     const breakdownSessions = displaySess.slice().reverse();
+    const timelines = sessionTimelines.value;
+    breakdownSessions.forEach((sess) => {
+      if (!timelines[sess.sessionId]) {
+        vscode?.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
+      }
+    });
     const sessionHeats = breakdownSessions.map((sess) => {
       let score = 0;
       const reasons = [];
@@ -1445,7 +1548,7 @@
         score += 10;
         reasons.push({ text: sess.inputTokens.toLocaleString() + " input tokens \u2014 audit your instruction files and remove verbose examples", linkPhrase: "audit your instruction files and remove verbose examples", helpId: "help-large-context" });
       }
-      const llmEntries = (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+      const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
       if (llmEntries.length >= 3) {
         const first = llmEntries[0].inputTokens ?? 0, last = llmEntries[llmEntries.length - 1].inputTokens ?? 0;
         const growthPct = first > 0 ? (last - first) / first * 100 : 0;
@@ -1466,12 +1569,12 @@
       totErr += s4.errors;
     });
     const sessionsWithGrowth = breakdownSessions.filter(
-      (sess) => (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0).length >= 1
+      (sess) => (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0).length >= 1
     );
     return /* @__PURE__ */ u4("div", { id: "efficiency-content", children: [
       sessionsWithGrowth.length > 0 && /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Input tokens sent per LLM call within each session. Rising lines indicate context accumulation. A sharp drop mid-session indicates context compaction. A single dot marks an in-progress session with one LLM call so far.", children: "CONTEXT GROWTH PER SESSION" }),
-        /* @__PURE__ */ u4(ContextGrowthChart, { sessions: breakdownSessions }),
+        /* @__PURE__ */ u4(ContextGrowthChart, { sessions: breakdownSessions, timelines }),
         /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);opacity:0.7;margin:4px 0 12px 2px", children: "Suggestion: If the graph appears crowded, consider refining the view by selecting fewer sessions (such as \u201CLast 5\u201D) or filtering by a specific agent to enhance clarity." })
       ] }),
       breakdownSessions.length > 0 && /* @__PURE__ */ u4(S, { children: [
@@ -1538,6 +1641,20 @@
             /* @__PURE__ */ u4("td", { style: "text-align:right" + (totErr > 0 ? ";color:var(--error)" : ""), children: /* @__PURE__ */ u4("strong", { children: totErr }) })
           ] }) })
         ] })
+      ] }),
+      displaySess.length > 0 && /* @__PURE__ */ u4("div", { style: "margin-top:32px", children: [
+        /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "TOKEN USAGE PER SESSION" }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
+          /* @__PURE__ */ u4("span", { children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" }),
+            " Input"
+          ] }),
+          /* @__PURE__ */ u4("span", { children: [
+            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" }),
+            " Output"
+          ] })
+        ] }),
+        /* @__PURE__ */ u4(SessionTokenChart, { sessions: displaySess })
       ] })
     ] });
   }
@@ -2901,148 +3018,6 @@
     ] });
   }
 
-  // media/src/tabs/Tokens.tsx
-  function SessionChart({ sessions }) {
-    const canvasRef = A2(null);
-    y2(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      const sessionData = sessions.map((sess, idx) => {
-        const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0;
-        const num = getSessionGlobalNumber(sess) || idx + 1;
-        return input + output > 0 ? { session: num, input, output, source: sess.source } : null;
-      }).filter(Boolean).reverse();
-      if (sessionData.length === 0) {
-        canvas.style.display = "none";
-        return;
-      }
-      canvas.style.display = "block";
-      const dpr = window.devicePixelRatio || 1;
-      const drect = canvas.getBoundingClientRect();
-      canvas.width = drect.width * dpr;
-      canvas.height = drect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      ctx.scale(dpr, dpr);
-      const w5 = drect.width, h5 = drect.height;
-      ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 44, bottom: 34, left: 44 };
-      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
-      const maxIn = Math.max(...sessionData.map((s4) => s4.input)) || 1;
-      const maxOut = Math.max(...sessionData.map((s4) => s4.output)) || 1;
-      const cs = getComputedStyle(document.body);
-      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
-      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
-      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
-      ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 0.5;
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const y5 = pad.top + chartH * i4 / 4;
-        ctx.beginPath();
-        ctx.moveTo(pad.left, y5);
-        ctx.lineTo(pad.left + chartW, y5);
-        ctx.stroke();
-      }
-      ctx.fillStyle = "#FFB74D";
-      ctx.font = fontStr;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const val = maxIn * (4 - i4) / 4;
-        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
-      }
-      ctx.fillStyle = "#81C784";
-      ctx.textAlign = "left";
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const val = maxOut * (4 - i4) / 4;
-        if (val > 0) ctx.fillText(formatCompact(val), pad.left + chartW + 4, pad.top + chartH * i4 / 4);
-      }
-      const barGap = 8;
-      const sl = sessionData.length;
-      const groupWidth = Math.max(12, (chartW - barGap * (sl + 1)) / sl);
-      const halfBar = groupWidth / 2;
-      const totalBarsW = sl * groupWidth + (sl + 1) * barGap;
-      const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      sessionData.forEach((s4, i4) => {
-        const x4 = offsetX + i4 * (groupWidth + barGap);
-        const inH = s4.input / maxIn * chartH;
-        ctx.fillStyle = "#FFB74D";
-        ctx.fillRect(x4, pad.top + chartH - inH, halfBar, inH);
-        const outH = s4.output / maxOut * chartH;
-        ctx.fillStyle = "#81C784";
-        ctx.fillRect(x4 + halfBar, pad.top + chartH - outH, halfBar, outH);
-        ctx.fillStyle = textColor;
-        ctx.fillText("" + s4.session, x4 + groupWidth / 2, pad.top + chartH + 4);
-        ctx.beginPath();
-        ctx.arc(x4 + groupWidth / 2, pad.top + chartH + 18, 3, 0, Math.PI * 2);
-        ctx.fillStyle = getAgentColor(s4.source);
-        ctx.fill();
-      });
-    });
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("canvas", { ref: canvasRef, id: "dashboard-session-chart", style: "width:100%;height:200px;display:block" }),
-      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
-    ] });
-  }
-  function agentLabel(source) {
-    if (source === "claude_code") return "Claude";
-    if (source === "copilot") return "Copilot";
-    if (source === "codex") return "Codex";
-    return "Agent";
-  }
-  function Tokens() {
-    const sessions = displaySessions.value;
-    if (sessions.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "tokens-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    const byName = {};
-    sessions.forEach((sess) => {
-      const key = sess.model ? `${agentLabel(sess.source)}: ${sess.model}` : agentLabel(sess.source);
-      const tokens = (sess.inputTokens ?? 0) + (sess.outputTokens ?? 0);
-      if (tokens <= 0) return;
-      if (!byName[key]) byName[key] = { tokens: 0, count: 0 };
-      byName[key].tokens += tokens;
-      byName[key].count++;
-    });
-    const data = Object.entries(byName).map(([name, v4]) => ({ name, ...v4 })).sort((a4, b4) => b4.tokens - a4.tokens);
-    const maxTokensBar = data.length > 0 ? data[0].tokens : 1;
-    return /* @__PURE__ */ u4("div", { id: "tokens-content", children: [
-      /* @__PURE__ */ u4("div", { style: "margin-bottom:24px", children: [
-        /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "TOKEN USAGE PER SESSION" }),
-        /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
-          /* @__PURE__ */ u4("span", { children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" }),
-            " Input"
-          ] }),
-          /* @__PURE__ */ u4("span", { children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" }),
-            " Output"
-          ] })
-        ] }),
-        /* @__PURE__ */ u4(SessionChart, { sessions })
-      ] }),
-      /* @__PURE__ */ u4("h3", { style: "margin:32px 0 12px;font-size:13px;color:var(--muted)", children: "TOKENS BY MODEL / AGENT" }),
-      /* @__PURE__ */ u4("div", { class: "bar-chart-container", style: "margin-top:32px", children: [
-        /* @__PURE__ */ u4("div", { class: "bar-chart", children: data.slice(0, 20).map((d5) => {
-          const h5 = Math.max(d5.tokens / maxTokensBar * 180, 2);
-          const countLabel = d5.count > 1 ? ` (${d5.count} sessions)` : "";
-          return /* @__PURE__ */ u4("div", { class: "bar-col", children: [
-            /* @__PURE__ */ u4("div", { class: "bar-value", children: d5.tokens.toLocaleString() }),
-            /* @__PURE__ */ u4("div", { class: "bar-rect", style: "height:" + h5 + "px", title: `${d5.name}: ${d5.tokens.toLocaleString()} tokens${countLabel}` }),
-            /* @__PURE__ */ u4("div", { class: "bar-label", children: [
-              d5.name,
-              countLabel
-            ] })
-          ] }, d5.name);
-        }) }),
-        /* @__PURE__ */ u4("div", { class: "axis-label", children: "Token consumption by model (aggregated across sessions)" })
-      ] })
-    ] });
-  }
-
   // media/src/tabs/Cost.tsx
   function fmtUsd2(usd) {
     if (usd === 0) return "$0.00";
@@ -3057,6 +3032,125 @@
   }
   function sessionCostMode(session, mode) {
     return session.source === "codex" || session.source === "claude_code" ? "token" : mode;
+  }
+  function HistoryChart({ rows }) {
+    const [hovered, setHovered] = d2(null);
+    if (rows.length === 0) {
+      return /* @__PURE__ */ u4("div", { class: "empty-state", style: "margin-bottom:16px", children: "No historical data yet \u2014 sessions will appear here as they are recorded." });
+    }
+    const W = 600, H2 = 180;
+    const pad = { top: 12, right: 48, bottom: 28, left: 52 };
+    const chartW = W - pad.left - pad.right;
+    const chartH = H2 - pad.top - pad.bottom;
+    const maxTokens = Math.max(...rows.map((r5) => r5.totalTokens + r5.cacheReadTokens + r5.cacheCreateTokens), 1);
+    const maxCost = Math.max(...rows.map((r5) => r5.costUsd), 1e-3);
+    const barW = Math.max(4, Math.floor(chartW / rows.length) - 2);
+    const gap = Math.max(1, Math.floor((chartW - barW * rows.length) / (rows.length + 1)));
+    const startX = pad.left + gap;
+    const gridLines = [0, 1, 2, 3, 4].map((i4) => ({
+      y: pad.top + chartH * (1 - i4 / 4),
+      label: formatCompact(Math.round(maxTokens * i4 / 4))
+    }));
+    const costPoints = rows.map((r5, i4) => {
+      const cx = startX + i4 * (barW + gap) + barW / 2;
+      const cy = r5.costUsd > 0 ? pad.top + chartH * (1 - r5.costUsd / maxCost) : pad.top + chartH;
+      return `${cx},${cy}`;
+    });
+    const hovRow = hovered !== null ? rows[hovered] : null;
+    return /* @__PURE__ */ u4("div", { style: "position:relative;margin-bottom:8px", children: [
+      /* @__PURE__ */ u4(
+        "svg",
+        {
+          viewBox: `0 0 ${W} ${H2}`,
+          style: "width:100%;height:180px;display:block",
+          onMouseLeave: () => setHovered(null),
+          children: [
+            gridLines.map((gl) => /* @__PURE__ */ u4("g", { children: [
+              /* @__PURE__ */ u4("line", { x1: pad.left, y1: gl.y, x2: W - pad.right, y2: gl.y, stroke: "var(--vscode-panel-border,#333)", "stroke-width": "0.5" }),
+              /* @__PURE__ */ u4("text", { x: pad.left - 4, y: gl.y, "text-anchor": "end", "dominant-baseline": "middle", fill: "var(--vscode-descriptionForeground,#888)", "font-size": "9", children: gl.label })
+            ] }, gl.y)),
+            [0, 1, 2, 3, 4].map((i4) => /* @__PURE__ */ u4("text", { x: W - pad.right + 4, y: pad.top + chartH * (1 - i4 / 4), "text-anchor": "start", "dominant-baseline": "middle", fill: "var(--vscode-descriptionForeground,#888)", "font-size": "9", children: "$" + (maxCost * i4 / 4).toFixed(maxCost < 0.1 ? 3 : 2) }, i4)),
+            rows.map((r5, i4) => {
+              const x4 = startX + i4 * (barW + gap);
+              const inputOnlyH = (r5.totalTokens - r5.outputTokens) / maxTokens * chartH;
+              const cacheReadH = r5.cacheReadTokens / maxTokens * chartH;
+              const cacheCreateH = r5.cacheCreateTokens / maxTokens * chartH;
+              const outputH = r5.outputTokens / maxTokens * chartH;
+              let yBase = pad.top + chartH;
+              const bars = [
+                { fill: "var(--vscode-charts-blue,#4fc3f7)", height: Math.max(0, inputOnlyH) },
+                { fill: "var(--vscode-charts-green,#81c784)", height: Math.max(0, cacheReadH) },
+                { fill: "var(--vscode-charts-yellow,#ffb74d)", height: Math.max(0, cacheCreateH) },
+                { fill: "var(--vscode-charts-red,#e57373)", height: Math.max(0, outputH) }
+              ];
+              return /* @__PURE__ */ u4("g", { onMouseEnter: () => setHovered(i4), style: "cursor:default", children: [
+                bars.map((bar, bi) => {
+                  if (bar.height < 0.5) return null;
+                  yBase -= bar.height;
+                  return /* @__PURE__ */ u4("rect", { x: x4, y: yBase, width: barW, height: bar.height, fill: bar.fill, opacity: hovered === i4 ? 1 : 0.85 }, bi);
+                }),
+                /* @__PURE__ */ u4("text", { x: x4 + barW / 2, y: H2 - pad.bottom + 10, "text-anchor": "middle", fill: "var(--vscode-descriptionForeground,#888)", "font-size": "8", children: r5.day.slice(5) })
+              ] }, i4);
+            }),
+            rows.length > 1 && /* @__PURE__ */ u4(
+              "polyline",
+              {
+                points: costPoints.join(" "),
+                fill: "none",
+                stroke: "var(--vscode-charts-purple,#ba68c8)",
+                "stroke-width": "1.5",
+                "stroke-dasharray": "3 2",
+                opacity: "0.9"
+              }
+            ),
+            rows.map((r5, i4) => {
+              if (r5.costUsd === 0) return null;
+              const cx = startX + i4 * (barW + gap) + barW / 2;
+              const cy = pad.top + chartH * (1 - r5.costUsd / maxCost);
+              return /* @__PURE__ */ u4("circle", { cx, cy, r: "2.5", fill: "var(--vscode-charts-purple,#ba68c8)" }, i4);
+            })
+          ]
+        }
+      ),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;font-size:10px;color:var(--muted);margin-top:2px;flex-wrap:wrap", children: [
+        ["var(--vscode-charts-blue,#4fc3f7)", "Input tok"],
+        ["var(--vscode-charts-green,#81c784)", "Cache read"],
+        ["var(--vscode-charts-yellow,#ffb74d)", "Cache write"],
+        ["var(--vscode-charts-red,#e57373)", "Output tok"],
+        ["var(--vscode-charts-purple,#ba68c8)", "Cost (dashed line)"]
+      ].map(([color, label]) => /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px", children: [
+        /* @__PURE__ */ u4("span", { style: `display:inline-block;width:8px;height:8px;border-radius:2px;background:${color}` }),
+        label
+      ] }, label)) }),
+      hovRow && /* @__PURE__ */ u4("div", { style: "position:absolute;top:4px;right:4px;background:var(--vscode-editorWidget-background,#252526);border:1px solid var(--vscode-panel-border,#333);border-radius:4px;padding:8px 10px;font-size:11px;line-height:1.8;pointer-events:none;z-index:10;min-width:150px", children: [
+        /* @__PURE__ */ u4("div", { style: "font-weight:600;margin-bottom:2px", children: hovRow.day }),
+        /* @__PURE__ */ u4("div", { style: "color:var(--muted)", children: [
+          hovRow.sessionCount,
+          " session",
+          hovRow.sessionCount !== 1 ? "s" : ""
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          "Input: ",
+          /* @__PURE__ */ u4("strong", { children: formatCompact(hovRow.totalTokens) })
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          "Cache read: ",
+          formatCompact(hovRow.cacheReadTokens)
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          "Cache write: ",
+          formatCompact(hovRow.cacheCreateTokens)
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          "Output: ",
+          formatCompact(hovRow.outputTokens)
+        ] }),
+        /* @__PURE__ */ u4("div", { style: "margin-top:4px;color:var(--vscode-charts-purple,#ba68c8)", children: [
+          "Cost: ",
+          /* @__PURE__ */ u4("strong", { children: "$" + hovRow.costUsd.toFixed(3) })
+        ] })
+      ] })
+    ] });
   }
   function CostBarChart({ sessions, mode }) {
     const canvasRef = A2(null);
@@ -3225,6 +3319,36 @@
           "Claude \u2014 Always uses token-based pricing"
         ] })
       ] }),
+      (() => {
+        const stats = dailyStats.value;
+        const lifetime = lifetimeStats.value;
+        const agentFilter = selectedAgentFilter.value;
+        const filteredStats = agentFilter !== "all" ? stats : stats;
+        return /* @__PURE__ */ u4("div", { style: "margin-bottom:24px", children: [
+          /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "30-DAY TOKEN & COST HISTORY" }),
+          /* @__PURE__ */ u4(HistoryChart, { rows: filteredStats }),
+          lifetime && lifetime.totalSessions > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;gap:20px;font-size:11px;color:var(--muted);flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--vscode-panel-border)", children: [
+            /* @__PURE__ */ u4("span", { children: [
+              lifetime.totalSessions,
+              " total sessions"
+            ] }),
+            /* @__PURE__ */ u4("span", { children: [
+              formatCompact(lifetime.totalTokens),
+              " total tokens"
+            ] }),
+            /* @__PURE__ */ u4("span", { style: "color:var(--foreground)", children: [
+              "~",
+              "$" + lifetime.totalCostUsd.toFixed(2),
+              " estimated lifetime cost"
+            ] }),
+            lifetime.oldestSessionMs > 0 && /* @__PURE__ */ u4("span", { children: [
+              new Date(lifetime.oldestSessionMs).toISOString().slice(0, 10),
+              " \u2192 ",
+              new Date(lifetime.newestSessionMs).toISOString().slice(0, 10)
+            ] })
+          ] })
+        ] });
+      })(),
       /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "ESTIMATED COST PER SESSION" }),
       /* @__PURE__ */ u4(CostBarChart, { sessions: pricedSessions, mode }),
       /* @__PURE__ */ u4("h3", { style: "margin:24px 0 8px;font-size:13px;color:var(--muted)", children: "SESSION COST TABLE" }),
@@ -3382,127 +3506,6 @@
               /* @__PURE__ */ u4("strong", { children: "~$?" }),
               ". Older Claude models (claude-3-5-sonnet, claude-3-opus, etc.) may appear in imported historical sessions."
             ] })
-          ] })
-        ] })
-      ] })
-    ] });
-  }
-
-  // media/src/tabs/Latency.tsx
-  function TtftChart({ sessions }) {
-    const canvasRef = A2(null);
-    y2(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      const barData = sessions.map((sess, idx) => {
-        const llmEntries = (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.ttft ?? 0) > 0);
-        if (llmEntries.length === 0) return null;
-        const ttft = Math.round(llmEntries.reduce((s4, e4) => s4 + (e4.ttft ?? 0), 0) / llmEntries.length);
-        return ttft > 0 ? { session: getSessionGlobalNumber(sess) || idx + 1, ttft, source: sess.source } : null;
-      }).filter(Boolean).reverse();
-      if (barData.length === 0) {
-        canvas.style.display = "none";
-        return;
-      }
-      canvas.style.display = "block";
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      ctx.scale(dpr, dpr);
-      const w5 = rect.width, h5 = rect.height;
-      const pad = { top: 8, right: 12, bottom: 34, left: 56 };
-      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
-      const maxTtft = Math.max(...barData.map((d5) => d5.ttft)) || 1;
-      const cs = getComputedStyle(document.body);
-      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
-      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
-      ctx.font = fontStr;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillStyle = textColor;
-      const barW = Math.max(8, (chartW - 4 * (barData.length + 1)) / barData.length);
-      barData.forEach((d5, i4) => {
-        const x4 = pad.left + i4 * (barW + 4);
-        const barH = d5.ttft / maxTtft * chartH;
-        ctx.fillStyle = "#4fc3f7";
-        ctx.fillRect(x4, pad.top + chartH - barH, barW, barH);
-        ctx.fillStyle = textColor;
-        ctx.fillText("" + d5.session, x4 + barW / 2, pad.top + chartH + 4);
-      });
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const val = maxTtft * (4 - i4) / 4;
-        ctx.fillText(val > 1e3 ? (val / 1e3).toFixed(1) + "s" : val.toFixed(0) + "ms", pad.left - 4, pad.top + chartH * i4 / 4);
-      }
-    });
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("canvas", { ref: canvasRef, id: "ttft-chart", style: "width:100%;height:160px;display:block" }),
-      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
-    ] });
-  }
-  function Latency() {
-    const sessions = displaySessions.value;
-    if (sessions.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "latency-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    const displayGroups = sessions.slice().reverse().slice(0, 20).map((sess, idx) => ({
-      label: "" + (getSessionGlobalNumber(sess) || idx + 1),
-      source: sess.source,
-      durationMs: sess.durationMs
-    }));
-    const maxDur = Math.max(...displayGroups.map((g4) => g4.durationMs)) || 1;
-    const sessionsWithTtft = sessions.filter((s4) => (s4.timeline ?? []).some((e4) => e4.type === "llm" && (e4.ttft ?? 0) > 0));
-    return /* @__PURE__ */ u4("div", { id: "latency-content", children: [
-      sessionsWithTtft.length > 0 && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:0 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Average time to first token per session.", children: "TIME TO FIRST TOKEN" }),
-        /* @__PURE__ */ u4(TtftChart, { sessions })
-      ] }),
-      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", children: "SESSION DURATION" }),
-      /* @__PURE__ */ u4("div", { class: "heatmap", children: [
-        /* @__PURE__ */ u4("table", { style: "border-collapse:collapse", children: [
-          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("td", {}),
-            displayGroups.map((g4, gi) => /* @__PURE__ */ u4("td", { style: "text-align:center;width:32px;min-width:32px;padding:2px 4px;vertical-align:bottom", children: /* @__PURE__ */ u4("div", { style: "font-size:10px;white-space:nowrap;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px", children: [
-              /* @__PURE__ */ u4("span", { style: "opacity:0.6", children: g4.label }),
-              g4.source && /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getAgentDotHtml(g4.source) } })
-            ] }) }, gi))
-          ] }) }),
-          /* @__PURE__ */ u4("tbody", { children: /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("td", { class: "heatmap-row-label", children: "Session" }),
-            displayGroups.map((g4, idx) => {
-              const intensity = g4.durationMs / maxDur;
-              const r5 = Math.round(79 + intensity * 176);
-              const gr = Math.round(195 - intensity * 130);
-              const bl = Math.round(247 - intensity * 180);
-              const bg = g4.durationMs > 0 ? `rgb(${r5},${gr},${bl})` : "transparent";
-              return /* @__PURE__ */ u4("td", { style: "text-align:center;width:32px;min-width:32px;padding:2px 4px", children: /* @__PURE__ */ u4("div", { class: "heatmap-cell", style: "background:" + bg, children: g4.durationMs > 0 && /* @__PURE__ */ u4("span", { class: "htip", children: [
-                "Session ",
-                g4.label,
-                ": ",
-                formatMs(g4.durationMs)
-              ] }) }) }, idx);
-            })
-          ] }) })
-        ] }),
-        /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" }),
-        /* @__PURE__ */ u4("div", { class: "heatmap-legend", children: [
-          /* @__PURE__ */ u4("span", { children: "Duration:" }),
-          /* @__PURE__ */ u4("span", { children: "Low" }),
-          /* @__PURE__ */ u4("div", { class: "heatmap-legend-bar", children: Array.from({ length: 6 }, (_4, li) => {
-            const int = li / 5;
-            const lr = Math.round(79 + int * 176);
-            const lg = Math.round(195 - int * 130);
-            const lb = Math.round(247 - int * 180);
-            return /* @__PURE__ */ u4("span", { style: `background:rgb(${lr},${lg},${lb})` }, li);
-          }) }),
-          /* @__PURE__ */ u4("span", { children: [
-            "High (",
-            formatMs(maxDur),
-            ")"
           ] })
         ] })
       ] })
@@ -3862,6 +3865,147 @@
     ] });
   }
 
+  // media/src/tabs/SessionSearch.tsx
+  var DATE_PRESETS = [
+    { label: "All time", sinceMs: null },
+    { label: "Today", sinceMs: -1 },
+    // -1 = resolve at search time to start-of-today
+    { label: "Last 7 days", sinceMs: 7 * 864e5 },
+    { label: "Last 30 days", sinceMs: 30 * 864e5 }
+  ];
+  function resolveSince(sinceMs) {
+    if (sinceMs === null) return void 0;
+    if (sinceMs === -1) {
+      const d5 = /* @__PURE__ */ new Date();
+      d5.setHours(0, 0, 0, 0);
+      return d5.getTime();
+    }
+    return Date.now() - sinceMs;
+  }
+  var SORT_OPTIONS = [
+    { label: "Recent", orderBy: "start_time", dir: "DESC" },
+    { label: "Most expensive", orderBy: "cost_usd", dir: "DESC" },
+    { label: "Longest", orderBy: "duration_ms", dir: "DESC" },
+    { label: "Most tokens", orderBy: "total_tokens", dir: "DESC" },
+    { label: "Most errors", orderBy: "errors", dir: "DESC" }
+  ];
+  function SessionSearch() {
+    const [text, setText] = d2("");
+    const [dateIdx, setDateIdx] = d2(0);
+    const [sortIdx, setSortIdx] = d2(0);
+    const debounceRef = A2(null);
+    y2(() => {
+      sendSearch();
+    }, []);
+    function sendSearch(overrides = {}) {
+      const t4 = overrides.text !== void 0 ? overrides.text : text;
+      const dIdx = overrides.dateIdx !== void 0 ? overrides.dateIdx : dateIdx;
+      const sIdx = overrides.sortIdx !== void 0 ? overrides.sortIdx : sortIdx;
+      const sinceVal = resolveSince(DATE_PRESETS[dIdx].sinceMs);
+      const sort = SORT_OPTIONS[sIdx];
+      const query = {
+        text: t4 || void 0,
+        since: sinceVal,
+        orderBy: sort.orderBy,
+        orderDir: sort.dir,
+        limit: 50,
+        offset: 0
+      };
+      vscode?.postMessage({ type: "searchSessions", query });
+    }
+    function handleTextChange(newText) {
+      setText(newText);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => sendSearch({ text: newText }), 300);
+    }
+    function handleDateChange(idx) {
+      setDateIdx(idx);
+      sendSearch({ dateIdx: idx });
+    }
+    function handleSortChange(idx) {
+      setSortIdx(idx);
+      sendSearch({ sortIdx: idx });
+    }
+    const results = searchResults.value;
+    return /* @__PURE__ */ u4("div", { id: "search-content", children: [
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px", children: /* @__PURE__ */ u4(
+        "input",
+        {
+          type: "text",
+          placeholder: "Search by session request\u2026",
+          value: text,
+          onInput: (e4) => handleTextChange(e4.target.value),
+          style: "flex:1;min-width:180px;padding:5px 8px;font-size:12px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+        }
+      ) }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px", children: [
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;flex-wrap:wrap;align-items:center", children: [
+          /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-right:2px", children: "Date" }),
+          DATE_PRESETS.map((p5, i4) => /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "tab-mini" + (dateIdx === i4 ? " active" : ""),
+              onClick: () => handleDateChange(i4),
+              children: p5.label
+            },
+            i4
+          ))
+        ] }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;flex-wrap:wrap;align-items:center", children: [
+          /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-right:2px", children: "Sort" }),
+          SORT_OPTIONS.map((s4, i4) => /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "tab-mini" + (sortIdx === i4 ? " active" : ""),
+              onClick: () => handleSortChange(i4),
+              children: s4.label
+            },
+            i4
+          ))
+        ] })
+      ] }),
+      !results && /* @__PURE__ */ u4("div", { class: "empty-state", children: "Enter a search term or change filters to search historical sessions." }),
+      results && results.sessions.length === 0 && /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions matched." }),
+      results && results.sessions.length > 0 && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-bottom:8px", children: [
+          "Showing ",
+          results.sessions.length,
+          " of ",
+          results.totalCount,
+          " result",
+          results.totalCount !== 1 ? "s" : ""
+        ] }),
+        /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: [
+          /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
+            /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border);color:var(--muted);text-align:left", children: [
+              /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Agent" }),
+              /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Request" }),
+              /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Date" }),
+              /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Tokens" }),
+              /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Duration" }),
+              /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Errors" })
+            ] }) }),
+            /* @__PURE__ */ u4("tbody", { children: results.sessions.map((s4) => /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border)", children: [
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;white-space:nowrap", children: [
+                /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor(s4.source) + ";margin-right:4px;vertical-align:middle" }),
+                getAgentSourceLabel(s4.source)
+              ] }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: s4.userRequest, children: s4.userRequest || /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-style:italic", children: "\u2014" }) }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;color:var(--muted);font-size:10px;white-space:nowrap", children: s4.startTime ? new Date(s4.startTime).toLocaleString() : "\u2014" }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(s4.inputTokens + s4.outputTokens) }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: formatMs(s4.durationMs) }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: s4.errors > 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--vscode-charts-red,#e57373)", children: s4.errors }) : /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2014" }) })
+            ] }, s4.sessionId)) })
+          ] }),
+          results.totalCount > results.sessions.length && /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);padding:8px", children: [
+            results.totalCount - results.sessions.length,
+            " more \u2014 refine your search to narrow down."
+          ] })
+        ] })
+      ] })
+    ] });
+  }
+
   // media/src/tabs/Files.tsx
   function countLines(s4) {
     return s4 ? s4.split("\n").length : 0;
@@ -4201,7 +4345,11 @@
       st.clickedNodeId = null;
       setIsPlayingRef.current(false);
       const sess = allSessions[clampedIdx]?.sess;
-      const timeline = (sess?.timeline ?? []).filter((e4) => e4.type !== "background");
+      const loadedTimeline = sess ? sessionTimelines.value[sess.sessionId] ?? sess.timeline : [];
+      if (sess && !sessionTimelines.value[sess.sessionId]) {
+        vscode?.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
+      }
+      const timeline = (loadedTimeline ?? []).filter((e4) => e4.type !== "background");
       const turns = sess ? buildTurnGroups(sess, timeline) : [];
       const toolData = /* @__PURE__ */ new Map();
       turns.forEach((turn, ti) => {
@@ -4677,7 +4825,7 @@
         canvas.removeEventListener("mouseleave", onMouseLeave);
         canvas.removeEventListener("click", onClick);
       };
-    }, [sessions, clampedIdx]);
+    }, [sessions, clampedIdx, sessionTimelines.value[allSessions[clampedIdx < 0 ? allSessions.length - 1 : clampedIdx]?.sess?.sessionId ?? ""]]);
     function handleZoomIn() {
       const c4 = canvasRef.current;
       if (!c4) return;
@@ -4970,93 +5118,6 @@
     ] });
   }
 
-  // media/src/tabs/Errors.tsx
-  function requestTimeline(sessionId) {
-    if (vscode) {
-      vscode.postMessage({ type: "loadSessionDetail", sessionId });
-    }
-  }
-  function ErrorEntry({ entry }) {
-    const [open, setOpen] = d2(false);
-    return /* @__PURE__ */ u4("div", { class: "error-item", style: "margin-left:12px;margin-bottom:4px", children: [
-      /* @__PURE__ */ u4("div", { class: "error-item-header", onClick: () => setOpen((o4) => !o4), style: "cursor:pointer", children: [
-        /* @__PURE__ */ u4("span", { class: "error-chevron", children: open ? "\u25BC" : "\u25B6" }),
-        /* @__PURE__ */ u4("span", { style: "font-size:11px;font-weight:600", children: entry.label }),
-        entry.durationMs > 0 && /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-left:8px", children: [
-          entry.durationMs,
-          "ms"
-        ] })
-      ] }),
-      open && entry.errorMessage && /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "padding-left:20px;margin-top:4px", children: [
-        /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: "Message" }),
-        /* @__PURE__ */ u4("span", { class: "wf-detail-val", style: "color:var(--error)", children: entry.errorMessage })
-      ] }),
-      open && entry.timestamp && /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "padding-left:20px", children: [
-        /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: "Time" }),
-        /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: entry.timestamp })
-      ] })
-    ] });
-  }
-  function SessionErrorGroup({ sess }) {
-    const [open, setOpen] = d2(false);
-    const timelines = sessionTimelines.value;
-    const timeline = timelines[sess.sessionId];
-    const errorEntries = timeline?.filter((e4) => e4.isError) ?? [];
-    const dotColor = getAgentColor(sess.source);
-    const toggle = () => {
-      if (!open && !timeline) {
-        requestTimeline(sess.sessionId);
-      }
-      setOpen((o4) => !o4);
-    };
-    return /* @__PURE__ */ u4("div", { class: "error-item", style: "margin-bottom:8px", children: [
-      /* @__PURE__ */ u4("div", { class: "error-item-header", onClick: toggle, style: "cursor:pointer", children: [
-        /* @__PURE__ */ u4("span", { class: "error-chevron", children: open ? "\u25BC" : "\u25B6" }),
-        /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + dotColor + ";margin-right:6px;vertical-align:middle", title: getAgentSourceLabel(sess.source) }),
-        /* @__PURE__ */ u4("span", { class: "error-name", children: sess.userRequest || "[session]" }),
-        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--error);margin-left:auto;white-space:nowrap", children: [
-          sess.errors,
-          " error",
-          sess.errors !== 1 ? "s" : ""
-        ] }),
-        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-left:8px", children: [
-          "#",
-          getSessionGlobalNumber(sess) || sess.sessionId.slice(0, 8)
-        ] })
-      ] }),
-      open && /* @__PURE__ */ u4("div", { style: "padding-top:4px", children: [
-        !timeline && /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding-left:20px", children: "Loading timeline\u2026" }),
-        timeline && errorEntries.length === 0 && /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding-left:20px", children: "No individual error entries found in timeline." }),
-        errorEntries.map((e4, i4) => /* @__PURE__ */ u4(ErrorEntry, { entry: e4 }, e4.spanId + i4))
-      ] })
-    ] });
-  }
-  function Errors() {
-    const sessions = displaySessions.value;
-    const errorSessions = sessions.filter((s4) => s4.errors > 0);
-    if (sessions.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "errors-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    if (errorSessions.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "errors-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No errors recorded in the current session window" }) });
-    }
-    return /* @__PURE__ */ u4("div", { id: "errors-content", children: [
-      /* @__PURE__ */ u4("div", { class: "tab-stats", style: "margin-bottom:12px", children: [
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val err", children: errorSessions.reduce((a4, s4) => a4 + s4.errors, 0) }),
-          " total errors"
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: errorSessions.length }),
-          " session",
-          errorSessions.length !== 1 ? "s" : "",
-          " affected"
-        ] })
-      ] }),
-      /* @__PURE__ */ u4("div", { class: "errors-list", children: errorSessions.map((sess) => /* @__PURE__ */ u4(SessionErrorGroup, { sess }, sess.sessionId)) })
-    ] });
-  }
-
   // media/src/tabs/Export.tsx
   function send(type) {
     if (vscode) {
@@ -5175,14 +5236,12 @@
     ["Recommendations", "Actionable insights for improving prompt efficiency, plus loop and malfunction detection. Two signal categories: efficiency insights (token waste, cache, tool failures) and loop signals (tool deadlock, state spirals, error recurrence, runaway steps, context accumulation)."],
     ["Alerts", "Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts."],
     ["Automation", "Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay."],
-    ["Tokens", "Token consumption aggregated by span name and per session, sorted from highest to lowest."],
-    ["Latency", "Span durations as a color-coded grid, helping identify which operations are consistently slow."],
     ["Traces", "A human-readable timeline of each session \u2014 LLM calls with decisions, tool calls with arguments and results, token usage per step, and background overhead breakdown."],
+    ["Search", "Search and filter historical sessions stored in the database. Filter by request text, date range, and sort by recency, cost, duration, token count, or error count."],
     ["Files", "Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed."],
     ["Flow", "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency. Supports zoom, pan, and playback animation."],
     ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
     ["Tools", "Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],
-    ["Errors", "All spans that completed with an error status. Click any item to expand its full details and attributes."],
     ["Export", "Export OTEL spans as JSON files \u2014 full or redacted (prompt text, tool inputs, and tool results replaced with [redacted]). Replay either format with pnpm run demo to re-examine a past session without the original agent running."],
     ["Help", "This tab \u2014 an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Recommendations and malfunction detection."]
   ];
@@ -5218,7 +5277,7 @@
     ["Trace ID", "A unique identifier linking all spans belonging to the same session/request."],
     ["Turn", "One LLM call within a session. A multi-turn session involves the agent calling the LLM, executing tools, then calling the LLM again."],
     ["TTFT", "Time to First Token \u2014 the latency between sending a prompt and receiving the first token of the response."],
-    ["Waterfall", "A span visualization where operations are displayed as horizontal bars on a time axis, with nesting depth shown by indentation. Used in OpenTelemetry tooling; AgentLens surfaces span timing data through the Latency tab instead."]
+    ["Waterfall", "A span visualization where operations are displayed as horizontal bars on a time axis, with nesting depth shown by indentation. Used in OpenTelemetry tooling; AgentLens surfaces span timing data through the Traces tab instead."]
   ];
   function termId(term) {
     return "gl-" + term.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
@@ -5685,7 +5744,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
               id: "help-tool-failures",
               title: "Tool Failures",
               why: "Tool failures come from: (1) guessed file paths that don't exist, (2) unavailable commands, or (3) hallucinated APIs. Each failure adds error text to context.",
-              steps: `<li>Provide exact file paths in your prompt.</li><li>Tell the agent which package manager and runtime are available.</li><li>Check the Errors tab to see what paths were guessed.</li><li>Verify files exist before prompting.</li>`,
+              steps: `<li>Provide exact file paths in your prompt.</li><li>Tell the agent which package manager and runtime are available.</li><li>Verify files exist before prompting.</li>`,
               impact: "Each eliminated failure saves one full LLM recovery turn \u2014 roughly 30,000 wasted tokens per failure cascade."
             }
           ),
@@ -6359,15 +6418,13 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     { id: "efficiency", label: "Efficiency", primary: true, title: "Per-session metrics and token usage breakdown." },
     { id: "cost", label: "Cost", primary: true, title: "Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing." },
     { id: "traces", label: "Traces", primary: true, title: "A human-readable timeline of each session \u2014 LLM calls with their decisions, tool calls with arguments, and token usage." },
+    { id: "search", label: "Search", primary: true, title: "Search and filter historical sessions from the database by request text, date range, cost, and sort order." },
     { id: "recommendations", label: "Recommendations", primary: true, title: "Actionable insights and recommendations for improving prompt efficiency and reducing token waste." },
     { id: "agents", label: "Agents", primary: false, title: "Copilot, Claude, and Codex \u2014 session counts, token usage, tools, and latency broken down by agent source." },
     { id: "alerts", label: "Alerts", primary: false, title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
     { id: "automation", label: "Automation", primary: false, title: "Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed." },
-    { id: "errors", label: "Errors", primary: false, title: "All spans that completed with an error status. Click any item to expand its full details and attributes." },
     { id: "files", label: "Files", primary: false, title: "Files created or modified by the agent, organized by session with inline diffs." },
     { id: "flow", label: "Flow", primary: false, title: "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency." },
-    { id: "latency", label: "Latency", primary: false, title: "Span durations as a color-coded grid, helping identify which operations are consistently slow." },
-    { id: "tokens", label: "Tokens", primary: false, title: "Token consumption aggregated by span name and per session, sorted from highest to lowest." },
     { id: "tools", label: "Tools", primary: false, title: "Tool call distribution broken down by tool name, with token usage and performance stats per tool." },
     { id: "export", label: "Export", primary: true, title: "Export raw or redacted OTEL span data as JSON files." },
     { id: "help", label: "Help", primary: true, title: "Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard." }
@@ -6381,14 +6438,12 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         return /* @__PURE__ */ u4(Recommendations, {});
       case "alerts":
         return /* @__PURE__ */ u4(Alerts, {});
-      case "tokens":
-        return /* @__PURE__ */ u4(Tokens, {});
       case "cost":
         return /* @__PURE__ */ u4(Cost, {});
-      case "latency":
-        return /* @__PURE__ */ u4(Latency, {});
       case "traces":
         return /* @__PURE__ */ u4(Traces, {});
+      case "search":
+        return /* @__PURE__ */ u4(SessionSearch, {});
       case "files":
         return /* @__PURE__ */ u4(Files, {});
       case "flow":
@@ -6397,8 +6452,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         return /* @__PURE__ */ u4(Agents, {});
       case "tools":
         return /* @__PURE__ */ u4(Tools, {});
-      case "errors":
-        return /* @__PURE__ */ u4(Errors, {});
       case "export":
         return /* @__PURE__ */ u4(Export, {});
       case "automation":
@@ -6458,6 +6511,13 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         if (msg.type === "update") {
           if (msg.summary?.toolCalls) toolCalls.value = msg.summary.toolCalls;
           sessionSummary.value = msg.sessionSummary ?? sessionSummary.value;
+          if (msg.analyticsData) {
+            dailyStats.value = msg.analyticsData.dailyStats;
+            lifetimeStats.value = msg.analyticsData.lifetimeStats;
+          }
+          if (msg.burnRate !== void 0) {
+            burnRateData.value = msg.burnRate ?? null;
+          }
           if (!initialLoadDone) {
             initialLoadDone = true;
             setTimeout(() => {
@@ -6497,6 +6557,12 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             const sel = document.getElementById("session-limit");
             if (sel) sel.value = String(limit);
           }
+        } else if (msg.type === "searchResults" && msg.sessions != null) {
+          searchResults.value = {
+            sessions: msg.sessions,
+            totalCount: msg.totalCount ?? 0,
+            offset: msg.offset ?? 0
+          };
         } else if (msg.type === "clearAll") {
           toolCalls.value = {};
           sessionSummary.value = null;
@@ -6505,6 +6571,10 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           swRetainedSessions.value = [];
           swLastSessionCount.value = 0;
           dismissedSpanIds.clear();
+          dailyStats.value = [];
+          lifetimeStats.value = null;
+          burnRateData.value = null;
+          searchResults.value = null;
         }
       };
       window.addEventListener("message", handler);

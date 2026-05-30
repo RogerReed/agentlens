@@ -1,6 +1,6 @@
 import * as preact from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { sessionSummary, displaySessions, COLORS } from '../state'
+import { sessionSummary, displaySessions, sessionTimelines, burnRateData, COLORS, vscode } from '../state'
 import {
   getSessionGlobalNumber,
   formatMs, formatCompact, getAgentColor,
@@ -11,7 +11,7 @@ type HeatReason = { text: string; linkPhrase?: string; helpId?: string }
 
 // ── Context growth chart ──────────────────────────────────────────────────────
 
-function ContextGrowthChart({ sessions }: { sessions: SessionSummaryCard[] }) {
+function ContextGrowthChart({ sessions, timelines }: { sessions: SessionSummaryCard[]; timelines: Record<string, import('../types').TimelineEntry[]> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -21,7 +21,7 @@ function ContextGrowthChart({ sessions }: { sessions: SessionSummaryCard[] }) {
     let globalMax = 0, globalMin = Infinity, globalMaxPoints = 0
 
     sessions.forEach((sess, idx) => {
-      const llmEntries = (sess.timeline ?? []).filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0)
+      const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0)
       if (llmEntries.length < 1) return
       const points = llmEntries.map(e => e.inputTokens ?? 0)
       const max = Math.max(...points), min = Math.min(...points)
@@ -164,6 +164,14 @@ function SessionRow({ sess, idx, heat, expanded, onToggle }: {
         </td>
         <td style="text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title={sess.userRequest}>
           {(sess.userRequest ?? '').slice(0, 60)}{(sess.userRequest ?? '').length > 60 ? '…' : ''}
+          {(() => {
+            const br = burnRateData.value
+            if (!br || br.sessionId !== sess.sessionId) return null
+            const tpm = br.burnRate.tokensPerMinute
+            const cph = br.burnRate.costPerHour
+            const label = formatCompact(Math.round(tpm)) + ' tok/min' + (cph > 0.001 ? ' · $' + cph.toFixed(2) + '/hr' : '')
+            return <span style="margin-left:6px;padding:1px 5px;background:var(--vscode-charts-green,#81c784);color:#000;border-radius:3px;font-size:9px;font-weight:600;vertical-align:middle" data-tip={'Active session burn rate: ' + label}>{label}</span>
+          })()}
         </td>
         <td style="text-align:left;white-space:nowrap;color:var(--muted);font-size:10px" title={sess.model}>{sess.model ? sess.model.split('/').pop() : '—'}</td>
         <td style="text-align:left;white-space:nowrap;font-size:10px;font-family:monospace;color:var(--muted)" title={sess.conversationId || ''}>
@@ -182,6 +190,90 @@ function SessionRow({ sess, idx, heat, expanded, onToggle }: {
   )
 }
 
+// ── Token usage per session chart (moved from Tokens tab) ────────────────────
+
+function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) return
+
+    const sessionData = sessions.map((sess, idx) => {
+      const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0
+      const num = getSessionGlobalNumber(sess) || (idx + 1)
+      return input + output > 0 ? { session: num, input, output, source: sess.source } : null
+    }).filter(Boolean).reverse() as Array<{ session: number; input: number; output: number; source: string }>
+
+    if (sessionData.length === 0) { canvas.style.display = 'none'; return }
+    canvas.style.display = 'block'
+
+    const dpr = window.devicePixelRatio || 1
+    const drect = canvas.getBoundingClientRect()
+    canvas.width = drect.width * dpr; canvas.height = drect.height * dpr
+    const ctx = canvas.getContext('2d')!
+    ctx.scale(dpr, dpr)
+    const w = drect.width, h = drect.height
+    ctx.clearRect(0, 0, w, h)
+
+    const pad = { top: 8, right: 44, bottom: 34, left: 44 }
+    const chartW = w - pad.left - pad.right, chartH = h - pad.top - pad.bottom
+
+    const maxIn  = Math.max(...sessionData.map(s => s.input))  || 1
+    const maxOut = Math.max(...sessionData.map(s => s.output)) || 1
+
+    const cs = getComputedStyle(document.body)
+    const gridColor = cs.getPropertyValue('--vscode-panel-border').trim() || '#333'
+    const textColor = cs.getPropertyValue('--vscode-descriptionForeground').trim() || '#888'
+    const fontStr = '10px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
+
+    ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + (chartH * i / 4)
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke()
+    }
+    ctx.fillStyle = '#FFB74D'; ctx.font = fontStr; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
+    for (let i = 0; i <= 4; i++) {
+      const val = maxIn * (4 - i) / 4
+      if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + (chartH * i / 4))
+    }
+    ctx.fillStyle = '#81C784'; ctx.textAlign = 'left'
+    for (let i = 0; i <= 4; i++) {
+      const val = maxOut * (4 - i) / 4
+      if (val > 0) ctx.fillText(formatCompact(val), pad.left + chartW + 4, pad.top + (chartH * i / 4))
+    }
+
+    const barGap = 8
+    const sl = sessionData.length
+    const groupWidth = Math.max(12, (chartW - barGap * (sl + 1)) / sl)
+    const halfBar = groupWidth / 2
+    const totalBarsW = sl * groupWidth + (sl + 1) * barGap
+    const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top'
+
+    sessionData.forEach((s, i) => {
+      const x = offsetX + i * (groupWidth + barGap)
+      const inH = (s.input / maxIn) * chartH
+      ctx.fillStyle = '#FFB74D'; ctx.fillRect(x, pad.top + chartH - inH, halfBar, inH)
+      const outH = (s.output / maxOut) * chartH
+      ctx.fillStyle = '#81C784'; ctx.fillRect(x + halfBar, pad.top + chartH - outH, halfBar, outH)
+      ctx.fillStyle = textColor; ctx.fillText('' + s.session, x + groupWidth / 2, pad.top + chartH + 4)
+      ctx.beginPath()
+      ctx.arc(x + groupWidth / 2, pad.top + chartH + 18, 3, 0, Math.PI * 2)
+      ctx.fillStyle = getAgentColor(s.source); ctx.fill()
+    })
+  })
+
+  return (
+    <>
+      <canvas ref={canvasRef} style="width:100%;height:200px;display:block" />
+      <div class="heatmap-axis-label">← Session (latest to earliest) →</div>
+    </>
+  )
+}
+
 export function Efficiency() {
   const summary = sessionSummary.value
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set([0]))
@@ -193,6 +285,14 @@ export function Efficiency() {
   const displaySess = displaySessions.value
   const breakdownSessions = displaySess.slice().reverse()
 
+  // Request timeline for any session not yet loaded — needed for context growth chart and heat scores.
+  const timelines = sessionTimelines.value
+  breakdownSessions.forEach(sess => {
+    if (!timelines[sess.sessionId]) {
+      vscode?.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
+    }
+  })
+
   // Heat scores for session rows
   const sessionHeats = breakdownSessions.map(sess => {
     let score = 0; const reasons: HeatReason[] = []
@@ -201,7 +301,7 @@ export function Efficiency() {
     const cacheRateNum = sess.inputTokens > 0 ? (sess.cacheReadTokens / sess.inputTokens) * 100 : 100
     if (cacheRateNum < 50 && sess.inputTokens > 5000) { score += Math.min((50 - cacheRateNum) * 0.5, 20); reasons.push({ text: 'Cache hit rate ' + cacheRateNum.toFixed(0) + '% — keep static content at the top of prompts so the cache prefix stays stable', linkPhrase: 'keep static content at the top of prompts so the cache prefix stays stable', helpId: 'help-cache-rate' }) }
     if (sess.inputTokens > 100000) { score += 10; reasons.push({ text: sess.inputTokens.toLocaleString() + ' input tokens — audit your instruction files and remove verbose examples', linkPhrase: 'audit your instruction files and remove verbose examples', helpId: 'help-large-context' }) }
-    const llmEntries = (sess.timeline ?? []).filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0)
+    const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0)
     if (llmEntries.length >= 3) {
       const first = llmEntries[0].inputTokens ?? 0, last = llmEntries[llmEntries.length - 1].inputTokens ?? 0
       const growthPct = first > 0 ? ((last - first) / first) * 100 : 0
@@ -214,16 +314,15 @@ export function Efficiency() {
   breakdownSessions.forEach(s => { totLlm += s.totalLlmCalls; totTool += s.totalToolCalls; totIn += s.inputTokens; totOut += s.outputTokens; totDur += s.durationMs; totErr += s.errors })
 
   const sessionsWithGrowth = breakdownSessions.filter(sess =>
-    (sess.timeline ?? []).filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0).length >= 1
+    (timelines[sess.sessionId] ?? sess.timeline ?? []).filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0).length >= 1
   )
 
   return (
     <div id="efficiency-content">
-
       {sessionsWithGrowth.length > 0 && (
         <>
           <h3 class="has-metric-tip" style="margin:24px 0 12px;font-size:13px;color:var(--muted)" data-tip="Input tokens sent per LLM call within each session. Rising lines indicate context accumulation. A sharp drop mid-session indicates context compaction. A single dot marks an in-progress session with one LLM call so far.">CONTEXT GROWTH PER SESSION</h3>
-          <ContextGrowthChart sessions={breakdownSessions} />
+          <ContextGrowthChart sessions={breakdownSessions} timelines={timelines} />
           <div style="font-size:10px;color:var(--muted);opacity:0.7;margin:4px 0 12px 2px">
             Suggestion: If the graph appears crowded, consider refining the view by selecting fewer sessions (such as “Last 5”) or filtering by a specific agent to enhance clarity.
           </div>
@@ -288,6 +387,18 @@ export function Efficiency() {
             </tfoot>
           </table>
         </>
+      )}
+
+      {/* Token usage per session */}
+      {displaySess.length > 0 && (
+        <div style="margin-top:32px">
+          <h3 style="margin:0 0 8px;font-size:13px;color:var(--muted)">TOKEN USAGE PER SESSION</h3>
+          <div style="display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)">
+            <span><span style="display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" /> Input</span>
+            <span><span style="display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" /> Output</span>
+          </div>
+          <SessionTokenChart sessions={displaySess} />
+        </div>
       )}
 
       </div>
