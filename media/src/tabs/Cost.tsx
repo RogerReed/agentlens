@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks'
 import { useEffect, useRef } from 'preact/hooks'
-import { displaySessions, dailyStats, lifetimeStats, selectedAgentFilter } from '../state'
+import { displaySessions, rangedSessions, dailyStats, lifetimeStats, selectedAgentFilter, timeRange, makeTimeRange } from '../state'
+import type { TimePreset } from '../state'
 import { getAgentColor, getSessionGlobalNumber, formatCompact, getAgentSourceLabel } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { PRICING_LAST_UPDATED } from '../pricing'
@@ -31,6 +32,29 @@ function sessionCostMode(session: SessionSummaryCard, mode: PricingMode): Pricin
 
 function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
   const [hovered, setHovered] = useState<number | null>(null)
+  const activeRange = timeRange.value
+
+  function handleBarClick(row: DailyStatRow) {
+    // Clicking a bar sets the time range to that specific day
+    const dayStart = new Date(row.day + 'T00:00:00').getTime()
+    const dayEnd   = dayStart + 86_400_000 - 1
+    if (activeRange.preset !== 'live' && activeRange.preset !== 'all'
+        && activeRange.since === dayStart && activeRange.until === dayEnd) {
+      // Already on this day — click again to clear
+      timeRange.value = makeTimeRange('all')
+    } else {
+      timeRange.value = { preset: '24h', since: dayStart, until: dayEnd }
+    }
+  }
+
+  // Determine which bars fall inside the active time range
+  function isBarInRange(row: DailyStatRow): boolean {
+    if (activeRange.preset === 'live' || activeRange.preset === 'all') return false
+    const dayMs = new Date(row.day + 'T00:00:00').getTime()
+    const since = activeRange.since ?? 0
+    const until = activeRange.until ?? Date.now()
+    return dayMs >= since && dayMs <= until
+  }
 
   if (rows.length === 0) {
     return <div class="empty-state" style="margin-bottom:16px">No historical data yet — sessions will appear here as they are recorded.</div>
@@ -103,12 +127,15 @@ function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
             { fill: 'var(--vscode-charts-red,#e57373)',    height: Math.max(0, outputH) },
           ]
 
+          const inRange = isBarInRange(r)
           return (
-            <g key={i} onMouseEnter={() => setHovered(i)} style="cursor:default">
+            <g key={i} onMouseEnter={() => setHovered(i)} onClick={() => handleBarClick(r)} style="cursor:pointer">
+              {/* Range highlight background */}
+              {inRange && <rect x={x - 1} y={pad.top} width={barW + 2} height={chartH} fill="rgba(55,148,255,0.12)" rx="2" />}
               {bars.map((bar, bi) => {
                 if (bar.height < 0.5) return null
                 yBase -= bar.height
-                return <rect key={bi} x={x} y={yBase} width={barW} height={bar.height} fill={bar.fill} opacity={hovered === i ? 1 : 0.85} />
+                return <rect key={bi} x={x} y={yBase} width={barW} height={bar.height} fill={bar.fill} opacity={hovered === i ? 1 : inRange ? 0.95 : 0.8} />
               })}
               {/* X-axis label: abbreviated day */}
               <text x={x + barW / 2} y={H - pad.bottom + 10} text-anchor="middle" fill="var(--vscode-descriptionForeground,#888)" font-size="8">
@@ -254,7 +281,7 @@ function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode
 // ── Main tab ──────────────────────────────────────────────────────────────────
 
 export function Cost() {
-  const sessions = displaySessions.value
+  const sessions = rangedSessions.value
   const [mode, setMode] = useState<PricingMode>('token')
 
   const copilotSessions = sessions.filter(s => s.source === 'copilot')
@@ -347,12 +374,13 @@ export function Cost() {
         const lifetime = lifetimeStats.value
         const agentFilter = selectedAgentFilter.value
         const filteredStats = agentFilter !== 'all'
-          ? stats  // dailyStats already filtered server-side when filter active; show as-is
+          ? stats
           : stats
         return (
           <div style="margin-bottom:24px">
             <h3 style="margin:0 0 8px;font-size:13px;color:var(--muted)">30-DAY TOKEN &amp; COST HISTORY</h3>
             <HistoryChart rows={filteredStats} />
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">Click a bar to filter the session table to that day. Click again to clear.</div>
             {lifetime && lifetime.totalSessions > 0 && (
               <div style="display:flex;gap:20px;font-size:11px;color:var(--muted);flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--vscode-panel-border)">
                 <span>{lifetime.totalSessions} total sessions</span>

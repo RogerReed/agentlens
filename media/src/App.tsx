@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'preact/hooks'
 import { signal } from '@preact/signals'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import {
   sessionSummary, toolCalls, dismissedSpanIds,
   swRetainedSessions, swLastSessionCount,
   selectedAgentFilter, sessionLimit, activeTab,
   sessionTimelines, blobCache,
-  dailyStats, lifetimeStats, burnRateData, searchResults,
-  focusedSessionId,
-  vscode, displaySessions,
+  dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults,
+  focusedSessionId, timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
+  vscode, displaySessions, rangedSessions,
 } from './state'
 import type { TimelineEntry, AgentFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
 import { getAgentColor, getAgentSourceLabel, getSessionGlobalNumber, formatMs } from './utils'
@@ -183,10 +183,15 @@ export function App() {
           if (sel) sel.value = String(limit)
         }
       } else if (msg.type === 'searchResults' && msg.sessions != null) {
-        searchResults.value = {
+        const data = {
           sessions: msg.sessions,
           totalCount: msg.totalCount ?? 0,
           offset: msg.offset ?? 0,
+        }
+        if ((msg as { context?: string }).context === 'timeRange') {
+          rangedSearchResults.value = data
+        } else {
+          searchResults.value = data
         }
       } else if (msg.type === 'clearAll') {
         toolCalls.value = {}
@@ -201,6 +206,8 @@ export function App() {
         burnRateData.value = null
         searchResults.value = null
         focusedSessionId.value = null
+        rangedSearchResults.value = null
+        timeRange.value = { preset: 'live' }
       }
     }
     window.addEventListener('message', handler)
@@ -231,6 +238,7 @@ export function App() {
         <MoreDropdown />
       </div>
 
+      <TimeRangePicker />
       <FocusedSessionBar />
       <div class="panel active">
         <ActivePanel />
@@ -238,6 +246,111 @@ export function App() {
 
       <img id="mascot-img" src="" alt="AgentLens mascot" style="display:none" />
     </>
+  )
+}
+
+const AGENT_FILTER_OPTIONS: Array<{ value: AgentFilter; label: string }> = [
+  { value: 'all',        label: 'All' },
+  { value: 'copilot',    label: 'Copilot' },
+  { value: 'claude_code',label: 'Claude' },
+  { value: 'codex',      label: 'Codex' },
+]
+
+function TimeRangePicker() {
+  const range = timeRange.value
+  const agent = selectedAgentFilter.value
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  function fireSearch(r: typeof timeRange.value) {
+    if (r.preset === 'live' || r.preset === 'all') {
+      rangedSearchResults.value = null
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    if (debounce.current) clearTimeout(debounce.current)
+    debounce.current = setTimeout(() => {
+      vscode?.postMessage({
+        type: 'searchSessions',
+        query: { since: r.since, until: r.until, limit: CHART_MAX, orderBy: 'start_time', orderDir: 'DESC' },
+        context: 'timeRange',
+      })
+    }, 120)
+  }
+
+  function selectPreset(id: typeof range.preset) {
+    const r = makeTimeRange(id)
+    timeRange.value = r
+    fireSearch(r)
+  }
+
+  // Clear loading indicator when results arrive
+  useEffect(() => {
+    if (rangedSearchResults.value !== null) setLoading(false)
+  }, [rangedSearchResults.value])
+
+  const count = rangedSessions.value.length
+  const total = rangedSearchResults.value?.totalCount
+  const isActive = range.preset !== 'live' && range.preset !== 'all'
+
+  return (
+    <div style="display:flex;align-items:center;gap:0;padding:0 8px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);height:30px;flex-shrink:0">
+      {/* Time presets */}
+      <span style="font-size:10px;color:var(--muted);margin-right:6px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">Time</span>
+      <div style="display:flex;gap:1px">
+        {TIME_PRESETS.map(p => (
+          <button
+            key={p.id}
+            onClick={() => selectPreset(p.id)}
+            style={[
+              'padding:2px 7px;font-size:11px;cursor:pointer;border:none;border-radius:3px;transition:background 0.1s',
+              range.preset === p.id
+                ? 'background:var(--vscode-button-background);color:var(--vscode-button-foreground);font-weight:600'
+                : 'background:transparent;color:var(--muted)',
+            ].join(';')}
+            title={p.ms ? `Last ${p.label}` : p.id === 'live' ? 'Live sessions only' : 'All recorded sessions'}
+          >{p.label}</button>
+        ))}
+      </div>
+
+      {/* Divider */}
+      <span style="width:1px;height:14px;background:var(--border);margin:0 8px;flex-shrink:0" />
+
+      {/* Agent filter */}
+      <div style="display:flex;gap:1px">
+        {AGENT_FILTER_OPTIONS.map(o => (
+          <button
+            key={o.value}
+            onClick={() => { selectedAgentFilter.value = o.value }}
+            style={[
+              'padding:2px 7px;font-size:11px;cursor:pointer;border:none;border-radius:3px;transition:background 0.1s',
+              agent === o.value
+                ? 'background:var(--vscode-button-secondaryBackground,rgba(255,255,255,.12));color:var(--foreground);font-weight:600'
+                : 'background:transparent;color:var(--muted)',
+            ].join(';')}
+          >{o.label}</button>
+        ))}
+      </div>
+
+      {/* Session count badge */}
+      <span style="margin-left:8px;font-size:10px;color:var(--muted);white-space:nowrap">
+        {loading
+          ? <span style="opacity:0.6">loading…</span>
+          : isActive
+            ? <span>{count}{total && total > count ? ` of ${total}` : ''} session{count !== 1 ? 's' : ''}</span>
+            : <span>{count} session{count !== 1 ? 's' : ''}</span>}
+      </span>
+
+      {/* Refresh button for non-live ranges */}
+      {isActive && (
+        <button
+          onClick={() => fireSearch(makeTimeRange(range.preset))}
+          style="margin-left:4px;padding:2px 5px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-radius:3px"
+          title="Refresh this time range"
+        >↻</button>
+      )}
+    </div>
   )
 }
 

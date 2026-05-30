@@ -8,6 +8,38 @@ import type {
 // Maximum sessions rendered in any single chart or table
 export const CHART_MAX = 25
 
+// ── Time range navigation ─────────────────────────────────────────────────────
+
+export type TimePreset = 'live' | '1h' | '6h' | '24h' | '7d' | '30d' | 'all'
+
+export interface TimeRange {
+  preset: TimePreset
+  since?: number   // unix ms — undefined means no lower bound
+  until?: number   // unix ms — undefined means now
+}
+
+export const TIME_PRESETS: Array<{ id: TimePreset; label: string; ms: number | null }> = [
+  { id: 'live', label: 'Live',  ms: null },
+  { id: '1h',   label: '1h',   ms: 60 * 60_000 },
+  { id: '6h',   label: '6h',   ms: 6 * 60 * 60_000 },
+  { id: '24h',  label: '24h',  ms: 24 * 60 * 60_000 },
+  { id: '7d',   label: '7d',   ms: 7 * 86_400_000 },
+  { id: '30d',  label: '30d',  ms: 30 * 86_400_000 },
+  { id: 'all',  label: 'All',  ms: null },
+]
+
+export function makeTimeRange(preset: TimePreset): TimeRange {
+  const p = TIME_PRESETS.find(t => t.id === preset)!
+  if (p.ms === null) return { preset }
+  return { preset, since: Date.now() - p.ms }
+}
+
+// Active time range — defaults to 'live' (no filtering, uses in-memory sessions)
+export const timeRange = signal<TimeRange>({ preset: 'live' })
+
+// DB-queried sessions for the active time range (separate from the Search tab results)
+export const rangedSearchResults = signal<SearchResultData | null>(null)
+
 // ── Analytics signals ─────────────────────────────────────────────────────────
 
 export const dailyStats = signal<DailyStatRow[]>([])
@@ -115,8 +147,23 @@ export const displaySessions = computed<SessionSummaryCard[]>(() => {
   return all.slice(0, limit)   // sessions are newest-first; take the first N (most recent)
 })
 
+// Sessions scoped to the active time range + agent filter.
+// Live/All → displaySessions (in-memory, newest-first).
+// Any other preset → DB search results, agent-filtered client-side.
+export const rangedSessions = computed<SessionSummaryCard[]>(() => {
+  const range = timeRange.value
+  if (range.preset === 'live' || range.preset === 'all') {
+    return displaySessions.value
+  }
+  const results = rangedSearchResults.value
+  if (!results) return displaySessions.value  // still loading — show live as fallback
+  const agent = selectedAgentFilter.value
+  if (agent === 'all') return results.sessions
+  return results.sessions.filter(s => s.source === agent)
+})
+
 export const agentPresence = computed(() => {
-  const sessions = displaySessions.value
+  const sessions = rangedSessions.value
   return {
     claude:  sessions.some(s => s.source === 'claude_code'),
     copilot: sessions.some(s => s.source === 'copilot'),

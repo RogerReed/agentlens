@@ -95,6 +95,7 @@ export class DashboardPanel {
           sessions: result.sessions,
           totalCount: result.totalCount,
           offset: (msg.query as { offset?: number }).offset ?? 0,
+          context: (msg as { context?: string }).context ?? 'search',
         })
       } else if (msg.type === 'exportSessionData') {
         vscode.commands.executeCommand('agentLens.exportData')

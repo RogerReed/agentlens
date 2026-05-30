@@ -1006,6 +1006,22 @@
 
   // media/src/state.ts
   var CHART_MAX = 25;
+  var TIME_PRESETS = [
+    { id: "live", label: "Live", ms: null },
+    { id: "1h", label: "1h", ms: 60 * 6e4 },
+    { id: "6h", label: "6h", ms: 6 * 60 * 6e4 },
+    { id: "24h", label: "24h", ms: 24 * 60 * 6e4 },
+    { id: "7d", label: "7d", ms: 7 * 864e5 },
+    { id: "30d", label: "30d", ms: 30 * 864e5 },
+    { id: "all", label: "All", ms: null }
+  ];
+  function makeTimeRange(preset) {
+    const p5 = TIME_PRESETS.find((t4) => t4.id === preset);
+    if (p5.ms === null) return { preset };
+    return { preset, since: Date.now() - p5.ms };
+  }
+  var timeRange = y3({ preset: "live" });
+  var rangedSearchResults = y3(null);
   var dailyStats = y3([]);
   var lifetimeStats = y3(null);
   var burnRateData = y3(null);
@@ -1089,8 +1105,19 @@
     if (limit >= all.length) return all;
     return all.slice(0, limit);
   });
+  var rangedSessions = g2(() => {
+    const range = timeRange.value;
+    if (range.preset === "live" || range.preset === "all") {
+      return displaySessions.value;
+    }
+    const results = rangedSearchResults.value;
+    if (!results) return displaySessions.value;
+    const agent = selectedAgentFilter.value;
+    if (agent === "all") return results.sessions;
+    return results.sessions.filter((s4) => s4.source === agent);
+  });
   var agentPresence = g2(() => {
-    const sessions = displaySessions.value;
+    const sessions = rangedSessions.value;
     return {
       claude: sessions.some((s4) => s4.source === "claude_code"),
       copilot: sessions.some((s4) => s4.source === "copilot"),
@@ -1863,7 +1890,7 @@
     if (!summary?.sessions?.length) {
       return /* @__PURE__ */ u4("div", { id: "efficiency-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
     }
-    const displaySess = displaySessions.value;
+    const displaySess = rangedSessions.value;
     const breakdownSessions = displaySess.slice().reverse();
     const timelines = sessionTimelines.value;
     breakdownSessions.forEach((sess) => {
@@ -3055,6 +3082,23 @@
   }
   function HistoryChart({ rows }) {
     const [hovered, setHovered] = d2(null);
+    const activeRange = timeRange.value;
+    function handleBarClick(row) {
+      const dayStart = (/* @__PURE__ */ new Date(row.day + "T00:00:00")).getTime();
+      const dayEnd = dayStart + 864e5 - 1;
+      if (activeRange.preset !== "live" && activeRange.preset !== "all" && activeRange.since === dayStart && activeRange.until === dayEnd) {
+        timeRange.value = makeTimeRange("all");
+      } else {
+        timeRange.value = { preset: "24h", since: dayStart, until: dayEnd };
+      }
+    }
+    function isBarInRange(row) {
+      if (activeRange.preset === "live" || activeRange.preset === "all") return false;
+      const dayMs = (/* @__PURE__ */ new Date(row.day + "T00:00:00")).getTime();
+      const since = activeRange.since ?? 0;
+      const until = activeRange.until ?? Date.now();
+      return dayMs >= since && dayMs <= until;
+    }
     if (rows.length === 0) {
       return /* @__PURE__ */ u4("div", { class: "empty-state", style: "margin-bottom:16px", children: "No historical data yet \u2014 sessions will appear here as they are recorded." });
     }
@@ -3103,11 +3147,13 @@
                 { fill: "var(--vscode-charts-yellow,#ffb74d)", height: Math.max(0, cacheCreateH) },
                 { fill: "var(--vscode-charts-red,#e57373)", height: Math.max(0, outputH) }
               ];
-              return /* @__PURE__ */ u4("g", { onMouseEnter: () => setHovered(i4), style: "cursor:default", children: [
+              const inRange = isBarInRange(r5);
+              return /* @__PURE__ */ u4("g", { onMouseEnter: () => setHovered(i4), onClick: () => handleBarClick(r5), style: "cursor:pointer", children: [
+                inRange && /* @__PURE__ */ u4("rect", { x: x4 - 1, y: pad.top, width: barW + 2, height: chartH, fill: "rgba(55,148,255,0.12)", rx: "2" }),
                 bars.map((bar, bi) => {
                   if (bar.height < 0.5) return null;
                   yBase -= bar.height;
-                  return /* @__PURE__ */ u4("rect", { x: x4, y: yBase, width: barW, height: bar.height, fill: bar.fill, opacity: hovered === i4 ? 1 : 0.85 }, bi);
+                  return /* @__PURE__ */ u4("rect", { x: x4, y: yBase, width: barW, height: bar.height, fill: bar.fill, opacity: hovered === i4 ? 1 : inRange ? 0.95 : 0.8 }, bi);
                 }),
                 /* @__PURE__ */ u4("text", { x: x4 + barW / 2, y: H2 - pad.bottom + 10, "text-anchor": "middle", fill: "var(--vscode-descriptionForeground,#888)", "font-size": "8", children: r5.day.slice(5) })
               ] }, i4);
@@ -3252,7 +3298,7 @@
     ] });
   }
   function Cost() {
-    const sessions = displaySessions.value;
+    const sessions = rangedSessions.value;
     const [mode, setMode] = d2("token");
     const copilotSessions = sessions.filter((s4) => s4.source === "copilot");
     const codexSessions = sessions.filter((s4) => s4.source === "codex");
@@ -3347,6 +3393,7 @@
         return /* @__PURE__ */ u4("div", { style: "margin-bottom:24px", children: [
           /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "30-DAY TOKEN & COST HISTORY" }),
           /* @__PURE__ */ u4(HistoryChart, { rows: filteredStats }),
+          /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-top:4px", children: "Click a bar to filter the session table to that day. Click again to clear." }),
           lifetime && lifetime.totalSessions > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;gap:20px;font-size:11px;color:var(--muted);flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--vscode-panel-border)", children: [
             /* @__PURE__ */ u4("span", { children: [
               lifetime.totalSessions,
@@ -3840,7 +3887,7 @@
     ] });
   }
   function Traces() {
-    const base = displaySessions.value;
+    const base = rangedSessions.value;
     const summary = sessionSummary.value;
     const focusedId = focusedSessionId.value;
     y2(() => {
@@ -4318,7 +4365,7 @@
     return entry.spanId.startsWith("flow-inferred-turn-");
   }
   function Flow() {
-    const sessions = displaySessions.value;
+    const sessions = rangedSessions.value;
     const [isPlaying, setIsPlaying] = d2(false);
     const focusedId = focusedSessionId.value;
     const focusedIdx = focusedId ? sessions.findIndex((s4) => s4.sessionId === focusedId) : -1;
@@ -6604,11 +6651,16 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             if (sel) sel.value = String(limit);
           }
         } else if (msg.type === "searchResults" && msg.sessions != null) {
-          searchResults.value = {
+          const data = {
             sessions: msg.sessions,
             totalCount: msg.totalCount ?? 0,
             offset: msg.offset ?? 0
           };
+          if (msg.context === "timeRange") {
+            rangedSearchResults.value = data;
+          } else {
+            searchResults.value = data;
+          }
         } else if (msg.type === "clearAll") {
           toolCalls.value = {};
           sessionSummary.value = null;
@@ -6622,6 +6674,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           burnRateData.value = null;
           searchResults.value = null;
           focusedSessionId.value = null;
+          rangedSearchResults.value = null;
+          timeRange.value = { preset: "live" };
         }
       };
       window.addEventListener("message", handler);
@@ -6651,9 +6705,99 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         ),
         /* @__PURE__ */ u4(MoreDropdown, {})
       ] }),
+      /* @__PURE__ */ u4(TimeRangePicker, {}),
       /* @__PURE__ */ u4(FocusedSessionBar, {}),
       /* @__PURE__ */ u4("div", { class: "panel active", children: /* @__PURE__ */ u4(ActivePanel, {}) }),
       /* @__PURE__ */ u4("img", { id: "mascot-img", src: "", alt: "AgentLens mascot", style: "display:none" })
+    ] });
+  }
+  var AGENT_FILTER_OPTIONS = [
+    { value: "all", label: "All" },
+    { value: "copilot", label: "Copilot" },
+    { value: "claude_code", label: "Claude" },
+    { value: "codex", label: "Codex" }
+  ];
+  function TimeRangePicker() {
+    const range = timeRange.value;
+    const agent = selectedAgentFilter.value;
+    const debounce = A2(null);
+    const [loading, setLoading] = d2(false);
+    function fireSearch(r5) {
+      if (r5.preset === "live" || r5.preset === "all") {
+        rangedSearchResults.value = null;
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      if (debounce.current) clearTimeout(debounce.current);
+      debounce.current = setTimeout(() => {
+        vscode?.postMessage({
+          type: "searchSessions",
+          query: { since: r5.since, until: r5.until, limit: CHART_MAX, orderBy: "start_time", orderDir: "DESC" },
+          context: "timeRange"
+        });
+      }, 120);
+    }
+    function selectPreset(id) {
+      const r5 = makeTimeRange(id);
+      timeRange.value = r5;
+      fireSearch(r5);
+    }
+    y2(() => {
+      if (rangedSearchResults.value !== null) setLoading(false);
+    }, [rangedSearchResults.value]);
+    const count = rangedSessions.value.length;
+    const total = rangedSearchResults.value?.totalCount;
+    const isActive = range.preset !== "live" && range.preset !== "all";
+    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:0;padding:0 8px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);height:30px;flex-shrink:0", children: [
+      /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-right:6px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "Time" }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:1px", children: TIME_PRESETS.map((p5) => /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => selectPreset(p5.id),
+          style: [
+            "padding:2px 7px;font-size:11px;cursor:pointer;border:none;border-radius:3px;transition:background 0.1s",
+            range.preset === p5.id ? "background:var(--vscode-button-background);color:var(--vscode-button-foreground);font-weight:600" : "background:transparent;color:var(--muted)"
+          ].join(";"),
+          title: p5.ms ? `Last ${p5.label}` : p5.id === "live" ? "Live sessions only" : "All recorded sessions",
+          children: p5.label
+        },
+        p5.id
+      )) }),
+      /* @__PURE__ */ u4("span", { style: "width:1px;height:14px;background:var(--border);margin:0 8px;flex-shrink:0" }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:1px", children: AGENT_FILTER_OPTIONS.map((o4) => /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => {
+            selectedAgentFilter.value = o4.value;
+          },
+          style: [
+            "padding:2px 7px;font-size:11px;cursor:pointer;border:none;border-radius:3px;transition:background 0.1s",
+            agent === o4.value ? "background:var(--vscode-button-secondaryBackground,rgba(255,255,255,.12));color:var(--foreground);font-weight:600" : "background:transparent;color:var(--muted)"
+          ].join(";"),
+          children: o4.label
+        },
+        o4.value
+      )) }),
+      /* @__PURE__ */ u4("span", { style: "margin-left:8px;font-size:10px;color:var(--muted);white-space:nowrap", children: loading ? /* @__PURE__ */ u4("span", { style: "opacity:0.6", children: "loading\u2026" }) : isActive ? /* @__PURE__ */ u4("span", { children: [
+        count,
+        total && total > count ? ` of ${total}` : "",
+        " session",
+        count !== 1 ? "s" : ""
+      ] }) : /* @__PURE__ */ u4("span", { children: [
+        count,
+        " session",
+        count !== 1 ? "s" : ""
+      ] }) }),
+      isActive && /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => fireSearch(makeTimeRange(range.preset)),
+          style: "margin-left:4px;padding:2px 5px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-radius:3px",
+          title: "Refresh this time range",
+          children: "\u21BB"
+        }
+      )
     ] });
   }
   function FocusedSessionBar() {

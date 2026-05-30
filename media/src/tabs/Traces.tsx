@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks'
 import {
-  displaySessions, sessionSummary, sessionTimelines, focusedSessionId, vscode,
+  rangedSessions, sessionSummary, sessionTimelines, focusedSessionId, vscode,
 } from '../state'
 import {
   formatMs, formatCompact, syntaxHighlightJson, getSessionGlobalNumber,
@@ -356,7 +356,7 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
 }
 
 export function Traces() {
-  const base = displaySessions.value
+  const base = rangedSessions.value
   const summary = sessionSummary.value
   const focusedId = focusedSessionId.value
 

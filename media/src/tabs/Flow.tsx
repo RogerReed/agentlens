@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { displaySessions, sessionTimelines, focusedSessionId, vscode } from '../state'
+import { rangedSessions, sessionTimelines, focusedSessionId, vscode } from '../state'
 import { getSessionGlobalNumber, getAgentSourceLabel, formatMs } from '../utils'
 import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry } from '../types'
@@ -117,7 +117,7 @@ function isInferredTurn(entry: TimelineEntry): boolean {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function Flow() {
-  const sessions = displaySessions.value
+  const sessions = rangedSessions.value
   const [isPlaying, setIsPlaying] = useState(false)
 
   // Resolve which session to show: focused > last selected > most recent

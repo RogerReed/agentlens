@@ -1,6 +1,6 @@
 import * as preact from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { sessionSummary, displaySessions, sessionTimelines, burnRateData, focusedSessionId, CHART_MAX, COLORS, vscode } from '../state'
+import { sessionSummary, displaySessions, rangedSessions, sessionTimelines, burnRateData, focusedSessionId, CHART_MAX, COLORS, vscode } from '../state'
 import {
   getSessionGlobalNumber,
   formatMs, formatCompact, getAgentColor,
@@ -289,7 +289,7 @@ export function Efficiency() {
     return <div id="efficiency-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
   }
 
-  const displaySess = displaySessions.value
+  const displaySess = rangedSessions.value
   const breakdownSessions = displaySess.slice().reverse()
 
   // Request timeline for any session not yet loaded — needed for context growth chart and heat scores.
