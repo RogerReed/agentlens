@@ -191,7 +191,7 @@ graph LR
 
 ```mermaid
 flowchart TD
-    IN[spans: Span\[\]] --> GRP[Group spans by traceId<br/>Build parentSpanId → children map]
+    IN["spans: Span[]"] --> GRP[Group spans by traceId<br/>Build parentSpanId → children map]
 
     GRP --> CP_FIND[Find invoke_agent spans<br/>Copilot roots]
     GRP --> CC_FIND[Find claude_code.interaction spans<br/>Claude roots]
@@ -209,7 +209,7 @@ flowchart TD
 
     CX_FIND --> CX_B[buildCodexSessions]
 
-    CP_B --> SESSIONS[SessionSummaryCard\[\]]
+    CP_B --> SESSIONS["SessionSummaryCard[]"]
     CC_B --> SESSIONS
     CX_B --> SESSIONS
 
@@ -254,7 +254,7 @@ graph TB
         CX_PROMPT --> CX_TOOL
     end
 
-    CP_ROOT & CC_ROOT & CX_PROMPT --> CARD[SessionSummaryCard<br/>source · model · turns<br/>tokens · cacheHitRate<br/>timeline: TimelineEntry\[\]<br/>filesRead/Changed/Searched<br/>toolCounts · errors · outcome]
+    CP_ROOT & CC_ROOT & CX_PROMPT --> CARD["SessionSummaryCard<br/>source · model · turns<br/>tokens · cacheHitRate<br/>timeline: TimelineEntry[]<br/>filesRead/Changed/Searched<br/>toolCounts · errors · outcome"]
 ```
 
 ---
