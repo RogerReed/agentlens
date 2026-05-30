@@ -1810,23 +1810,6 @@
     }
     return "";
   }
-  function getSessionUserRequest(span) {
-    return String(
-      getAttr(span, "copilot_chat.user_request") ?? getAttr(span, "user_prompt") ?? getAttr(span, "prompt") ?? getAttr(span, "codex.user_prompt") ?? getAttr(span, "codex.prompt") ?? getAttr(span, "codex.user_message") ?? getAttr(span, "codex.input") ?? ""
-    );
-  }
-  function extractUserRequest(raw) {
-    if (!raw) return "";
-    const trimmed = raw.trim();
-    if (trimmed.indexOf("<userRequest>") !== -1) {
-      const match = trimmed.match(/<userRequest>\s*([\s\S]*?)\s*<\/userRequest>/);
-      return match ? match[1].trim() : trimmed;
-    }
-    const codexMatch = trimmed.match(/(?:^|\n)##\s+My request(?:\s+for\s+[^\n:]+)?:\s*\n([\s\S]*)$/i);
-    if (codexMatch?.[1]?.trim()) return codexMatch[1].trim();
-    const stripped = trimmed.replace(/<ide_[^>]*>[\s\S]*?<\/ide_[^>]*>/gi, "").trim();
-    return stripped || trimmed;
-  }
   function spanTypeBadge(span) {
     const n3 = (span.name ?? "").toLowerCase();
     const otelName = String(getAttr(span, "otel.name") ?? "").toLowerCase();
@@ -1837,148 +1820,6 @@
     if (n3.includes("embed")) return { label: "EMBED", color: "#FF85A1" };
     if (n3.includes("search") || n3.includes("retrieve")) return { label: "RAG", color: "#85E0D0" };
     return { label: "SPAN", color: "var(--muted)" };
-  }
-  var SPAN_ATTR_HIGHLIGHT = /* @__PURE__ */ new Set([
-    "span.type",
-    "event.name",
-    "tool_name",
-    "full_command",
-    "gen_ai.tool.name",
-    "gen_ai.tool.call.arguments",
-    "gen_ai.tool.call.result",
-    "decision",
-    "source",
-    "success",
-    "duration_ms",
-    "gen_ai.system",
-    "gen_ai.provider.name",
-    "gen_ai.request.model",
-    "gen_ai.response.model"
-  ]);
-  var SPAN_ATTR_SUPPRESS = /* @__PURE__ */ new Set([
-    "user.id",
-    "user.email",
-    "user.account_uuid",
-    "user.account_id",
-    "organization.id",
-    "session.id",
-    "copilot_chat.chat_session_id",
-    "host.name",
-    "service.name",
-    "service.version",
-    "telemetry.sdk.language",
-    "telemetry.sdk.name",
-    "telemetry.sdk.version",
-    "env",
-    "code.file.path",
-    "code.module.name",
-    "code.line.number",
-    "thread.id",
-    "thread.name",
-    "target",
-    "busy_ns",
-    "idle_ns",
-    "terminal.type",
-    "gen_ai.tool.type",
-    "gen_ai.tool.description",
-    "otel.trace_id",
-    // Rendered separately as a formatted "Response" block
-    "gen_ai.output.messages"
-  ]);
-  function extractLlmResponseText(span) {
-    const raw = String(getAttr(span, "gen_ai.output.messages") ?? "");
-    if (!raw) return null;
-    try {
-      const msgs = JSON.parse(raw);
-      for (const msg of msgs) {
-        if (msg.role !== "assistant") continue;
-        const blocks = msg.content ?? msg.parts ?? [];
-        for (const b4 of blocks) {
-          if (b4.type === "text" && typeof b4.text === "string" && b4.text.trim()) {
-            return b4.text;
-          }
-        }
-      }
-    } catch {
-    }
-    return null;
-  }
-  function extractLlmToolCalls(span) {
-    const raw = String(getAttr(span, "gen_ai.output.messages") ?? "");
-    if (!raw) return [];
-    try {
-      const msgs = JSON.parse(raw);
-      const names = [];
-      for (const msg of msgs) {
-        if (msg.role !== "assistant") continue;
-        const blocks = msg.content ?? msg.parts ?? [];
-        for (const b4 of blocks) {
-          if ((b4.type === "tool_use" || b4.type === "tool_call") && b4.name) {
-            names.push(b4.name);
-          }
-        }
-      }
-      return names;
-    } catch {
-      return [];
-    }
-  }
-  function isLlmSpan(span) {
-    const name = span.name ?? "";
-    return name === "claude_code.llm_request" || name.startsWith("chat ");
-  }
-  function extractSpanSummary(span) {
-    const name = span.name ?? "";
-    if (isLlmSpan(span)) {
-      const responseText = extractLlmResponseText(span);
-      if (responseText) {
-        const snippet = responseText.trim().replace(/\s+/g, " ");
-        return snippet.length > 100 ? snippet.slice(0, 100) + "\u2026" : snippet;
-      }
-      const model = String(getAttr(span, "gen_ai.request.model") ?? getAttr(span, "gen_ai.response.model") ?? getAttr(span, "model") ?? "");
-      const stop = String(getAttr(span, "stop_reason") ?? getAttr(span, "gen_ai.response.finish_reasons") ?? "");
-      const inTok = Number(getAttr(span, "input_tokens") ?? 0);
-      const outTok = Number(getAttr(span, "output_tokens") ?? 0);
-      const parts = [];
-      if (model) parts.push(model);
-      if (stop) parts.push(stop);
-      if (inTok || outTok) parts.push(inTok.toLocaleString() + " in \u2192 " + outTok.toLocaleString() + " out");
-      return parts.length > 0 ? parts.join(" \xB7 ") : null;
-    }
-    if (name === "claude_code.tool") {
-      const tool = String(getAttr(span, "tool_name") ?? "");
-      const cmd = String(getAttr(span, "full_command") ?? "");
-      if (tool && cmd) return tool + ": " + (cmd.length > 120 ? cmd.slice(0, 120) + "\u2026" : cmd);
-      return tool || null;
-    }
-    if (name.startsWith("execute_tool ")) {
-      const argsRaw = String(getAttr(span, "gen_ai.tool.call.arguments") ?? "");
-      if (argsRaw) {
-        try {
-          const args = JSON.parse(argsRaw);
-          const key = ["command", "filePath", "dirPath", "query", "pattern", "operation", "id", "path"].find((k3) => typeof args[k3] === "string" && args[k3].length > 0);
-          if (key) {
-            const val = args[key];
-            return val.length > 120 ? val.slice(0, 120) + "\u2026" : val;
-          }
-          const first = Object.values(args).find((v4) => typeof v4 === "string" && v4.length > 0 && v4.length < 200);
-          if (first) return first.slice(0, 120);
-        } catch {
-        }
-      }
-      return null;
-    }
-    if (name === "codex.tool_decision") {
-      const tool = String(getAttr(span, "tool_name") ?? "");
-      const decision = String(getAttr(span, "decision") ?? "");
-      const source = String(getAttr(span, "source") ?? "");
-      if (tool && decision) return tool + " \u2192 " + decision + (source ? " (via " + source + ")" : "");
-      return tool || null;
-    }
-    if (name === "exec_command" || name === "apply_patch") {
-      return String(getAttr(span, "tool_name") ?? "") || name;
-    }
-    return null;
   }
   function getAgentSourceLabel(source) {
     if (source === "claude_code") return "Claude";
@@ -2107,35 +1948,6 @@
     if (rs === "no list") return "none";
     return rs;
   }
-  function buildSpanTree(traceSpans) {
-    const byId = {};
-    const roots = [];
-    traceSpans.forEach((s4) => {
-      byId[s4.spanId] = { span: s4, children: [], depth: 0 };
-    });
-    traceSpans.forEach((s4) => {
-      const node = byId[s4.spanId];
-      if (s4.parentSpanId && byId[s4.parentSpanId]) {
-        byId[s4.parentSpanId].children.push(node);
-      } else {
-        roots.push(node);
-      }
-    });
-    function setDepth(node, d5) {
-      node.depth = d5;
-      node.children.sort((a4, b4) => nanoToMs(a4.span.startTime) - nanoToMs(b4.span.startTime));
-      node.children.forEach((c4) => setDepth(c4, d5 + 1));
-    }
-    roots.sort((a4, b4) => nanoToMs(a4.span.startTime) - nanoToMs(b4.span.startTime));
-    roots.forEach((r5) => setDepth(r5, 0));
-    const flat = [];
-    function flatten(node) {
-      flat.push(node);
-      node.children.forEach(flatten);
-    }
-    roots.forEach(flatten);
-    return flat;
-  }
 
   // media/src/state.ts
   function makeSetSignal() {
@@ -2180,12 +1992,8 @@
   var selectedAgentFilter = y3("all");
   var insightFilter = y3("all");
   var activeTab = y3("efficiency");
-  var retainWaterfall = y3(true);
-  var retainSummaryWaterfall = y3(true);
-  var waterfallSpans = y3([]);
   var swRetainedSessions = y3([]);
   var swLastSessionCount = y3(0);
-  var expandedSpanIds = makeSetSignal();
   var dismissedSpanIds = makeSetSignal();
   var lastSeenTraceIds = makeSetSignal();
   var ignoredInsightKeys = makeSetSignal();
@@ -4620,7 +4428,7 @@
     ] });
   }
 
-  // media/src/tabs/Summaries.tsx
+  // media/src/tabs/Traces.tsx
   function BgSummaryBlock({ bgSpans }) {
     const [open, setOpen] = d2(false);
     if (!bgSpans?.length) return null;
@@ -4915,7 +4723,7 @@
       ] })
     ] });
   }
-  function Summaries() {
+  function Traces() {
     const base = displaySessions.value;
     const summary = sessionSummary.value;
     if (!summary?.sessions?.length) {
@@ -4959,371 +4767,6 @@
         sessionsToShow.length === 0 && /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions to display" })
       ] }),
       summary.backgroundSpans?.length > 0 && /* @__PURE__ */ u4(BgSummaryBlock, { bgSpans: summary.backgroundSpans })
-    ] });
-  }
-
-  // media/src/tabs/Traces.tsx
-  function isCodexWebsocketSpan(span) {
-    const name = (span.name ?? "").toLowerCase();
-    if (!name.includes("websocket")) return false;
-    const eventName = String(getAttr(span, "event.name") ?? "").toLowerCase();
-    return name.startsWith("codex.") || eventName.startsWith("codex.") || Boolean(getCodexSessionId(span));
-  }
-  function SpanRow({ span, minStart, traceRange, depth }) {
-    const isExpanded = expandedSpanIds.has(span.spanId);
-    const [localOpen, setLocalOpen] = d2(isExpanded);
-    const [showSuppressed, setShowSuppressed] = d2(false);
-    const [showFullResponse, setShowFullResponse] = d2(false);
-    const st = nanoToMs(span.startTime), en = nanoToMs(span.endTime);
-    const dur = en - st;
-    const left = minStart > 0 && st > 0 ? (st - minStart) / traceRange * 100 : 0;
-    const width = traceRange > 0 ? Math.max(dur / traceRange * 100, 0.5) : 100;
-    const badge = spanTypeBadge(span);
-    const isErr = span.status?.code === 2;
-    const barColor = isErr ? "var(--error)" : badge.color;
-    const summary = extractSpanSummary(span);
-    const attrs = span.attributes ?? [];
-    const tipLines = [
-      span.name,
-      ...summary ? [summary] : [],
-      "Duration: " + formatMs(dur),
-      "Span: " + span.spanId,
-      ...span.parentSpanId ? ["Parent: " + span.parentSpanId] : [],
-      ...attrs.filter((a4) => SPAN_ATTR_HIGHLIGHT.has(a4.key)).slice(0, 6).map((a4) => {
-        const v4 = a4.value;
-        const display = v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue;
-        return a4.key + ": " + String(display ?? JSON.stringify(v4));
-      })
-    ];
-    const statusStr = span.status ? (span.status.code === 0 ? "OK" : span.status.code === 2 ? "ERROR" : "UNSET") + (span.status.message ? " \u2014 " + span.status.message : "") : "UNSET";
-    const metaLines = [
-      { k: "Span ID", v: span.spanId ?? "\u2014" },
-      { k: "Trace ID", v: span.traceId ?? "\u2014" },
-      ...span.parentSpanId ? [{ k: "Parent Span ID", v: span.parentSpanId }] : [],
-      { k: "Status", v: statusStr }
-    ];
-    const attrToRow = (a4) => {
-      const v4 = a4.value;
-      const display = v4.stringValue ?? v4.intValue ?? v4.doubleValue ?? v4.boolValue;
-      return { k: a4.key, v: String(display ?? JSON.stringify(v4)) };
-    };
-    const highlightedRows = attrs.filter((a4) => SPAN_ATTR_HIGHLIGHT.has(a4.key)).map(attrToRow);
-    const normalRows = attrs.filter((a4) => !SPAN_ATTR_HIGHLIGHT.has(a4.key) && !SPAN_ATTR_SUPPRESS.has(a4.key)).map(attrToRow);
-    const suppressedRows = attrs.filter((a4) => SPAN_ATTR_SUPPRESS.has(a4.key)).map(attrToRow);
-    function toggle() {
-      const next = !localOpen;
-      setLocalOpen(next);
-      if (next) expandedSpanIds.add(span.spanId);
-      else expandedSpanIds.delete(span.spanId);
-    }
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("div", { class: clsx_default("wf-row", { selected: localOpen }), onClick: toggle, children: [
-        /* @__PURE__ */ u4("div", { class: "wf-label", title: summary ? span.name + " \u2014 " + summary : span.name, children: [
-          Array.from({ length: depth }, (_4, i4) => /* @__PURE__ */ u4("span", { class: "wf-indent" }, i4)),
-          /* @__PURE__ */ u4("span", { class: "wf-chevron", children: localOpen ? "\u25BC" : "\u25B6" }),
-          /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + barColor + ";color:#000", children: badge.label }),
-          /* @__PURE__ */ u4("span", { style: "display:inline-flex;flex-direction:column;min-width:0", children: [
-            /* @__PURE__ */ u4("span", { class: "wf-name", children: span.name }),
-            summary && /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px", children: summary })
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("div", { class: "wf-bar-area", children: /* @__PURE__ */ u4("div", { class: "wf-bar", style: `left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`, children: [
-          /* @__PURE__ */ u4("div", { class: "wf-bar-inner", style: "background:" + barColor + ";opacity:" + (isErr ? "1" : "0.7") }),
-          width < 15 && /* @__PURE__ */ u4("span", { class: "wf-dur", children: formatMs(dur) }),
-          /* @__PURE__ */ u4("div", { class: "wf-tip", dangerouslySetInnerHTML: { __html: tipLines.map((l5) => esc(l5)).join("<br>") } })
-        ] }) }),
-        /* @__PURE__ */ u4("div", { class: "wf-info", children: formatMs(dur) })
-      ] }),
-      /* @__PURE__ */ u4("div", { class: clsx_default("wf-detail", { open: localOpen }), id: "detail-" + span.spanId, children: [
-        metaLines.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
-          /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
-          /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
-        ] }, dl.k)),
-        highlightedRows.length > 0 && /* @__PURE__ */ u4(S, { children: [
-          /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "border-top:1px solid var(--border);margin-top:4px;padding-top:4px", children: [
-            /* @__PURE__ */ u4("span", { class: "wf-detail-key", style: "color:var(--accent);font-weight:600", children: "Tool detail" }),
-            /* @__PURE__ */ u4("span", { class: "wf-detail-val" })
-          ] }),
-          highlightedRows.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
-            /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
-            /* @__PURE__ */ u4("span", { class: "wf-detail-val", style: "white-space:pre-wrap;word-break:break-all", children: dl.v })
-          ] }, dl.k))
-        ] }),
-        isLlmSpan(span) && (() => {
-          const responseText = extractLlmResponseText(span);
-          const toolCalls2 = extractLlmToolCalls(span);
-          const inTok = Number(getAttr(span, "input_tokens") ?? 0);
-          const outTok = Number(getAttr(span, "output_tokens") ?? 0);
-          const hasContent = responseText || toolCalls2.length > 0 || inTok > 0;
-          if (!hasContent) return null;
-          const PREVIEW_LEN = 600;
-          const isLong = (responseText?.length ?? 0) > PREVIEW_LEN;
-          return /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border);margin-top:4px;padding-top:4px", children: [
-            /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
-              /* @__PURE__ */ u4("span", { class: "wf-detail-key", style: "color:var(--accent);font-weight:600", children: "Response" }),
-              /* @__PURE__ */ u4("span", { class: "wf-detail-val", style: "color:var(--muted);font-size:10px", children: inTok > 0 && /* @__PURE__ */ u4(S, { children: [
-                inTok.toLocaleString(),
-                " in \u2192 ",
-                outTok.toLocaleString(),
-                " out"
-              ] }) })
-            ] }),
-            toolCalls2.length > 0 && /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
-              /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: "Tool calls" }),
-              /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: toolCalls2.join(", ") })
-            ] }),
-            responseText && /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "align-items:flex-start", children: [
-              /* @__PURE__ */ u4("span", { class: "wf-detail-key", style: "padding-top:2px", children: "Text" }),
-              /* @__PURE__ */ u4("span", { class: "wf-detail-val", style: "white-space:pre-wrap;word-break:break-word;font-size:11px", children: [
-                showFullResponse ? responseText : responseText.slice(0, PREVIEW_LEN),
-                isLong && !showFullResponse && /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2026" }),
-                isLong && /* @__PURE__ */ u4(
-                  "button",
-                  {
-                    class: "sw-show-full-btn",
-                    style: "display:block;margin-top:4px",
-                    onClick: (e4) => {
-                      e4.stopPropagation();
-                      setShowFullResponse((v4) => !v4);
-                    },
-                    children: showFullResponse ? "Collapse" : "Show full response"
-                  }
-                )
-              ] })
-            ] })
-          ] });
-        })(),
-        normalRows.length > 0 && normalRows.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", children: [
-          /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
-          /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
-        ] }, dl.k)),
-        suppressedRows.length > 0 && /* @__PURE__ */ u4(S, { children: [
-          /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "margin-top:4px", children: [
-            /* @__PURE__ */ u4(
-              "span",
-              {
-                class: "wf-detail-key",
-                style: "color:var(--muted);cursor:pointer;user-select:none",
-                onClick: (e4) => {
-                  e4.stopPropagation();
-                  setShowSuppressed((v4) => !v4);
-                },
-                children: [
-                  showSuppressed ? "\u25BC" : "\u25B6",
-                  " SDK / identity attrs (",
-                  suppressedRows.length,
-                  ")"
-                ]
-              }
-            ),
-            /* @__PURE__ */ u4("span", { class: "wf-detail-val" })
-          ] }),
-          showSuppressed && suppressedRows.map((dl) => /* @__PURE__ */ u4("div", { class: "wf-detail-row", style: "opacity:0.55", children: [
-            /* @__PURE__ */ u4("span", { class: "wf-detail-key", children: dl.k }),
-            /* @__PURE__ */ u4("span", { class: "wf-detail-val", children: dl.v })
-          ] }, dl.k))
-        ] })
-      ] })
-    ] });
-  }
-  function TraceGroup({
-    traceId,
-    traceSpans,
-    sessionNum,
-    source,
-    sessionPrompt,
-    model,
-    isFirst
-  }) {
-    const [collapsed, setCollapsed] = d2(!isFirst);
-    const [promptExpanded, setPromptExpanded] = d2(false);
-    const minStart = Math.min(...traceSpans.map((s4) => nanoToMs(s4.startTime)).filter((t4) => t4 > 0)) || 0;
-    const maxEnd = Math.max(...traceSpans.map((s4) => nanoToMs(s4.endTime)));
-    const traceRange = maxEnd - minStart || 1;
-    const traceDur = formatMs(traceRange);
-    const errorCount = traceSpans.filter((s4) => s4.status?.code === 2).length;
-    const tree = buildSpanTree(traceSpans);
-    const traceLabel = sessionNum ? /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("strong", { children: sessionNum }),
-      " ",
-      source && /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getAgentDotHtml(source) } }),
-      " "
-    ] }) : null;
-    const sessionTitle = sessionNum ? sessionPrompt || "[session in progress]" : sessionPrompt;
-    const isLongPrompt = (sessionTitle?.length ?? 0) > 120;
-    const promptSnippet = sessionTitle ? ` ${isLongPrompt ? sessionTitle.slice(0, 120) + "\u2026" : sessionTitle}` : "";
-    const idLabel = traceId.startsWith("codex:") ? "Session" : "Trace";
-    const timeMarks = Array.from({ length: 6 }, (_4, t4) => formatMs(traceRange * t4 / 5));
-    return /* @__PURE__ */ u4("div", { class: "wf-trace-group", children: [
-      /* @__PURE__ */ u4("div", { class: "wf-trace-header", onClick: () => setCollapsed((c4) => !c4), children: [
-        /* @__PURE__ */ u4("span", { children: [
-          /* @__PURE__ */ u4("span", { class: "wf-header-chevron", children: collapsed ? "\u25B6" : "\u25BC" }),
-          traceLabel,
-          promptSnippet,
-          isLongPrompt && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: (e4) => {
-            e4.stopPropagation();
-            setPromptExpanded((v4) => !v4);
-          }, children: promptExpanded ? "Collapse" : "Show full prompt" })
-        ] }),
-        /* @__PURE__ */ u4("span", { class: "wf-trace-stats", children: [
-          /* @__PURE__ */ u4("span", { class: "wf-trace-id", children: [
-            idLabel,
-            " ",
-            traceId.substring(0, 16),
-            "..."
-          ] }),
-          " \xB7 ",
-          traceSpans.length,
-          " spans",
-          " \xB7 ",
-          traceDur,
-          model && /* @__PURE__ */ u4(S, { children: [
-            " \xB7 ",
-            model
-          ] }),
-          errorCount > 0 && /* @__PURE__ */ u4("span", { class: "err", children: [
-            " \xB7 ",
-            errorCount,
-            " errors"
-          ] })
-        ] })
-      ] }),
-      promptExpanded && sessionTitle && /* @__PURE__ */ u4("div", { style: "padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word", children: sessionTitle }),
-      /* @__PURE__ */ u4("div", { class: clsx_default("wf-trace-body", { collapsed }), children: [
-        /* @__PURE__ */ u4("div", { class: "wf-time-ruler", children: timeMarks.map((m4, i4) => /* @__PURE__ */ u4("span", { children: m4 }, i4)) }),
-        tree.map((node) => /* @__PURE__ */ u4(
-          SpanRow,
-          {
-            span: node.span,
-            minStart,
-            traceRange,
-            depth: node.depth
-          },
-          node.span.spanId
-        ))
-      ] })
-    ] });
-  }
-  function Traces() {
-    const wfSpans = waterfallSpans.value;
-    const sessions = displaySessions.value;
-    const codexRawTraceSessionMap = /* @__PURE__ */ new Map();
-    wfSpans.forEach((span) => {
-      const sessionId = getCodexSessionId(span);
-      const rawTraceId = getAttr(span, "otel.trace_id");
-      if (sessionId && rawTraceId) codexRawTraceSessionMap.set(String(rawTraceId), sessionId);
-    });
-    const sessionSpanMap = /* @__PURE__ */ new Map();
-    sessions.forEach((sess) => {
-      if (sess.source !== "codex" || !sess.traceId) return;
-      if (sess.sessionId) sessionSpanMap.set(sess.sessionId, sess.traceId);
-      for (const entry of sess.timeline ?? []) {
-        if (entry.spanId) sessionSpanMap.set(entry.spanId, sess.traceId);
-      }
-    });
-    const groupKeyForSpan = (span) => sessionSpanMap.get(span.spanId) || getCodexSessionId(span) || codexRawTraceSessionMap.get(span.traceId) || span.traceId;
-    const displayTraceIds = sessions.length > 0 ? new Set(sessions.map((s4) => s4.traceId).filter(Boolean)) : null;
-    const allSessionTraceIds = new Set(
-      (sessionSummary.value?.sessions ?? []).map((s4) => s4.traceId).filter(Boolean)
-    );
-    const filtered = wfSpans.filter((s4) => {
-      if (isCodexWebsocketSpan(s4)) return false;
-      const groupKey = groupKeyForSpan(s4);
-      return !displayTraceIds || displayTraceIds.has(groupKey) || !allSessionTraceIds.has(groupKey);
-    });
-    const traceMap = {};
-    const traceOrder = [];
-    filtered.forEach((s4) => {
-      const groupKey = groupKeyForSpan(s4);
-      if (!traceMap[groupKey]) {
-        traceMap[groupKey] = [];
-        traceOrder.push(groupKey);
-      }
-      traceMap[groupKey].push(s4);
-    });
-    const spanCount = filtered.length;
-    const traceCount = new Set(filtered.map((s4) => groupKeyForSpan(s4))).size;
-    const errorCount = filtered.filter((s4) => s4.status?.code === 2).length;
-    const sessionTraceMap = {};
-    const sessionPromptMap = {};
-    const sessionSourceMap = {};
-    const sessionModelMap = {};
-    sessions.forEach((sess) => {
-      if (sess.traceId) {
-        sessionTraceMap[sess.traceId] = getSessionGlobalNumber(sess);
-        sessionPromptMap[sess.traceId] = sess.userRequest ?? "";
-        sessionSourceMap[sess.traceId] = sess.source ?? "";
-        sessionModelMap[sess.traceId] = sess.model ?? "";
-      }
-    });
-    const reverseOrder = [...traceOrder].reverse();
-    const sessionTraceIdsFromSummary = sessions.map((sess) => sess.traceId).filter((traceId) => Boolean(traceId && traceMap[traceId]));
-    const seenSessionTraceIds = new Set(sessionTraceIdsFromSummary);
-    const sessionTraceIdsRev = [
-      ...sessionTraceIdsFromSummary.reverse(),
-      ...reverseOrder.filter((tid) => sessionTraceMap[tid] && !seenSessionTraceIds.has(tid))
-    ];
-    const bgTraceIdsRev = reverseOrder.filter((tid) => !sessionTraceMap[tid]);
-    const toRender = sessionTraceIdsRev.length > 0 ? sessionTraceIdsRev : reverseOrder;
-    return /* @__PURE__ */ u4("div", { id: "traces-content", children: [
-      /* @__PURE__ */ u4("div", { class: "tab-stats", children: [
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: spanCount }),
-          " spans"
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: traceCount }),
-          " traces"
-        ] }),
-        errorCount > 0 && /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val err", children: errorCount }),
-          " errors"
-        ] })
-      ] }),
-      /* @__PURE__ */ u4("div", { id: "traces-content-inner", children: filtered.length === 0 ? /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) : /* @__PURE__ */ u4(S, { children: /* @__PURE__ */ u4("div", { class: "waterfall", children: [
-        toRender.map((tid, i4) => {
-          const prompt = sessionPromptMap[tid] || (() => {
-            const spans2 = traceMap[tid] ?? [];
-            for (const s4 of spans2) {
-              if (isSessionSpan(s4.name)) return extractUserRequest(getSessionUserRequest(s4));
-            }
-            return "";
-          })();
-          return /* @__PURE__ */ u4(
-            TraceGroup,
-            {
-              traceId: tid,
-              traceSpans: traceMap[tid],
-              sessionNum: sessionTraceMap[tid],
-              source: sessionSourceMap[tid],
-              sessionPrompt: prompt,
-              model: sessionModelMap[tid],
-              isFirst: i4 === 0
-            },
-            tid
-          );
-        }),
-        bgTraceIdsRev.length > 0 && sessionTraceIdsRev.length > 0 && /* @__PURE__ */ u4(BgGroup, { bgTraceIds: bgTraceIdsRev, traceMap })
-      ] }) }) })
-    ] });
-  }
-  function BgGroup({ bgTraceIds, traceMap }) {
-    const [collapsed, setCollapsed] = d2(true);
-    const totalBgSpans = bgTraceIds.reduce((s4, tid) => s4 + (traceMap[tid]?.length ?? 0), 0);
-    return /* @__PURE__ */ u4("div", { class: "sw-bg-group", style: "margin-top:16px", children: [
-      /* @__PURE__ */ u4("div", { class: "sw-bg-header", onClick: () => setCollapsed((c4) => !c4), children: [
-        /* @__PURE__ */ u4("span", { class: "sw-bg-chevron", children: collapsed ? "\u25B6" : "\u25BC" }),
-        /* @__PURE__ */ u4("strong", { children: "Background Overhead" }),
-        /* @__PURE__ */ u4("span", { class: "sw-bg-summary", children: [
-          bgTraceIds.length,
-          " trace",
-          bgTraceIds.length !== 1 ? "s" : "",
-          " \xB7 ",
-          totalBgSpans,
-          " spans"
-        ] })
-      ] }),
-      /* @__PURE__ */ u4("div", { class: clsx_default("sw-bg-body", { collapsed }), children: bgTraceIds.map((tid, _i) => /* @__PURE__ */ u4(TraceGroup, { traceId: tid, traceSpans: traceMap[tid], isFirst: false }, tid)) })
     ] });
   }
 
@@ -6660,8 +6103,7 @@
     ["Automation", "Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay."],
     ["Tokens", "Token consumption aggregated by span name and per session, sorted from highest to lowest."],
     ["Latency", "Span durations as a color-coded grid, helping identify which operations are consistently slow."],
-    ["Summaries", "A human-readable session waterfall with LLM decisions, tool arguments and results, token usage per step, and background overhead breakdown."],
-    ["Traces", "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing."],
+    ["Traces", "A human-readable timeline of each session \u2014 LLM calls with decisions, tool calls with arguments and results, token usage per step, and background overhead breakdown."],
     ["Files", "Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed."],
     ["Flow", "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency. Supports zoom, pan, and playback animation."],
     ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
@@ -6691,7 +6133,6 @@
     ["Output Ratio", "Percentage of total tokens that are output (generated by the model). In cached agentic coding sessions this can be naturally tiny, so AgentLens no longer uses it as a standalone alert."],
     ["Prompt", "The text you type into the AI chat to request work. Each prompt initiates a new session."],
     ["Request", "The user-visible message sent to the agent in a single prompt. In OTEL terms, the request anchor differs by agent: Copilot uses invoke_agent, Claude uses claude_code.interaction, and Codex is normalized from prompt log events."],
-    ["Retain Spans", "A waterfall checkbox option. When checked, spans from previous prompts are kept visible alongside new ones."],
     ["Session", "A single prompt-to-response cycle. Starts when you send a prompt and ends when the agent delivers its final response. AgentLens normalizes different Copilot, Claude, and Codex OTEL shapes into this shared model."],
     ["Span", "A single timed operation recorded by OpenTelemetry. AgentLens displays true trace spans and normalized log events with a span-like name, duration, and attributes."],
     ["Span ID", "A unique identifier for a single span within a trace. Used to establish parent-child relationships between operations."],
@@ -6703,7 +6144,7 @@
     ["Trace ID", "A unique identifier linking all spans belonging to the same session/request."],
     ["Turn", "One LLM call within a session. A multi-turn session involves the agent calling the LLM, executing tools, then calling the LLM again."],
     ["TTFT", "Time to First Token \u2014 the latency between sending a prompt and receiving the first token of the response."],
-    ["Waterfall", "A visualization where spans are displayed as horizontal bars on a time axis, with nesting depth shown by indentation."]
+    ["Waterfall", "A span visualization where operations are displayed as horizontal bars on a time axis, with nesting depth shown by indentation. Used in OpenTelemetry tooling; AgentLens surfaces span timing data through the Latency tab instead."]
   ];
   function termId(term) {
     return "gl-" + term.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
@@ -6756,7 +6197,7 @@
       agent: "Codex",
       format: "Primarily flat OTLP log records (structured JSON events sent to /v1/logs), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding trace_exporter to ~/.codex/config.toml also emits timing spans to /v1/traces. Both the CLI and the VS Code extension read the same config file.",
       coverage: "With the recommended configuration (log_user_prompt = true and both exporters set): prompt text, token counts, model name, TTFT, tool names, tool arguments, tool results, and span timing are all present.",
-      gaps: "Trace and Timeline tabs have less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without trace_exporter, span waterfall data is limited."
+      gaps: "The Traces timeline has less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without trace_exporter, timing data is limited."
     }
   ];
   var codeStyle = "font-size:11px;background:var(--panel-bg);padding:1px 4px;border-radius:3px";
@@ -7094,11 +6535,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             ] })
           ] })
         ] })) }),
-        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: [
-          "The practical effect: ",
-          /* @__PURE__ */ u4("a", { href: "#gl-trace", children: "Traces" }),
-          " and Timeline stay closest to the raw OTEL structure, while Efficiency, Summaries, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side."
-        ] })
+        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: "The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side." })
       ] })
     ] });
   }
@@ -7274,7 +6711,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
               title: "Infinite Loop \u2014 Context Accumulation",
               why: `<a href="#gl-input-tokens">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`,
               example: "First call: 8K in \u2192 600 out (7.5%). Last call: 65K in \u2192 80 out (0.12%). Five turns reading the same files without edits.",
-              steps: `<li>Stop immediately \u2014 cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Summaries tab to review what was accomplished.</li>`,
+              steps: `<li>Stop immediately \u2014 cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Traces tab to review what was accomplished.</li>`,
               impact: "Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."
             }
           )
@@ -7847,7 +7284,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   var TABS = [
     { id: "efficiency", label: "Efficiency", primary: true, title: "Per-session metrics and token usage breakdown." },
     { id: "cost", label: "Cost", primary: true, title: "Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing." },
-    { id: "summaries", label: "Summaries", primary: true, title: "A high-level, human-readable timeline of each session \u2014 LLM calls with their decisions, tool calls with arguments, and token usage." },
+    { id: "traces", label: "Traces", primary: true, title: "A human-readable timeline of each session \u2014 LLM calls with their decisions, tool calls with arguments, and token usage." },
     { id: "recommendations", label: "Recommendations", primary: true, title: "Actionable insights and recommendations for improving prompt efficiency and reducing token waste." },
     { id: "agents", label: "Agents", primary: false, title: "Copilot, Claude, and Codex \u2014 session counts, token usage, tools, and latency broken down by agent source." },
     { id: "alerts", label: "Alerts", primary: false, title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
@@ -7858,7 +7295,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     { id: "latency", label: "Latency", primary: false, title: "Span durations as a color-coded grid, helping identify which operations are consistently slow." },
     { id: "tokens", label: "Tokens", primary: false, title: "Token consumption aggregated by span name and per session, sorted from highest to lowest." },
     { id: "tools", label: "Tools", primary: false, title: "Tool call distribution broken down by tool name, with token usage and performance stats per tool." },
-    { id: "traces", label: "Traces", primary: false, title: "Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing." },
     { id: "export", label: "Export", primary: true, title: "Export raw or redacted OTEL span data as JSON files." },
     { id: "help", label: "Help", primary: true, title: "Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard." }
   ];
@@ -7971,35 +7407,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     const combined = [...summary.sessions, ...newSessions].sort((a4, b4) => sessionStartMs(a4) - sessionStartMs(b4));
     return { ...summary, sessions: combined };
   }
-  function updateWaterfall(newSpans) {
-    if (retainWaterfall.value) {
-      const existingIds = new Set(waterfallSpans.value.map((s4) => s4.spanId));
-      const toAdd = newSpans.filter((s4) => !existingIds.has(s4.spanId) && !dismissedSpanIds.has(s4.spanId));
-      if (toAdd.length > 0) {
-        waterfallSpans.value = [...waterfallSpans.value, ...toAdd];
-      }
-    } else {
-      const agentSpans = newSpans.filter((s4) => isSessionSpan(s4.name));
-      if (agentSpans.length > 0) {
-        agentSpans.sort((a4, b4) => {
-          const ta = a4.startTime ?? "0", tb = b4.startTime ?? "0";
-          return ta < tb ? 1 : ta > tb ? -1 : 0;
-        });
-        const latestTraceId = agentSpans[0].traceId;
-        const relatedTraceIds = /* @__PURE__ */ new Set([latestTraceId]);
-        for (const s4 of newSpans) {
-          if (s4.traceId !== latestTraceId) continue;
-          const rawTraceId = getAttr(s4, "otel.trace_id");
-          if (rawTraceId) relatedTraceIds.add(String(rawTraceId));
-        }
-        waterfallSpans.value = newSpans.filter(
-          (s4) => relatedTraceIds.has(s4.traceId) && !dismissedSpanIds.has(s4.spanId)
-        );
-      } else {
-        waterfallSpans.value = newSpans.filter((s4) => !dismissedSpanIds.has(s4.spanId));
-      }
-    }
-  }
   function ActivePanel() {
     const tab = normalizeTabId(activeTab.value);
     switch (tab) {
@@ -8015,8 +7422,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         return /* @__PURE__ */ u4(Cost, {});
       case "latency":
         return /* @__PURE__ */ u4(Latency, {});
-      case "summaries":
-        return /* @__PURE__ */ u4(Summaries, {});
       case "traces":
         return /* @__PURE__ */ u4(Traces, {});
       case "files":
@@ -8163,7 +7568,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     }, []);
     y2(() => {
       if (spans.value.length > 0) {
-        if (waterfallSpans.value.length === 0) updateWaterfall(spans.value);
         const supplemented = fillMissingClaudeSessions(sessionSummary.value, spans.value);
         if (supplemented) sessionSummary.value = supplemented;
       }
@@ -8178,7 +7582,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           const incomingSummary = msg.sessionSummary ?? sessionSummary.value;
           const supplemented = fillMissingClaudeSessions(incomingSummary, spans.value);
           if (supplemented) sessionSummary.value = supplemented;
-          updateWaterfall(spans.value);
           if (!initialLoadDone) {
             initialLoadDone = true;
             setTimeout(() => {
@@ -8215,12 +7618,9 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           spans.value = [];
           toolCalls.value = {};
           sessionSummary.value = null;
-          waterfallSpans.value = [];
           swRetainedSessions.value = [];
           swLastSessionCount.value = 0;
           dismissedSpanIds.clear();
-          lastSeenTraceIds.clear();
-          expandedSpanIds.clear();
         }
       };
       window.addEventListener("message", handler);

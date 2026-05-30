@@ -5,7 +5,7 @@
 
 ![AgentLens demo](media/demo.gif)
 
-Local observability that makes AI agent sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. AgentLens captures OpenTelemetry traces from your agents and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable recommendations in real time — then helps you prompt your agents on inefficiencies to improve interactions.
+Local observability that makes AI agent sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. AgentLens captures OpenTelemetry traces from your agents and surfaces efficiency metrics, session cost estimates, human-readable session traces, and actionable recommendations in real time — then helps you prompt your agents on inefficiencies to improve interactions.
 
 ## Getting Started
 
@@ -56,7 +56,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ## Features
 
 - **Telemetry Collection** — Built-in OpenTelemetry receiver captures traces and logs from Copilot, Claude Code, and Codex — no external infrastructure needed
-- **Session Dashboard** — See inside every agent run: context growth, tool calls, token usage, latency, errors, and file changes across interactive real-time panels
+- **Session Dashboard** — See inside every agent run: human-readable session traces, context growth, tool calls, token usage, latency, errors, and file changes across interactive real-time panels
 - **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, with a per-session bar chart and cross-session cost table
 - **Recommendations & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns — with suggested prompts to correct course
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat tool calls — per-agent or shared
@@ -266,7 +266,7 @@ Open the VS Code Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for
 
 | Command | Description |
 | ------- | ----------- |
-| `AgentLens: Open Dashboard` | Open the full 16-tab dashboard in an editor panel |
+| `AgentLens: Open Dashboard` | Open the full 15-tab dashboard in an editor panel |
 | `AgentLens: Clear Session Data` | Wipe all collected spans from memory |
 | `AgentLens: Export OTEL Data` | Write raw OTEL spans to JSON files in your workspace root (also available in the **Export** dashboard tab) |
 | `AgentLens: Export OTEL Data (Redacted)` | Same, with prompt text, tool inputs, tool results, and PII replaced with `[redacted]` (also available in the **Export** tab) |
@@ -279,7 +279,7 @@ This extension contributes the following settings:
 
 ## Agent Telemetry Formats
 
-Each AI coding agent emits a different OTEL shape. AgentLens normalizes all three into a shared session model for the dashboard, while keeping raw telemetry available in the Traces tab.
+Each AI coding agent emits a different OTEL shape. AgentLens normalizes all three into a shared session model for the dashboard.
 
 ### Copilot OTEL Format
 
@@ -307,7 +307,7 @@ Each AI coding agent emits a different OTEL shape. AgentLens normalizes all thre
 
 **What's included:** With the recommended configuration (`log_user_prompt = true` and both exporters set): prompt text, token counts, model name, time-to-first-token, tool names, tool arguments, tool results, and span timing are all present.
 
-**Gaps:** The Traces tab has less span granularity than Copilot or Claude Code since Codex is primarily log-based. Without `trace_exporter`, span waterfall data is limited.
+**Gaps:** Codex has less span granularity than Copilot or Claude Code since it is primarily log-based. Without `trace_exporter`, timing data in the Latency tab is limited.
 
 ---
 

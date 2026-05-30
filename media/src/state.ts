@@ -34,17 +34,13 @@ export const selectedAgentFilter = signal<AgentFilter>('all')
 export const insightFilter = signal<InsightFilter>('all')
 export const activeTab = signal('efficiency')
 
-// ── Waterfall / trace retention signals ──────────────────────────────────────
+// ── Session retention signals ─────────────────────────────────────────────────
 
-export const retainWaterfall = signal(true)
-export const retainSummaryWaterfall = signal(true)
-export const waterfallSpans = signal<Span[]>([])
 export const swRetainedSessions = signal<SessionSummaryCard[]>([])
 export const swLastSessionCount = signal(0)
 
 // ── Set-based signals ─────────────────────────────────────────────────────────
 
-export const expandedSpanIds = makeSetSignal<string>()
 export const dismissedSpanIds = makeSetSignal<string>()
 export const lastSeenTraceIds = makeSetSignal<string>()
 export const ignoredInsightKeys = makeSetSignal<string>()
