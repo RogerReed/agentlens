@@ -3104,6 +3104,17 @@
   }
 
   // media/src/sessionMetrics.ts
+  function fmtUsd(usd) {
+    if (usd === 0) return "$0.00";
+    if (usd < 1e-3) return "<$0.001";
+    if (usd < 1) return "$" + usd.toFixed(3);
+    return "$" + usd.toFixed(2);
+  }
+  function calcEntryCost(entry, sessionModel) {
+    const rates = lookupRates(entry.model || sessionModel);
+    if (!rates) return 0;
+    return calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, rates);
+  }
   function calcSessionCost(session, mode) {
     const modelId = session.model || "";
     const rates = lookupRates(modelId);
@@ -3937,7 +3948,7 @@
   }
 
   // media/src/tabs/Cost.tsx
-  function fmtUsd(usd) {
+  function fmtUsd2(usd) {
     if (usd === 0) return "$0.00";
     if (usd < 1e-3) return "<$0.001";
     if (usd < 1) return "$" + usd.toFixed(3);
@@ -4148,7 +4159,7 @@
             /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(rawInput) }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(s4.outputTokens) }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: s4.cacheReadTokens > 0 ? formatCompact(s4.cacheReadTokens) : "\u2014" }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-weight:600", children: cost.modelUnknown ? /* @__PURE__ */ u4("span", { style: "color:var(--muted)", "data-tip": 'Model "' + s4.model + '" not in rate table \u2014 add rates in pricing.ts', children: "~$?" }) : fmtUsd(cost.totalUsd) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-weight:600", children: cost.modelUnknown ? /* @__PURE__ */ u4("span", { style: "color:var(--muted)", "data-tip": 'Model "' + s4.model + '" not in rate table \u2014 add rates in pricing.ts', children: "~$?" }) : fmtUsd2(cost.totalUsd) }),
             showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: !isCopilot ? "\u2014" : cost.modelUnknown ? "?" : fmtCredits(cost.aiCredits) })
           ] }, s4.sessionId);
         }) }),
@@ -4163,7 +4174,7 @@
             ] }),
             /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;font-weight:600", children: [
               copilotAnyUnknown ? "~" : "",
-              fmtUsd(copilotTotalUsd)
+              fmtUsd2(copilotTotalUsd)
             ] }),
             showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: [
               copilotAnyUnknown ? "~" : "",
@@ -4180,7 +4191,7 @@
             ] }),
             /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;font-weight:600", children: [
               codexAnyUnknown ? "~" : "",
-              fmtUsd(codexTotalUsd)
+              fmtUsd2(codexTotalUsd)
             ] }),
             showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
           ] }),
@@ -4194,7 +4205,7 @@
             ] }),
             /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;font-weight:600", children: [
               claudeAnyUnknown ? "~" : "",
-              fmtUsd(claudeTotalUsd)
+              fmtUsd2(claudeTotalUsd)
             ] }),
             showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
           ] }),
@@ -4208,7 +4219,7 @@
             ] }),
             /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right", children: [
               copilotAnyUnknown || codexAnyUnknown || claudeAnyUnknown ? "~" : "",
-              fmtUsd(copilotTotalUsd + codexTotalUsd + claudeTotalUsd)
+              fmtUsd2(copilotTotalUsd + codexTotalUsd + claudeTotalUsd)
             ] }),
             showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
           ] })
@@ -4517,10 +4528,11 @@
       ] })
     ] });
   }
-  function StepDetail({ step, idx, sessIdx }) {
+  function StepDetail({ step, idx, sessIdx, sessionModel }) {
     const [showOutput, setShowOutput] = d2(false);
     const entry = step.entry;
     if (entry.type === "llm") {
+      const entryCost = calcEntryCost(entry, sessionModel);
       return /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
           /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Model" }),
@@ -4540,6 +4552,10 @@
             ] }),
             entry.responseText && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setShowOutput((v4) => !v4), children: showOutput ? "hide output" : "view output" })
           ] })
+        ] }),
+        entryCost > 0 && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Cost" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: fmtUsd(entryCost) })
         ] }),
         showOutput && entry.responseText && /* @__PURE__ */ u4(LongTextSection, { heading: "Output", text: entry.responseText, id: "sw-output-" + sessIdx + "-" + idx }),
         (entry.ttft ?? 0) > 0 && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
@@ -4623,9 +4639,10 @@
       !isLong || !expanded ? /* @__PURE__ */ u4("pre", { class: "sw-full-result-pre", style: "margin:0 0 8px", children: isJson && formatted.length <= 2e3 ? /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: syntaxHighlightJson(isLong ? text.slice(0, maxPreviewChars) : formatted) } }) : isLong ? text.slice(0, maxPreviewChars) + "\u2026" : formatted }) : /* @__PURE__ */ u4("pre", { class: "sw-full-result-pre", style: "margin:0 0 8px", children: isJson && formatted.length <= 2e3 ? /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: syntaxHighlightJson(formatted) } }) : formatted })
     ] });
   }
-  function StepRow({ step, idx, sessIdx, sessionDur }) {
+  function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }) {
     const [open, setOpen] = d2(false);
     const entry = step.entry;
+    const entryCost = entry.type === "llm" ? calcEntryCost(entry, sessionModel) : 0;
     let badgeLabel, barColor;
     if (entry.type === "llm") {
       badgeLabel = "LLM";
@@ -4657,10 +4674,14 @@
             formatCompact(entry.inputTokens ?? 0),
             " \u2193",
             formatCompact(entry.outputTokens ?? 0)
+          ] }),
+          entryCost > 0 && /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);white-space:nowrap", children: [
+            "~",
+            fmtUsd(entryCost)
           ] })
         ] })
       ] }),
-      open && /* @__PURE__ */ u4("div", { class: "sw-detail open", children: /* @__PURE__ */ u4(StepDetail, { step, idx, sessIdx }) })
+      open && /* @__PURE__ */ u4("div", { class: "sw-detail open", children: /* @__PURE__ */ u4(StepDetail, { step, idx, sessIdx, sessionModel }) })
     ] });
   }
   function SessionBlock({ sess, sessIdx, totalCount, isFirst }) {
@@ -4719,7 +4740,7 @@
       promptExpanded && /* @__PURE__ */ u4("div", { style: "padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word", children: sess.userRequest }),
       !collapsed && /* @__PURE__ */ u4("div", { class: "wf-trace-body", children: [
         /* @__PURE__ */ u4("div", { class: "wf-time-ruler", children: Array.from({ length: 6 }, (_4, t4) => /* @__PURE__ */ u4("span", { children: formatMs(sessionDur * t4 / 5) }, t4)) }),
-        steps.map((step, si) => /* @__PURE__ */ u4(StepRow, { step, idx: si, sessIdx, sessionDur }, step.entry.spanId + si))
+        steps.map((step, si) => /* @__PURE__ */ u4(StepRow, { step, idx: si, sessIdx, sessionDur, sessionModel: sess.model ?? "" }, step.entry.spanId + si))
       ] })
     ] });
   }
@@ -5417,6 +5438,7 @@
           totalTurns: turns.length,
           inputTokens: turn.entry.inputTokens ?? 0,
           outputTokens: turn.entry.outputTokens ?? 0,
+          costUsd: inferred ? void 0 : calcEntryCost(turn.entry, sess?.model ?? "") || void 0,
           model: turn.entry.model ?? turn.entry.label ?? "",
           durationMs: turn.entry.durationMs ?? 0,
           action: turn.entry.action ?? "",
@@ -5675,6 +5697,8 @@
               if (hn.note) lines.push({ label: "Note", value: hn.note });
               if ((hn.inputTokens ?? 0) > 0 || (hn.outputTokens ?? 0) > 0)
                 lines.push({ label: "Tokens", value: (hn.inputTokens ?? 0).toLocaleString() + " in \u2192 " + (hn.outputTokens ?? 0).toLocaleString() + " out" });
+              if ((hn.costUsd ?? 0) > 0)
+                lines.push({ label: "Cost", value: fmtUsd(hn.costUsd) });
               if (hn.durationMs) lines.push({ label: "Duration", value: formatMs(hn.durationMs) });
               if (hn.action) lines.push({ label: "Outcome", value: hn.action });
               if (hn.toolsUsed?.length) lines.push({ label: "Tools used", value: hn.toolsUsed.slice(0, 5).join(", ") + (hn.toolsUsed.length > 5 ? " +" + (hn.toolsUsed.length - 5) + " more" : "") });

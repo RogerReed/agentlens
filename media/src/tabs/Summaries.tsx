@@ -6,6 +6,7 @@ import {
   formatMs, formatCompact, syntaxHighlightJson, getSessionGlobalNumber,
   getAgentDotHtml, formatLlmLabel, formatToolLabel, formatToolResult,
 } from '../utils'
+import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry, BackgroundSpanSummary } from '../types'
 
 interface Step {
@@ -64,11 +65,12 @@ function BgSummaryBlock({ bgSpans }: { bgSpans: BackgroundSpanSummary[] }) {
   )
 }
 
-function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: number }) {
+function StepDetail({ step, idx, sessIdx, sessionModel }: { step: Step; idx: number; sessIdx: number; sessionModel: string }) {
   const [showOutput, setShowOutput] = useState(false)
   const entry = step.entry
 
   if (entry.type === 'llm') {
+    const entryCost = calcEntryCost(entry, sessionModel)
     return (
       <>
         <div class="sw-detail-section"><div class="sw-detail-heading">Model</div><div class="sw-detail-value">{entry.model || 'unknown'}</div></div>
@@ -85,6 +87,12 @@ function StepDetail({ step, idx, sessIdx }: { step: Step; idx: number; sessIdx: 
                 </button>
               )}
             </div>
+          </div>
+        )}
+        {entryCost > 0 && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">Cost</div>
+            <div class="sw-detail-value">{fmtUsd(entryCost)}</div>
           </div>
         )}
         {showOutput && entry.responseText && <LongTextSection heading="Output" text={entry.responseText} id={'sw-output-' + sessIdx + '-' + idx} />}
@@ -165,9 +173,10 @@ function LongTextSection({ heading, text, id: _id, isJson }: { heading: string; 
   )
 }
 
-function StepRow({ step, idx, sessIdx, sessionDur }: { step: Step; idx: number; sessIdx: number; sessionDur: number }) {
+function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step: Step; idx: number; sessIdx: number; sessionDur: number; sessionModel: string }) {
   const [open, setOpen] = useState(false)
   const entry = step.entry
+  const entryCost = entry.type === 'llm' ? calcEntryCost(entry, sessionModel) : 0
 
   let badgeLabel: string, barColor: string
   if (entry.type === 'llm') { badgeLabel = 'LLM'; barColor = 'var(--accent)' }
@@ -203,11 +212,14 @@ function StepRow({ step, idx, sessIdx, sessionDur }: { step: Step; idx: number; 
               ↑{formatCompact(entry.inputTokens ?? 0)} ↓{formatCompact(entry.outputTokens ?? 0)}
             </div>
           )}
+          {entryCost > 0 && (
+            <div style="font-size:9px;color:var(--muted);white-space:nowrap">~{fmtUsd(entryCost)}</div>
+          )}
         </div>
       </div>
       {open && (
         <div class="sw-detail open">
-          <StepDetail step={step} idx={idx} sessIdx={sessIdx} />
+          <StepDetail step={step} idx={idx} sessIdx={sessIdx} sessionModel={sessionModel} />
         </div>
       )}
     </>
@@ -271,7 +283,7 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
           <div class="wf-time-ruler">
             {Array.from({ length: 6 }, (_, t) => <span key={t}>{formatMs(sessionDur * t / 5)}</span>)}
           </div>
-          {steps.map((step, si) => <StepRow key={step.entry.spanId + si} step={step} idx={si} sessIdx={sessIdx} sessionDur={sessionDur} />)}
+          {steps.map((step, si) => <StepRow key={step.entry.spanId + si} step={step} idx={si} sessIdx={sessIdx} sessionDur={sessionDur} sessionModel={sess.model ?? ''} />)}
         </div>
       )}
     </div>
