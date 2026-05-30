@@ -92,6 +92,8 @@ export async function autoConfigureClaudeCode(port: number): Promise<ConfigResul
   const staleKeys = [
     'OTEL_EXPORTER_OTLP_TRACES_PROTOCOL',
     'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT',
+    'OTEL_SEMCONV_STABILITY_OPT_IN',
+    'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT',
   ]
 
   try {

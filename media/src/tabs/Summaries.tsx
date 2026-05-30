@@ -70,6 +70,8 @@ function StepDetail({ step, idx, sessIdx, sessionModel }: { step: Step; idx: num
   const entry = step.entry
 
   if (entry.type === 'llm') {
+    const PREVIEW_LEN = 400
+    const isLongResponse = (entry.responseText?.length ?? 0) > PREVIEW_LEN
     const entryCost = calcEntryCost(entry, sessionModel)
     return (
       <>
@@ -81,11 +83,6 @@ function StepDetail({ step, idx, sessIdx, sessionModel }: { step: Step; idx: num
               <span class="sw-token-in">{(entry.inputTokens ?? 0).toLocaleString()} input</span>
               <span class="sw-token-arrow"> → </span>
               <span class="sw-token-out">{(entry.outputTokens ?? 0).toLocaleString()} output</span>
-              {entry.responseText && (
-                <button class="sw-show-full-btn" style="margin-left:8px" onClick={() => setShowOutput(v => !v)}>
-                  {showOutput ? 'hide output' : 'view output'}
-                </button>
-              )}
             </div>
           </div>
         )}
@@ -95,13 +92,28 @@ function StepDetail({ step, idx, sessIdx, sessionModel }: { step: Step; idx: num
             <div class="sw-detail-value">{fmtUsd(entryCost)}</div>
           </div>
         )}
-        {showOutput && entry.responseText && <LongTextSection heading="Output" text={entry.responseText} id={'sw-output-' + sessIdx + '-' + idx} />}
+        {entry.responseText && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">
+              Response
+              {isLongResponse && (
+                <button class="sw-show-full-btn" style="margin-left:8px" onClick={() => setShowOutput(v => !v)}>
+                  {showOutput ? 'Collapse' : 'Show full response'}
+                </button>
+              )}
+            </div>
+            <div class="sw-detail-value" style="white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.5">
+              {showOutput ? entry.responseText : entry.responseText.slice(0, PREVIEW_LEN)}
+              {isLongResponse && !showOutput && <span style="color:var(--muted)">…</span>}
+            </div>
+          </div>
+        )}
+        {entry.thinking && <LongTextSection heading="Reasoning" text={entry.thinking} id={'sw-thinking-' + sessIdx + '-' + idx} />}
         {(entry.ttft ?? 0) > 0 && (
           <div class="sw-detail-section"><div class="sw-detail-heading">Time to First Token</div><div class="sw-detail-value">{formatMs(entry.ttft!)}</div></div>
         )}
         <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
-        {entry.action && <div class="sw-detail-section"><div class="sw-detail-heading">Decision</div><div class="sw-detail-value">{entry.action}</div></div>}
-        {entry.thinking && <div class="sw-detail-section"><div class="sw-detail-heading">Reasoning</div><div class="sw-detail-thinking" style="white-space:pre-wrap">{entry.thinking}</div></div>}
+        {entry.action && <div class="sw-detail-section"><div class="sw-detail-heading">Stop reason</div><div class="sw-detail-value">{entry.action}</div></div>}
         {entry.timestamp && <div class="sw-detail-section"><div class="sw-detail-heading">Timestamp</div><div class="sw-detail-value sw-detail-muted">{entry.timestamp}</div></div>}
       </>
     )
@@ -111,12 +123,28 @@ function StepDetail({ step, idx, sessIdx, sessionModel }: { step: Step; idx: num
     const toolParts = (entry.label ?? '').match(/^(\S+)\s*([\s\S]*)$/)
     const tName = toolParts ? toolParts[1] : entry.label
     const tArgs = toolParts ? toolParts[2] : ''
+    // toolInput is a raw command, a file path, or a JSON args object.
+    const isRaw = entry.toolInput && !entry.toolInput.trimStart().startsWith('{')
+    const isFilePath = isRaw && (entry.toolInput!.startsWith('/') || entry.toolInput!.startsWith('~') || /^[A-Za-z]:[/\\]/.test(entry.toolInput!))
+    const inputHeading = !isRaw ? 'Arguments' : isFilePath ? 'File' : 'Command'
+    const inputText = isRaw ? entry.toolInput : (tArgs || entry.toolInput || '')
     const resultText = entry.fullResult || entry.resultSummary || ''
     return (
       <>
         <div class="sw-detail-section"><div class="sw-detail-heading">Tool</div><div class="sw-detail-value"><code>{tName}</code></div></div>
-        {tArgs && <div class="sw-detail-section"><div class="sw-detail-heading">Arguments</div><div class="sw-detail-value"><code>{tArgs}</code></div></div>}
+        {inputText && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">{inputHeading}</div>
+            <div class="sw-detail-value"><code style="white-space:pre-wrap;word-break:break-all">{inputText}</code></div>
+          </div>
+        )}
         <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
+        {entry.decision && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">Decision</div>
+            <div class="sw-detail-value" style={entry.decision === 'rejected' ? 'color:var(--error)' : 'color:#8ec96b'}>{entry.decision}</div>
+          </div>
+        )}
         {resultText && <LongTextSection heading="Result" text={resultText} id={'sw-result-' + sessIdx + '-' + idx} isJson />}
         {entry.isError && <div class="sw-detail-section"><div class="sw-detail-heading err">Error</div><div class="sw-detail-value err">This step failed</div></div>}
         {entry.timestamp && <div class="sw-detail-section"><div class="sw-detail-heading">Timestamp</div><div class="sw-detail-value sw-detail-muted">{entry.timestamp}</div></div>}
@@ -190,17 +218,32 @@ function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step: Step;
     : entry.type === 'user_input' ? (entry.decision && entry.decision !== 'unknown' ? `${entry.label} (${entry.decision})` : entry.label)
     : entry.label || ''
 
+  // Show a subtitle for tool entries when toolInput is a raw string (not JSON args).
+  // For file paths show just the basename; for shell commands show the full command truncated.
+  const toolSubtitle = (() => {
+    if (entry.type !== 'tool' || !entry.toolInput || entry.toolInput.trimStart().startsWith('{')) return null
+    const input = entry.toolInput
+    const isFilePath = input.startsWith('/') || input.startsWith('~') || /^[A-Za-z]:[/\\]/.test(input)
+    if (isFilePath) return input.split('/').pop() || input
+    return input.length > 90 ? input.slice(0, 90) + '…' : input
+  })()
+
+  const subtitle = toolSubtitle
+
   const left = sessionDur > 0 ? (step.offsetMs / sessionDur * 100) : 0
   const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100
 
   return (
     <>
       <div class="wf-row" onClick={() => setOpen(v => !v)}>
-        <div class="wf-label" title={rowLabel}>
+        <div class="wf-label" title={subtitle ? rowLabel + ' — ' + subtitle : rowLabel}>
           <span class="wf-indent" />
           <span class="sw-chevron">{open ? '▼' : '▶'}</span>
           <span class="wf-type-badge" style={'background:' + barColor + ';color:#000'}>{badgeLabel}</span>
-          <span class="wf-name">{rowLabel}</span>
+          <span style="display:inline-flex;flex-direction:column;min-width:0">
+            <span class="wf-name">{rowLabel}</span>
+            {subtitle && <span style="font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px">{subtitle}</span>}
+          </span>
         </div>
         <div class="wf-bar-area">
           <div class="wf-bar" style={`left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`}>

@@ -18,6 +18,9 @@ export class OtlpCollector {
   private codexSessionByOtelTraceId = new Map<string, string>()
   private codexPromptOrdinalByConversation = new Map<string, number>()
   private codexActivePromptSessionId = ''
+  // Buffers gen_ai.choice / gen_ai.assistant.message log event content keyed by traceId:spanId.
+  // Spans and their log events arrive on separate HTTP requests; this handles either ordering.
+  private genAiResponseBuffer = new Map<string, string>()
 
   constructor(
     private port: number,
@@ -372,6 +375,26 @@ export class OtlpCollector {
           const isCodexEvent = eventName.startsWith('codex.')
           const isClaudeToolResult = eventName === 'tool_result' && logToolName !== ''
 
+          // gen_ai_latest_experimental: response content arrives as log events rather than span attributes.
+          // Buffer by traceId:spanId so it can be injected when the matching LLM span arrives,
+          // or injected retroactively if the span is already stored.
+          const isGenAiContent = eventName === 'gen_ai.choice' || eventName === 'gen_ai.assistant.message'
+          if (isGenAiContent) {
+            const logTraceId = typeof rec.traceId === 'string' ? rec.traceId : ''
+            const logSpanId = typeof rec.spanId === 'string' ? rec.spanId : ''
+            if (logTraceId && logSpanId) {
+              const raw = this.getAttrFrom(attrs, ['gen_ai.event.content'])
+              const formatted = raw ? this.formatGenAiEventContent(raw, eventName) : ''
+              if (formatted) {
+                const bufKey = `${logTraceId}:${logSpanId}`
+                this.genAiResponseBuffer.set(bufKey, formatted)
+                // If the span already exists in the store, inject immediately.
+                this.store.injectSpanAttribute(logTraceId, logSpanId, 'gen_ai.output.messages', formatted)
+              }
+            }
+            continue
+          }
+
           if (!isCodexEvent && !isClaudeToolResult) {continue}
           if (isCodexEvent && this.isCodexWebsocketSpan(eventName, attrs)) {continue}
 
@@ -520,6 +543,13 @@ export class OtlpCollector {
           }
         }
       }
+      // Inject gen_ai response content buffered from a prior log event, if available.
+      const bufKey = `${traceId}:${span.spanId}`
+      const bufferedContent = this.genAiResponseBuffer.get(bufKey)
+      if (bufferedContent) {
+        attrs = this.setStringAttr(attrs, 'gen_ai.output.messages', bufferedContent)
+        this.genAiResponseBuffer.delete(bufKey)
+      }
       this.store.addSpan({
         traceId,
         spanId: span.spanId,
@@ -533,6 +563,25 @@ export class OtlpCollector {
       count++
     }
     return count
+  }
+
+  // Normalises a gen_ai.choice or gen_ai.assistant.message event content value into the
+  // gen_ai.output.messages array format expected by extractResponseText in the summarizer.
+  private formatGenAiEventContent(raw: string, eventName: string): string {
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>
+      // gen_ai.choice wraps the message: { finish_reason, index, message: { role, content } }
+      const msg: Record<string, unknown> = eventName === 'gen_ai.choice' && parsed.message
+        ? parsed.message as Record<string, unknown>
+        : parsed
+      const role = msg.role ?? 'assistant'
+      let content = msg.content
+      // Normalise string content to block array format for extractResponseText compatibility
+      if (typeof content === 'string') {
+        content = [{ type: 'text', text: content }]
+      }
+      return JSON.stringify([{ role, content }])
+    } catch { return '' }
   }
 
   async stop() {

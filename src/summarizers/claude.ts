@@ -2,7 +2,7 @@ import { Span } from '../types'
 import { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizerTypes'
 import {
   getAttrStr, getAttrInt, nanoToMs, CLAUDE_WRITE_TOOLS,
-  extractResponseText, extractTokenCounts, normalizeUserRequest,
+  extractResponseText, extractTokenCounts, normalizeUserRequest, getGenAiModel,
 } from './helpers'
 
 function strOrUndef(v: unknown): string | undefined {
@@ -52,7 +52,7 @@ export function buildClaudeSessions(
         totalLlmCalls++
         const { input: inTok, output: outTok, cacheRead, cacheCreate } = extractTokenCounts(child)
         const ttft = getAttrInt(child, 'ttft_ms')
-        const childModel = getAttrStr(child, 'gen_ai.request.model') || getAttrStr(child, 'model')
+        const childModel = getGenAiModel(child)
         if (childModel) { model = childModel }
         inputTokens += inTok
         outputTokens += outTok
@@ -151,6 +151,8 @@ export function buildClaudeSessions(
         const argsStr = getAttrStr(child, 'tool_input')
           || getAttrStr(child, 'input')
           || getAttrStr(child, 'gen_ai.tool.call.arguments')
+          || getAttrStr(child, 'full_command')   // Bash: raw shell command
+          || getAttrStr(child, 'file_path')       // Read/Edit/Write: file path
         let foundChangedPath = false
         const toolEditDetails: EditDetail[] = []
         if (argsStr) {
