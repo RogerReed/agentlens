@@ -1,233 +1,310 @@
 import { useState } from 'preact/hooks'
-import clsx from 'clsx'
 import {
-  waterfallSpans, expandedSpanIds,
   displaySessions, sessionSummary,
 } from '../state'
 import {
-  esc, nanoToMs, formatMs, getAgentDotHtml,
-  buildSpanTree, isSessionSpan, getSessionUserRequest, extractUserRequest,
-  spanTypeBadge, getSessionGlobalNumber, getCodexSessionId, getAttr,
-  extractSpanSummary, SPAN_ATTR_HIGHLIGHT, SPAN_ATTR_SUPPRESS,
-  isLlmSpan, extractLlmResponseText, extractLlmToolCalls,
+  formatMs, formatCompact, syntaxHighlightJson, getSessionGlobalNumber,
+  getAgentDotHtml, formatLlmLabel, formatToolLabel, formatToolResult,
 } from '../utils'
-import type { Span, SessionSummaryCard } from '../types'
+import { calcEntryCost, fmtUsd } from '../sessionMetrics'
+import type { SessionSummaryCard, TimelineEntry, BackgroundSpanSummary } from '../types'
 
-
-function isCodexWebsocketSpan(span: Span): boolean {
-  const name = (span.name ?? '').toLowerCase()
-  if (!name.includes('websocket')) return false
-  const eventName = String(getAttr(span, 'event.name') ?? '').toLowerCase()
-  return name.startsWith('codex.') || eventName.startsWith('codex.') || Boolean(getCodexSessionId(span))
+interface Step {
+  entry: TimelineEntry
+  offsetMs: number
+  durationMs: number
 }
 
-function SpanRow({ span, minStart, traceRange, depth }: {
-  span: Span; minStart: number; traceRange: number; depth: number
-}) {
-  const isExpanded = expandedSpanIds.has(span.spanId)
-  const [localOpen, setLocalOpen] = useState(isExpanded)
-  const [showSuppressed, setShowSuppressed] = useState(false)
-  const [showFullResponse, setShowFullResponse] = useState(false)
 
-  const st = nanoToMs(span.startTime), en = nanoToMs(span.endTime)
-  const dur = en - st
-  const left = minStart > 0 && st > 0 ? ((st - minStart) / traceRange * 100) : 0
-  const width = traceRange > 0 ? Math.max((dur / traceRange * 100), 0.5) : 100
-  const badge = spanTypeBadge(span)
-  const isErr = span.status?.code === 2
-  const barColor = isErr ? 'var(--error)' : badge.color
-  const summary = extractSpanSummary(span)
 
-  const attrs = span.attributes ?? []
-  const tipLines = [
-    span.name,
-    ...(summary ? [summary] : []),
-    'Duration: ' + formatMs(dur),
-    'Span: ' + span.spanId,
-    ...(span.parentSpanId ? ['Parent: ' + span.parentSpanId] : []),
-    ...attrs.filter(a => SPAN_ATTR_HIGHLIGHT.has(a.key)).slice(0, 6).map(a => {
-      const v = a.value
-      const display = v.stringValue ?? v.intValue ?? v.doubleValue ?? v.boolValue
-      return a.key + ': ' + String(display ?? JSON.stringify(v))
-    }),
-  ]
+function BgSummaryBlock({ bgSpans }: { bgSpans: BackgroundSpanSummary[] }) {
+  const [open, setOpen] = useState(false)
+  if (!bgSpans?.length) return null
 
-  const statusStr = span.status
-    ? (span.status.code === 0 ? 'OK' : span.status.code === 2 ? 'ERROR' : 'UNSET')
-      + (span.status.message ? ' — ' + span.status.message : '')
-    : 'UNSET'
+  const groups: Record<string, { count: number; tokens: number; model: string }> = {}
+  let totalTokens = 0
+  bgSpans.forEach(bg => {
+    const key = bg.purpose || bg.name || 'Unknown'
+    if (!groups[key]) groups[key] = { count: 0, tokens: 0, model: bg.model || '' }
+    groups[key].count++
+    const tok = (bg.inputTokens ?? 0) + (bg.outputTokens ?? 0)
+    groups[key].tokens += tok
+    totalTokens += tok
+  })
 
-  const metaLines = [
-    { k: 'Span ID', v: span.spanId ?? '—' },
-    { k: 'Trace ID', v: span.traceId ?? '—' },
-    ...(span.parentSpanId ? [{ k: 'Parent Span ID', v: span.parentSpanId }] : []),
-    { k: 'Status', v: statusStr },
-  ]
-
-  const attrToRow = (a: typeof attrs[number]) => {
-    const v = a.value
-    const display = v.stringValue ?? v.intValue ?? v.doubleValue ?? v.boolValue
-    return { k: a.key, v: String(display ?? JSON.stringify(v)) }
+  const descriptions: Record<string, string> = {
+    'Generate chat title': 'Creates the title shown in the chat history sidebar.',
+    'Generate progress messages': 'Produces the status messages shown while the agent works.',
+    'Extension language model call': 'LLM call made by a VS Code extension — often used for completions or inline suggestions.',
   }
 
-  const highlightedRows = attrs.filter(a => SPAN_ATTR_HIGHLIGHT.has(a.key)).map(attrToRow)
-  const normalRows      = attrs.filter(a => !SPAN_ATTR_HIGHLIGHT.has(a.key) && !SPAN_ATTR_SUPPRESS.has(a.key)).map(attrToRow)
-  const suppressedRows  = attrs.filter(a => SPAN_ATTR_SUPPRESS.has(a.key)).map(attrToRow)
+  const purposes = Object.keys(groups).sort((a, b) => groups[b].tokens - groups[a].tokens)
 
-  function toggle() {
-    const next = !localOpen
-    setLocalOpen(next)
-    if (next) expandedSpanIds.add(span.spanId); else expandedSpanIds.delete(span.spanId)
+  return (
+    <div class="sw-bg-group">
+      <div class="sw-bg-header" onClick={() => setOpen(v => !v)}>
+        <span class="sw-bg-chevron">{open ? '▼' : '▶'}</span>{' '}
+        <span>Background Overhead</span>
+        <span class="sw-bg-summary">{bgSpans.length} calls · {totalTokens.toLocaleString()} tokens</span>
+      </div>
+      {open && (
+        <div class="sw-bg-body">
+          <div class="sw-bg-note">Automatic LLM calls that ran alongside this prompt. These are not part of your agent session but still consume tokens.</div>
+          {purposes.map(purpose => (
+            <div key={purpose} class="sw-bg-item">
+              <div class="sw-bg-item-header">
+                <span class="sw-bg-item-name">{purpose}</span>
+                <span class="sw-bg-item-stats">{groups[purpose].count}× · {groups[purpose].tokens.toLocaleString()} tok · {groups[purpose].model}</span>
+              </div>
+              {descriptions[purpose] && <div class="sw-bg-item-desc">{descriptions[purpose]}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function StepDetail({ step, idx, sessIdx, sessionModel }: { step: Step; idx: number; sessIdx: number; sessionModel: string }) {
+  const [showOutput, setShowOutput] = useState(false)
+  const entry = step.entry
+
+  if (entry.type === 'llm') {
+    const PREVIEW_LEN = 400
+    const isLongResponse = (entry.responseText?.length ?? 0) > PREVIEW_LEN
+    const entryCost = calcEntryCost(entry, sessionModel)
+    return (
+      <>
+        <div class="sw-detail-section"><div class="sw-detail-heading">Model</div><div class="sw-detail-value">{entry.model || 'unknown'}</div></div>
+        {((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">Token Usage</div>
+            <div class="sw-detail-value">
+              <span class="sw-token-in">{(entry.inputTokens ?? 0).toLocaleString()} input</span>
+              <span class="sw-token-arrow"> → </span>
+              <span class="sw-token-out">{(entry.outputTokens ?? 0).toLocaleString()} output</span>
+            </div>
+          </div>
+        )}
+        {entryCost > 0 && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">Cost</div>
+            <div class="sw-detail-value">{fmtUsd(entryCost)}</div>
+          </div>
+        )}
+        {entry.responseText && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">
+              Response
+              {isLongResponse && (
+                <button class="sw-show-full-btn" style="margin-left:8px" onClick={() => setShowOutput(v => !v)}>
+                  {showOutput ? 'Collapse' : 'Show full response'}
+                </button>
+              )}
+            </div>
+            <div class="sw-detail-value" style="white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.5">
+              {showOutput ? entry.responseText : entry.responseText.slice(0, PREVIEW_LEN)}
+              {isLongResponse && !showOutput && <span style="color:var(--muted)">…</span>}
+            </div>
+          </div>
+        )}
+        {entry.thinking && <LongTextSection heading="Reasoning" text={entry.thinking} id={'sw-thinking-' + sessIdx + '-' + idx} />}
+        {(entry.ttft ?? 0) > 0 && (
+          <div class="sw-detail-section"><div class="sw-detail-heading">Time to First Token</div><div class="sw-detail-value">{formatMs(entry.ttft!)}</div></div>
+        )}
+        <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
+        {entry.action && <div class="sw-detail-section"><div class="sw-detail-heading">Stop reason</div><div class="sw-detail-value">{entry.action}</div></div>}
+        {entry.timestamp && <div class="sw-detail-section"><div class="sw-detail-heading">Timestamp</div><div class="sw-detail-value sw-detail-muted">{entry.timestamp}</div></div>}
+      </>
+    )
+  }
+
+  if (entry.type === 'tool') {
+    const toolParts = (entry.label ?? '').match(/^(\S+)\s*([\s\S]*)$/)
+    const tName = toolParts ? toolParts[1] : entry.label
+    const tArgs = toolParts ? toolParts[2] : ''
+    // toolInput is a raw command, a file path, or a JSON args object.
+    const isRaw = entry.toolInput && !entry.toolInput.trimStart().startsWith('{')
+    const isFilePath = isRaw && (entry.toolInput!.startsWith('/') || entry.toolInput!.startsWith('~') || /^[A-Za-z]:[/\\]/.test(entry.toolInput!))
+    const inputHeading = !isRaw ? 'Arguments' : isFilePath ? 'File' : 'Command'
+    const inputText = isRaw ? entry.toolInput : (tArgs || entry.toolInput || '')
+    const resultText = entry.fullResult || entry.resultSummary || ''
+    return (
+      <>
+        <div class="sw-detail-section"><div class="sw-detail-heading">Tool</div><div class="sw-detail-value"><code>{tName}</code></div></div>
+        {inputText && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">{inputHeading}</div>
+            <div class="sw-detail-value"><code style="white-space:pre-wrap;word-break:break-all">{inputText}</code></div>
+          </div>
+        )}
+        <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
+        {entry.decision && (
+          <div class="sw-detail-section">
+            <div class="sw-detail-heading">Decision</div>
+            <div class="sw-detail-value" style={entry.decision === 'rejected' ? 'color:var(--error)' : 'color:#8ec96b'}>{entry.decision}</div>
+          </div>
+        )}
+        {resultText && <LongTextSection heading="Result" text={resultText} id={'sw-result-' + sessIdx + '-' + idx} isJson />}
+        {entry.isError && <div class="sw-detail-section"><div class="sw-detail-heading err">Error</div><div class="sw-detail-value err">This step failed</div></div>}
+        {entry.timestamp && <div class="sw-detail-section"><div class="sw-detail-heading">Timestamp</div><div class="sw-detail-value sw-detail-muted">{entry.timestamp}</div></div>}
+      </>
+    )
   }
 
   return (
     <>
-      <div class={clsx('wf-row', { selected: localOpen })} onClick={toggle}>
-        <div class="wf-label" title={summary ? span.name + ' — ' + summary : span.name}>
-          {Array.from({ length: depth }, (_, i) => <span key={i} class="wf-indent" />)}
-          <span class="wf-chevron">{localOpen ? '▼' : '▶'}</span>
-          <span class="wf-type-badge" style={'background:' + barColor + ';color:#000'}>{badge.label}</span>
-          <span style="display:inline-flex;flex-direction:column;min-width:0">
-            <span class="wf-name">{span.name}</span>
-            {summary && <span style="font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px">{summary}</span>}
-          </span>
-        </div>
-        <div class="wf-bar-area">
-          <div class="wf-bar" style={`left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`}>
-            <div class="wf-bar-inner" style={'background:' + barColor + ';opacity:' + (isErr ? '1' : '0.7')} />
-            {width < 15 && <span class="wf-dur">{formatMs(dur)}</span>}
-            <div class="wf-tip" dangerouslySetInnerHTML={{ __html: tipLines.map(l => esc(l)).join('<br>') }} />
-          </div>
-        </div>
-        <div class="wf-info">{formatMs(dur)}</div>
-      </div>
-
-      <div class={clsx('wf-detail', { open: localOpen })} id={'detail-' + span.spanId}>
-        {metaLines.map(dl => (
-          <div key={dl.k} class="wf-detail-row">
-            <span class="wf-detail-key">{dl.k}</span>
-            <span class="wf-detail-val">{dl.v}</span>
-          </div>
-        ))}
-        {highlightedRows.length > 0 && (
-          <>
-            <div class="wf-detail-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">
-              <span class="wf-detail-key" style="color:var(--accent);font-weight:600">Tool detail</span>
-              <span class="wf-detail-val" />
-            </div>
-            {highlightedRows.map(dl => (
-              <div key={dl.k} class="wf-detail-row">
-                <span class="wf-detail-key">{dl.k}</span>
-                <span class="wf-detail-val" style="white-space:pre-wrap;word-break:break-all">{dl.v}</span>
-              </div>
-            ))}
-          </>
-        )}
-        {isLlmSpan(span) && (() => {
-          const responseText = extractLlmResponseText(span)
-          const toolCalls = extractLlmToolCalls(span)
-          const inTok = Number(getAttr(span, 'input_tokens') ?? 0)
-          const outTok = Number(getAttr(span, 'output_tokens') ?? 0)
-          const hasContent = responseText || toolCalls.length > 0 || inTok > 0
-          if (!hasContent) return null
-          const PREVIEW_LEN = 600
-          const isLong = (responseText?.length ?? 0) > PREVIEW_LEN
-          return (
-            <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">
-              <div class="wf-detail-row">
-                <span class="wf-detail-key" style="color:var(--accent);font-weight:600">Response</span>
-                <span class="wf-detail-val" style="color:var(--muted);font-size:10px">
-                  {inTok > 0 && <>{inTok.toLocaleString()} in → {outTok.toLocaleString()} out</>}
-                </span>
-              </div>
-              {toolCalls.length > 0 && (
-                <div class="wf-detail-row">
-                  <span class="wf-detail-key">Tool calls</span>
-                  <span class="wf-detail-val">{toolCalls.join(', ')}</span>
-                </div>
-              )}
-              {responseText && (
-                <div class="wf-detail-row" style="align-items:flex-start">
-                  <span class="wf-detail-key" style="padding-top:2px">Text</span>
-                  <span class="wf-detail-val" style="white-space:pre-wrap;word-break:break-word;font-size:11px">
-                    {showFullResponse ? responseText : responseText.slice(0, PREVIEW_LEN)}
-                    {isLong && !showFullResponse && <span style="color:var(--muted)">…</span>}
-                    {isLong && (
-                      <button
-                        class="sw-show-full-btn"
-                        style="display:block;margin-top:4px"
-                        onClick={e => { e.stopPropagation(); setShowFullResponse(v => !v) }}
-                      >
-                        {showFullResponse ? 'Collapse' : 'Show full response'}
-                      </button>
-                    )}
-                  </span>
-                </div>
-              )}
-            </div>
-          )
-        })()}
-        {normalRows.length > 0 && normalRows.map(dl => (
-          <div key={dl.k} class="wf-detail-row">
-            <span class="wf-detail-key">{dl.k}</span>
-            <span class="wf-detail-val">{dl.v}</span>
-          </div>
-        ))}
-        {suppressedRows.length > 0 && (
-          <>
-            <div class="wf-detail-row" style="margin-top:4px">
-              <span
-                class="wf-detail-key"
-                style="color:var(--muted);cursor:pointer;user-select:none"
-                onClick={e => { e.stopPropagation(); setShowSuppressed(v => !v) }}
-              >
-                {showSuppressed ? '▼' : '▶'} SDK / identity attrs ({suppressedRows.length})
-              </span>
-              <span class="wf-detail-val" />
-            </div>
-            {showSuppressed && suppressedRows.map(dl => (
-              <div key={dl.k} class="wf-detail-row" style="opacity:0.55">
-                <span class="wf-detail-key">{dl.k}</span>
-                <span class="wf-detail-val">{dl.v}</span>
-              </div>
-            ))}
-          </>
-        )}
-      </div>
+      <div class="sw-detail-section"><div class="sw-detail-heading">Background Task</div><div class="sw-detail-value">{entry.label || ''}</div></div>
+      <div class="sw-detail-section"><div class="sw-detail-heading">Duration</div><div class="sw-detail-value">{formatMs(step.durationMs)}</div></div>
     </>
   )
 }
 
-function TraceGroup({
-  traceId, traceSpans, sessionNum, source, sessionPrompt, model, isFirst,
-}: {
-  traceId: string; traceSpans: Span[]; sessionNum?: number; source?: string;
-  sessionPrompt?: string; model?: string; isFirst: boolean
+function LongTextSection({ heading, text, id: _id, isJson }: { heading: string; text: string; id: string; isJson?: boolean }) {
+  const [expanded, setExpanded] = useState(false)
+  const maxPreviewChars = 600
+  const isLong = text.length > maxPreviewChars
+
+  let formatted = text.length > 6000 ? text.slice(0, 6000) + '\n... [truncated ' + (text.length - 6000).toLocaleString() + ' chars]' : text
+  if (formatted.length <= 2000) {
+    try { formatted = JSON.stringify(JSON.parse(formatted), null, 2) } catch { /* keep as-is */ }
+  }
+
+  return (
+    <>
+      <div class="sw-detail-section">
+        <div class="sw-detail-heading">
+          {heading}
+          {isLong && (
+            <button class="sw-show-full-btn" style="margin-left:8px" onClick={() => setExpanded(v => !v)}>
+              {expanded ? 'Collapse' : 'Show full'}
+            </button>
+          )}
+        </div>
+      </div>
+      {!isLong || !expanded ? (
+        <pre class="sw-full-result-pre" style="margin:0 0 8px">
+          {isJson && formatted.length <= 2000
+            ? <span dangerouslySetInnerHTML={{ __html: syntaxHighlightJson(isLong ? text.slice(0, maxPreviewChars) : formatted) }} />
+            : (isLong ? text.slice(0, maxPreviewChars) + '…' : formatted)
+          }
+        </pre>
+      ) : (
+        <pre class="sw-full-result-pre" style="margin:0 0 8px">
+          {isJson && formatted.length <= 2000
+            ? <span dangerouslySetInnerHTML={{ __html: syntaxHighlightJson(formatted) }} />
+            : formatted
+          }
+        </pre>
+      )}
+    </>
+  )
+}
+
+function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step: Step; idx: number; sessIdx: number; sessionDur: number; sessionModel: string }) {
+  const [open, setOpen] = useState(false)
+  const entry = step.entry
+  const entryCost = entry.type === 'llm' ? calcEntryCost(entry, sessionModel) : 0
+
+  let badgeLabel: string, barColor: string
+  if (entry.type === 'llm') { badgeLabel = 'LLM'; barColor = 'var(--accent)' }
+  else if (entry.type === 'tool') { badgeLabel = 'TOOL'; barColor = '#B8E986' }
+  else if (entry.type === 'user_input') { badgeLabel = 'USER'; barColor = '#F5A623' }
+  else { badgeLabel = 'BG'; barColor = 'var(--muted)' }
+  if (entry.isError) barColor = 'var(--error)'
+
+  const rowLabel = entry.type === 'llm' ? formatLlmLabel(entry)
+    : entry.type === 'tool' ? formatToolLabel(entry) + (formatToolResult(entry) ? ' → ' + formatToolResult(entry) : '')
+    : entry.type === 'user_input' ? (entry.decision && entry.decision !== 'unknown' ? `${entry.label} (${entry.decision})` : entry.label)
+    : entry.label || ''
+
+  // Show a subtitle for tool entries when toolInput is a raw string (not JSON args).
+  // For file paths show just the basename; for shell commands show the full command truncated.
+  const toolSubtitle = (() => {
+    if (entry.type !== 'tool' || !entry.toolInput || entry.toolInput.trimStart().startsWith('{')) return null
+    const input = entry.toolInput
+    const isFilePath = input.startsWith('/') || input.startsWith('~') || /^[A-Za-z]:[/\\]/.test(input)
+    if (isFilePath) return input.split('/').pop() || input
+    return input.length > 90 ? input.slice(0, 90) + '…' : input
+  })()
+
+  const subtitle = toolSubtitle
+
+  const left = sessionDur > 0 ? (step.offsetMs / sessionDur * 100) : 0
+  const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100
+
+  return (
+    <>
+      <div class="wf-row" onClick={() => setOpen(v => !v)}>
+        <div class="wf-label" title={subtitle ? rowLabel + ' — ' + subtitle : rowLabel}>
+          <span class="wf-indent" />
+          <span class="sw-chevron">{open ? '▼' : '▶'}</span>
+          <span class="wf-type-badge" style={'background:' + barColor + ';color:#000'}>{badgeLabel}</span>
+          <span style="display:inline-flex;flex-direction:column;min-width:0">
+            <span class="wf-name">{rowLabel}</span>
+            {subtitle && <span style="font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px">{subtitle}</span>}
+          </span>
+        </div>
+        <div class="wf-bar-area">
+          <div class="wf-bar" style={`left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`}>
+            <div class="wf-bar-inner" style={'background:' + barColor + ';opacity:' + (entry.isError ? '1' : '0.7')} />
+          </div>
+        </div>
+        <div class="wf-info">
+          {formatMs(step.durationMs)}
+          {entry.type === 'llm' && ((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && (
+            <div style="font-size:9px;color:var(--muted);white-space:nowrap;margin-top:2px">
+              ↑{formatCompact(entry.inputTokens ?? 0)} ↓{formatCompact(entry.outputTokens ?? 0)}
+            </div>
+          )}
+          {entryCost > 0 && (
+            <div style="font-size:9px;color:var(--muted);white-space:nowrap">~{fmtUsd(entryCost)}</div>
+          )}
+        </div>
+      </div>
+      {open && (
+        <div class="sw-detail open">
+          <StepDetail step={step} idx={idx} sessIdx={sessIdx} sessionModel={sessionModel} />
+        </div>
+      )}
+    </>
+  )
+}
+
+function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
+  sess: SessionSummaryCard; sessIdx: number; totalCount: number; isFirst: boolean
 }) {
   const [collapsed, setCollapsed] = useState(!isFirst)
   const [promptExpanded, setPromptExpanded] = useState(false)
+  const isLongPrompt = (sess.userRequest?.length ?? 0) > 100
 
-  const minStart = Math.min(...traceSpans.map(s => nanoToMs(s.startTime)).filter(t => t > 0)) || 0
-  const maxEnd = Math.max(...traceSpans.map(s => nanoToMs(s.endTime)))
-  const traceRange = maxEnd - minStart || 1
-  const traceDur = formatMs(traceRange)
-  const errorCount = traceSpans.filter(s => s.status?.code === 2).length
-  const tree = buildSpanTree(traceSpans)
+  const sessionNum = getSessionGlobalNumber(sess) || (totalCount - sessIdx)
+  const sessionStartMs = sess.startTime ? new Date(sess.startTime).getTime() : 0
+  let sessionDur = sess.durationMs || 1
 
-  const traceLabel = sessionNum ? <><strong>{sessionNum}</strong> {source && <span dangerouslySetInnerHTML={{ __html: getAgentDotHtml(source) }} />} </> : null
-  const sessionTitle = sessionNum ? (sessionPrompt || '[session in progress]') : sessionPrompt
-  const isLongPrompt = (sessionTitle?.length ?? 0) > 120
-  const promptSnippet = sessionTitle ? ` ${isLongPrompt ? sessionTitle.slice(0, 120) + '…' : sessionTitle}` : ''
-  const idLabel = traceId.startsWith('codex:') ? 'Session' : 'Trace'
+  const steps: Step[] = (sess.timeline ?? []).map(entry => {
+    const entryStart = entry.timestamp ? new Date(entry.timestamp).getTime() : 0
+    const offset = sessionStartMs > 0 && entryStart > 0 ? entryStart - sessionStartMs : 0
+    return { entry, offsetMs: Math.max(offset, 0), durationMs: entry.durationMs || 0 }
+  })
 
-  const timeMarks = Array.from({ length: 6 }, (_, t) => formatMs(traceRange * t / 5))
+  if (steps.length > 0) {
+    const maxEnd = Math.max(...steps.map(s => s.offsetMs + s.durationMs))
+    if (maxEnd > sessionDur) sessionDur = maxEnd
+  }
+  if (sessionDur <= 0) sessionDur = 1
+
+  const errorCount = sess.errors || 0
+  const outcomeLabel = sess.outcome === 'text_response' ? 'Responded' : sess.outcome === 'tool_calls' ? 'Tool calls' : null
 
   return (
     <div class="wf-trace-group">
-      <div class="wf-trace-header" onClick={() => setCollapsed(c => !c)}>
+      <div class="wf-trace-header" onClick={() => setCollapsed(v => !v)}>
         <span>
           <span class="wf-header-chevron">{collapsed ? '▶' : '▼'}</span>
-          {traceLabel}{promptSnippet}
+          <strong>{sessionNum}</strong>{' '}
+          <span dangerouslySetInnerHTML={{ __html: getAgentDotHtml(sess.source) }} />{' '}
+          "{sess.userRequest.slice(0, 100)}{isLongPrompt ? '…' : ''}"
           {isLongPrompt && (
             <button class="sw-show-full-btn" style="margin-left:8px" onClick={e => { e.stopPropagation(); setPromptExpanded(v => !v) }}>
               {promptExpanded ? 'Collapse' : 'Show full prompt'}
@@ -235,172 +312,70 @@ function TraceGroup({
           )}
         </span>
         <span class="wf-trace-stats">
-          <span class="wf-trace-id">{idLabel} {traceId.substring(0, 16)}...</span>
-          {' · '}{traceSpans.length} spans{' · '}{traceDur}
-          {model && <>{' · '}{model}</>}
+          {steps.length} steps · {formatMs(sessionDur)} · {sess.model}
           {errorCount > 0 && <span class="err"> · {errorCount} errors</span>}
+          {outcomeLabel && <>{' · '}{outcomeLabel}</>}
         </span>
       </div>
-      {promptExpanded && sessionTitle && (
+
+      {promptExpanded && (
         <div style="padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word">
-          {sessionTitle}
+          {sess.userRequest}
         </div>
       )}
-      <div class={clsx('wf-trace-body', { collapsed })}>
-        <div class="wf-time-ruler">
-          {timeMarks.map((m, i) => <span key={i}>{m}</span>)}
+      {!collapsed && (
+        <div class="wf-trace-body">
+          <div class="wf-time-ruler">
+            {Array.from({ length: 6 }, (_, t) => <span key={t}>{formatMs(sessionDur * t / 5)}</span>)}
+          </div>
+          {steps.map((step, si) => <StepRow key={step.entry.spanId + si} step={step} idx={si} sessIdx={sessIdx} sessionDur={sessionDur} sessionModel={sess.model ?? ''} />)}
         </div>
-        {tree.map(node => (
-          <SpanRow
-            key={node.span.spanId}
-            span={node.span}
-            minStart={minStart}
-            traceRange={traceRange}
-            depth={node.depth}
-          />
-        ))}
-      </div>
+      )}
     </div>
   )
 }
 
 export function Traces() {
-  const wfSpans = waterfallSpans.value
-  const sessions = displaySessions.value
-  const codexRawTraceSessionMap = new Map<string, string>()
-  wfSpans.forEach((span: Span) => {
-    const sessionId = getCodexSessionId(span)
-    const rawTraceId = getAttr(span, 'otel.trace_id')
-    if (sessionId && rawTraceId) codexRawTraceSessionMap.set(String(rawTraceId), sessionId)
-  })
-  const sessionSpanMap = new Map<string, string>()
-  sessions.forEach((sess: SessionSummaryCard) => {
-    if (sess.source !== 'codex' || !sess.traceId) return
-    if (sess.sessionId) sessionSpanMap.set(sess.sessionId, sess.traceId)
-    for (const entry of sess.timeline ?? []) {
-      if (entry.spanId) sessionSpanMap.set(entry.spanId, sess.traceId)
-    }
-  })
-  const groupKeyForSpan = (span: Span) =>
-    sessionSpanMap.get(span.spanId) || getCodexSessionId(span) || codexRawTraceSessionMap.get(span.traceId) || span.traceId
+  const base = displaySessions.value
+  const summary = sessionSummary.value
 
-  const displayTraceIds = sessions.length > 0
-    ? new Set(sessions.map((s: SessionSummaryCard) => s.traceId).filter(Boolean))
-    : null
+  if (!summary?.sessions?.length) {
+    return <div id="summary-traces-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+  }
 
-  // All trace IDs that belong to any known completed/synthetic session.
-  // Spans outside this set are in-progress and always shown regardless of display limit.
-  const allSessionTraceIds = new Set(
-    (sessionSummary.value?.sessions ?? []).map(s => s.traceId).filter(Boolean)
-  )
-
-  const filtered = wfSpans.filter(s => {
-    if (isCodexWebsocketSpan(s)) return false
-    const groupKey = groupKeyForSpan(s)
-    return !displayTraceIds                       // no sessions yet → show everything
-      || displayTraceIds.has(groupKey)            // within the session display window
-      || !allSessionTraceIds.has(groupKey)        // not part of any known session (in-progress)
-  })
-
-  const traceMap: Record<string, Span[]> = {}
-  const traceOrder: string[] = []
-  filtered.forEach(s => {
-    const groupKey = groupKeyForSpan(s)
-    if (!traceMap[groupKey]) { traceMap[groupKey] = []; traceOrder.push(groupKey) }
-    traceMap[groupKey].push(s)
-  })
-
-  const spanCount = filtered.length
-  const traceCount = new Set(filtered.map(s => groupKeyForSpan(s))).size
-  const errorCount = filtered.filter(s => s.status?.code === 2).length
-
-  // Build session metadata
-  const sessionTraceMap: Record<string, number> = {}
-  const sessionPromptMap: Record<string, string> = {}
-  const sessionSourceMap: Record<string, string> = {}
-  const sessionModelMap: Record<string, string> = {}
-  sessions.forEach((sess: SessionSummaryCard) => {
-    if (sess.traceId) {
-      sessionTraceMap[sess.traceId] = getSessionGlobalNumber(sess)
-      sessionPromptMap[sess.traceId] = sess.userRequest ?? ''
-      sessionSourceMap[sess.traceId] = sess.source ?? ''
-      sessionModelMap[sess.traceId] = sess.model ?? ''
-    }
-  })
-
-  const reverseOrder = [...traceOrder].reverse()
-  const sessionTraceIdsFromSummary = sessions
-    .map((sess: SessionSummaryCard) => sess.traceId)
-    .filter((traceId): traceId is string => Boolean(traceId && traceMap[traceId]))
-  const seenSessionTraceIds = new Set(sessionTraceIdsFromSummary)
-  const sessionTraceIdsRev = [
-    ...sessionTraceIdsFromSummary.reverse(),
-    ...reverseOrder.filter(tid => sessionTraceMap[tid] && !seenSessionTraceIds.has(tid)),
-  ]
-  const bgTraceIdsRev = reverseOrder.filter(tid => !sessionTraceMap[tid])
-
-  const toRender = sessionTraceIdsRev.length > 0 ? sessionTraceIdsRev : reverseOrder
+  const sessionsToShow = [...base].reverse()
+  const totalLlmCalls = sessionsToShow.reduce((s, sess) => s + sess.totalLlmCalls, 0)
+  const totalToolCalls = sessionsToShow.reduce((s, sess) => s + sess.totalToolCalls, 0)
+  const totalTokens = sessionsToShow.reduce((s, sess) => s + sess.inputTokens + sess.outputTokens, 0)
 
   return (
-    <div id="traces-content">
+    <div id="summary-traces-content">
       <div class="tab-stats">
-        <div><strong class="tab-stat-val">{spanCount}</strong> spans</div>
-        <div><strong class="tab-stat-val">{traceCount}</strong> traces</div>
-        {errorCount > 0 && <div><strong class="tab-stat-val err">{errorCount}</strong> errors</div>}
+        <div><strong class="tab-stat-val">{sessionsToShow.length}</strong> sessions</div>
+        <div><strong class="tab-stat-val">{totalLlmCalls}</strong> LLM calls</div>
+        <div><strong class="tab-stat-val">{totalToolCalls}</strong> tool calls</div>
+        <div><strong class="tab-stat-val">{formatCompact(totalTokens)}</strong> tokens</div>
       </div>
-      <div id="traces-content-inner">
-        {filtered.length === 0 ? (
-          <div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div>
-        ) : (
-          <>
-            <div class="waterfall">
-              {toRender.map((tid, i) => {
-                const prompt = sessionPromptMap[tid] || (() => {
-                  const spans = traceMap[tid] ?? []
-                  for (const s of spans) {
-                    if (isSessionSpan(s.name)) return extractUserRequest(getSessionUserRequest(s))
-                  }
-                  return ''
-                })()
-                return (
-                  <TraceGroup
-                    key={tid}
-                    traceId={tid}
-                    traceSpans={traceMap[tid]}
-                    sessionNum={sessionTraceMap[tid]}
-                    source={sessionSourceMap[tid]}
-                    sessionPrompt={prompt}
-                    model={sessionModelMap[tid]}
-                    isFirst={i === 0}
-                  />
-                )
-              })}
-              {bgTraceIdsRev.length > 0 && sessionTraceIdsRev.length > 0 && (
-                <BgGroup bgTraceIds={bgTraceIdsRev} traceMap={traceMap} />
-              )}
-            </div>
-          </>
+      <div style="font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)">
+        Each agent exposes different OTEL data — some fields may be missing or estimated. See the Traces tab for raw span-level detail.
+      </div>
+      <div class="waterfall">
+        {sessionsToShow.map((sess, idx) => (
+          <SessionBlock
+            key={sess.traceId + idx}
+            sess={sess}
+            sessIdx={idx}
+            totalCount={sessionsToShow.length}
+            isFirst={idx === 0}
+          />
+        ))}
+        {sessionsToShow.length === 0 && (
+          <div class="empty-state">No sessions to display</div>
         )}
       </div>
-    </div>
-  )
-}
-
-function BgGroup({ bgTraceIds, traceMap }: { bgTraceIds: string[]; traceMap: Record<string, Span[]> }) {
-  const [collapsed, setCollapsed] = useState(true)
-  const totalBgSpans = bgTraceIds.reduce((s, tid) => s + (traceMap[tid]?.length ?? 0), 0)
-  return (
-    <div class="sw-bg-group" style="margin-top:16px">
-      <div class="sw-bg-header" onClick={() => setCollapsed(c => !c)}>
-        <span class="sw-bg-chevron">{collapsed ? '▶' : '▼'}</span>
-        <strong>Background Overhead</strong>
-        <span class="sw-bg-summary">{bgTraceIds.length} trace{bgTraceIds.length !== 1 ? 's' : ''} · {totalBgSpans} spans</span>
-      </div>
-      <div class={clsx('sw-bg-body', { collapsed })}>
-        {bgTraceIds.map((tid, _i) => (
-          <TraceGroup key={tid} traceId={tid} traceSpans={traceMap[tid]} isFirst={false} />
-        ))}
-      </div>
+      {summary.backgroundSpans?.length > 0 && (
+        <BgSummaryBlock bgSpans={summary.backgroundSpans} />
+      )}
     </div>
   )
 }

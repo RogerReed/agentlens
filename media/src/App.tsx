@@ -2,12 +2,12 @@ import { useEffect, useState } from 'preact/hooks'
 import { signal } from '@preact/signals'
 import { zipSync, strToU8 } from 'fflate'
 import {
-  spans, sessionSummary, toolCalls, waterfallSpans, dismissedSpanIds,
-  lastSeenTraceIds, expandedSpanIds, swRetainedSessions, swLastSessionCount,
-  selectedAgentFilter, sessionLimit, retainWaterfall, activeTab,
+  spans, sessionSummary, toolCalls, dismissedSpanIds,
+  swRetainedSessions, swLastSessionCount,
+  selectedAgentFilter, sessionLimit, activeTab,
   vscode, displaySessions,
 } from './state'
-import { getAttr, isSessionSpan, nanoToMs, sessionStartMs } from './utils'
+import { nanoToMs, sessionStartMs } from './utils'
 import type { Span, SessionSummaryCard, FullSummary, AgentFilter } from './types'
 
 // Tab components
@@ -17,7 +17,6 @@ import { Alerts, computeAlertCount, checkAlerts } from './tabs/Alerts'
 import { Tokens } from './tabs/Tokens'
 import { Cost } from './tabs/Cost'
 import { Latency } from './tabs/Latency'
-import { Summaries } from './tabs/Summaries'
 import { Traces } from './tabs/Traces'
 import { Files } from './tabs/Files'
 import { Flow } from './tabs/Flow'
@@ -34,7 +33,7 @@ const sidebarOpen = signal(true)
 const TABS = [
   { id: 'efficiency',      label: 'Efficiency',      primary: true,  title: 'Per-session metrics and token usage breakdown.' },
   { id: 'cost',            label: 'Cost',            primary: true,  title: 'Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing.' },
-  { id: 'summaries',       label: 'Summaries',       primary: true,  title: 'A high-level, human-readable timeline of each session — LLM calls with their decisions, tool calls with arguments, and token usage.' },
+  { id: 'traces',          label: 'Traces',          primary: true,  title: 'A human-readable timeline of each session — LLM calls with their decisions, tool calls with arguments, and token usage.' },
   { id: 'recommendations', label: 'Recommendations', primary: true,  title: 'Actionable insights and recommendations for improving prompt efficiency and reducing token waste.' },
   { id: 'agents',          label: 'Agents',          primary: false, title: 'Copilot, Claude, and Codex — session counts, token usage, tools, and latency broken down by agent source.' },
   { id: 'alerts',          label: 'Alerts',          primary: false, title: 'Configurable alerts for context window usage, error rates, session length, and other efficiency signals.' },
@@ -45,7 +44,6 @@ const TABS = [
   { id: 'latency',         label: 'Latency',         primary: false, title: 'Span durations as a color-coded grid, helping identify which operations are consistently slow.' },
   { id: 'tokens',          label: 'Tokens',          primary: false, title: 'Token consumption aggregated by span name and per session, sorted from highest to lowest.' },
   { id: 'tools',           label: 'Tools',           primary: false, title: 'Tool call distribution broken down by tool name, with token usage and performance stats per tool.' },
-  { id: 'traces',          label: 'Traces',          primary: false, title: 'Raw OTLP spans as horizontal bars on a time axis, preserving the full parent-child nesting hierarchy and exact timing.' },
   { id: 'export',          label: 'Export',          primary: true,  title: 'Export raw or redacted OTEL span data as JSON files.' },
   { id: 'help',            label: 'Help',            primary: true,  title: 'Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard.' },
 ]
@@ -175,36 +173,6 @@ function fillMissingClaudeSessions(summary: FullSummary | null, allSpans: Span[]
   return { ...summary, sessions: combined }
 }
 
-function updateWaterfall(newSpans: Span[]) {
-  if (retainWaterfall.value) {
-    const existingIds = new Set(waterfallSpans.value.map(s => s.spanId))
-    const toAdd = newSpans.filter(s => !existingIds.has(s.spanId) && !dismissedSpanIds.has(s.spanId))
-    if (toAdd.length > 0) {
-      waterfallSpans.value = [...waterfallSpans.value, ...toAdd]
-    }
-  } else {
-    const agentSpans = newSpans.filter(s => isSessionSpan(s.name))
-    if (agentSpans.length > 0) {
-      agentSpans.sort((a, b) => {
-        const ta = a.startTime ?? '0', tb = b.startTime ?? '0'
-        return ta < tb ? 1 : ta > tb ? -1 : 0
-      })
-      const latestTraceId = agentSpans[0].traceId
-      const relatedTraceIds = new Set([latestTraceId])
-      for (const s of newSpans) {
-        if (s.traceId !== latestTraceId) continue
-        const rawTraceId = getAttr(s, 'otel.trace_id')
-        if (rawTraceId) relatedTraceIds.add(String(rawTraceId))
-      }
-      waterfallSpans.value = newSpans.filter(s =>
-        relatedTraceIds.has(s.traceId) && !dismissedSpanIds.has(s.spanId)
-      )
-    } else {
-      waterfallSpans.value = newSpans.filter(s => !dismissedSpanIds.has(s.spanId))
-    }
-  }
-}
-
 
 
 function ActivePanel() {
@@ -216,7 +184,6 @@ function ActivePanel() {
     case 'tokens':          return <Tokens />
     case 'cost':            return <Cost />
     case 'latency':         return <Latency />
-    case 'summaries':       return <Summaries />
     case 'traces':          return <Traces />
     case 'files':           return <Files />
     case 'flow':            return <Flow />
@@ -341,10 +308,9 @@ export function App() {
     }
   }, [])
 
-  // Seed waterfallSpans and supplement session summary from initial data
+  // Supplement session summary from initial data
   useEffect(() => {
     if (spans.value.length > 0) {
-      if (waterfallSpans.value.length === 0) updateWaterfall(spans.value)
       const supplemented = fillMissingClaudeSessions(sessionSummary.value, spans.value)
       if (supplemented) sessionSummary.value = supplemented
     }
@@ -362,7 +328,6 @@ export function App() {
         const incomingSummary = msg.sessionSummary ?? sessionSummary.value
         const supplemented = fillMissingClaudeSessions(incomingSummary, spans.value)
         if (supplemented) sessionSummary.value = supplemented
-        updateWaterfall(spans.value)
         // Only fire alerts/automations for real-time updates, not initial historical load
         if (!initialLoadDone) {
           initialLoadDone = true
@@ -403,12 +368,9 @@ export function App() {
         spans.value = []
         toolCalls.value = {}
         sessionSummary.value = null
-        waterfallSpans.value = []
         swRetainedSessions.value = []
         swLastSessionCount.value = 0
         dismissedSpanIds.clear()
-        lastSeenTraceIds.clear()
-        expandedSpanIds.clear()
       }
     }
     window.addEventListener('message', handler)
