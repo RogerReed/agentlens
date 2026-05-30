@@ -5,7 +5,8 @@ import { SCHEMA_SQL } from './schema'
 // Minimal sql.js surface we use — avoids pulling in @types/sql.js
 // which has a transitive @types/emscripten dep that requires browser lib types.
 interface SqlDatabase {
-  run(sql: string): void
+  run(sql: string, params?: unknown[]): void
+  exec(sql: string): Array<{ columns: string[]; values: unknown[][] }>
   export(): Uint8Array
   close(): void
 }
@@ -46,7 +47,6 @@ export async function openDatabase(storagePath: string, extensionPath: string): 
   return new AgentLensDb(db, dbPath, path.join(storagePath, BLOBS_DIR))
 }
 
-/** Wrapper that keeps the SqlDatabase and its file path together. */
 export class AgentLensDb {
   constructor(
     private readonly db: SqlDatabase,

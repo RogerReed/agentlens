@@ -11,6 +11,7 @@ const workspace = {
   workspaceFolders: [],
   fs: {
     writeFile: () => Promise.resolve(),
+    stat: () => Promise.reject(new Error('file not found')),
   },
 }
 
