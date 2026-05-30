@@ -1,24 +1,8 @@
 import * as vscode from 'vscode'
-import { SessionStore } from './sessionStore'
-import { summarizeSpans } from './spanSummarizer'
+import { SessionRepository } from './sessionRepository'
 import { nanoToMs } from './summarizers/helpers'
 import { Span } from './types'
 
-function isSessionSpan(name: string): boolean {
-  return name.includes('invoke_agent')
-    || name === 'claude_code.interaction'
-    || name === 'codex.user_prompt'
-    || name === 'codex.prompt'
-    || name === 'codex.user_message'
-    || name === 'codex.session_start'
-}
-
-function getSessionSource(name: string): 'copilot' | 'claude_code' | 'codex' | null {
-  if (name.includes('invoke_agent')) {return 'copilot'}
-  if (name === 'claude_code.interaction') {return 'claude_code'}
-  if (name.startsWith('codex.')) {return 'codex'}
-  return null
-}
 
 export class SidebarPanel implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView
@@ -27,9 +11,14 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
   private collectorError: string | null = null
 
   constructor(
-    private store: SessionStore,
+    private repo: SessionRepository,
     private extensionUri: vscode.Uri,
   ) {}
+
+  setRepository(repo: SessionRepository) {
+    this.repo = repo
+    this.refresh()
+  }
 
   setCollectorError(msg: string | null) {
     this.collectorError = msg
@@ -65,13 +54,12 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       }
     })
 
-    // Push updates within 300ms of new spans arriving; 5s heartbeat as fallback
     let pendingRefresh: ReturnType<typeof setTimeout> | undefined
     const scheduleRefresh = () => {
       if (pendingRefresh) return
       pendingRefresh = setTimeout(() => { pendingRefresh = undefined; this.refresh() }, 300)
     }
-    const updateDisposable = this.store.onUpdate(scheduleRefresh)
+    const updateDisposable = this.repo.onUpdate(scheduleRefresh)
     const interval = setInterval(() => this.refresh(), 5000)
     webviewView.onDidDispose(() => {
       clearInterval(interval)
@@ -101,45 +89,34 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     this.refresh()
   }
 
-  /** Return spans filtered to the current agent selection. */
-  private getFilteredSpans(): Span[] {
-    const allSpans = this.store.getSpans()
-    if (this.agentFilter === 'all') {return allSpans}
-    const matchingTraceIds = new Set<string>()
-    for (const s of allSpans) {
-      const source = getSessionSource(s.name)
-      if (source !== this.agentFilter) {continue}
-      // For Copilot/Claude, only session-root spans anchor a trace to an agent.
-      // For Codex, all codex.* log records come from the same source, so any span works.
-      if (isSessionSpan(s.name) || source === 'codex') {
-        matchingTraceIds.add(s.traceId)
-      }
-    }
-    return allSpans.filter(s => matchingTraceIds.has(s.traceId))
+  private getSessions() {
+    const filter = this.agentFilter !== 'all'
+      ? { source: this.agentFilter as 'copilot' | 'claude_code' | 'codex' }
+      : undefined
+    return this.repo.listSessions(filter)
   }
 
   refresh() {
     if (!this.view) {return}
-    const spans = this.getFilteredSpans()
-    const summary = summarizeSpans(spans)
-    const limited = this.limitSessions(summary.sessions)
+    const limited = this.limitSessions(this.getSessions())
     const sessionCount = limited.length
-    const tokenTotals = this.getTotalInputOutputTokens(spans)
     const cacheHitPct = limited.length > 0
       ? Math.round(limited.reduce((a, s) => a + s.cacheHitRate, 0) / limited.length * 100) : 0
     const avgTurns = limited.length > 0
       ? Math.round(limited.reduce((a, s) => a + s.totalLlmCalls, 0) / limited.length * 10) / 10 : 0
     const totalErrors = limited.reduce((a, s) => a + s.errors, 0)
     const totalToolCalls = limited.reduce((a, s) => a + s.totalToolCalls, 0)
-    const activity = this.getLastActivity(spans)
+    const totalInputTokens = limited.reduce((a, s) => a + s.inputTokens, 0)
+    const totalOutputTokens = limited.reduce((a, s) => a + s.outputTokens, 0)
+    const activity = this.getLastActivity()
     const AGENT_KEY_ORDER = ['copilot', 'claude_code', 'codex']
     const agentSources = [...new Set(
-      summarizeSpans(this.store.getSpans()).sessions.map(s => s.source).filter(Boolean)
+      this.repo.listSessions().map(s => s.source).filter(Boolean)
     )].sort((a, b) => {
       const ai = AGENT_KEY_ORDER.indexOf(a), bi = AGENT_KEY_ORDER.indexOf(b)
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
     })
-    const latest = limited.length > 0 ? limited[limited.length - 1] : null
+    const latest = limited.length > 0 ? limited[0] : null  // newest-first
     const latestSession = latest ? {
       model: latest.model || '',
       source: latest.source,
@@ -151,31 +128,22 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     } : null
     this.view.webview.postMessage({
       type: 'update', sessionCount, agentSources,
-      totalInputTokens: tokenTotals.input, totalOutputTokens: tokenTotals.output,
+      totalInputTokens, totalOutputTokens,
       cacheHitPct, avgTurns, totalErrors, totalToolCalls,
       isActive: activity.isActive, lastActivityMs: activity.lastMs,
       latestSession,
     })
   }
 
-  private limitSessions<T extends { inputTokens: number }>(sessions: T[]): T[] {
+  private limitSessions<T>(sessions: T[]): T[] {
     if (this.sessionLimit >= sessions.length) return sessions
-    return sessions.slice(sessions.length - this.sessionLimit)
+    return sessions.slice(0, this.sessionLimit)  // already newest-first
   }
 
-  private getTotalInputOutputTokens(spans: Span[]): { input: number; output: number } {
-    const sessions = this.limitSessions(summarizeSpans(spans).sessions)
-    return {
-      input: sessions.reduce((a, s) => a + s.inputTokens, 0),
-      output: sessions.reduce((a, s) => a + s.outputTokens, 0),
-    }
-  }
-
-  private getLastActivity(spans: Span[]): { isActive: boolean; lastMs: number } {
+  private getLastActivity(): { isActive: boolean; lastMs: number } {
+    const spans: Span[] = this.repo.store_.getSpans()
     let lastMs = 0
     for (const span of spans) {
-      // Prefer the wall-clock receive time; fall back to the OTLP timestamp.
-      // Codex log records often have timeUnixNano=0, so receivedAt is essential.
       const ms = span.receivedAt ?? nanoToMs(span.endTime)
       if (ms > lastMs) lastMs = ms
     }
@@ -185,10 +153,8 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
 
 
   private getHtml(webview: vscode.Webview) {
-    const allSpans = this.getFilteredSpans()
-    const initActivity = this.getLastActivity(allSpans)
-    const tokenTotals = this.getTotalInputOutputTokens(allSpans)
-    const limited = this.limitSessions(summarizeSpans(allSpans).sessions)
+    const initActivity = this.getLastActivity()
+    const limited = this.limitSessions(this.getSessions())
     const sessionCount = limited.length
     const cacheHitPct = limited.length > 0
       ? Math.round(limited.reduce((a, s) => a + s.cacheHitRate, 0) / limited.length * 100) : 0
@@ -196,7 +162,11 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       ? Math.round(limited.reduce((a, s) => a + s.totalLlmCalls, 0) / limited.length * 10) / 10 : 0
     const totalErrors = limited.reduce((a, s) => a + s.errors, 0)
     const totalToolCalls = limited.reduce((a, s) => a + s.totalToolCalls, 0)
-    const latestSession = limited.length > 0 ? limited[limited.length - 1] : null
+    const tokenTotals = {
+      input: limited.reduce((a, s) => a + s.inputTokens, 0),
+      output: limited.reduce((a, s) => a + s.outputTokens, 0),
+    }
+    const latestSession = limited.length > 0 ? limited[0] : null  // newest-first
     function formatCompact(n: number): string {
       return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
     }
@@ -227,7 +197,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     // Agent key is always based on ALL data, not the current agent filter
     const AGENT_KEY_ORDER = ['copilot', 'claude_code', 'codex']
     const allAgentSources = [...new Set(
-      summarizeSpans(this.store.getSpans()).sessions.map(s => s.source).filter(Boolean)
+      this.repo.listSessions().map(s => s.source).filter(Boolean)
     )].sort((a, b) => {
       const ai = AGENT_KEY_ORDER.indexOf(a), bi = AGENT_KEY_ORDER.indexOf(b)
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)

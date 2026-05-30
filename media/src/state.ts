@@ -1,9 +1,8 @@
 import { signal, computed } from '@preact/signals'
 import type {
-  Span, FullSummary, SessionSummaryCard,
+  FullSummary, SessionSummaryCard, TimelineEntry,
   AgentFilter, InsightFilter, VsCodeApi,
 } from './types'
-import { inferSpanSource } from './utils'
 
 // ── Set signal helper ─────────────────────────────────────────────────────────
 
@@ -23,9 +22,15 @@ function makeSetSignal<T>() {
 
 // ── Core data signals ─────────────────────────────────────────────────────────
 
-export const spans = signal<Span[]>(window.__INITIAL_SPANS__ ?? [])
 export const sessionSummary = signal<FullSummary | null>(window.__INITIAL_SESSION_SUMMARY__ ?? null)
 export const toolCalls = signal<Record<string, number>>(window.__INITIAL_TOOL_CALLS__ ?? {})
+
+// ── Lazy timeline cache: sessionId → loaded timeline entries ──────────────────
+// Populated by sessionDetail messages from the extension host.
+// blobCache: `${spanId}:${field}` → content string
+
+export const sessionTimelines = signal<Record<string, TimelineEntry[]>>({})
+export const blobCache = signal<Record<string, string>>({})
 
 // ── UI control signals ────────────────────────────────────────────────────────
 
@@ -54,7 +59,6 @@ export function setVscode(api: VsCodeApi): void { vscode = api }
 
 export function goToHelp(anchor: string): void {
   activeTab.value = 'help'
-  // Wait for Preact to commit the Help panel, then scroll to anchor
   setTimeout(() => {
     const el = document.getElementById(anchor)
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -82,22 +86,6 @@ export const displaySessions = computed<SessionSummaryCard[]>(() => {
   const limit = sessionLimit.value
   if (limit >= all.length) return all
   return all.slice(all.length - limit)
-})
-
-export const displaySpans = computed<Span[]>(() => {
-  const ds = displaySessions.value
-  if (!ds.length) {
-    const filter = selectedAgentFilter.value
-    if (filter === 'all') return spans.value
-    return spans.value.filter(s => inferSpanSource(s) === filter)
-  }
-  const traceIds = new Set(ds.map(s => s.traceId).filter(Boolean))
-  if (traceIds.size === 0) {
-    const filter = selectedAgentFilter.value
-    if (filter === 'all') return spans.value
-    return spans.value.filter(s => inferSpanSource(s) === filter)
-  }
-  return spans.value.filter(s => traceIds.has(s.traceId))
 })
 
 export const agentPresence = computed(() => {

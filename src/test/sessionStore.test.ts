@@ -156,16 +156,17 @@ suite('SessionStore', () => {
     assert.ok(data.summary)
   })
 
-  test('persists spans across store instances', () => {
+  test('new store instance starts empty (persistence is via SQLite, not globalState)', () => {
     const ctx = mockContext()
     const store1 = new SessionStore(ctx)
     store1.addSpan(makeSpan('invoke_agent', 't1'))
     store1.addSpan(makeSpan('tool/read_file', 't1'))
 
-    // Create new store with same context — should load persisted data
+    // Phase 3: globalState is no longer used for span persistence.
+    // A new store starts with an empty in-memory window.
     const store2 = new SessionStore(ctx)
-    assert.strictEqual(store2.getSpans().length, 2)
-    assert.strictEqual(store2.getSummary().totalSpans, 2)
+    assert.strictEqual(store2.getSpans().length, 0)
+    assert.strictEqual(store2.getSummary().totalSpans, 0)
   })
 
   suite('span retention', () => {
@@ -199,9 +200,10 @@ suite('SessionStore', () => {
       assert.ok(hasOldest, 'Oldest session should be retained')
     })
 
-    test('persists complete long Codex sessions instead of only the last raw spans', () => {
-      const ctx = mockContext()
-      const store = new SessionStore(ctx)
+    test('rolling window retains recently-received spans regardless of their OTLP timestamp', () => {
+      // Phase 3: spans are kept in a 5-min rolling window based on receivedAt (set at ingest),
+      // not on startTime (which may be historical). All spans added here get receivedAt = now.
+      const store = new SessionStore(mockContext())
       const codexSessionId = 'codex:conv-long:prompt-1'
 
       store.addSpan(makeSpan('invoke_agent', 'copilot-trace', {
@@ -217,7 +219,7 @@ suite('SessionStore', () => {
         ],
       }))
 
-      for (let i = 0; i < 5100; i++) {
+      for (let i = 0; i < 100; i++) {
         store.addSpan(makeSpan('codex.tool_result', codexSessionId, {
           spanId: `codex-tool-${i}`,
           attributes: [
@@ -229,15 +231,12 @@ suite('SessionStore', () => {
         }))
       }
 
-      const reloaded = new SessionStore(ctx)
-      const reloadedSpans = reloaded.getSpans()
-      const summary = summarizeSpans(reloadedSpans)
-
-      assert.ok(reloadedSpans.length > 5000, 'long sessions should not be truncated by raw span count')
-      assert.ok(reloadedSpans.some(s => s.spanId === 'codex-prompt'), 'Codex prompt/root span should survive persistence')
-      assert.ok(summary.sessions.some(s => s.source === 'copilot'), 'other agent sessions should survive a long Codex session')
-      assert.strictEqual(summary.sessions.filter(s => s.source === 'codex').length, 1)
-      assert.strictEqual(summary.sessions.find(s => s.source === 'codex')?.userRequest, 'long codex task')
+      // All spans were just added (receivedAt ≈ now) and should be in the window.
+      const spans = store.getSpans()
+      assert.ok(spans.length >= 100, 'recently-received spans should be retained')
+      assert.ok(spans.some(s => s.spanId === 'codex-prompt'), 'codex prompt span should be retained')
+      const summary = summarizeSpans(spans)
+      assert.ok(summary.sessions.some(s => s.source === 'copilot'), 'copilot session should be in window')
     })
   })
 

@@ -1,70 +1,40 @@
-import { displaySpans, displaySessions, COLORS } from '../state'
-import { nanoToMs, formatMs, getAgentColor, getAgentSourceLabel, inferSpanSource } from '../utils'
-import type { Span, SessionSummaryCard } from '../types'
-
-function getInputTokenCount(span: Span | undefined): number {
-  let input = 0
-  ;(span?.attributes ?? []).forEach(a => {
-    if (/input.?tokens|prompt.?tokens/i.test(a.key))
-      input = parseInt(String(a.value.intValue ?? a.value.stringValue ?? a.value.doubleValue)) || 0
-  })
-  return input
-}
-
-function getOutputTokenCount(span: Span | undefined): number {
-  let output = 0
-  ;(span?.attributes ?? []).forEach(a => {
-    if (/output.?tokens|completion.?tokens/i.test(a.key))
-      output = parseInt(String(a.value.intValue ?? a.value.stringValue ?? a.value.doubleValue)) || 0
-  })
-  return output
-}
+import { displaySessions, COLORS } from '../state'
+import { getAgentColor, getAgentSourceLabel } from '../utils'
 
 export function Tools() {
-  const spans = displaySpans.value
   const sessions = displaySessions.value
 
-  const traceSourceMap: Record<string, string> = {}
-  sessions.forEach((sess: SessionSummaryCard) => { if (sess.traceId && sess.source) traceSourceMap[sess.traceId] = sess.source })
+  if (sessions.length === 0) {
+    return <div id="tools-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+  }
 
+  // Aggregate tool counts from session summaries.
   const counts: Record<string, number> = {}
-  const toolTokens: Record<string, { input: number; output: number }> = {}
-  const toolDurations: Record<string, number[]> = {}
   const toolErrors: Record<string, number> = {}
   const toolAgents: Record<string, Record<string, boolean>> = {}
 
-  spans.forEach(s => {
-    if (s.name?.includes('tool')) {
-      const name = s.name
-      counts[name] = (counts[name] ?? 0) + 1
-      if (!toolTokens[name]) toolTokens[name] = { input: 0, output: 0 }
-      toolTokens[name].input += getInputTokenCount(s)
-      toolTokens[name].output += getOutputTokenCount(s)
-      if (!toolDurations[name]) toolDurations[name] = []
-      const dur = nanoToMs(s.endTime) - nanoToMs(s.startTime)
-      if (dur > 0) toolDurations[name].push(dur)
-      if (s.status?.code === 2) toolErrors[name] = (toolErrors[name] ?? 0) + 1
-      const src = (s.traceId && traceSourceMap[s.traceId]) || inferSpanSource(s) || null
-      if (src) { if (!toolAgents[name]) toolAgents[name] = {}; toolAgents[name][src] = true }
+  sessions.forEach(sess => {
+    Object.entries(sess.toolCounts ?? {}).forEach(([tool, count]) => {
+      counts[tool] = (counts[tool] ?? 0) + count
+      if (!toolAgents[tool]) toolAgents[tool] = {}
+      toolAgents[tool][sess.source] = true
+    })
+    // Error counts are at session level; distribute proportionally isn't possible,
+    // so we just mark tools from errored sessions.
+    if (sess.errors > 0) {
+      Object.keys(sess.toolCounts ?? {}).forEach(tool => {
+        toolErrors[tool] = (toolErrors[tool] ?? 0)  // keep as 0; we don't have per-tool error breakdown
+      })
     }
   })
 
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1])
 
   if (entries.length === 0) {
-    return <div id="tools-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+    return <div id="tools-content"><div class="empty-state">No tool calls recorded yet</div></div>
   }
 
   const total = entries.reduce((sum, e) => sum + e[1], 0)
-  const _totalErrors = entries.reduce((s, e) => s + (toolErrors[e[0]] ?? 0), 0)
-  const _failedTools = entries.filter(e => (toolErrors[e[0]] ?? 0) > 0)
-  const _mostUsed = entries[0]
-  const mostTokens = entries.slice().sort((a, b) => {
-    const tA = toolTokens[a[0]] ? toolTokens[a[0]].input + toolTokens[a[0]].output : 0
-    const tB = toolTokens[b[0]] ? toolTokens[b[0]].input + toolTokens[b[0]].output : 0
-    return tB - tA
-  })[0]
-  const _mostTokVal = mostTokens && toolTokens[mostTokens[0]] ? toolTokens[mostTokens[0]].input + toolTokens[mostTokens[0]].output : 0
 
   // SVG donut
   const r = 80, cx = 100, cy = 100, sw = 30
@@ -87,12 +57,9 @@ export function Tools() {
     return { name: e[0], count: e[1], pct, color, startA, endA: currentAngle }
   })
 
-  let grandErrors = 0
-
   return (
     <div id="tools-content">
       <h3 style="margin:0 0 16px;font-size:13px;color:var(--muted)">TOOL CALL DISTRIBUTION</h3>
-
 
       <div class="donut-container">
         <svg width="200" height="200" viewBox="0 0 200 200">
@@ -114,31 +81,24 @@ export function Tools() {
         </div>
       </div>
 
-      <h3 style="margin:24px 0 12px;font-size:13px;color:var(--muted)">TOOL TOKEN USAGE &amp; PERFORMANCE</h3>
+      <h3 style="margin:24px 0 12px;font-size:13px;color:var(--muted)">TOOL CALL BREAKDOWN</h3>
       <table class="tool-insights-table">
         <thead>
-          <tr>
-            <th>Tool</th><th>Calls</th><th>Errors</th><th>Avg Duration</th>
-          </tr>
+          <tr><th>Tool</th><th>Calls</th><th>% of Total</th><th>Agents</th></tr>
         </thead>
         <tbody>
           {entries.map(([name, callCount]) => {
-            const durations = toolDurations[name] ?? []
-            const errCount = toolErrors[name] ?? 0
-            grandErrors += errCount
-            const avgDur = durations.length > 0 ? durations.reduce((s, d) => s + d, 0) / durations.length : 0
             const agents = toolAgents[name] ? Object.keys(toolAgents[name]) : []
             return (
               <tr key={name}>
+                <td>{name}</td>
+                <td class="right">{callCount}</td>
+                <td class="right">{(callCount / total * 100).toFixed(1)}%</td>
                 <td>
                   {agents.map(a => (
                     <span key={a} style={'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + getAgentColor(a) + ';vertical-align:middle;margin-right:4px'} title={getAgentSourceLabel(a)} />
                   ))}
-                  {name}
                 </td>
-                <td class="right">{callCount}</td>
-                <td style={'text-align:right' + (errCount > 0 ? ';color:var(--error)' : '')}>{errCount}</td>
-                <td class="right">{avgDur > 0 ? formatMs(avgDur) : '—'}</td>
               </tr>
             )
           })}
@@ -147,8 +107,7 @@ export function Tools() {
           <tr>
             <td><strong>Total</strong></td>
             <td class="right"><strong>{total}</strong></td>
-            <td style={'text-align:right' + (grandErrors > 0 ? ';color:var(--error)' : '')}><strong>{grandErrors}</strong></td>
-            <td />
+            <td /><td />
           </tr>
         </tfoot>
       </table>

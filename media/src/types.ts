@@ -163,7 +163,6 @@ export interface SpanTreeNode {
 declare global {
   interface Window {
     acquireVsCodeApi(): VsCodeApi
-    __INITIAL_SPANS__?: Span[]
     __INITIAL_TOOL_CALLS__?: Record<string, number>
     __INITIAL_SESSION_SUMMARY__?: FullSummary | null
     __MASCOT_URI__?: string
