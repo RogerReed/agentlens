@@ -2,6 +2,19 @@ import type { SessionSummaryCard, TimelineEntry } from './types'
 import { getAgentProfiles, resolveAgentProfile, type AgentThresholdProfiles } from './agentProfiles'
 import { lookupRates, calcTokenCost, type PricingMode } from './pricing'
 
+export function fmtUsd(usd: number): string {
+  if (usd === 0) return '$0.00'
+  if (usd < 0.001) return '<$0.001'
+  if (usd < 1) return '$' + usd.toFixed(3)
+  return '$' + usd.toFixed(2)
+}
+
+export function calcEntryCost(entry: TimelineEntry, sessionModel: string): number {
+  const rates = lookupRates(entry.model || sessionModel)
+  if (!rates) return 0
+  return calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, rates)
+}
+
 export type { PricingMode }
 
 export interface SessionCost {

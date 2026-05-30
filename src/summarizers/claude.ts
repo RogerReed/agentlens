@@ -23,6 +23,14 @@ export function buildClaudeSessions(
       s.name === 'claude_code.llm_request' || s.name === 'claude_code.tool'
     )
 
+    const childrenBySpanId: Record<string, Span[]> = {}
+    for (const s of traceSpans) {
+      if (s.parentSpanId) {
+        if (!childrenBySpanId[s.parentSpanId]) { childrenBySpanId[s.parentSpanId] = [] }
+        childrenBySpanId[s.parentSpanId].push(s)
+      }
+    }
+
     let inputTokens = 0, outputTokens = 0, cacheReadTokens = 0, cacheCreateTokens = 0
     let totalLlmCalls = 0, totalToolCalls = 0, errors = 0
     let model = ''
@@ -32,7 +40,7 @@ export function buildClaudeSessions(
     const filesChanged = new Set<string>()
     let missingChangedFilePathCalls = 0
 
-    const timeline: TimelineEntry[] = topSpans.map(child => {
+    const timeline: TimelineEntry[] = topSpans.flatMap(child => {
       const childStart = nanoToMs(child.startTime)
       const childEnd = nanoToMs(child.endTime)
       const childDur = childEnd - childStart || getAttrInt(child, 'duration_ms')
@@ -117,7 +125,7 @@ export function buildClaudeSessions(
           } catch { /* ignore */ }
         }
 
-        return {
+        return [{
           type: 'llm' as const,
           spanId: child.spanId,
           label: childModel || 'LLM',
@@ -132,7 +140,7 @@ export function buildClaudeSessions(
           errorMessage: isError ? (child.status?.message || undefined) : undefined,
           timestamp: ts,
           editDetails: llmEditDetails.length > 0 ? llmEditDetails : undefined,
-        }
+        }]
       } else {
         // claude_code.tool
         totalToolCalls++
@@ -203,26 +211,33 @@ export function buildClaudeSessions(
           missingChangedFilePathCalls++
         }
 
-        // Capture permission decision from blocked_on_user child span.
-        // Only surface when non-trivial (not "unknown" = auto-approved).
-        const blockedChild = traceSpans.find(s =>
-          s.parentSpanId === child.spanId && s.name === 'claude_code.tool.blocked_on_user'
-        )
-        const rawDecision = blockedChild ? getAttrStr(blockedChild, 'decision') : null
-        const decision = rawDecision && rawDecision !== 'unknown' ? rawDecision : undefined
-
-        return {
+        const toolEntry: TimelineEntry = {
           type: 'tool' as const,
           spanId: child.spanId,
           label: toolName,
           durationMs: childDur || getAttrInt(child, 'duration_ms'),
           toolInput: argsStr || undefined,
-          decision,
           isError,
           errorMessage: isError ? (child.status?.message || undefined) : undefined,
           timestamp: ts,
           editDetails: toolEditDetails.length > 0 ? toolEditDetails : undefined,
         }
+
+        const blockedSpan = (childrenBySpanId[child.spanId] || [])
+          .find(c => c.name === 'claude_code.tool.blocked_on_user')
+        if (!blockedSpan) { return [toolEntry] }
+
+        const blockedStart = nanoToMs(blockedSpan.startTime)
+        const userInputEntry: TimelineEntry = {
+          type: 'user_input' as const,
+          spanId: blockedSpan.spanId,
+          label: 'Permission prompt',
+          durationMs: getAttrInt(blockedSpan, 'duration_ms') || (nanoToMs(blockedSpan.endTime) - blockedStart) || 0,
+          decision: getAttrStr(blockedSpan, 'decision') || undefined,
+          isError: false,
+          timestamp: blockedStart > 0 ? new Date(blockedStart).toISOString() : ts,
+        }
+        return [toolEntry, userInputEntry]
       }
     })
 

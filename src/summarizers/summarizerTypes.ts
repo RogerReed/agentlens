@@ -30,7 +30,7 @@ export interface SessionSummaryCard {
 }
 
 export interface TimelineEntry {
-  type: 'llm' | 'tool' | 'background'
+  type: 'llm' | 'tool' | 'user_input' | 'background'
   spanId: string
   label: string
   thinking?: string
