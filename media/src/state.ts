@@ -2,7 +2,27 @@ import { signal, computed } from '@preact/signals'
 import type {
   FullSummary, SessionSummaryCard, TimelineEntry,
   AgentFilter, InsightFilter, VsCodeApi,
+  DailyStatRow, LifetimeStats, BurnRate, Projection,
 } from './types'
+
+// ── Analytics signals ─────────────────────────────────────────────────────────
+
+export const dailyStats = signal<DailyStatRow[]>([])
+export const lifetimeStats = signal<LifetimeStats | null>(null)
+
+export interface BurnRateData {
+  sessionId: string
+  burnRate: BurnRate
+  projection: Projection | null
+}
+export const burnRateData = signal<BurnRateData | null>(null)
+
+export interface SearchResultData {
+  sessions: SessionSummaryCard[]
+  totalCount: number
+  offset: number
+}
+export const searchResults = signal<SearchResultData | null>(null)
 
 // ── Set signal helper ─────────────────────────────────────────────────────────
 

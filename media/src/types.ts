@@ -132,6 +132,51 @@ export interface FullSummary {
   efficiency: EfficiencyReport
 }
 
+// ── Phase 4 analytics types ───────────────────────────────────────────────────
+
+export interface DailyStatRow {
+  day: string              // 'YYYY-MM-DD'
+  totalTokens: number
+  cacheReadTokens: number
+  cacheCreateTokens: number
+  outputTokens: number
+  costUsd: number
+  sessionCount: number
+}
+
+export interface LifetimeStats {
+  totalSessions: number
+  totalTokens: number
+  totalCostUsd: number
+  oldestSessionMs: number
+  newestSessionMs: number
+}
+
+export interface BurnRate {
+  tokensPerMinute: number
+  costPerHour: number
+}
+
+export interface Projection {
+  totalTokens: number
+  totalCostUsd: number
+  remainingMinutes: number
+  contextFillPct: number
+}
+
+export interface SearchQuery {
+  text?: string
+  source?: string
+  model?: string
+  since?: number
+  until?: number
+  minCostUsd?: number
+  orderBy?: 'start_time' | 'cost_usd' | 'total_tokens' | 'duration_ms' | 'errors'
+  orderDir?: 'ASC' | 'DESC'
+  limit?: number
+  offset?: number
+}
+
 export type AgentFilter = 'all' | 'copilot' | 'claude_code' | 'codex'
 export type InsightFilter = 'all' | 'loop' | 'efficiency'
 

@@ -1,9 +1,12 @@
+import * as fs from 'fs'
 import * as vscode from 'vscode'
 import { SessionStore } from './sessionStore'
-import { DatabaseReader } from './database/reader'
+import { DatabaseReader, type DailyStatRow, type LifetimeStats, type SearchQuery, type BurnRate, type Projection } from './database/reader'
 import { DatabaseWriter } from './database/writer'
 import { summarizeSpans } from './spanSummarizer'
 import type { SessionSummaryCard, TimelineEntry } from './summarizers/summarizerTypes'
+
+export type { DailyStatRow, LifetimeStats, SearchQuery, BurnRate, Projection }
 
 /**
  * Merges historical sessions from SQLite with live sessions from the in-memory
@@ -60,6 +63,44 @@ export class SessionRepository {
     editIndex?: number,
   ): Promise<string | null> {
     return this.reader.loadBlob(spanId, field, editIndex)
+  }
+
+  /** Returns daily token + cost stats for the last N days, optionally filtered by source. */
+  queryDailyStats(options: { since: number; source?: string }): DailyStatRow[] {
+    return this.reader.queryDailyStats(options)
+  }
+
+  /** Returns lifetime aggregate stats across all non-sidechain sessions. */
+  queryLifetimeStats(): LifetimeStats {
+    return this.reader.queryLifetimeStats()
+  }
+
+  /** Full-text + filter session search with pagination. */
+  searchSessions(query: SearchQuery): { sessions: SessionSummaryCard[]; totalCount: number } {
+    return this.reader.searchSessions(query)
+  }
+
+  /** Burn rate for an active session. Returns null if < 2 LLM entries with timestamps. */
+  queryBurnRate(sessionId: string): { burnRate: BurnRate; projection: Projection | null } | null {
+    return this.reader.queryBurnRate(sessionId)
+  }
+
+  /** Returns storage size stats for the DB file and blobs directory. */
+  getStorageStats(dbPath: string, blobsDir: string): { dbBytes: number; blobBytes: number; blobCount: number } {
+    let dbBytes = 0
+    let blobBytes = 0
+    let blobCount = 0
+    try { dbBytes = fs.statSync(dbPath).size } catch { /* ok */ }
+    try {
+      const files = fs.readdirSync(blobsDir)
+      for (const f of files) {
+        try {
+          blobBytes += fs.statSync(`${blobsDir}/${f}`).size
+          blobCount++
+        } catch { /* ok */ }
+      }
+    } catch { /* ok */ }
+    return { dbBytes, blobBytes, blobCount }
   }
 
   /** Enqueues a session write — thin delegation to DatabaseWriter. */

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import type { SessionSummaryCard, TimelineEntry, EditDetail } from '../summarizers/summarizerTypes'
+import { calcTokenCostUsd } from '../pricing'
 
 // Strings below this length are kept inline in the DB row rather than written to a blob file.
 const BLOB_MIN_LENGTH = 512
@@ -95,7 +96,13 @@ export class DatabaseWriter {
   }
 
   private _writeSessionRow(card: SessionSummaryCard, workspace: string): void {
-    // Fields not yet present on SessionSummaryCard are noted below.
+    const costUsd = calcTokenCostUsd(
+      card.inputTokens,
+      card.cacheReadTokens,
+      card.cacheCreateTokens,
+      card.outputTokens,
+      card.model,
+    )
     this.db.run(
       `INSERT OR REPLACE INTO sessions (
         session_id, trace_id, source, workspace, project_path, model,
@@ -103,8 +110,8 @@ export class DatabaseWriter {
         cache_read_tokens, cache_create_tokens, cache_hit_rate,
         total_tool_calls, total_llm_calls, errors, outcome,
         is_sidechain, speed, user_request, tool_counts, loop_signals,
-        files_read, files_changed, files_searched, files_changed_note
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        files_read, files_changed, files_searched, files_changed_note, cost_usd
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         card.sessionId,
         card.traceId,
@@ -133,6 +140,7 @@ export class DatabaseWriter {
         JSON.stringify(card.filesChanged),
         JSON.stringify(card.filesSearched),
         card.filesChangedNote ?? null,
+        costUsd,
       ]
     )
   }

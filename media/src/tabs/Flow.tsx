@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { displaySessions } from '../state'
+import { displaySessions, sessionTimelines, vscode } from '../state'
 import { getSessionGlobalNumber, getAgentSourceLabel, formatMs } from '../utils'
 import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry } from '../types'
@@ -166,7 +166,11 @@ export function Flow() {
     setIsPlayingRef.current(false)
 
     const sess = allSessions[clampedIdx]?.sess
-    const timeline = (sess?.timeline ?? []).filter(e => e.type !== 'background')
+    const loadedTimeline = sess ? (sessionTimelines.value[sess.sessionId] ?? sess.timeline) : []
+    if (sess && !sessionTimelines.value[sess.sessionId]) {
+      vscode?.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
+    }
+    const timeline = (loadedTimeline ?? []).filter(e => e.type !== 'background')
 
     // ── Group timeline into turns (LLM call + following tool calls) ───────────
 
@@ -631,7 +635,7 @@ export function Flow() {
       canvas.removeEventListener('mouseleave', onMouseLeave)
       canvas.removeEventListener('click', onClick)
     }
-  }, [sessions, clampedIdx])
+  }, [sessions, clampedIdx, sessionTimelines.value[allSessions[clampedIdx < 0 ? allSessions.length - 1 : clampedIdx]?.sess?.sessionId ?? '']])
 
   // ── Controls ─────────────────────────────────────────────────────────────────
 

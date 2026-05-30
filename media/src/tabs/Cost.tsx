@@ -1,11 +1,11 @@
 import { useState } from 'preact/hooks'
 import { useEffect, useRef } from 'preact/hooks'
-import { displaySessions } from '../state'
+import { displaySessions, dailyStats, lifetimeStats, selectedAgentFilter } from '../state'
 import { getAgentColor, getSessionGlobalNumber, formatCompact, getAgentSourceLabel } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { PRICING_LAST_UPDATED } from '../pricing'
 import type { PricingMode } from '../sessionMetrics'
-import type { SessionSummaryCard } from '../types'
+import type { SessionSummaryCard, DailyStatRow } from '../types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -25,6 +25,148 @@ function fmtCredits(credits: number): string {
 function sessionCostMode(session: SessionSummaryCard, mode: PricingMode): PricingMode {
   // Codex and Claude Code are always token-based; the mode toggle only applies to Copilot
   return (session.source === 'codex' || session.source === 'claude_code') ? 'token' : mode
+}
+
+// ── 30-day history chart (SVG) ────────────────────────────────────────────────
+
+function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
+  const [hovered, setHovered] = useState<number | null>(null)
+
+  if (rows.length === 0) {
+    return <div class="empty-state" style="margin-bottom:16px">No historical data yet — sessions will appear here as they are recorded.</div>
+  }
+
+  const W = 600, H = 180
+  const pad = { top: 12, right: 48, bottom: 28, left: 52 }
+  const chartW = W - pad.left - pad.right
+  const chartH = H - pad.top - pad.bottom
+
+  const maxTokens = Math.max(...rows.map(r => r.totalTokens + r.cacheReadTokens + r.cacheCreateTokens), 1)
+  const maxCost   = Math.max(...rows.map(r => r.costUsd), 0.001)
+
+  const barW = Math.max(4, Math.floor(chartW / rows.length) - 2)
+  const gap  = Math.max(1, Math.floor((chartW - barW * rows.length) / (rows.length + 1)))
+  const startX = pad.left + gap
+
+  // Y-axis gridlines: 4 lines
+  const gridLines = [0, 1, 2, 3, 4].map(i => ({
+    y: pad.top + chartH * (1 - i / 4),
+    label: formatCompact(Math.round(maxTokens * i / 4)),
+  }))
+
+  const costPoints = rows.map((r, i) => {
+    const cx = startX + i * (barW + gap) + barW / 2
+    const cy = r.costUsd > 0
+      ? pad.top + chartH * (1 - r.costUsd / maxCost)
+      : pad.top + chartH
+    return `${cx},${cy}`
+  })
+
+  const hovRow = hovered !== null ? rows[hovered] : null
+
+  return (
+    <div style="position:relative;margin-bottom:8px">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        style="width:100%;height:180px;display:block"
+        onMouseLeave={() => setHovered(null)}
+      >
+        {/* Grid */}
+        {gridLines.map(gl => (
+          <g key={gl.y}>
+            <line x1={pad.left} y1={gl.y} x2={W - pad.right} y2={gl.y} stroke="var(--vscode-panel-border,#333)" stroke-width="0.5" />
+            <text x={pad.left - 4} y={gl.y} text-anchor="end" dominant-baseline="middle" fill="var(--vscode-descriptionForeground,#888)" font-size="9">{gl.label}</text>
+          </g>
+        ))}
+
+        {/* Cost axis labels (right side) */}
+        {[0, 1, 2, 3, 4].map(i => (
+          <text key={i} x={W - pad.right + 4} y={pad.top + chartH * (1 - i / 4)} text-anchor="start" dominant-baseline="middle" fill="var(--vscode-descriptionForeground,#888)" font-size="9">
+            {'$' + (maxCost * i / 4).toFixed(maxCost < 0.1 ? 3 : 2)}
+          </text>
+        ))}
+
+        {/* Stacked bars */}
+        {rows.map((r, i) => {
+          const x = startX + i * (barW + gap)
+          // Stack: inputOnly (bottom), cacheRead, cacheCreate, output (top)
+          const inputOnlyH  = ((r.totalTokens - r.outputTokens) / maxTokens) * chartH
+          const cacheReadH  = (r.cacheReadTokens   / maxTokens) * chartH
+          const cacheCreateH= (r.cacheCreateTokens / maxTokens) * chartH
+          const outputH     = (r.outputTokens       / maxTokens) * chartH
+
+          let yBase = pad.top + chartH
+          const bars: Array<{ fill: string; height: number }> = [
+            { fill: 'var(--vscode-charts-blue,#4fc3f7)',   height: Math.max(0, inputOnlyH) },
+            { fill: 'var(--vscode-charts-green,#81c784)',  height: Math.max(0, cacheReadH) },
+            { fill: 'var(--vscode-charts-yellow,#ffb74d)', height: Math.max(0, cacheCreateH) },
+            { fill: 'var(--vscode-charts-red,#e57373)',    height: Math.max(0, outputH) },
+          ]
+
+          return (
+            <g key={i} onMouseEnter={() => setHovered(i)} style="cursor:default">
+              {bars.map((bar, bi) => {
+                if (bar.height < 0.5) return null
+                yBase -= bar.height
+                return <rect key={bi} x={x} y={yBase} width={barW} height={bar.height} fill={bar.fill} opacity={hovered === i ? 1 : 0.85} />
+              })}
+              {/* X-axis label: abbreviated day */}
+              <text x={x + barW / 2} y={H - pad.bottom + 10} text-anchor="middle" fill="var(--vscode-descriptionForeground,#888)" font-size="8">
+                {r.day.slice(5)}
+              </text>
+            </g>
+          )
+        })}
+
+        {/* Cost line overlay */}
+        {rows.length > 1 && (
+          <polyline
+            points={costPoints.join(' ')}
+            fill="none"
+            stroke="var(--vscode-charts-purple,#ba68c8)"
+            stroke-width="1.5"
+            stroke-dasharray="3 2"
+            opacity="0.9"
+          />
+        )}
+        {rows.map((r, i) => {
+          if (r.costUsd === 0) return null
+          const cx = startX + i * (barW + gap) + barW / 2
+          const cy = pad.top + chartH * (1 - r.costUsd / maxCost)
+          return <circle key={i} cx={cx} cy={cy} r="2.5" fill="var(--vscode-charts-purple,#ba68c8)" />
+        })}
+      </svg>
+
+      {/* Legend */}
+      <div style="display:flex;gap:12px;font-size:10px;color:var(--muted);margin-top:2px;flex-wrap:wrap">
+        {[
+          ['var(--vscode-charts-blue,#4fc3f7)',   'Input tok'],
+          ['var(--vscode-charts-green,#81c784)',  'Cache read'],
+          ['var(--vscode-charts-yellow,#ffb74d)', 'Cache write'],
+          ['var(--vscode-charts-red,#e57373)',    'Output tok'],
+          ['var(--vscode-charts-purple,#ba68c8)', 'Cost (dashed line)'],
+        ].map(([color, label]) => (
+          <span key={label} style="display:flex;align-items:center;gap:4px">
+            <span style={`display:inline-block;width:8px;height:8px;border-radius:2px;background:${color}`} />
+            {label}
+          </span>
+        ))}
+      </div>
+
+      {/* Hover tooltip */}
+      {hovRow && (
+        <div style="position:absolute;top:4px;right:4px;background:var(--vscode-editorWidget-background,#252526);border:1px solid var(--vscode-panel-border,#333);border-radius:4px;padding:8px 10px;font-size:11px;line-height:1.8;pointer-events:none;z-index:10;min-width:150px">
+          <div style="font-weight:600;margin-bottom:2px">{hovRow.day}</div>
+          <div style="color:var(--muted)">{hovRow.sessionCount} session{hovRow.sessionCount !== 1 ? 's' : ''}</div>
+          <div>Input: <strong>{formatCompact(hovRow.totalTokens)}</strong></div>
+          <div>Cache read: {formatCompact(hovRow.cacheReadTokens)}</div>
+          <div>Cache write: {formatCompact(hovRow.cacheCreateTokens)}</div>
+          <div>Output: {formatCompact(hovRow.outputTokens)}</div>
+          <div style="margin-top:4px;color:var(--vscode-charts-purple,#ba68c8)">Cost: <strong>{'$' + (hovRow.costUsd).toFixed(3)}</strong></div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Per-session cost bar chart ─────────────────────────────────────────────────
@@ -198,6 +340,32 @@ export function Cost() {
           </span>
         )}
       </div>
+
+      {/* 30-day history */}
+      {(() => {
+        const stats = dailyStats.value
+        const lifetime = lifetimeStats.value
+        const agentFilter = selectedAgentFilter.value
+        const filteredStats = agentFilter !== 'all'
+          ? stats  // dailyStats already filtered server-side when filter active; show as-is
+          : stats
+        return (
+          <div style="margin-bottom:24px">
+            <h3 style="margin:0 0 8px;font-size:13px;color:var(--muted)">30-DAY TOKEN &amp; COST HISTORY</h3>
+            <HistoryChart rows={filteredStats} />
+            {lifetime && lifetime.totalSessions > 0 && (
+              <div style="display:flex;gap:20px;font-size:11px;color:var(--muted);flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--vscode-panel-border)">
+                <span>{lifetime.totalSessions} total sessions</span>
+                <span>{formatCompact(lifetime.totalTokens)} total tokens</span>
+                <span style="color:var(--foreground)">~{'$' + lifetime.totalCostUsd.toFixed(2)} estimated lifetime cost</span>
+                {lifetime.oldestSessionMs > 0 && (
+                  <span>{new Date(lifetime.oldestSessionMs).toISOString().slice(0, 10)} → {new Date(lifetime.newestSessionMs).toISOString().slice(0, 10)}</span>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Per-session cost bar chart */}
       <h3 style="margin:0 0 8px;font-size:13px;color:var(--muted)">ESTIMATED COST PER SESSION</h3>

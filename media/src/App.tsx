@@ -5,23 +5,22 @@ import {
   swRetainedSessions, swLastSessionCount,
   selectedAgentFilter, sessionLimit, activeTab,
   sessionTimelines, blobCache,
+  dailyStats, lifetimeStats, burnRateData, searchResults,
   vscode, displaySessions,
 } from './state'
-import type { TimelineEntry, AgentFilter } from './types'
+import type { TimelineEntry, AgentFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
 
 // Tab components
 import { Efficiency } from './tabs/Efficiency'
 import { Recommendations } from './tabs/Recommendations'
 import { Alerts, computeAlertCount, checkAlerts } from './tabs/Alerts'
-import { Tokens } from './tabs/Tokens'
 import { Cost } from './tabs/Cost'
-import { Latency } from './tabs/Latency'
 import { Traces } from './tabs/Traces'
+import { SessionSearch } from './tabs/SessionSearch'
 import { Files } from './tabs/Files'
 import { Flow } from './tabs/Flow'
 import { Agents } from './tabs/Agents'
 import { Tools } from './tabs/Tools'
-import { Errors } from './tabs/Errors'
 import { Export } from './tabs/Export'
 import { Help } from './tabs/Help'
 import { Automation, checkAutomations } from './tabs/Automation'
@@ -33,15 +32,13 @@ const TABS = [
   { id: 'efficiency',      label: 'Efficiency',      primary: true,  title: 'Per-session metrics and token usage breakdown.' },
   { id: 'cost',            label: 'Cost',            primary: true,  title: 'Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing.' },
   { id: 'traces',          label: 'Traces',          primary: true,  title: 'A human-readable timeline of each session — LLM calls with their decisions, tool calls with arguments, and token usage.' },
+  { id: 'search',          label: 'Search',          primary: true,  title: 'Search and filter historical sessions from the database by request text, date range, cost, and sort order.' },
   { id: 'recommendations', label: 'Recommendations', primary: true,  title: 'Actionable insights and recommendations for improving prompt efficiency and reducing token waste.' },
   { id: 'agents',          label: 'Agents',          primary: false, title: 'Copilot, Claude, and Codex — session counts, token usage, tools, and latency broken down by agent source.' },
   { id: 'alerts',          label: 'Alerts',          primary: false, title: 'Configurable alerts for context window usage, error rates, session length, and other efficiency signals.' },
   { id: 'automation',      label: 'Automation',      primary: false, title: 'Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed.' },
-  { id: 'errors',          label: 'Errors',          primary: false, title: 'All spans that completed with an error status. Click any item to expand its full details and attributes.' },
   { id: 'files',           label: 'Files',           primary: false, title: 'Files created or modified by the agent, organized by session with inline diffs.' },
   { id: 'flow',            label: 'Flow',            primary: false, title: 'LLM turns and tool calls visualized as a semantic graph — one node per turn, one per unique tool, edges weighted by call frequency.' },
-  { id: 'latency',         label: 'Latency',         primary: false, title: 'Span durations as a color-coded grid, helping identify which operations are consistently slow.' },
-  { id: 'tokens',          label: 'Tokens',          primary: false, title: 'Token consumption aggregated by span name and per session, sorted from highest to lowest.' },
   { id: 'tools',           label: 'Tools',           primary: false, title: 'Tool call distribution broken down by tool name, with token usage and performance stats per tool.' },
   { id: 'export',          label: 'Export',          primary: true,  title: 'Export raw or redacted OTEL span data as JSON files.' },
   { id: 'help',            label: 'Help',            primary: true,  title: 'Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard.' },
@@ -55,15 +52,13 @@ function ActivePanel() {
     case 'efficiency':      return <Efficiency />
     case 'recommendations': return <Recommendations />
     case 'alerts':          return <Alerts />
-    case 'tokens':          return <Tokens />
     case 'cost':            return <Cost />
-    case 'latency':         return <Latency />
     case 'traces':          return <Traces />
+    case 'search':          return <SessionSearch />
     case 'files':           return <Files />
     case 'flow':            return <Flow />
     case 'agents':          return <Agents />
     case 'tools':           return <Tools />
-    case 'errors':          return <Errors />
     case 'export':          return <Export />
     case 'automation':      return <Automation />
     case 'help':            return <Help />
@@ -129,10 +124,22 @@ export function App() {
         spanId?: string
         field?: string
         content?: string | null
+        analyticsData?: { dailyStats: DailyStatRow[]; lifetimeStats: LifetimeStats }
+        burnRate?: { sessionId: string; burnRate: BurnRate; projection: Projection | null } | null
+        sessions?: SessionSummaryCard[]
+        totalCount?: number
+        offset?: number
       }
       if (msg.type === 'update') {
         if (msg.summary?.toolCalls) toolCalls.value = msg.summary.toolCalls
         sessionSummary.value = msg.sessionSummary ?? sessionSummary.value
+        if (msg.analyticsData) {
+          dailyStats.value = msg.analyticsData.dailyStats
+          lifetimeStats.value = msg.analyticsData.lifetimeStats
+        }
+        if (msg.burnRate !== undefined) {
+          burnRateData.value = msg.burnRate ?? null
+        }
         if (!initialLoadDone) {
           initialLoadDone = true
           setTimeout(() => {
@@ -172,6 +179,12 @@ export function App() {
           const sel = document.getElementById('session-limit') as HTMLSelectElement
           if (sel) sel.value = String(limit)
         }
+      } else if (msg.type === 'searchResults' && msg.sessions != null) {
+        searchResults.value = {
+          sessions: msg.sessions,
+          totalCount: msg.totalCount ?? 0,
+          offset: msg.offset ?? 0,
+        }
       } else if (msg.type === 'clearAll') {
         toolCalls.value = {}
         sessionSummary.value = null
@@ -180,6 +193,10 @@ export function App() {
         swRetainedSessions.value = []
         swLastSessionCount.value = 0
         dismissedSpanIds.clear()
+        dailyStats.value = []
+        lifetimeStats.value = null
+        burnRateData.value = null
+        searchResults.value = null
       }
     }
     window.addEventListener('message', handler)

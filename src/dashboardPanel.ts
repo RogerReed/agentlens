@@ -88,6 +88,14 @@ export class DashboardPanel {
         })
       } else if (msg.type === 'agentFilterChanged' && this.sidebarProvider) {
         this.sidebarProvider.setAgentFilter(msg.value || 'all')
+      } else if (msg.type === 'searchSessions' && msg.query) {
+        const result = this.repo.searchSessions(msg.query as import('./sessionRepository').SearchQuery)
+        this.panel.webview.postMessage({
+          type: 'searchResults',
+          sessions: result.sessions,
+          totalCount: result.totalCount,
+          offset: (msg.query as { offset?: number }).offset ?? 0,
+        })
       } else if (msg.type === 'exportSessionData') {
         vscode.commands.executeCommand('agentLens.exportData')
       } else if (msg.type === 'exportSessionDataRedacted') {
@@ -116,12 +124,31 @@ export class DashboardPanel {
   update() {
     const sessions = this.repo.listSessions()
     const summary = this.repo.store_.getSummary()
-    // Build a FullSummary-shaped object from the merged session list.
-    // timeline[] are empty here — the frontend requests them lazily via loadSessionDetail.
     const sessionSummary = sessions.length > 0
       ? { sessions, backgroundSpans: [], efficiency: buildEfficiency(sessions) }
       : null
-    this.panel.webview.postMessage({ type: 'update', summary, sessionSummary })
+
+    // Analytics data: 30-day daily stats + lifetime totals.
+    const since30d = Date.now() - 30 * 86_400_000
+    const dailyStats = this.repo.queryDailyStats({ since: since30d })
+    const lifetimeStats = this.repo.queryLifetimeStats()
+
+    // Burn rate for the most recently updated live session (< 2 min old).
+    const recentCutoff = Date.now() - 2 * 60_000
+    const activeSession = sessions.find(s => Date.parse(s.startTime) > recentCutoff)
+    const burnRateResult = activeSession
+      ? this.repo.queryBurnRate(activeSession.sessionId)
+      : null
+
+    this.panel.webview.postMessage({
+      type: 'update',
+      summary,
+      sessionSummary,
+      analyticsData: { dailyStats, lifetimeStats },
+      burnRate: burnRateResult
+        ? { sessionId: activeSession!.sessionId, ...burnRateResult }
+        : null,
+    })
   }
 
   private dispose() {

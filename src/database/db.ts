@@ -41,6 +41,7 @@ export async function openDatabase(storagePath: string, extensionPath: string): 
   }
 
   db.run(SCHEMA_SQL)
+  applyMigrations(db)
 
   ensureBlobsDir(storagePath)
 
@@ -72,6 +73,15 @@ export class AgentLensDb {
   /** Direct access for query/write operations added in later phases. */
   get raw(): SqlDatabase {
     return this.db
+  }
+}
+
+function applyMigrations(db: SqlDatabase): void {
+  // Each migration is guarded so re-running on an already-migrated DB is safe.
+  const cols = db.exec('PRAGMA table_info(sessions)')
+  const colNames = cols[0]?.values.map(row => row[1] as string) ?? []
+  if (!colNames.includes('cost_usd')) {
+    db.run('ALTER TABLE sessions ADD COLUMN cost_usd REAL NOT NULL DEFAULT 0')
   }
 }
 

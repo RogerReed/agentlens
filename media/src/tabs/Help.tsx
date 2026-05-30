@@ -8,14 +8,12 @@ const VIEWS: [string, string][] = [
   ['Recommendations', 'Actionable insights for improving prompt efficiency, plus loop and malfunction detection. Two signal categories: efficiency insights (token waste, cache, tool failures) and loop signals (tool deadlock, state spirals, error recurrence, runaway steps, context accumulation).'],
   ['Alerts',          'Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts.'],
   ['Automation',      'Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay.'],
-  ['Tokens',          'Token consumption aggregated by span name and per session, sorted from highest to lowest.'],
-  ['Latency',         'Span durations as a color-coded grid, helping identify which operations are consistently slow.'],
   ['Traces',          'A human-readable timeline of each session — LLM calls with decisions, tool calls with arguments and results, token usage per step, and background overhead breakdown.'],
+  ['Search',          'Search and filter historical sessions stored in the database. Filter by request text, date range, and sort by recency, cost, duration, token count, or error count.'],
   ['Files',           'Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed.'],
   ['Flow',            'LLM turns and tool calls visualized as a semantic graph — one node per turn, one per unique tool, edges weighted by call frequency. Supports zoom, pan, and playback animation.'],
   ['Agents',          'Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table.'],
   ['Tools',           'Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool.'],
-  ['Errors',          'All spans that completed with an error status. Click any item to expand its full details and attributes.'],
   ['Export',          'Export OTEL spans as JSON files — full or redacted (prompt text, tool inputs, and tool results replaced with [redacted]). Replay either format with pnpm run demo to re-examine a past session without the original agent running.'],
   ['Help',            'This tab — an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Recommendations and malfunction detection.'],
 ]
@@ -52,7 +50,7 @@ const TERMS: [string, string][] = [
   ['Trace ID',               'A unique identifier linking all spans belonging to the same session/request.'],
   ['Turn',                   'One LLM call within a session. A multi-turn session involves the agent calling the LLM, executing tools, then calling the LLM again.'],
   ['TTFT',                   'Time to First Token — the latency between sending a prompt and receiving the first token of the response.'],
-  ['Waterfall',              'A span visualization where operations are displayed as horizontal bars on a time axis, with nesting depth shown by indentation. Used in OpenTelemetry tooling; AgentLens surfaces span timing data through the Latency tab instead.'],
+  ['Waterfall',              'A span visualization where operations are displayed as horizontal bars on a time axis, with nesting depth shown by indentation. Used in OpenTelemetry tooling; AgentLens surfaces span timing data through the Traces tab instead.'],
 ]
 
 function termId(term: string): string {
@@ -421,7 +419,7 @@ function InsightsSection() {
           />
           <InsightBlock id="help-tool-failures" title="Tool Failures"
             why="Tool failures come from: (1) guessed file paths that don't exist, (2) unavailable commands, or (3) hallucinated APIs. Each failure adds error text to context."
-            steps={`<li>Provide exact file paths in your prompt.</li><li>Tell the agent which package manager and runtime are available.</li><li>Check the Errors tab to see what paths were guessed.</li><li>Verify files exist before prompting.</li>`}
+            steps={`<li>Provide exact file paths in your prompt.</li><li>Tell the agent which package manager and runtime are available.</li><li>Verify files exist before prompting.</li>`}
             impact="Each eliminated failure saves one full LLM recovery turn — roughly 30,000 wasted tokens per failure cascade."
           />
           <InsightBlock id="help-large-results" title="Large Tool Results"
