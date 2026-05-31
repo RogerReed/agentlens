@@ -3390,8 +3390,9 @@
     const thBase = "padding:3px 6px;font-size:10px;font-weight:600;white-space:nowrap;user-select:none";
     const thSort = thBase + ";cursor:pointer;color:var(--fg)";
     const thMuted = thBase + ";color:var(--muted);font-weight:500";
-    return /* @__PURE__ */ u4("div", { id: "sessions-content", style: "overflow-x:auto", children: [
-      /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
+    return /* @__PURE__ */ u4("div", { id: "sessions-content", children: [
+      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);padding:0 8px 5px;font-style:italic", children: "Click any column header to sort \u2014 find most expensive, longest, or most error-prone sessions" }),
+      /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
         /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:2px solid var(--vscode-panel-border)", children: [
           /* @__PURE__ */ u4("th", { style: "width:16px;padding:3px 4px 3px 8px" }),
           /* @__PURE__ */ u4("th", { style: "width:10px;padding:3px 4px;" + thSort, onClick: () => onSortClick("source"), title: "Sort by agent", children: sortArrow("source") }),
@@ -3421,7 +3422,7 @@
           ] })
         ] }) }),
         /* @__PURE__ */ u4("tbody", { children: sessions.map((sess) => /* @__PURE__ */ u4(SessionRow, { sess }, sess.sessionId)) })
-      ] }),
+      ] }) }),
       /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)", children: [
         /* @__PURE__ */ u4("span", { children: [
           sessions.length,

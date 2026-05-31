@@ -300,7 +300,11 @@ export function Sessions() {
   const thMuted = thBase + ';color:var(--muted);font-weight:500'
 
   return (
-    <div id="sessions-content" style="overflow-x:auto">
+    <div id="sessions-content">
+      <div style="font-size:10px;color:var(--muted);padding:0 8px 5px;font-style:italic">
+        Click any column header to sort — find most expensive, longest, or most error-prone sessions
+      </div>
+      <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:11px">
         <thead>
           <tr style="border-bottom:2px solid var(--vscode-panel-border)">
@@ -320,6 +324,7 @@ export function Sessions() {
           ))}
         </tbody>
       </table>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)">
         <span>{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
         <button
