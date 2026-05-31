@@ -320,8 +320,12 @@ export function Sessions() {
           ))}
         </tbody>
       </table>
-      <div style="font-size:10px;color:var(--muted);padding:6px 8px">
-        {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)">
+        <span>{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
+        <button
+          style="padding:2px 8px;font-size:10px;cursor:pointer;border:1px solid var(--vscode-testing-iconFailed,#f44);border-radius:3px;background:transparent;color:var(--vscode-testing-iconFailed,#f44)"
+          onClick={() => vscode?.postMessage({ type: 'confirmClear' })}
+        >Clear All Data</button>
       </div>
     </div>
   )

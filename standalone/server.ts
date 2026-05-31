@@ -542,7 +542,12 @@ function getHtml(): string {
         getState: function() { return null; },
         setState: function() {},
         postMessage: function(msg) {
-          if (msg.type === 'clearAll') {
+          if (msg.type === 'confirmClear') {
+            if (confirm('Clear all AgentLens session data? This cannot be undone.')) {
+              fetch('/api/clear', { method: 'POST' });
+              window.dispatchEvent(new MessageEvent('message', { data: { type: 'clearAll' } }));
+            }
+          } else if (msg.type === 'clearAll') {
             fetch('/api/clear', { method: 'POST' });
           } else if (msg.type === 'automation' && msg.prompt) {
             // Strip the session header block and preview the action body

@@ -61,7 +61,18 @@ export class DashboardPanel {
     this.panel.webview.html = this.getHtml()
 
     this.panel.webview.onDidReceiveMessage(async msg => {
-      if (msg.type === 'clearAll') {
+      if (msg.type === 'confirmClear') {
+        const answer = await vscode.window.showWarningMessage(
+          'Clear all AgentLens session data? This cannot be undone.',
+          { modal: true },
+          'Clear All'
+        )
+        if (answer === 'Clear All') {
+          vscode.commands.executeCommand('agentLens.clearSessions')
+          this.panel.webview.postMessage({ type: 'clearAll' })
+          this.update()
+        }
+      } else if (msg.type === 'clearAll') {
         vscode.commands.executeCommand('agentLens.clearSessions')
         this.update()
       } else if (msg.type === 'loadSessionDetail' && msg.sessionId) {

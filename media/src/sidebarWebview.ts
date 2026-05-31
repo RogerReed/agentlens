@@ -100,18 +100,24 @@ function drawSparkline(canvas: HTMLCanvasElement, tokens: number[], color: strin
   const pad = { top: 10, right: 6, bottom: 14, left: 34 }
   const cw = w - pad.left - pad.right
   const ch = h - pad.top - pad.bottom
-  const maxVal = Math.max(...tokens) || 1
-  const xPos = (i: number) => pad.left + (i / (tokens.length - 1)) * cw
-  const yPos = (v: number) => pad.top + ch - (v / maxVal) * ch
 
-  // Y-axis labels: max at top, 0 at bottom
+  // Fit y-axis tightly to the data range so small changes show as movement
+  const rawMin = Math.min(...tokens), rawMax = Math.max(...tokens)
+  const spread = rawMax - rawMin || rawMax * 0.1 || 1
+  const yMin = Math.max(0, rawMin - spread * 0.15)
+  const yMax = rawMax + spread * 0.15
+
+  const xPos = (i: number) => pad.left + (i / (tokens.length - 1)) * cw
+  const yPos = (v: number) => pad.top + ch - ((v - yMin) / (yMax - yMin)) * ch
+
+  // Y-axis labels: max at top, min at bottom
   ctx.fillStyle = mutedColor
   ctx.font = fontStr
   ctx.textAlign = 'right'
   ctx.textBaseline = 'top'
-  ctx.fillText(fmt(maxVal), pad.left - 3, pad.top)
+  ctx.fillText(fmt(yMax), pad.left - 3, pad.top)
   ctx.textBaseline = 'bottom'
-  ctx.fillText('0', pad.left - 3, pad.top + ch)
+  ctx.fillText(fmt(yMin), pad.left - 3, pad.top + ch)
 
   // X-axis labels: T1 at left, T{n} at right
   ctx.textAlign = 'left'
@@ -120,11 +126,12 @@ function drawSparkline(canvas: HTMLCanvasElement, tokens: number[], color: strin
   ctx.textAlign = 'right'
   ctx.fillText('T' + tokens.length, pad.left + cw, pad.top + ch + 3)
 
-  // Filled area
+  // Filled area (bottom is the yMin gridline, not the absolute canvas bottom)
+  const chartBottom = yPos(yMin)
   ctx.beginPath()
-  ctx.moveTo(xPos(0), pad.top + ch)
+  ctx.moveTo(xPos(0), chartBottom)
   tokens.forEach((v, i) => ctx.lineTo(xPos(i), yPos(v)))
-  ctx.lineTo(xPos(tokens.length - 1), pad.top + ch)
+  ctx.lineTo(xPos(tokens.length - 1), chartBottom)
   ctx.closePath()
   const hex = color.startsWith('#') ? color : '#90a4ae'
   const r = parseInt(hex.slice(1, 3), 16)
