@@ -199,7 +199,9 @@
   function renderAgentKey() {
     const el = document.getElementById("sb-agent-key");
     if (!el) return;
-    el.innerHTML = state.agentSources.length ? state.agentSources.map(
+    const known = ["copilot", "claude_code", "codex"];
+    const sources = state.agentSources.filter((s) => known.includes(s));
+    el.innerHTML = sources.length ? sources.map(
       (src) => `<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${agentColor(src)}"></span>${agentLabel(src)}</span>`
     ).join("") : "";
   }

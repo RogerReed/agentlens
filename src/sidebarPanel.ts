@@ -86,11 +86,8 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     const activity = this.getLastActivity()
 
     const AGENT_ORDER = ['copilot', 'claude_code', 'codex']
-    const agentSources = [...new Set(all.map(s => s.source).filter(Boolean))]
-      .sort((a, b) => {
-        const ai = AGENT_ORDER.indexOf(a), bi = AGENT_ORDER.indexOf(b)
-        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
-      })
+    const agentSources = [...new Set(all.map(s => s.source).filter(s => AGENT_ORDER.includes(s as string)))]
+      .sort((a, b) => AGENT_ORDER.indexOf(a) - AGENT_ORDER.indexOf(b))
 
     const latest = all.length > 0 ? all[0] : null
 
@@ -164,11 +161,8 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     const latest = all.length > 0 ? all[0] : null
 
     const AGENT_ORDER = ['copilot', 'claude_code', 'codex']
-    const agentSources = [...new Set(all.map(s => s.source).filter(Boolean))]
-      .sort((a, b) => {
-        const ai = AGENT_ORDER.indexOf(a), bi = AGENT_ORDER.indexOf(b)
-        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
-      })
+    const agentSources = [...new Set(all.map(s => s.source).filter(s => AGENT_ORDER.includes(s as string)))]
+      .sort((a, b) => AGENT_ORDER.indexOf(a) - AGENT_ORDER.indexOf(b))
 
     const recentCutoff = Date.now() - 2 * 60_000
     const activeSession = all.find(s => Date.parse(s.startTime) > recentCutoff)
