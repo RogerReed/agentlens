@@ -43,7 +43,7 @@ graph TB
 
     subgraph Dashboard UI
         STATE[Preact Signals<br/>state.ts]
-        TABS[Tab Components<br/>Efficiency · Cost · Search · Traces · Flow…]
+        TABS[Tab Components<br/>Sessions · Analytics · Alerts · Automation · Export · Help]
     end
 
     CP -- "POST /v1/traces" --> COL
@@ -534,27 +534,44 @@ graph TD
         SIG_LS[lifetimeStats<br/>LifetimeStats or null]
         SIG_BR[burnRateData<br/>BurnRateData or null]
         SIG_SR[searchResults<br/>SearchResultData or null]
+        SIG_RSR[rangedSearchResults<br/>DB results for active time range]
     end
 
     subgraph uicontrols["UI controls"]
         SIG_LIM[sessionLimit<br/>number, default 10]
         SIG_AGT[selectedAgentFilter<br/>AgentFilter, default all]
-        SIG_TAB[activeTab<br/>string, default efficiency]
+        SIG_TAB[activeTab<br/>string, default sessions]
+        SIG_TF[sessionTextFilter<br/>string]
+        SIG_SK[sessionSortKey<br/>start_time · total_tokens · duration_ms<br/>errors · prompt · model · source · cost]
+        SIG_SD[sessionSortDir<br/>asc or desc]
+        SIG_TR[timeRange<br/>preset + optional since/until]
+        SIG_INF[insightFilter<br/>all · loop · efficiency]
+        SIG_IGN[ignoredInsightKeys<br/>Set of string]
     end
 
     subgraph Computed
-        COMP_FILT[agentFilteredSessions<br/>computed — filter by source]
+        COMP_AF[agentFilteredSessions<br/>computed — filter by source]
         COMP_DISP[displaySessions<br/>computed — last N sessions]
+        COMP_RS[rangedSessions<br/>computed — time range + DB merge]
+        COMP_FS[filteredSessions<br/>computed — text filter + sort]
         COMP_PRES[agentPresence<br/>computed — which agents active]
     end
 
-    SIG_SUM --> COMP_FILT
-    SIG_AGT --> COMP_FILT
-    COMP_FILT --> COMP_DISP
+    SIG_SUM --> COMP_AF
+    SIG_AGT --> COMP_AF
+    COMP_AF --> COMP_DISP
     SIG_LIM --> COMP_DISP
-    COMP_DISP --> COMP_PRES
+    COMP_AF --> COMP_RS
+    SIG_TR --> COMP_RS
+    SIG_RSR --> COMP_RS
+    COMP_RS --> COMP_FS
+    SIG_TF --> COMP_FS
+    SIG_SK --> COMP_FS
+    SIG_SD --> COMP_FS
+    COMP_RS --> COMP_PRES
 
-    COMP_DISP --> TAB_COMPS[Tab components]
+    COMP_FS --> TAB_COMPS[Tab components]
+    COMP_DISP --> TAB_COMPS
     SIG_TL --> TAB_COMPS
     SIG_BLOB --> TAB_COMPS
     SIG_DS --> TAB_COMPS
@@ -564,22 +581,41 @@ graph TD
     SIG_TAB --> TAB_COMPS
 ```
 
+**Key computed signal semantics:**
+
+- `agentFilteredSessions` — all in-memory sessions filtered by the selected agent pill. No limit applied.
+- `displaySessions` — `agentFilteredSessions` sliced to `sessionLimit` (most recent N). Used for the Sessions table.
+- `rangedSessions` — for bounded presets (7d/30d/…): merges `rangedSearchResults` (DB) with in-memory sessions that fall in the window. For "All": returns `agentFilteredSessions` directly.
+- `filteredSessions` — `rangedSessions` with text filter and sort applied. Used by Sessions table, Insights, and Efficiency charts within Analytics. Analytics charts that must stay time-ordered (ESTIMATED COST, TOKEN USAGE PER SESSION, CONTEXT GROWTH) source from `rangedSessions` directly.
+
 ### Tab component overview
+
+Six flat top-level tabs; secondary views are sub-panels within the expanded session row or the Analytics layout.
 
 ```mermaid
 graph LR
-    APP[App.tsx] --> NAV[Navigation bar<br/>primary + More dropdown]
+    APP[App.tsx<br/>sticky tab bar · time range picker<br/>agent filter pills · text filter] --> T1
 
-    NAV --> T1[Efficiency<br/>heat table · context growth<br/>token usage per session]
-    NAV --> T2[Cost<br/>30-day history chart<br/>per-session cost table]
-    NAV --> T3[Traces<br/>lazy timeline · blob expand]
-    NAV --> T4[Search<br/>text · date · sort filters<br/>paginated DB results]
-    NAV --> T5[Recommendations<br/>loop signals · efficiency insights]
-    NAV --> T6[Agents · Tools · Files<br/>More dropdown]
-    NAV --> T7[Flow<br/>LLM turn graph · lazy timelines]
-    NAV --> T8[Alerts · Automation<br/>More dropdown]
-    NAV --> T9[Export · Help<br/>More dropdown]
+    T1[Sessions<br/>sortable table — all columns<br/>expand-in-place detail panel]
+    T1 --> D1[Overview sub-tab<br/>stat tiles · burn rate · InsightCards]
+    T1 --> D2[Trace sub-tab<br/>waterfall — LLM calls + tool calls<br/>lazy timeline · blob expand]
+    T1 --> D3[Flow sub-tab<br/>turn-to-tool semantic graph<br/>canvas · lazy timelines]
+    T1 --> D4[Tools sub-tab<br/>donut chart + call table]
+    T1 --> D5[Files sub-tab<br/>files changed list · open in editor]
+
+    T2[Analytics<br/>ESTIMATED COST · AGENT BREAKDOWN<br/>TOKEN USAGE PER SESSION · CONTEXT GROWTH]
+    T2 --> A1[CostBarChart — per-session bars<br/>daily total overlay · pricing mode toggle]
+    T2 --> A2[AgentCard ×3 — per-agent stat tiles]
+    T2 --> A3[SessionTokenChart — input/output bars<br/>day boundary highlights]
+    T2 --> A4[ContextGrowthChart — animated<br/>per-session spotlight · play/pause/speed]
+
+    T3[Alerts<br/>configurable threshold alerts<br/>VS Code notification with View Alerts + Copy Prompt]
+    T4[Automation<br/>loop breaker · turn wrap-up<br/>error cascade · context compaction]
+    T5[Export<br/>full or redacted JSON export]
+    T6[Help<br/>sticky TOC nav · glossary · OTEL setup]
 ```
+
+**Chart data isolation:** Analytics charts (`CostBarChart`, `SessionTokenChart`, `ContextGrowthChart`) source from `rangedSessions` (always newest-first by time) so the Sessions table sort key has no effect on their order.
 
 ### DashboardPanel ↔ Webview message protocol
 
@@ -610,11 +646,11 @@ sequenceDiagram
     WV->>EXT: {type:'clearAll'}
     WV->>EXT: {type:'askAI', prompt, agent}
     WV->>EXT: {type:'openFile', filePath}
-    WV->>EXT: {type:'agentFilterChanged', value}
     WV->>EXT: {type:'exportSessionData'}
     WV->>EXT: {type:'openSidebar' | 'closeSidebar'}
-    WV->>EXT: {type:'automation', ...}
+    WV->>EXT: {type:'automation', automationId, agent, prompt, ...}
     WV->>EXT: {type:'alert', label, detail, severity}
+    Note over EXT: showWarning/Error/InformationMessage<br/>with 'View Alerts' + 'Copy Prompt' buttons<br/>Copy Prompt writes AI-ready text to clipboard
 ```
 
 ---
@@ -639,8 +675,8 @@ flowchart TD
         RATES -- no  --> ZERO[cost=0, modelUnknown=true]
         RATES -- yes --> MODE{PricingMode}
         MODE -- token --> TC[calcTokenCost<br/>input/cacheRead/cacheWrite/output<br/>per-MTok rate / 1,000,000]
-        MODE -- request --> RC[calcRequestCost<br/>turns x multiplier x $0.04]
-        MODE -- request-annual --> RA[calcRequestCost<br/>turns x multiplierAnnualPostJun1 x $0.04]
+        MODE -- request-annual --> RA[calcRequestCost<br/>turns x multiplierAnnualPostJun1 x $0.04<br/>annual-plan holders post-Jun 2026]
+        MODE -- request --> RC[calcRequestCost — DEPRECATED<br/>turns x multiplier x $0.04<br/>pre-Jun 2026 billing only]
         TC --> ENTRY_COST[calcEntryCost - Flow tooltip]
         TC --> SESS_COST[calcSessionCost - Cost tab table]
         RC --> SESS_COST
@@ -746,7 +782,7 @@ agentlens/
 │   ├── spanSummarizer.ts         # Orchestrates per-agent builders
 │   ├── pricing.ts                # Extension-host pricing: lookupRates, calcTokenCostUsd
 │   ├── sidebarPanel.ts           # Sidebar webview
-│   ├── dashboardPanel.ts         # Full dashboard webview, message protocol
+│   ├── dashboardPanel.ts         # Full dashboard webview, message protocol, alert notifications
 │   ├── autoConfig.ts             # Copilot VS Code settings
 │   ├── autoConfigNode.ts         # Claude/Codex file-based config
 │   ├── exportData.ts             # JSON export helpers
@@ -778,29 +814,43 @@ agentlens/
 │       └── pricing.test.ts
 ├── media/
 │   ├── src/
-│   │   ├── App.tsx               # Preact root, message handler, tab router
-│   │   ├── state.ts              # All signals: sessions, timelines, blobs, analytics, search
+│   │   ├── App.tsx               # Preact root, message handler, tab router, sticky tab bar
+│   │   ├── state.ts              # Signals: sessions, timelines, blobs, analytics, sort, time range
 │   │   ├── types.ts              # Frontend types mirroring backend + analytics types
 │   │   ├── pricing.ts            # Browser pricing: rate table, lookupRates, calcTokenCost
 │   │   ├── sessionMetrics.ts     # calcSessionCost, calcEntryCost, fmtUsd
-│   │   ├── utils.ts              # Formatting, span helpers, agent colors
-│   │   ├── agentProfiles.ts      # Per-agent alert thresholds
+│   │   ├── utils.ts              # Formatting helpers, agent colors, session labels
+│   │   ├── agentProfiles.ts      # Per-agent alert/automation thresholds (localStorage)
+│   │   ├── AgentThresholdInputs.tsx  # Reusable form input components for threshold editing
 │   │   ├── sidebarWebview.ts     # Sidebar JS (no JSX)
+│   │   ├── styles/
+│   │   │   ├── base.css          # Global variables, layout primitives
+│   │   │   ├── tabs.css          # Tab bar (sticky), tab-mini buttons
+│   │   │   ├── toolbar.css       # Time range picker, agent filter pills, search bar
+│   │   │   ├── components.css    # Cards, tables, tool-insights-table, empty states
+│   │   │   ├── tooltip.css       # has-metric-tip, metric-tooltip (global hover tooltip)
+│   │   │   ├── waterfall.css     # Trace waterfall timeline
+│   │   │   ├── summaries.css     # Session detail expand: sw-detail, sw-bg-* blocks
+│   │   │   ├── heatmap.css       # heatmap-axis-label used by Cost/Efficiency charts
+│   │   │   ├── insights.css      # InsightCard styles
+│   │   │   ├── graph.css         # Flow semantic graph canvas overlay
+│   │   │   ├── help.css          # Help tab typography, TOC nav, glossary
+│   │   │   └── export.css        # Export tab card layout
 │   │   └── tabs/
-│   │       ├── Efficiency.tsx    # Heat table, context growth chart, token usage chart
-│   │       ├── Cost.tsx          # 30-day history chart, per-session cost table
-│   │       ├── Traces.tsx        # Lazy timeline, blob expand
-│   │       ├── SessionSearch.tsx # Text/date/sort search, paginated DB results
-│   │       ├── Flow.tsx          # LLM turn graph (canvas), lazy timeline loading
-│   │       ├── Recommendations.tsx
-│   │       ├── Agents.tsx
-│   │       ├── Tools.tsx
-│   │       ├── Files.tsx
-│   │       ├── Alerts.tsx
-│   │       ├── Automation.tsx
-│   │       ├── Export.tsx
-│   │       ├── Help.tsx
-│   │       └── Timeline.tsx      # Shared timeline rendering component
+│   │       ├── Sessions.tsx      # Sortable session table, expand-in-place detail panel
+│   │       │                     #   sub-tabs: Overview (InsightCards) · Trace · Flow · Tools · Files
+│   │       ├── Analytics.tsx     # ESTIMATED COST · AGENT BREAKDOWN · TOKEN USAGE · CONTEXT GROWTH
+│   │       ├── Insights.tsx      # InsightCard component + generateInsights; clipboard copy icon
+│   │       ├── Cost.tsx          # CostBarChart (canvas), per-session cost table, fmtUsd
+│   │       ├── SessionCharts.tsx # ContextGrowthChart (animated), SessionTokenChart, TurnsLink
+│   │       ├── Traces.tsx        # Waterfall rows (Step/StepRow), background span groups
+│   │       ├── Flow.tsx          # Turn-to-tool semantic graph (canvas), FlowCanvas component
+│   │       ├── Agents.tsx        # computeStats helper used by Analytics AgentCard
+│   │       ├── Tools.tsx         # ToolsChart (donut + table) used by Sessions detail
+│   │       ├── Alerts.tsx        # Alert config UI, checkAlerts, AlertNotification type
+│   │       ├── Automation.tsx    # Automation config UI, checkAutomations, prompt building
+│   │       ├── Export.tsx        # Raw + redacted JSON export UI
+│   │       └── Help.tsx          # Sticky TOC nav, glossary, OTEL setup guide
 │   ├── dashboard.js              # Compiled Preact bundle
 │   ├── dashboard.css             # Compiled styles
 │   └── sidebar.js                # Compiled sidebar script
