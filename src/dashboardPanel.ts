@@ -279,18 +279,29 @@ async function handleAlertNotification(
   sidebarProvider?: SidebarPanel
 ): Promise<void> {
   const text = `AgentLens: ${msg.label}${msg.detail ? ' — ' + msg.detail : ''}`
+  const clipboardPrompt = [
+    "AgentLens alert triggered in my AI coding session. Please explain what's happening and how I should respond.",
+    '',
+    `Alert: ${msg.label}`,
+    ...(msg.detail ? [`Detail: ${msg.detail}`] : []),
+  ].join('\n')
+
   let promise: Thenable<string | undefined>
   if (msg.severity === 'error') {
-    promise = vscode.window.showErrorMessage(text, 'View Alerts')
+    promise = vscode.window.showErrorMessage(text, 'View Alerts', 'Copy Prompt')
   } else if (msg.severity === 'info') {
-    promise = vscode.window.showInformationMessage(text, 'View Alerts')
+    promise = vscode.window.showInformationMessage(text, 'View Alerts', 'Copy Prompt')
   } else {
-    promise = vscode.window.showWarningMessage(text, 'View Alerts')
+    promise = vscode.window.showWarningMessage(text, 'View Alerts', 'Copy Prompt')
   }
   promise.then(action => {
     if (action === 'View Alerts') {
       DashboardPanel.show(context, repo, sidebarProvider)
       DashboardPanel.switchToTab('alerts')
+    } else if (action === 'Copy Prompt') {
+      vscode.env.clipboard.writeText(clipboardPrompt).then(() => {
+        vscode.window.showInformationMessage('AgentLens: Alert prompt copied — paste into your AI chat.')
+      })
     }
   })
 }

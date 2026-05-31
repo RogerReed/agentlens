@@ -2,13 +2,14 @@ import { useState } from 'preact/hooks'
 import {
   filteredSessions, sessionSummary, sessionTimelines, burnRateData,
   focusedSessionId, vscode, ignoredInsightKeys,
+  sessionSortKey, sessionSortDir, type SortKey,
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
 } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
-import { generateInsights } from './Insights'
+import { generateInsights, InsightCard } from './Insights'
 import { buildDisplaySummary } from '../utils'
 import { Step, StepRow } from './Traces'
 import { FlowCanvas } from './Flow'
@@ -104,10 +105,7 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
               <div>
                 <div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:6px">Insights</div>
                 {sessInsights.slice(0, 4).map(ins => (
-                  <div key={ins.title} style="margin-bottom:5px;padding:6px 10px;background:var(--hover);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;font-size:11px">
-                    <div style="font-weight:600;margin-bottom:1px">{ins.title.replace(/^\[Session \d+\]\s*/, '')}</div>
-                    <div style="color:var(--muted);font-size:10px">{ins.action}</div>
-                  </div>
+                  <InsightCard key={ins.title} ins={ins} isIgnored={false} sessions={[sess]} />
                 ))}
               </div>
             )}
@@ -280,19 +278,40 @@ export function Sessions() {
     )
   }
 
+  const sortKey = sessionSortKey.value
+  const sortDir = sessionSortDir.value
+
+  function sortArrow(key: SortKey) {
+    if (sortKey !== key) return <span style="opacity:0.3;margin-left:3px">↕</span>
+    return <span style="margin-left:3px;color:var(--accent)">{sortDir === 'desc' ? '▼' : '▲'}</span>
+  }
+
+  function onSortClick(key: SortKey) {
+    if (sessionSortKey.value === key) {
+      sessionSortDir.value = sessionSortDir.value === 'desc' ? 'asc' : 'desc'
+    } else {
+      sessionSortKey.value = key
+      sessionSortDir.value = 'desc'
+    }
+  }
+
+  const thBase = 'padding:3px 6px;font-size:10px;font-weight:600;white-space:nowrap;user-select:none'
+  const thSort = thBase + ';cursor:pointer;color:var(--fg)'
+  const thMuted = thBase + ';color:var(--muted);font-weight:500'
+
   return (
     <div id="sessions-content" style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:11px">
         <thead>
-          <tr style="border-bottom:1px solid var(--vscode-panel-border)">
+          <tr style="border-bottom:2px solid var(--vscode-panel-border)">
             <th style="width:16px;padding:3px 4px 3px 8px" />
-            <th style="width:10px;padding:3px 4px" />
-            <th style="padding:3px 6px;text-align:left;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap">Time</th>
-            <th style="padding:3px 6px;text-align:left;font-size:10px;font-weight:500;color:var(--muted)">Prompt</th>
-            <th style="padding:3px 6px;text-align:left;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap">Model</th>
-            <th style="padding:3px 6px;text-align:right;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap">Tokens</th>
-            <th style="padding:3px 6px;text-align:right;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap">Duration</th>
-            <th style="padding:3px 8px 3px 6px;text-align:right;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap">Cost</th>
+            <th style={'width:10px;padding:3px 4px;' + thSort} onClick={() => onSortClick('source')} title="Sort by agent">{sortArrow('source')}</th>
+            <th style={'text-align:left;' + thSort} onClick={() => onSortClick('start_time')}>Time{sortArrow('start_time')}</th>
+            <th style={'text-align:left;' + thSort} onClick={() => onSortClick('prompt')}>Prompt{sortArrow('prompt')}</th>
+            <th style={'text-align:left;' + thSort} onClick={() => onSortClick('model')}>Model{sortArrow('model')}</th>
+            <th style={'text-align:right;' + thSort} onClick={() => onSortClick('total_tokens')}>Tokens{sortArrow('total_tokens')}</th>
+            <th style={'text-align:right;' + thSort} onClick={() => onSortClick('duration_ms')}>Duration{sortArrow('duration_ms')}</th>
+            <th style={'text-align:right;padding:3px 8px 3px 6px;' + thSort} onClick={() => onSortClick('cost')}>Cost{sortArrow('cost')}</th>
           </tr>
         </thead>
         <tbody>

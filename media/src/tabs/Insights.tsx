@@ -358,6 +358,7 @@ export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgno
   const sessionAgentColor = session ? getAgentColor(session.source) : ''
   const sessionTimestamp = session ? formatSessionTime(session) : ''
   const sessionPrompt = session?.userRequest || ''
+  const [copied, setCopied] = useState(false)
 
   function buildAiPrompt(): string {
     const lines: string[] = [ins.title, '']
@@ -383,12 +384,59 @@ export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgno
     return lines.join('\n')
   }
 
+  function buildClipboardPrompt(): string {
+    const lines: string[] = [
+      "I'm using an AI coding agent and AgentLens detected the following issue in my session.",
+      'Please explain what\'s happening and suggest specific improvements to my workflow or prompt.',
+      '',
+      '--- Session context ---',
+    ]
+    if (session) {
+      lines.push(sessionTimestamp + ' · ' + getAgentSourceLabel(session.source))
+      if (session.userRequest && session.userRequest !== '[session in progress]')
+        lines.push('Task: "' + session.userRequest + '"')
+    } else {
+      lines.push('Across sessions')
+    }
+    lines.push('', '--- Insight ---', insightTitle)
+    if (ins.detail) lines.push('', ins.detail)
+    if (session) {
+      lines.push('', '--- Session data ---')
+      const topTools = Object.entries(session.toolCounts ?? {})
+        .sort((a, b) => b[1] - a[1]).slice(0, 5)
+        .map(([t, n]) => t + ' ×' + n).join(', ')
+      if (topTools) lines.push('Top tools: ' + topTools)
+      if (session.filesChanged.length > 0)
+        lines.push('Files changed: ' + session.filesChanged.slice(0, 5).join(', '))
+      const errors = session.timeline.filter(e => e.isError && e.errorMessage).slice(0, 3)
+      if (errors.length > 0)
+        lines.push('Errors:\n' + errors.map(e => '  - ' + (e.errorMessage ?? '').slice(0, 120)).join('\n'))
+      lines.push('Stats: ' + session.totalLlmCalls + ' LLM calls · ' + session.totalToolCalls + ' tool calls · '
+        + (session.cacheHitRate * 100).toFixed(0) + '% cache hit')
+    }
+    lines.push('', '--- Recommended action ---', ins.action)
+    return lines.join('\n')
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(buildClipboardPrompt()).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
+
   return (
     <div class={clsx('insight-card', 'insight-' + ins.severity)} style={isIgnored ? 'opacity:0.55' : ''}>
       {/* Header: icon + title + ignore button */}
       <div class="insight-header" style="align-items:flex-start;margin-bottom:4px">
         <span class="insight-icon" style="margin-top:1px">{icon}</span>
         <span class="insight-title" style="flex:1">{insightTitle}</span>
+        <button
+          class="insight-ignore-btn"
+          title="Copy prompt to clipboard"
+          onClick={handleCopy}
+          style={copied ? 'color:var(--accent)' : ''}
+        >{copied ? '✓' : '⧉'}</button>
         {isIgnored ? (
           <button class="insight-restore-btn" title="Restore" onClick={() => ignoredInsightKeys.delete(ins.title)}>Restore</button>
         ) : (

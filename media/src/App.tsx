@@ -8,7 +8,7 @@ import {
   dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults,
   focusedSessionId, timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
   vscode, displaySessions, rangedSessions,
-  sessionTextFilter, sessionSortKey, type SortKey,
+  sessionTextFilter,
 } from './state'
 import type { TimelineEntry, AgentFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
 
@@ -272,6 +272,11 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   const count = rangedSessions.value.length
   const total = rangedSearchResults.value?.totalCount
   const isActive = range.preset !== 'all'
+  // For "All" time: use full unfiltered in-memory list (no limit, no agent filter)
+  // so pills reflect every agent that has ever recorded a session in memory.
+  // For bounded presets: use rangedSessions which merges DB history with in-memory.
+  const baseSessions = isActive ? rangedSessions.value : (sessionSummary.value?.sessions ?? [])
+  const presentSources = new Set(baseSessions.map(s => s.source))
 
   return (
     <div style="display:flex;align-items:center;gap:0;padding:0 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0">
@@ -298,7 +303,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
         <span style="width:1px;height:14px;background:var(--border);margin:0 8px;flex-shrink:0" />
         <div style="display:flex;gap:4px;align-items:center">
           <span style="font-size:10px;color:var(--muted);margin-right:2px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">Agent</span>
-          {AGENT_FILTER_OPTIONS.map(o => {
+          {AGENT_FILTER_OPTIONS.filter(o => o.value === 'all' || presentSources.has(o.value)).map(o => {
             const active = agent === o.value
             const displayColor = (active && o.activeColor) ? o.activeColor : o.color
             return (
@@ -333,34 +338,17 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   )
 }
 
-const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
-  { key: 'start_time',   label: 'Recent' },
-  { key: 'total_tokens', label: 'Tokens' },
-  { key: 'duration_ms',  label: 'Longest' },
-]
-
 function SearchFilterBar() {
   const text = sessionTextFilter.value
-  const sort = sessionSortKey.value
   return (
-    <div style="display:flex;align-items:center;gap:6px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0">
       <input
         type="text"
         placeholder="Filter sessions…"
         value={text}
         onInput={e => { sessionTextFilter.value = (e.target as HTMLInputElement).value }}
-        style="flex:1;min-width:120px;max-width:240px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+        style="flex:1;min-width:120px;max-width:260px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
       />
-      <div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-right:2px">Sort</span>
-        {SORT_OPTIONS.map(o => (
-          <button
-            key={o.key}
-            class={'tab-mini' + (sort === o.key ? ' active' : '')}
-            onClick={() => { sessionSortKey.value = o.key }}
-          >{o.label}</button>
-        ))}
-      </div>
     </div>
   )
 }
