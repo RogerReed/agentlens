@@ -30,9 +30,27 @@ cost = (inputTokens / 1_000_000 × inputRate)
 aiCredits = cost / 0.01
 ```
 
-### Model 2 — Request-based with multipliers (pre-Jun 1, 2026)
+### Model 2 — Annual-plan request-based (from Jun 1, 2026)
 
-**Who it applies to:** All Copilot plans before June 1, 2026 (active billing as of this file's date).
+**Who it applies to:** Copilot annual-plan holders who opt to stay on request-based billing
+after June 1, 2026. These users face significantly higher multipliers than the pre-June rates.
+
+**Source:** <https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans>
+
+**What this page provides:**
+
+- Post-June multipliers for annual plan holders (`multiplierAnnualPostJun1` field in `ModelRates`)
+- Formula is the same as Model 3 — only the multiplier values differ
+
+**Formula:**
+
+```text
+cost = userPromptCount × multiplierAnnualPostJun1 × $0.04
+```
+
+### Model 3 — Request-based with multipliers *(deprecated — pre-Jun 1, 2026)*
+
+**Who it applies to:** All Copilot plans before June 1, 2026. No longer active for new sessions.
 
 **Source:** <https://docs.github.com/en/copilot/concepts/billing/copilot-requests>
 
@@ -47,24 +65,6 @@ aiCredits = cost / 0.01
 
 ```text
 cost = userPromptCount × multiplier × $0.04
-```
-
-### Model 3 — Annual-plan request-based (post-Jun 1, 2026)
-
-**Who it applies to:** Copilot annual-plan holders who opt to stay on request-based billing
-after June 1, 2026. These users face significantly higher multipliers than the pre-June rates.
-
-**Source:** <https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans>
-
-**What this page provides:**
-
-- Post-June multipliers for annual plan holders (`multiplierAnnualPostJun1` field in `ModelRates`)
-- Formula is the same as Model 2 — only the multiplier values differ
-
-**Formula:**
-
-```text
-cost = userPromptCount × multiplierAnnualPostJun1 × $0.04
 ```
 
 ---

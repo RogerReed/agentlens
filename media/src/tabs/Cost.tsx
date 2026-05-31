@@ -376,10 +376,10 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
   })
 
   return (
-    <>
+    <div style="margin-bottom:16px">
       <canvas ref={canvasRef} style="width:100%;height:230px;display:block" />
-      <div class="heatmap-axis-label">← older · sessions · newer →</div>
-    </>
+      <div class="heatmap-axis-label" style="margin-top:2px">← older · sessions · newer →</div>
+    </div>
   )
 }
 
@@ -449,17 +449,12 @@ export function Cost() {
                 class={'tab-mini' + (mode === 'token' ? ' active' : '')}
                 onClick={() => setMode('token')}
                 title="Token-based AI Credits billing, effective Jun 1, 2026"
-              >Token-based (from Jun 1, 2026)</button>
-              <button
-                class={'tab-mini' + (mode === 'request' ? ' active' : '')}
-                onClick={() => setMode('request')}
-                title="Request-based billing with model multipliers, active before Jun 1, 2026"
-              >Request-based (pre-Jun 1, 2026)</button>
+              >Token-based</button>
               <button
                 class={'tab-mini' + (mode === 'request-annual' ? ' active' : '')}
                 onClick={() => setMode('request-annual')}
-                title="Annual plan holders staying on request billing after Jun 1, 2026 face significantly higher multipliers"
-              >Annual plan request-based (post-Jun 1, 2026)</button>
+                title="Annual plan holders staying on request-based billing after Jun 1, 2026 — higher multipliers apply"
+              >Annual plan (request)</button>
             </div>
           </div>
         )}
@@ -607,9 +602,7 @@ export function Cost() {
       <div style="margin-top:16px;font-size:10px;color:var(--muted);line-height:1.6">
         {mode === 'token'
           ? 'Token-based AI Credits: effective Jun 1, 2026. Per-turn chart uses input+output only; session totals include cache tokens.'
-          : mode === 'request'
-            ? 'Request-based: active before Jun 1, 2026. Cost = multiplier × $0.04 per user prompt. Models marked 0× (e.g. GPT-4.1) are free under this model.'
-            : 'Annual plan request-based: for annual-plan holders staying on old billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June.'}
+          : 'Annual plan request-based: for annual-plan holders staying on request billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June.'}
         {codexSessions.length > 0 && ' Codex sessions use token-based pricing regardless of the Copilot billing model selected above.'}
         {claudeSessions.length > 0 && ' Claude sessions use Anthropic API token-based pricing regardless of the Copilot billing model selected above.'}
       </div>
