@@ -344,12 +344,14 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
         <div class="sb-section-label">Context Growth</div>
         <canvas id="sb-sparkline"></canvas>
         <div id="sb-turn-label" class="sb-turn-label"></div>
+        <div id="sb-sparkline-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic;padding:2px 0">Waiting for data…</div>
       </div>
 
       <!-- Burn rate (active only) -->
       <div class="sb-card" id="sb-burn-row" style="display:none">
         <div class="sb-section-label">Burn Rate</div>
         <div id="sb-burn" class="sb-burn"></div>
+        <div id="sb-burn-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic">Waiting for data…</div>
       </div>
 
       <!-- Key counters -->

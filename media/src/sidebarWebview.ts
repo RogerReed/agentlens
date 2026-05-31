@@ -220,12 +220,17 @@ function render() {
 
   // Sparkline
   const canvas = document.getElementById('sb-sparkline') as HTMLCanvasElement | null
-  if (canvas && currentSession.turnInputTokens.length > 0) {
-    canvas.style.display = 'block'
-    drawSparkline(canvas, currentSession.turnInputTokens, color, isActive)
-  } else if (canvas) {
-    canvas.style.display = 'none'
+  const sparklineWaiting = document.getElementById('sb-sparkline-waiting')
+  const hasSparklineData = currentSession.turnInputTokens.length > 0
+  if (canvas) {
+    if (hasSparklineData) {
+      canvas.style.display = 'block'
+      drawSparkline(canvas, currentSession.turnInputTokens, color, isActive)
+    } else {
+      canvas.style.display = 'none'
+    }
   }
+  if (sparklineWaiting) sparklineWaiting.style.display = hasSparklineData ? 'none' : ''
 
   // Turn label
   const turnLabel = document.getElementById('sb-turn-label')
@@ -238,13 +243,19 @@ function render() {
   // Burn rate row
   const burnRow = document.getElementById('sb-burn-row')
   if (burnRow) {
-    if (burnRate && isActive) {
+    if (isActive) {
       burnRow.style.display = ''
       const burnEl = document.getElementById('sb-burn')
-      if (burnEl) {
+      const burnWaiting = document.getElementById('sb-burn-waiting')
+      if (burnRate) {
         const tpm = fmt(Math.round(burnRate.tokensPerMinute))
         const cph = burnRate.costPerHour > 0.001 ? ` · $${burnRate.costPerHour.toFixed(2)}/hr` : ''
-        burnEl.textContent = `${tpm} tok/min${cph}`
+        if (burnEl) burnEl.textContent = `${tpm} tok/min${cph}`
+        if (burnEl) burnEl.style.display = ''
+        if (burnWaiting) burnWaiting.style.display = 'none'
+      } else {
+        if (burnEl) burnEl.style.display = 'none'
+        if (burnWaiting) burnWaiting.style.display = ''
       }
     } else {
       burnRow.style.display = 'none'
