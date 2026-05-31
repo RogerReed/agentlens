@@ -9,7 +9,7 @@ import {
 import {
   AgentThresholdInputs,
   AgentThresholdNumberInputs,
-} from '../AgentThresholdValues'
+} from '../AgentThresholdInputs'
 import {
   AGENT_ORDER,
   getAgentProfiles,

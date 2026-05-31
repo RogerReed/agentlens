@@ -11,7 +11,7 @@ import './styles/summaries.css'
 import './styles/heatmap.css'
 import './styles/export.css'
 import './styles/help.css'
-import './styles/efficiency.css'
+import './styles/tooltip.css'
 import './styles/insights.css'
 import './styles/graph.css'
 

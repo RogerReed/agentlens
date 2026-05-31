@@ -3466,7 +3466,7 @@
     ] });
   }
 
-  // media/src/tabs/Efficiency.tsx
+  // media/src/tabs/SessionCharts.tsx
   function TurnsLink() {
     return /* @__PURE__ */ u4(
       "span",
@@ -4094,7 +4094,7 @@
     ] });
   }
 
-  // media/src/AgentThresholdValues.tsx
+  // media/src/AgentThresholdInputs.tsx
   var DISPLAY_AGENT_ORDER = ["copilot", "claude_code", "codex"];
   function ThresholdShell({ label, children }) {
     return /* @__PURE__ */ u4("div", { style: "display:grid;gap:6px;font-size:12px;margin:8px 0", children: [
@@ -6178,8 +6178,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   }
 
   // media/src/dashboard.tsx
-  var vscode2 = window.acquireVsCodeApi();
-  setVscode(vscode2);
+  var vscode3 = window.acquireVsCodeApi();
+  setVscode(vscode3);
   R(/* @__PURE__ */ u4(App, {}), document.getElementById("app"));
 })();
 //# sourceMappingURL=dashboard.js.map

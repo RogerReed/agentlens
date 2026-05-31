@@ -1172,7 +1172,7 @@ body {
   color: var(--vscode-textLink-activeForeground, var(--accent));
 }
 
-/* media/src/styles/efficiency.css */
+/* media/src/styles/tooltip.css */
 .has-metric-tip {
   cursor: help;
   border-bottom: 1px dotted var(--muted);

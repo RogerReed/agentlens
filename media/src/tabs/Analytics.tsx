@@ -10,7 +10,7 @@ import type { SessionSummaryCard } from '../types'
 import type { PricingMode } from '../sessionMetrics'
 import { PRICING_LAST_UPDATED } from '../pricing'
 
-import { ContextGrowthChart, SessionTokenChart } from './Efficiency'
+import { ContextGrowthChart, SessionTokenChart } from './SessionCharts'
 import { CostBarChart, fmtUsd } from './Cost'
 import { computeStats } from './Agents'
 
