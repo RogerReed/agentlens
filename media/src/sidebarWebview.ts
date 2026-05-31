@@ -82,6 +82,10 @@ function drawSparkline(canvas: HTMLCanvasElement, tokens: number[], color: strin
   const w = rect.width, h = rect.height
   ctx.clearRect(0, 0, w, h)
 
+  const cs = getComputedStyle(document.body)
+  const mutedColor = cs.getPropertyValue('--vscode-descriptionForeground').trim() || '#888'
+  const fontStr = '9px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
+
   if (tokens.length < 2) {
     if (tokens.length === 1) {
       ctx.fillStyle = color
@@ -92,18 +96,35 @@ function drawSparkline(canvas: HTMLCanvasElement, tokens: number[], color: strin
     return
   }
 
-  const pad = { top: 6, right: 6, bottom: 4, left: 4 }
+  // Padding leaves room for y-axis labels (left) and x-axis labels (bottom)
+  const pad = { top: 10, right: 6, bottom: 14, left: 34 }
   const cw = w - pad.left - pad.right
   const ch = h - pad.top - pad.bottom
   const maxVal = Math.max(...tokens) || 1
   const xPos = (i: number) => pad.left + (i / (tokens.length - 1)) * cw
   const yPos = (v: number) => pad.top + ch - (v / maxVal) * ch
 
+  // Y-axis labels: max at top, 0 at bottom
+  ctx.fillStyle = mutedColor
+  ctx.font = fontStr
+  ctx.textAlign = 'right'
+  ctx.textBaseline = 'top'
+  ctx.fillText(fmt(maxVal), pad.left - 3, pad.top)
+  ctx.textBaseline = 'bottom'
+  ctx.fillText('0', pad.left - 3, pad.top + ch)
+
+  // X-axis labels: T1 at left, T{n} at right
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'top'
+  ctx.fillText('T1', pad.left, pad.top + ch + 3)
+  ctx.textAlign = 'right'
+  ctx.fillText('T' + tokens.length, pad.left + cw, pad.top + ch + 3)
+
   // Filled area
   ctx.beginPath()
-  ctx.moveTo(xPos(0), h)
+  ctx.moveTo(xPos(0), pad.top + ch)
   tokens.forEach((v, i) => ctx.lineTo(xPos(i), yPos(v)))
-  ctx.lineTo(xPos(tokens.length - 1), h)
+  ctx.lineTo(xPos(tokens.length - 1), pad.top + ch)
   ctx.closePath()
   const hex = color.startsWith('#') ? color : '#90a4ae'
   const r = parseInt(hex.slice(1, 3), 16)
