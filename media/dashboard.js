@@ -1753,7 +1753,7 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const w5 = rect.width, h5 = rect.height;
       ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 58, bottom: 52, left: 64 };
+      const pad = { top: 8, right: 58, bottom: 14, left: 64 };
       const chartW = w5 - pad.left - pad.right;
       const chartH = h5 - pad.top - pad.bottom;
       const cs = getComputedStyle(document.body);
@@ -1835,18 +1835,14 @@
             ctx.setLineDash([]);
           }
           isFirst = false;
-          const labelX = (x1 + x22) / 2;
-          const d5 = /* @__PURE__ */ new Date(dk + "T12:00:00Z");
-          const label = isNaN(d5.getTime()) ? dk : d5.toLocaleDateString(void 0, { month: "short", day: "numeric" });
-          ctx.save();
-          ctx.translate(labelX, pad.top + chartH + 6);
-          ctx.rotate(-Math.PI / 2);
-          ctx.font = labelFont;
-          ctx.fillStyle = textColor;
-          ctx.textAlign = "right";
-          ctx.textBaseline = "middle";
-          ctx.fillText(label, 0, 0);
-          ctx.restore();
+          if (!isFirst) {
+            const label = dk.length >= 10 ? dk.slice(5, 10) : dk;
+            ctx.font = labelFont;
+            ctx.fillStyle = textColor;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillText(label, x1 + 2, pad.top + 1);
+          }
         }
       }
       if (n3 > 0 && dayGroups.size > 0) {

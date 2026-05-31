@@ -249,7 +249,7 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
     const w = rect.width, h = rect.height
     ctx.clearRect(0, 0, w, h)
 
-    const pad = { top: 8, right: 58, bottom: 52, left: 64 }
+    const pad = { top: 8, right: 58, bottom: 14, left: 64 }
     const chartW = w - pad.left - pad.right
     const chartH = h - pad.top - pad.bottom
 
@@ -329,19 +329,15 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
         }
         isFirst = false
 
-        // Rotated label: pivot at center-bottom of day group, rotated -90°
-        const labelX = (x1 + x2) / 2
-        const d = new Date(dk + 'T12:00:00Z')
-        const label = isNaN(d.getTime()) ? dk : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-        ctx.save()
-        ctx.translate(labelX, pad.top + chartH + 6)
-        ctx.rotate(-Math.PI / 2)
-        ctx.font = labelFont
-        ctx.fillStyle = textColor
-        ctx.textAlign = 'right'
-        ctx.textBaseline = 'middle'
-        ctx.fillText(label, 0, 0)
-        ctx.restore()
+        // Inline label at top of day boundary line (MM-DD, same style as SessionTokenChart)
+        if (!isFirst) {
+          const label = dk.length >= 10 ? dk.slice(5, 10) : dk
+          ctx.font = labelFont
+          ctx.fillStyle = textColor
+          ctx.textAlign = 'left'
+          ctx.textBaseline = 'top'
+          ctx.fillText(label, x1 + 2, pad.top + 1)
+        }
       }
     }
 
