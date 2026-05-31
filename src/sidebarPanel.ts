@@ -91,11 +91,9 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
 
     const latest = all.length > 0 ? all[0] : null
 
-    // Burn rate for most recent active session (< 2 min old)
-    const recentCutoff = Date.now() - 2 * 60_000
-    const activeSession = all.find(s => Date.parse(s.startTime) > recentCutoff)
-    const burnRateResult = activeSession
-      ? this.repo.queryBurnRate(activeSession.sessionId)
+    // Burn rate for the current session — use latest if the session is active
+    const burnRateResult = activity.isActive && latest
+      ? this.repo.queryBurnRate(latest.sessionId)
       : null
 
     // Timeline cache — reload only when session changes or turn count grows

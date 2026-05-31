@@ -250,7 +250,7 @@ function render() {
       if (burnRate) {
         const tpm = fmt(Math.round(burnRate.tokensPerMinute))
         const cph = burnRate.costPerHour > 0.001 ? ` · $${burnRate.costPerHour.toFixed(2)}/hr` : ''
-        if (burnEl) burnEl.textContent = `${tpm} tok/min${cph}`
+        if (burnEl) burnEl.textContent = `${tpm} tokens/min${cph}`
         if (burnEl) burnEl.style.display = ''
         if (burnWaiting) burnWaiting.style.display = 'none'
       } else {
