@@ -101,11 +101,11 @@
     const empty = document.getElementById("sb-empty");
     if (!currentSession) {
       if (block) block.style.display = "none";
-      if (empty) empty.style.display = "";
+      if (empty) empty.style.display = "block";
       renderFooter();
       return;
     }
-    if (block) block.style.display = "";
+    if (block) block.style.display = "block";
     if (empty) empty.style.display = "none";
     const color = agentColor(currentSession.source);
     const agentEl = document.getElementById("sb-agent");

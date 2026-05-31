@@ -214,7 +214,6 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     return `<!DOCTYPE html>
 <html>
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${webview.cspSource}; style-src 'unsafe-inline';">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -370,8 +369,8 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
 
     </div>
 
-    <!-- Empty state -->
-    <div id="sb-empty" class="sb-muted" style="text-align:center;padding:24px 0;font-size:11px">
+    <!-- Empty state (shown by render() when currentSession is null) -->
+    <div id="sb-empty" class="sb-muted" style="text-align:center;padding:24px 0;font-size:11px;display:none">
       No sessions recorded yet
     </div>
 
