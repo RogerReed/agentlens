@@ -3,10 +3,14 @@ import { SessionRepository } from './sessionRepository'
 import { nanoToMs } from './summarizers/helpers'
 import { Span } from './types'
 
-
 export class SidebarPanel implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView
   private collectorError: string | null = null
+
+  // Timeline cache — only reload when session changes or turn count grows
+  private cachedTimelineSessionId: string | null = null
+  private cachedTimelineTurns = 0
+  private cachedTurnInputTokens: number[] = []
 
   constructor(
     private repo: SessionRepository,
@@ -38,10 +42,12 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
         vscode.commands.executeCommand('agentLens.openDashboard')
         setTimeout(() => {
           const { DashboardPanel } = require('./dashboardPanel')
-          DashboardPanel.switchToTab(msg.tab)
+          DashboardPanel.switchToTab(msg.tab ?? 'sessions')
         }, 300)
       } else if (msg.type === 'clearAll') {
         vscode.commands.executeCommand('agentLens.clearSessions')
+        this.cachedTimelineSessionId = null
+        this.cachedTurnInputTokens = []
         this.refresh()
         const { DashboardPanel } = require('./dashboardPanel')
         DashboardPanel.sendClearAll()
@@ -63,59 +69,70 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     })
   }
 
-  setAgentFilter(_value: string) { /* no-op: filtering is per-component in the dashboard */ }
-  setSessionLimit(_value: number) { /* no-op: session limit is per-component in the dashboard */ }
-
-  private getSessions() {
-    return this.repo.listSessions()
-  }
+  setAgentFilter(_value: string) { /* no-op */ }
+  setSessionLimit(_value: number) { /* no-op */ }
 
   refresh() {
-    if (!this.view) {return}
-    const all = this.getSessions()
-    // Use most recent 25 for sidebar stats
-    const recent = all.slice(0, 25)
+    if (!this.view) return
+    const all = this.repo.listSessions()
     const sessionCount = all.length
-    const cacheHitPct = recent.length > 0
-      ? Math.round(recent.reduce((a, s) => a + s.cacheHitRate, 0) / recent.length * 100) : 0
-    const avgTurns = recent.length > 0
-      ? Math.round(recent.reduce((a, s) => a + s.totalLlmCalls, 0) / recent.length * 10) / 10 : 0
-    const totalErrors = recent.reduce((a, s) => a + s.errors, 0)
-    const totalToolCalls = recent.reduce((a, s) => a + s.totalToolCalls, 0)
-    const totalInputTokens = recent.reduce((a, s) => a + s.inputTokens, 0)
-    const totalOutputTokens = recent.reduce((a, s) => a + s.outputTokens, 0)
     const activity = this.getLastActivity()
-    const AGENT_KEY_ORDER = ['copilot', 'claude_code', 'codex']
+
+    const AGENT_ORDER = ['copilot', 'claude_code', 'codex']
     const agentSources = [...new Set(all.map(s => s.source).filter(Boolean))]
       .sort((a, b) => {
-        const ai = AGENT_KEY_ORDER.indexOf(a), bi = AGENT_KEY_ORDER.indexOf(b)
+        const ai = AGENT_ORDER.indexOf(a), bi = AGENT_ORDER.indexOf(b)
         return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
       })
-    const latest = all.length > 0 ? all[0] : null  // newest-first
-    const latestSession = latest ? {
-      model: latest.model || '',
-      source: latest.source,
-      totalLlmCalls: latest.totalLlmCalls,
-      totalToolCalls: latest.totalToolCalls,
-      durationMs: latest.durationMs,
-      errors: latest.errors,
-      cacheHitRate: latest.cacheHitRate,
-      userRequest: latest.userRequest || '',
-    } : null
 
-    // Burn rate for the most recent active session (< 2 min old)
+    const latest = all.length > 0 ? all[0] : null
+
+    // Burn rate for most recent active session (< 2 min old)
     const recentCutoff = Date.now() - 2 * 60_000
     const activeSession = all.find(s => Date.parse(s.startTime) > recentCutoff)
     const burnRateResult = activeSession
       ? this.repo.queryBurnRate(activeSession.sessionId)
       : null
 
+    // Timeline cache — reload only when session changes or turn count grows
+    let turnInputTokens = this.cachedTurnInputTokens
+    if (latest) {
+      const llmTurns = latest.totalLlmCalls
+      if (latest.sessionId !== this.cachedTimelineSessionId || llmTurns > this.cachedTimelineTurns) {
+        try {
+          const entries = this.repo.loadSessionTimeline(latest.sessionId)
+          turnInputTokens = entries
+            .filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0)
+            .map(e => e.inputTokens ?? 0)
+          this.cachedTimelineSessionId = latest.sessionId
+          this.cachedTimelineTurns = llmTurns
+          this.cachedTurnInputTokens = turnInputTokens
+        } catch {
+          turnInputTokens = this.cachedTurnInputTokens
+        }
+      }
+    }
+
+    const currentSession = latest ? {
+      source: latest.source,
+      model: latest.model || '',
+      userRequest: latest.userRequest || '',
+      totalLlmCalls: latest.totalLlmCalls,
+      totalToolCalls: latest.totalToolCalls,
+      errors: latest.errors,
+      cacheHitRate: latest.cacheHitRate,
+      durationMs: latest.durationMs,
+      startTime: latest.startTime,
+      turnInputTokens,
+    } : null
+
     this.view.webview.postMessage({
-      type: 'update', sessionCount, agentSources,
-      totalInputTokens, totalOutputTokens,
-      cacheHitPct, avgTurns, totalErrors, totalToolCalls,
-      isActive: activity.isActive, lastActivityMs: activity.lastMs,
-      latestSession,
+      type: 'update',
+      isActive: activity.isActive,
+      lastActivityMs: activity.lastMs,
+      sessionCount,
+      agentSources,
+      currentSession,
       burnRate: burnRateResult ? {
         tokensPerMinute: Math.round(burnRateResult.burnRate.tokensPerMinute),
         costPerHour: burnRateResult.burnRate.costPerHour,
@@ -134,184 +151,244 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     return { isActive, lastMs }
   }
 
+  private getHtml(webview: vscode.Webview): string {
+    const activity = this.getLastActivity()
+    const all = this.repo.listSessions()
+    const latest = all.length > 0 ? all[0] : null
 
-  private getHtml(webview: vscode.Webview) {
-    const initActivity = this.getLastActivity()
-    const all = this.getSessions()
-    const recent = all.slice(0, 25)
-    const sessionCount = all.length
-    const cacheHitPct = recent.length > 0
-      ? Math.round(recent.reduce((a, s) => a + s.cacheHitRate, 0) / recent.length * 100) : 0
-    const avgTurns = recent.length > 0
-      ? Math.round(recent.reduce((a, s) => a + s.totalLlmCalls, 0) / recent.length * 10) / 10 : 0
-    const totalErrors = recent.reduce((a, s) => a + s.errors, 0)
-    const totalToolCalls = recent.reduce((a, s) => a + s.totalToolCalls, 0)
-    const tokenTotals = {
-      input: recent.reduce((a, s) => a + s.inputTokens, 0),
-      output: recent.reduce((a, s) => a + s.outputTokens, 0),
-    }
-    const latestSession = all.length > 0 ? all[0] : null  // newest-first
-    function formatCompact(n: number): string {
-      return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
-    }
-    function formatDuration(ms: number): string {
-      if (ms < 60_000) return `${Math.round(ms / 1000)}s`
-      return `${Math.round(ms / 60_000)}m`
-    }
-
-    const sidebarJsUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'sidebar.js'))
-
-    const AGENT_KEY_ORDER = ['copilot', 'claude_code', 'codex']
-    const allAgentSources = [...new Set(all.map(s => s.source).filter(Boolean))]
+    const AGENT_ORDER = ['copilot', 'claude_code', 'codex']
+    const agentSources = [...new Set(all.map(s => s.source).filter(Boolean))]
       .sort((a, b) => {
-        const ai = AGENT_KEY_ORDER.indexOf(a), bi = AGENT_KEY_ORDER.indexOf(b)
+        const ai = AGENT_ORDER.indexOf(a), bi = AGENT_ORDER.indexOf(b)
         return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
       })
-    const agentSourcesJson = JSON.stringify(allAgentSources)
+
+    const recentCutoff = Date.now() - 2 * 60_000
+    const activeSession = all.find(s => Date.parse(s.startTime) > recentCutoff)
+    const burnRateResult = activeSession ? this.repo.queryBurnRate(activeSession.sessionId) : null
+
+    let turnInputTokens: number[] = []
+    if (latest) {
+      try {
+        const entries = this.repo.loadSessionTimeline(latest.sessionId)
+        turnInputTokens = entries
+          .filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0)
+          .map(e => e.inputTokens ?? 0)
+        this.cachedTimelineSessionId = latest.sessionId
+        this.cachedTimelineTurns = latest.totalLlmCalls
+        this.cachedTurnInputTokens = turnInputTokens
+      } catch { /* empty timeline */ }
+    }
+
+    const currentSession = latest ? {
+      source: latest.source,
+      model: latest.model || '',
+      userRequest: latest.userRequest || '',
+      totalLlmCalls: latest.totalLlmCalls,
+      totalToolCalls: latest.totalToolCalls,
+      errors: latest.errors,
+      cacheHitRate: latest.cacheHitRate,
+      durationMs: latest.durationMs,
+      startTime: latest.startTime,
+      turnInputTokens,
+    } : null
+
+    const burnRate = burnRateResult ? {
+      tokensPerMinute: Math.round(burnRateResult.burnRate.tokensPerMinute),
+      costPerHour: burnRateResult.burnRate.costPerHour,
+    } : null
+
+    const initData = JSON.stringify({
+      lastActivityMs: activity.lastMs,
+      agentSources,
+      sessionCount: all.length,
+      isActive: activity.isActive,
+      currentSession,
+      burnRate,
+    })
+
+    const sidebarJsUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'media', 'sidebar.js')
+    )
 
     return `<!DOCTYPE html>
-    <html>
-    <head>
-      <style>
-        body { font-family: var(--vscode-font-family); padding: 0 8px 8px; color: var(--vscode-foreground); }
-        .open-btn {
-          display: block; width: 100%; padding: 6px 10px; margin-bottom: 8px;
-          font-size: 12px; font-weight: 600; text-align: center; cursor: pointer;
-          color: var(--vscode-button-foreground); background: var(--vscode-button-background);
-          border: none; border-radius: 4px;
-        }
-        .open-btn:hover { background: var(--vscode-button-hoverBackground); }
-        .card { background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 8px 10px; margin-bottom: 6px; position: relative; }
-        .metric { font-size: 24px; font-weight: bold; color: var(--vscode-textLink-foreground); }
-        .label { font-size: 11px; color: var(--vscode-descriptionForeground); margin-top: 2px; }
-        h3 { margin: 0 0 4px 0; font-size: 12px; text-transform: uppercase; color: var(--vscode-descriptionForeground); cursor: default; }
-        .has-tip { position: static; border-bottom: 1px dotted var(--vscode-descriptionForeground); display: inline-block; margin-bottom: 6px; cursor: help; }
-        .has-tip .tip { display: none; position: fixed; left: 0; right: 0; z-index: 10; background: var(--vscode-editorHoverWidget-background, #252526); color: var(--vscode-editorHoverWidget-foreground, #ccc); border: 1px solid var(--vscode-editorHoverWidget-border, #454545); border-radius: 4px; padding: 6px 8px; font-size: 12px; font-weight: normal; text-transform: none; line-height: 1.4; white-space: normal; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        .has-tip:hover .tip { display: block; }
-        .status-error { color: var(--vscode-testing-iconFailed); }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
-        .stat-grid .card { margin-bottom: 0; }
-        .tokens-card { display: flex; gap: 0; align-items: flex-start; }
-        .tokens-divider { width: 1px; background: var(--vscode-panel-border); align-self: stretch; margin: 2px 12px; flex-shrink: 0; }
-        .tokens-half { flex: 1; min-width: 0; }
-        .tokens-half .metric { font-size: 18px; }
-        @keyframes agentPulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.4); } }
-        .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-        .status-dot.active { background:#56D364; animation:agentPulse 1.5s ease-in-out infinite; }
-        .status-dot.idle { background:var(--vscode-descriptionForeground); opacity:0.5; }
-        .filter-label { font-size:10px; color:var(--vscode-descriptionForeground); margin-bottom:2px; }
-        .clear-btn { display:block; width:100%; padding:4px 8px; font-size:11px; cursor:pointer; border:1px solid var(--vscode-testing-iconFailed,#f44); border-radius:3px; background:transparent; color:var(--vscode-testing-iconFailed,#f44); margin-top:8px; }
-        .clear-btn:hover { background:rgba(255,68,68,0.08); }
-        .export-btn { display:block; width:100%; padding:6px 10px; font-size:12px; font-weight:600; text-align:center; cursor:pointer; border:1px solid var(--vscode-button-background,#007acc); border-radius:4px; background:transparent; color:var(--vscode-button-background,#007acc); margin-top:16px; position:fixed; left:8px; right:8px; bottom:8px; z-index:10; }
-        .export-btn:hover { background:var(--vscode-button-hoverBackground, #e5f3ff); }
-      </style>
-    </head>
-    <body>
-      ${this.collectorError ? `
-      <div id="collector-error-banner" style="background:var(--vscode-inputValidation-errorBackground,#5a1d1d);border:1px solid var(--vscode-inputValidation-errorBorder,#be1100);color:var(--vscode-inputValidation-errorForeground,#f48771);padding:8px 10px;margin-bottom:8px;border-radius:4px;font-size:11px;line-height:1.4">
-        <div style="font-weight:600;margin-bottom:3px">&#9888; Collector not running</div>
-        <div>${this.collectorError}</div>
-        <button onclick="document.getElementById('collector-error-banner').remove()" style="margin-top:6px;font-size:10px;padding:2px 8px;cursor:pointer;background:transparent;border:1px solid currentColor;border-radius:3px;color:inherit">Dismiss</button>
-      </div>` : ''}
-
-      <!-- Agent key -->
-      <div id="agentKey" style="margin-bottom:6px"></div>
-
-
-      <!-- Status + Sessions -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-        <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Status<span class="tip">Active when a span was received in the last 20 seconds.</span></span></h3>
-          <div style="display:flex;align-items:center;gap:5px;margin:2px 0">
-            <span class="status-dot ${initActivity.isActive ? 'active' : 'idle'}" id="statusDot"></span>
-            <span class="metric" style="font-size:12px;color:${initActivity.isActive ? 'var(--vscode-foreground)' : 'var(--vscode-descriptionForeground)'}" id="statusText">${initActivity.isActive ? 'Active' : 'Idle'}</span>
-          </div>
-          <div class="label" id="statusLabel">${initActivity.lastMs === 0 ? 'No activity yet' : ''}</div>
-        </div>
-        <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Sessions<span class="tip">Total prompt-to-response cycles recorded.</span></span></h3>
-          <div class="metric" id="sessionCountLabel" style="font-size:18px">${sessionCount}</div>
-          <div class="label">Total</div>
-        </div>
-      </div>
-
-      <!-- Tokens -->
-      <div class="card tokens-card" style="margin-bottom:6px">
-        <div class="tokens-half">
-          <h3><span class="has-tip">Input<span class="tip">Tokens sent to the model — context, history, tools, and the user prompt.</span></span></h3>
-          <div class="metric" id="inputTokens" style="font-size:15px">${formatCompact(tokenTotals.input)}</div>
-          <div class="label">Total</div>
-        </div>
-        <div class="tokens-divider"></div>
-        <div class="tokens-half">
-          <h3><span class="has-tip">Output<span class="tip">Tokens generated by the model across all sessions.</span></span></h3>
-          <div class="metric" id="outputTokens" style="font-size:15px">${formatCompact(tokenTotals.output)}</div>
-          <div class="label">Total</div>
-        </div>
-      </div>
-
-      <!-- Cache / Turns / Errors / Tools grid -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-        <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Cache Hit<span class="tip">Average % of input tokens served from cache. Higher is cheaper and faster.</span></span></h3>
-          <div class="metric" id="cacheHitRate" style="font-size:18px">${cacheHitPct}%</div>
-          <div class="label">Avg</div>
-        </div>
-        <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Turns<span class="tip">Average LLM calls per session. Fewer turns = more efficient.</span></span></h3>
-          <div class="metric" id="avgTurns" style="font-size:18px">${avgTurns}</div>
-          <div class="label">Avg</div>
-        </div>
-        <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Errors<span class="tip">Total spans that completed with an error status across the selected sessions.</span></span></h3>
-          <div class="metric" id="totalErrors" style="font-size:18px;color:${totalErrors > 0 ? 'var(--vscode-testing-iconFailed,#f44)' : 'inherit'}">${totalErrors}</div>
-          <div class="label">Total</div>
-        </div>
-        <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Tool Calls<span class="tip">Total tool invocations across the selected sessions.</span></span></h3>
-          <div class="metric" id="totalToolCalls" style="font-size:18px">${totalToolCalls}</div>
-          <div class="label">Total</div>
-        </div>
-      </div>
-
-      <!-- Latest session -->
-      <div class="card" id="latestSessionCard" style="margin-bottom:6px;${latestSession ? '' : 'display:none'}">
-        <h3>Latest Session</h3>
-        <div id="latestSessionBody" style="font-size:11px;color:var(--vscode-foreground);margin-top:4px">${latestSession ? `
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
-            <span style="color:var(--vscode-descriptionForeground)">${latestSession.source === 'claude_code' ? 'Claude' : latestSession.source === 'codex' ? 'Codex' : 'Copilot'}</span>
-            <span style="color:var(--vscode-descriptionForeground)">${formatDuration(latestSession.durationMs)}</span>
-          </div>
-          <div style="color:var(--vscode-textLink-foreground);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${latestSession.model || '—'}</div>
-          <div style="display:flex;gap:12px;font-size:10px;color:var(--vscode-descriptionForeground)">
-            <span>${latestSession.totalLlmCalls} turn${latestSession.totalLlmCalls !== 1 ? 's' : ''}</span>
-            <span>${latestSession.totalToolCalls} tool${latestSession.totalToolCalls !== 1 ? 's' : ''}</span>
-            ${latestSession.errors > 0 ? `<span style="color:var(--vscode-testing-iconFailed,#f44)">${latestSession.errors} err</span>` : ''}
-            <span>${Math.round(latestSession.cacheHitRate * 100)}% cache</span>
-          </div>` : ''}</div>
-      </div>
-
-      <!-- Actions -->
-      <button class="clear-btn" id="clearBtn">Clear All Data</button>
-      <script>
-        var __SIDEBAR_INIT__ = {
-          lastActivityMs: ${initActivity.lastMs},
-          agentSources: ${agentSourcesJson},
-          latestSession: ${latestSession ? JSON.stringify({
-            source: latestSession.source,
-            model: latestSession.model,
-            totalLlmCalls: latestSession.totalLlmCalls,
-            totalToolCalls: latestSession.totalToolCalls,
-            durationMs: latestSession.durationMs,
-            errors: latestSession.errors,
-            cacheHitRate: latestSession.cacheHitRate,
-            userRequest: latestSession.userRequest,
-          }) : 'null'}
-        };
-      </script>
-      <script src="${sidebarJsUri}"></script>
-    </body>
-    </html>`
+<html>
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src ${webview.cspSource}; style-src 'unsafe-inline';">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size, 13px);
+    color: var(--vscode-foreground);
+    background: var(--vscode-sideBar-background, var(--vscode-editor-background));
+    padding: 8px 8px 0;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
+  .sb-body { flex: 1 1 auto; overflow-y: auto; }
+  .sb-card {
+    background: var(--vscode-editor-background);
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+  }
+  .sb-section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--vscode-descriptionForeground);
+    margin-bottom: 4px;
+  }
+  .sb-row { display: flex; align-items: center; gap: 6px; }
+  .sb-dot {
+    display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; flex-shrink: 0;
+  }
+  .sb-dot.active { background: #56D364; animation: pulse 1.5s ease-in-out infinite; }
+  .sb-dot.idle { background: var(--vscode-descriptionForeground); opacity: 0.5; }
+  @keyframes pulse { 0%,100% { opacity:1;transform:scale(1); } 50% { opacity:0.5;transform:scale(1.4); } }
+  .sb-status { font-size: 12px; font-weight: 600; }
+  .sb-muted { color: var(--vscode-descriptionForeground); font-size: 11px; }
+  .sb-prompt {
+    font-size: 10px;
+    color: var(--vscode-foreground);
+    opacity: 0.8;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin: 3px 0 2px;
+    font-style: italic;
+  }
+  .sb-model { font-size: 10px; color: var(--vscode-textLink-foreground); margin-bottom: 4px; }
+  canvas { display: block; width: 100%; height: 80px; }
+  .sb-turn-label { font-size: 10px; color: var(--vscode-descriptionForeground); margin-top: 3px; }
+  .sb-burn { font-size: 12px; font-weight: 600; color: var(--vscode-charts-green, #81c784); }
+  .sb-counters {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 4px; text-align: center;
+  }
+  .sb-counter-val { font-size: 16px; font-weight: 700; color: var(--vscode-textLink-foreground); }
+  .sb-counter-key { font-size: 9px; color: var(--vscode-descriptionForeground); text-transform: uppercase; letter-spacing: 0.3px; }
+  .sb-open-btn {
+    display: block; width: 100%; padding: 7px 10px;
+    font-size: 12px; font-weight: 600; text-align: center; cursor: pointer;
+    color: var(--vscode-button-foreground);
+    background: var(--vscode-button-background);
+    border: none; border-radius: 4px; margin-bottom: 6px;
+  }
+  .sb-open-btn:hover { background: var(--vscode-button-hoverBackground); }
+  .sb-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 0 8px; font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    border-top: 1px solid var(--vscode-panel-border);
+    margin-top: 4px;
+  }
+  .sb-clear-btn {
+    padding: 2px 8px; font-size: 10px; cursor: pointer;
+    border: 1px solid var(--vscode-testing-iconFailed, #f44);
+    border-radius: 3px; background: transparent;
+    color: var(--vscode-testing-iconFailed, #f44);
+  }
+  .sb-clear-btn:hover { background: rgba(255,68,68,0.08); }
+  .sb-error-banner {
+    background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
+    border: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+    color: var(--vscode-inputValidation-errorForeground, #f48771);
+    padding: 8px 10px; margin-bottom: 8px; border-radius: 4px;
+    font-size: 11px; line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+  ${this.collectorError ? `
+  <div class="sb-error-banner" id="sb-err-banner">
+    <div style="font-weight:600;margin-bottom:3px">&#9888; Collector not running</div>
+    <div>${this.collectorError}</div>
+    <button onclick="document.getElementById('sb-err-banner').remove()"
+      style="margin-top:6px;font-size:10px;padding:2px 8px;cursor:pointer;background:transparent;border:1px solid currentColor;border-radius:3px;color:inherit">Dismiss</button>
+  </div>` : ''}
 
+  <div class="sb-body">
+
+    <!-- Agent key -->
+    <div id="sb-agent-key" style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px;color:var(--vscode-descriptionForeground);margin-bottom:6px;align-items:center"></div>
+
+    <!-- Status row -->
+    <div class="sb-card" style="margin-bottom:6px">
+      <div class="sb-row" style="margin-bottom:2px">
+        <span class="sb-dot ${activity.isActive ? 'active' : 'idle'}" id="sb-dot"></span>
+        <span class="sb-status" id="sb-status-text">${activity.isActive ? 'Active' : 'Idle'}</span>
+        <span style="flex:1"></span>
+        <span id="sb-agent" class="sb-muted" style="display:flex;align-items:center"></span>
+        <span id="sb-dur" class="sb-muted"></span>
+      </div>
+      <div id="sb-prompt" class="sb-prompt"></div>
+      <div id="sb-model" class="sb-model"></div>
+      <span id="sb-ago" class="sb-muted" style="font-size:10px"></span>
+    </div>
+
+    <!-- Session block (hidden when no sessions) -->
+    <div id="sb-session-block" style="display:none">
+
+      <!-- Context growth sparkline -->
+      <div class="sb-card">
+        <div class="sb-section-label">Context Growth</div>
+        <canvas id="sb-sparkline"></canvas>
+        <div id="sb-turn-label" class="sb-turn-label"></div>
+      </div>
+
+      <!-- Burn rate (active only) -->
+      <div class="sb-card" id="sb-burn-row" style="display:none">
+        <div class="sb-section-label">Burn Rate</div>
+        <div id="sb-burn" class="sb-burn"></div>
+      </div>
+
+      <!-- Key counters -->
+      <div class="sb-card">
+        <div class="sb-counters">
+          <div>
+            <div class="sb-counter-val" id="sb-turns">—</div>
+            <div class="sb-counter-key">Turns</div>
+          </div>
+          <div>
+            <div class="sb-counter-val" id="sb-tools">—</div>
+            <div class="sb-counter-key">Tools</div>
+          </div>
+          <div>
+            <div class="sb-counter-val" id="sb-errors">—</div>
+            <div class="sb-counter-key">Errors</div>
+          </div>
+          <div>
+            <div class="sb-counter-val" id="sb-cache">—</div>
+            <div class="sb-counter-key">Cache</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Empty state -->
+    <div id="sb-empty" class="sb-muted" style="text-align:center;padding:24px 0;font-size:11px">
+      No sessions recorded yet
+    </div>
+
+    <!-- Open dashboard -->
+    <button class="sb-open-btn" id="sb-open-btn">Open Dashboard</button>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="sb-footer">
+    <span id="sb-session-count">0</span>&nbsp;sessions
+    <button class="sb-clear-btn" id="sb-clear-btn">Clear All</button>
+  </div>
+
+  <script>var __SIDEBAR_INIT__ = ${initData};</script>
+  <script src="${sidebarJsUri}"></script>
+</body>
+</html>`
+  }
 }
