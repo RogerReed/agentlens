@@ -29,13 +29,13 @@
     n3 && n3.parentNode && n3.parentNode.removeChild(n3);
   }
   function k(l5, u5, t4) {
-    var i4, r4, o4, e4 = {};
-    for (o4 in u5) "key" == o4 ? i4 = u5[o4] : "ref" == o4 ? r4 = u5[o4] : e4[o4] = u5[o4];
+    var i4, r5, o4, e4 = {};
+    for (o4 in u5) "key" == o4 ? i4 = u5[o4] : "ref" == o4 ? r5 = u5[o4] : e4[o4] = u5[o4];
     if (arguments.length > 2 && (e4.children = arguments.length > 3 ? n.call(arguments, 2) : t4), "function" == typeof l5 && null != l5.defaultProps) for (o4 in l5.defaultProps) void 0 === e4[o4] && (e4[o4] = l5.defaultProps[o4]);
-    return x(l5, e4, i4, r4, null);
+    return x(l5, e4, i4, r5, null);
   }
-  function x(n3, t4, i4, r4, o4) {
-    var e4 = { type: n3, props: t4, key: i4, ref: r4, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: void 0, __v: null == o4 ? ++u : o4, __i: -1, __u: 0 };
+  function x(n3, t4, i4, r5, o4) {
+    var e4 = { type: n3, props: t4, key: i4, ref: r5, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: void 0, __v: null == o4 ? ++u : o4, __i: -1, __u: 0 };
     return null == o4 && null != l.vnode && l.vnode(e4), e4;
   }
   function S(n3) {
@@ -51,8 +51,8 @@
   }
   function I(n3) {
     if (n3.__P && n3.__d) {
-      var u5 = n3.__v, t4 = u5.__e, i4 = [], r4 = [], o4 = m({}, u5);
-      o4.__v = u5.__v + 1, l.vnode && l.vnode(o4), q(n3.__P, o4, u5, n3.__n, n3.__P.namespaceURI, 32 & u5.__u ? [t4] : null, i4, null == t4 ? $(u5) : t4, !!(32 & u5.__u), r4), o4.__v = u5.__v, o4.__.__k[o4.__i] = o4, D(i4, o4, r4), u5.__e = u5.__ = null, o4.__e != t4 && P(o4);
+      var u5 = n3.__v, t4 = u5.__e, i4 = [], r5 = [], o4 = m({}, u5);
+      o4.__v = u5.__v + 1, l.vnode && l.vnode(o4), q(n3.__P, o4, u5, n3.__n, n3.__P.namespaceURI, 32 & u5.__u ? [t4] : null, i4, null == t4 ? $(u5) : t4, !!(32 & u5.__u), r5), o4.__v = u5.__v, o4.__.__k[o4.__i] = o4, D(i4, o4, r5), u5.__e = u5.__ = null, o4.__e != t4 && P(o4);
     }
   }
   function P(n3) {
@@ -70,21 +70,21 @@
       i.length = H.__r = 0;
     }
   }
-  function L(n3, l5, u5, t4, i4, r4, o4, e4, f5, c4, s4) {
+  function L(n3, l5, u5, t4, i4, r5, o4, e4, f5, c4, s4) {
     var a4, h5, p5, v4, y5, _4, g4, m4 = t4 && t4.__k || w, b4 = l5.length;
-    for (f5 = T(u5, l5, m4, f5, b4), a4 = 0; a4 < b4; a4++) null != (p5 = u5.__k[a4]) && (h5 = -1 != p5.__i && m4[p5.__i] || d, p5.__i = a4, _4 = q(n3, p5, h5, i4, r4, o4, e4, f5, c4, s4), v4 = p5.__e, p5.ref && h5.ref != p5.ref && (h5.ref && J(h5.ref, null, p5), s4.push(p5.ref, p5.__c || v4, p5)), null == y5 && null != v4 && (y5 = v4), (g4 = !!(4 & p5.__u)) || h5.__k === p5.__k ? (f5 = j(p5, f5, n3, g4), g4 && h5.__e && (h5.__e = null)) : "function" == typeof p5.type && void 0 !== _4 ? f5 = _4 : v4 && (f5 = v4.nextSibling), p5.__u &= -7);
+    for (f5 = T(u5, l5, m4, f5, b4), a4 = 0; a4 < b4; a4++) null != (p5 = u5.__k[a4]) && (h5 = -1 != p5.__i && m4[p5.__i] || d, p5.__i = a4, _4 = q(n3, p5, h5, i4, r5, o4, e4, f5, c4, s4), v4 = p5.__e, p5.ref && h5.ref != p5.ref && (h5.ref && J(h5.ref, null, p5), s4.push(p5.ref, p5.__c || v4, p5)), null == y5 && null != v4 && (y5 = v4), (g4 = !!(4 & p5.__u)) || h5.__k === p5.__k ? (f5 = j(p5, f5, n3, g4), g4 && h5.__e && (h5.__e = null)) : "function" == typeof p5.type && void 0 !== _4 ? f5 = _4 : v4 && (f5 = v4.nextSibling), p5.__u &= -7);
     return u5.__e = y5, f5;
   }
   function T(n3, l5, u5, t4, i4) {
-    var r4, o4, e4, f5, c4, s4 = u5.length, a4 = s4, h5 = 0;
-    for (n3.__k = new Array(i4), r4 = 0; r4 < i4; r4++) null != (o4 = l5[r4]) && "boolean" != typeof o4 && "function" != typeof o4 ? ("string" == typeof o4 || "number" == typeof o4 || "bigint" == typeof o4 || o4.constructor == String ? o4 = n3.__k[r4] = x(null, o4, null, null, null) : g(o4) ? o4 = n3.__k[r4] = x(S, { children: o4 }, null, null, null) : void 0 === o4.constructor && o4.__b > 0 ? o4 = n3.__k[r4] = x(o4.type, o4.props, o4.key, o4.ref ? o4.ref : null, o4.__v) : n3.__k[r4] = o4, f5 = r4 + h5, o4.__ = n3, o4.__b = n3.__b + 1, e4 = null, -1 != (c4 = o4.__i = O(o4, u5, f5, a4)) && (a4--, (e4 = u5[c4]) && (e4.__u |= 2)), null == e4 || null == e4.__v ? (-1 == c4 && (i4 > s4 ? h5-- : i4 < s4 && h5++), "function" != typeof o4.type && (o4.__u |= 4)) : c4 != f5 && (c4 == f5 - 1 ? h5-- : c4 == f5 + 1 ? h5++ : (c4 > f5 ? h5-- : h5++, o4.__u |= 4))) : n3.__k[r4] = null;
-    if (a4) for (r4 = 0; r4 < s4; r4++) null != (e4 = u5[r4]) && 0 == (2 & e4.__u) && (e4.__e == t4 && (t4 = $(e4)), K(e4, e4));
+    var r5, o4, e4, f5, c4, s4 = u5.length, a4 = s4, h5 = 0;
+    for (n3.__k = new Array(i4), r5 = 0; r5 < i4; r5++) null != (o4 = l5[r5]) && "boolean" != typeof o4 && "function" != typeof o4 ? ("string" == typeof o4 || "number" == typeof o4 || "bigint" == typeof o4 || o4.constructor == String ? o4 = n3.__k[r5] = x(null, o4, null, null, null) : g(o4) ? o4 = n3.__k[r5] = x(S, { children: o4 }, null, null, null) : void 0 === o4.constructor && o4.__b > 0 ? o4 = n3.__k[r5] = x(o4.type, o4.props, o4.key, o4.ref ? o4.ref : null, o4.__v) : n3.__k[r5] = o4, f5 = r5 + h5, o4.__ = n3, o4.__b = n3.__b + 1, e4 = null, -1 != (c4 = o4.__i = O(o4, u5, f5, a4)) && (a4--, (e4 = u5[c4]) && (e4.__u |= 2)), null == e4 || null == e4.__v ? (-1 == c4 && (i4 > s4 ? h5-- : i4 < s4 && h5++), "function" != typeof o4.type && (o4.__u |= 4)) : c4 != f5 && (c4 == f5 - 1 ? h5-- : c4 == f5 + 1 ? h5++ : (c4 > f5 ? h5-- : h5++, o4.__u |= 4))) : n3.__k[r5] = null;
+    if (a4) for (r5 = 0; r5 < s4; r5++) null != (e4 = u5[r5]) && 0 == (2 & e4.__u) && (e4.__e == t4 && (t4 = $(e4)), K(e4, e4));
     return t4;
   }
   function j(n3, l5, u5, t4) {
-    var i4, r4;
+    var i4, r5;
     if ("function" == typeof n3.type) {
-      for (i4 = n3.__k, r4 = 0; i4 && r4 < i4.length; r4++) i4[r4] && (i4[r4].__ = n3, l5 = j(i4[r4], l5, u5, t4));
+      for (i4 = n3.__k, r5 = 0; i4 && r5 < i4.length; r5++) i4[r5] && (i4[r5].__ = n3, l5 = j(i4[r5], l5, u5, t4));
       return l5;
     }
     n3.__e != l5 && (t4 && (l5 && n3.type && !l5.parentNode && (l5 = $(n3)), u5.insertBefore(n3.__e, l5 || null)), l5 = n3.__e);
@@ -94,10 +94,10 @@
     return l5;
   }
   function O(n3, l5, u5, t4) {
-    var i4, r4, o4, e4 = n3.key, f5 = n3.type, c4 = l5[u5], s4 = null != c4 && 0 == (2 & c4.__u);
+    var i4, r5, o4, e4 = n3.key, f5 = n3.type, c4 = l5[u5], s4 = null != c4 && 0 == (2 & c4.__u);
     if (null === c4 && null == e4 || s4 && e4 == c4.key && f5 == c4.type) return u5;
     if (t4 > (s4 ? 1 : 0)) {
-      for (i4 = u5 - 1, r4 = u5 + 1; i4 >= 0 || r4 < l5.length; ) if (null != (c4 = l5[o4 = i4 >= 0 ? i4-- : r4++]) && 0 == (2 & c4.__u) && e4 == c4.key && f5 == c4.type) return o4;
+      for (i4 = u5 - 1, r5 = u5 + 1; i4 >= 0 || r5 < l5.length; ) if (null != (c4 = l5[o4 = i4 >= 0 ? i4-- : r5++]) && 0 == (2 & c4.__u) && e4 == c4.key && f5 == c4.type) return o4;
     }
     return -1;
   }
@@ -105,13 +105,13 @@
     "-" == l5[0] ? n3.setProperty(l5, null == u5 ? "" : u5) : n3[l5] = null == u5 ? "" : "number" != typeof u5 || _.test(l5) ? u5 : u5 + "px";
   }
   function N(n3, l5, u5, t4, i4) {
-    var r4, o4;
+    var r5, o4;
     n: if ("style" == l5) if ("string" == typeof u5) n3.style.cssText = u5;
     else {
       if ("string" == typeof t4 && (n3.style.cssText = t4 = ""), t4) for (l5 in t4) u5 && l5 in u5 || z(n3.style, l5, "");
       if (u5) for (l5 in u5) t4 && u5[l5] == t4[l5] || z(n3.style, l5, u5[l5]);
     }
-    else if ("o" == l5[0] && "n" == l5[1]) r4 = l5 != (l5 = l5.replace(a, "$1")), o4 = l5.toLowerCase(), l5 = o4 in n3 || "onFocusOut" == l5 || "onFocusIn" == l5 ? o4.slice(2) : l5.slice(2), n3.l || (n3.l = {}), n3.l[l5 + r4] = u5, u5 ? t4 ? u5[s] = t4[s] : (u5[s] = h, n3.addEventListener(l5, r4 ? v : p, r4)) : n3.removeEventListener(l5, r4 ? v : p, r4);
+    else if ("o" == l5[0] && "n" == l5[1]) r5 = l5 != (l5 = l5.replace(a, "$1")), o4 = l5.toLowerCase(), l5 = o4 in n3 || "onFocusOut" == l5 || "onFocusIn" == l5 ? o4.slice(2) : l5.slice(2), n3.l || (n3.l = {}), n3.l[l5 + r5] = u5, u5 ? t4 ? u5[s] = t4[s] : (u5[s] = h, n3.addEventListener(l5, r5 ? v : p, r5)) : n3.removeEventListener(l5, r5 ? v : p, r5);
     else {
       if ("http://www.w3.org/2000/svg" == i4) l5 = l5.replace(/xlink(H|:h)/, "h").replace(/sName$/, "s");
       else if ("width" != l5 && "height" != l5 && "href" != l5 && "list" != l5 && "form" != l5 && "tabIndex" != l5 && "download" != l5 && "rowSpan" != l5 && "colSpan" != l5 && "role" != l5 && "popover" != l5 && l5 in n3) try {
@@ -132,7 +132,7 @@
       }
     };
   }
-  function q(n3, u5, t4, i4, r4, o4, e4, f5, c4, s4) {
+  function q(n3, u5, t4, i4, r5, o4, e4, f5, c4, s4) {
     var a4, h5, p5, v4, y5, d5, _4, k3, x4, M, $2, I2, P2, A3, H2, T4 = u5.type;
     if (void 0 !== u5.constructor) return null;
     128 & t4.__u && (c4 = !!(32 & t4.__u), o4 = [f5 = u5.__e = t4.__e]), (a4 = l.__b) && a4(u5);
@@ -153,7 +153,7 @@
       else do {
         h5.__d = false, I2 && I2(u5), a4 = h5.render(h5.props, h5.state, h5.context), h5.state = h5.__s;
       } while (h5.__d && ++P2 < 25);
-      h5.state = h5.__s, null != h5.getChildContext && (i4 = m(m({}, i4), h5.getChildContext())), x4 && !p5 && null != h5.getSnapshotBeforeUpdate && (d5 = h5.getSnapshotBeforeUpdate(v4, y5)), A3 = null != a4 && a4.type === S && null == a4.key ? E(a4.props.children) : a4, f5 = L(n3, g(A3) ? A3 : [A3], u5, t4, i4, r4, o4, e4, f5, c4, s4), h5.base = u5.__e, u5.__u &= -161, h5.__h.length && e4.push(h5), _4 && (h5.__E = h5.__ = null);
+      h5.state = h5.__s, null != h5.getChildContext && (i4 = m(m({}, i4), h5.getChildContext())), x4 && !p5 && null != h5.getSnapshotBeforeUpdate && (d5 = h5.getSnapshotBeforeUpdate(v4, y5)), A3 = null != a4 && a4.type === S && null == a4.key ? E(a4.props.children) : a4, f5 = L(n3, g(A3) ? A3 : [A3], u5, t4, i4, r5, o4, e4, f5, c4, s4), h5.base = u5.__e, u5.__u &= -161, h5.__h.length && e4.push(h5), _4 && (h5.__E = h5.__ = null);
     } catch (n4) {
       if (u5.__v = null, c4 || null != o4) if (n4.then) {
         for (u5.__u |= c4 ? 160 : 128; f5 && 8 == f5.nodeType && f5.nextSibling; ) f5 = f5.nextSibling;
@@ -165,7 +165,7 @@
       else u5.__e = t4.__e, u5.__k = t4.__k, n4.then || B(u5);
       l.__e(n4, u5, t4);
     }
-    else null == o4 && u5.__v == t4.__v ? (u5.__k = t4.__k, u5.__e = t4.__e) : f5 = u5.__e = G(t4.__e, u5, t4, i4, r4, o4, e4, c4, s4);
+    else null == o4 && u5.__v == t4.__v ? (u5.__k = t4.__k, u5.__e = t4.__e) : f5 = u5.__e = G(t4.__e, u5, t4, i4, r5, o4, e4, c4, s4);
     return (a4 = l.diffed) && a4(u5), 128 & u5.__u ? void 0 : f5;
   }
   function B(n3) {
@@ -186,7 +186,7 @@
   function E(n3) {
     return "object" != typeof n3 || null == n3 || n3.__b > 0 ? n3 : g(n3) ? n3.map(E) : m({}, n3);
   }
-  function G(u5, t4, i4, r4, o4, e4, f5, c4, s4) {
+  function G(u5, t4, i4, r5, o4, e4, f5, c4, s4) {
     var a4, h5, p5, v4, y5, w5, _4, m4 = i4.props || d, k3 = t4.props, x4 = t4.type;
     if ("svg" == x4 ? o4 = "http://www.w3.org/2000/svg" : "math" == x4 ? o4 = "http://www.w3.org/1998/Math/MathML" : o4 || (o4 = "http://www.w3.org/1999/xhtml"), null != e4) {
       for (a4 = 0; a4 < e4.length; a4++) if ((y5 = e4[a4]) && "setAttribute" in y5 == !!x4 && (x4 ? y5.localName == x4 : 3 == y5.nodeType)) {
@@ -204,7 +204,7 @@
       for (a4 in m4) y5 = m4[a4], "dangerouslySetInnerHTML" == a4 ? p5 = y5 : "children" == a4 || a4 in k3 || "value" == a4 && "defaultValue" in k3 || "checked" == a4 && "defaultChecked" in k3 || N(u5, a4, null, y5, o4);
       for (a4 in k3) y5 = k3[a4], "children" == a4 ? v4 = y5 : "dangerouslySetInnerHTML" == a4 ? h5 = y5 : "value" == a4 ? w5 = y5 : "checked" == a4 ? _4 = y5 : c4 && "function" != typeof y5 || m4[a4] === y5 || N(u5, a4, y5, m4[a4], o4);
       if (h5) c4 || p5 && (h5.__html == p5.__html || h5.__html == u5.innerHTML) || (u5.innerHTML = h5.__html), t4.__k = [];
-      else if (p5 && (u5.innerHTML = ""), L("template" == t4.type ? u5.content : u5, g(v4) ? v4 : [v4], t4, i4, r4, "foreignObject" == x4 ? "http://www.w3.org/1999/xhtml" : o4, e4, f5, e4 ? e4[0] : i4.__k && $(i4, 0), c4, s4), null != e4) for (a4 = e4.length; a4--; ) b(e4[a4]);
+      else if (p5 && (u5.innerHTML = ""), L("template" == t4.type ? u5.content : u5, g(v4) ? v4 : [v4], t4, i4, r5, "foreignObject" == x4 ? "http://www.w3.org/1999/xhtml" : o4, e4, f5, e4 ? e4[0] : i4.__k && $(i4, 0), c4, s4), null != e4) for (a4 = e4.length; a4--; ) b(e4[a4]);
       c4 || (a4 = "value", "progress" == x4 && null == w5 ? u5.removeAttribute("value") : null != w5 && (w5 !== u5[a4] || "progress" == x4 && !w5 || "option" == x4 && w5 != m4[a4]) && N(u5, a4, w5, m4[a4], o4), a4 = "checked", null != _4 && _4 != u5[a4] && N(u5, a4, _4, m4[a4], o4));
     }
     return u5;
@@ -220,7 +220,7 @@
     }
   }
   function K(n3, u5, t4) {
-    var i4, r4;
+    var i4, r5;
     if (l.unmount && l.unmount(n3), (i4 = n3.ref) && (i4.current && i4.current != n3.__e || J(i4, null, u5)), null != (i4 = n3.__c)) {
       if (i4.componentWillUnmount) try {
         i4.componentWillUnmount();
@@ -229,19 +229,19 @@
       }
       i4.base = i4.__P = null;
     }
-    if (i4 = n3.__k) for (r4 = 0; r4 < i4.length; r4++) i4[r4] && K(i4[r4], u5, t4 || "function" != typeof n3.type);
+    if (i4 = n3.__k) for (r5 = 0; r5 < i4.length; r5++) i4[r5] && K(i4[r5], u5, t4 || "function" != typeof n3.type);
     t4 || b(n3.__e), n3.__c = n3.__ = n3.__e = void 0;
   }
   function Q(n3, l5, u5) {
     return this.constructor(n3, u5);
   }
   function R(u5, t4, i4) {
-    var r4, o4, e4, f5;
-    t4 == document && (t4 = document.documentElement), l.__ && l.__(u5, t4), o4 = (r4 = "function" == typeof i4) ? null : i4 && i4.__k || t4.__k, e4 = [], f5 = [], q(t4, u5 = (!r4 && i4 || t4).__k = k(S, null, [u5]), o4 || d, d, t4.namespaceURI, !r4 && i4 ? [i4] : o4 ? null : t4.firstChild ? n.call(t4.childNodes) : null, e4, !r4 && i4 ? i4 : o4 ? o4.__e : t4.firstChild, r4, f5), D(e4, u5, f5);
+    var r5, o4, e4, f5;
+    t4 == document && (t4 = document.documentElement), l.__ && l.__(u5, t4), o4 = (r5 = "function" == typeof i4) ? null : i4 && i4.__k || t4.__k, e4 = [], f5 = [], q(t4, u5 = (!r5 && i4 || t4).__k = k(S, null, [u5]), o4 || d, d, t4.namespaceURI, !r5 && i4 ? [i4] : o4 ? null : t4.firstChild ? n.call(t4.childNodes) : null, e4, !r5 && i4 ? i4 : o4 ? o4.__e : t4.firstChild, r5, f5), D(e4, u5, f5);
   }
   n = w.slice, l = { __e: function(n3, l5, u5, t4) {
-    for (var i4, r4, o4; l5 = l5.__; ) if ((i4 = l5.__c) && !i4.__) try {
-      if ((r4 = i4.constructor) && null != r4.getDerivedStateFromError && (i4.setState(r4.getDerivedStateFromError(n3)), o4 = i4.__d), null != i4.componentDidCatch && (i4.componentDidCatch(n3, t4 || {}), o4 = i4.__d), o4) return i4.__E = i4;
+    for (var i4, r5, o4; l5 = l5.__; ) if ((i4 = l5.__c) && !i4.__) try {
+      if ((r5 = i4.constructor) && null != r5.getDerivedStateFromError && (i4.setState(r5.getDerivedStateFromError(n3)), o4 = i4.__d), null != i4.componentDidCatch && (i4.componentDidCatch(n3, t4 || {}), o4 = i4.__d), o4) return i4.__E = i4;
     } catch (l6) {
       n3 = l6;
     }
@@ -282,33 +282,33 @@
   function h2(n3, u5, i4) {
     var o4 = p2(t2++, 2);
     if (o4.t = n3, !o4.__c && (o4.__ = [i4 ? i4(u5) : D2(void 0, u5), function(n4) {
-      var t4 = o4.__N ? o4.__N[0] : o4.__[0], r4 = o4.t(t4, n4);
-      t4 !== r4 && (o4.__N = [r4, o4.__[1]], o4.__c.setState({}));
+      var t4 = o4.__N ? o4.__N[0] : o4.__[0], r5 = o4.t(t4, n4);
+      t4 !== r5 && (o4.__N = [r5, o4.__[1]], o4.__c.setState({}));
     }], o4.__c = r2, !r2.__f)) {
-      var f5 = function(n4, t4, r4) {
+      var f5 = function(n4, t4, r5) {
         if (!o4.__c.__H) return true;
         var u6 = o4.__c.__H.__.filter(function(n5) {
           return n5.__c;
         });
         if (u6.every(function(n5) {
           return !n5.__N;
-        })) return !c4 || c4.call(this, n4, t4, r4);
+        })) return !c4 || c4.call(this, n4, t4, r5);
         var i5 = o4.__c.props !== n4;
         return u6.some(function(n5) {
           if (n5.__N) {
             var t5 = n5.__[0];
             n5.__ = n5.__N, n5.__N = void 0, t5 !== n5.__[0] && (i5 = true);
           }
-        }), c4 && c4.call(this, n4, t4, r4) || i5;
+        }), c4 && c4.call(this, n4, t4, r5) || i5;
       };
       r2.__f = true;
       var c4 = r2.shouldComponentUpdate, e4 = r2.componentWillUpdate;
-      r2.componentWillUpdate = function(n4, t4, r4) {
+      r2.componentWillUpdate = function(n4, t4, r5) {
         if (this.__e) {
           var u6 = c4;
-          c4 = void 0, f5(n4, t4, r4), c4 = u6;
+          c4 = void 0, f5(n4, t4, r5), c4 = u6;
         }
-        e4 && e4.call(this, n4, t4, r4);
+        e4 && e4.call(this, n4, t4, r5);
       }, r2.shouldComponentUpdate = f5;
     }
     return o4.__N || o4.__;
@@ -322,17 +322,17 @@
       return { current: n3 };
     }, []);
   }
-  function T2(n3, r4) {
+  function T2(n3, r5) {
     var u5 = p2(t2++, 7);
-    return C2(u5.__H, r4) && (u5.__ = n3(), u5.__H = r4, u5.__h = n3), u5.__;
+    return C2(u5.__H, r5) && (u5.__ = n3(), u5.__H = r5, u5.__h = n3), u5.__;
   }
   function j2() {
     for (var n3; n3 = f2.shift(); ) {
       var t4 = n3.__H;
       if (n3.__P && t4) try {
         t4.__h.some(z2), t4.__h.some(B2), t4.__h = [];
-      } catch (r4) {
-        t4.__h = [], c2.__e(r4, n3.__v);
+      } catch (r5) {
+        t4.__h = [], c2.__e(r5, n3.__v);
       }
     }
   }
@@ -358,29 +358,29 @@
         n4.__h.some(z2), n4.__h = n4.__h.filter(function(n5) {
           return !n5.__ || B2(n5);
         });
-      } catch (r4) {
+      } catch (r5) {
         t4.some(function(n5) {
           n5.__h && (n5.__h = []);
-        }), t4 = [], c2.__e(r4, n4.__v);
+        }), t4 = [], c2.__e(r5, n4.__v);
       }
     }), l2 && l2(n3, t4);
   }, c2.unmount = function(n3) {
     m2 && m2(n3);
-    var t4, r4 = n3.__c;
-    r4 && r4.__H && (r4.__H.__.some(function(n4) {
+    var t4, r5 = n3.__c;
+    r5 && r5.__H && (r5.__H.__.some(function(n4) {
       try {
         z2(n4);
       } catch (n5) {
         t4 = n5;
       }
-    }), r4.__H = void 0, t4 && c2.__e(t4, r4.__v));
+    }), r5.__H = void 0, t4 && c2.__e(t4, r5.__v));
   };
   var k2 = "function" == typeof requestAnimationFrame;
   function w2(n3) {
-    var t4, r4 = function() {
+    var t4, r5 = function() {
       clearTimeout(u5), k2 && cancelAnimationFrame(t4), setTimeout(n3);
-    }, u5 = setTimeout(r4, 35);
-    k2 && (t4 = requestAnimationFrame(r4));
+    }, u5 = setTimeout(r5, 35);
+    k2 && (t4 = requestAnimationFrame(r5));
   }
   function z2(n3) {
     var t4 = r2, u5 = n3.__c;
@@ -391,8 +391,8 @@
     n3.__c = n3.__(), r2 = t4;
   }
   function C2(n3, t4) {
-    return !n3 || n3.length !== t4.length || t4.some(function(t5, r4) {
-      return t5 !== n3[r4];
+    return !n3 || n3.length !== t4.length || t4.some(function(t5, r5) {
+      return t5 !== n3[r5];
     });
   }
   function D2(n3, t4) {
@@ -417,7 +417,7 @@
         h3 = void 0;
         v3++;
         while (void 0 !== n3) {
-          var r4 = n3.u;
+          var r5 = n3.u;
           n3.u = void 0;
           n3.f &= -3;
           if (!(8 & n3.f) && w3(n3)) try {
@@ -428,7 +428,7 @@
               t4 = true;
             }
           }
-          n3 = r4;
+          n3 = r5;
         }
       }
       v3 = 0;
@@ -517,18 +517,18 @@
   l3.prototype.U = function(i4) {
     var t4 = this;
     if (void 0 !== this.t) {
-      var n3 = i4.e, r4 = i4.x;
+      var n3 = i4.e, r5 = i4.x;
       if (void 0 !== n3) {
-        n3.x = r4;
+        n3.x = r5;
         i4.e = void 0;
       }
-      if (void 0 !== r4) {
-        r4.e = n3;
+      if (void 0 !== r5) {
+        r5.e = n3;
         i4.x = void 0;
       }
       if (i4 === this.t) {
-        this.t = r4;
-        if (void 0 === r4) o3(function() {
+        this.t = r5;
+        if (void 0 === r5) o3(function() {
           var i5;
           null == (i5 = t4.Z) || i5.call(t4);
         });
@@ -610,15 +610,15 @@
   function b2(i4) {
     var t4 = i4.s, n3 = void 0;
     while (void 0 !== t4) {
-      var r4 = t4.p;
+      var r5 = t4.p;
       if (-1 === t4.i) {
         t4.S.U(t4);
-        if (void 0 !== r4) r4.n = t4.n;
-        if (void 0 !== t4.n) t4.n.p = r4;
+        if (void 0 !== r5) r5.n = t4.n;
+        if (void 0 !== t4.n) t4.n.p = r5;
       } else n3 = t4;
       t4.S.n = t4.r;
       if (void 0 !== t4.r) t4.r = void 0;
-      t4 = r4;
+      t4 = r5;
     }
     i4.s = n3;
   }
@@ -785,9 +785,9 @@
       n3.d();
       throw i5;
     }
-    var r4 = n3.d.bind(n3);
-    r4[Symbol.dispose] = r4;
-    return r4;
+    var r5 = n3.d.bind(n3);
+    r5[Symbol.dispose] = r5;
+    return r5;
   }
 
   // node_modules/.pnpm/@preact+signals@2.9.0_preact@10.29.1/node_modules/@preact/signals/dist/signals.module.js
@@ -799,8 +799,8 @@
   j3(function() {
     l4 = this.N;
   })();
-  function g3(i4, r4) {
-    l[i4] = r4.bind(null, l[i4] || function() {
+  function g3(i4, r5) {
+    l[i4] = r5.bind(null, l[i4] || function() {
     });
   }
   function b3(i4) {
@@ -849,12 +849,12 @@
   } }, __b: { configurable: true, value: 1 } });
   g3("__b", function(i4, n3) {
     if ("string" == typeof n3.type) {
-      var r4, t4 = n3.props;
+      var r5, t4 = n3.props;
       for (var o4 in t4) if ("children" !== o4) {
         var e4 = t4[o4];
         if (e4 instanceof l3) {
-          if (!r4) n3.__np = r4 = {};
-          r4[o4] = e4;
+          if (!r5) n3.__np = r5 = {};
+          r5[o4] = e4;
           t4[o4] = e4.peek();
         }
       }
@@ -865,40 +865,40 @@
     i4(n3);
     if (n3.type !== S) {
       b3();
-      var r4, o4 = n3.__c;
+      var r5, o4 = n3.__c;
       if (o4) {
         o4.__$f &= -2;
-        if (void 0 === (r4 = o4.__$u)) o4.__$u = r4 = (function(i5, n4) {
-          var r5;
+        if (void 0 === (r5 = o4.__$u)) o4.__$u = r5 = (function(i5, n4) {
+          var r6;
           j3(function() {
-            r5 = this;
+            r6 = this;
           }, { name: n4 });
-          r5.c = i5;
-          return r5;
+          r6.c = i5;
+          return r6;
         })(function() {
           var i5;
-          if (p4) null == (i5 = r4.y) || i5.call(r4);
+          if (p4) null == (i5 = r5.y) || i5.call(r5);
           o4.__$f |= 1;
           o4.setState({});
         }, "function" == typeof n3.type ? n3.type.displayName || n3.type.name : "");
       }
       d4 = o4;
-      b3(r4);
+      b3(r5);
     }
   });
-  g3("__e", function(i4, n3, r4, t4) {
+  g3("__e", function(i4, n3, r5, t4) {
     b3();
     d4 = void 0;
-    i4(n3, r4, t4);
+    i4(n3, r5, t4);
   });
   g3("diffed", function(i4, n3) {
     b3();
     d4 = void 0;
-    var r4;
-    if ("string" == typeof n3.type && (r4 = n3.__e)) {
+    var r5;
+    if ("string" == typeof n3.type && (r5 = n3.__e)) {
       var t4 = n3.__np, o4 = n3.props;
       if (t4) {
-        var e4 = r4.U;
+        var e4 = r5.U;
         if (e4) for (var f5 in e4) {
           var u5 = e4[f5];
           if (void 0 !== u5 && !(f5 in t4)) {
@@ -908,12 +908,12 @@
         }
         else {
           e4 = {};
-          r4.U = e4;
+          r5.U = e4;
         }
         for (var a4 in t4) {
           var c4 = e4[a4], v4 = t4[a4];
           if (void 0 === c4) {
-            c4 = w4(r4, a4, v4);
+            c4 = w4(r5, a4, v4);
             e4[a4] = c4;
           } else c4.o(v4, o4);
         }
@@ -922,29 +922,29 @@
     }
     i4(n3);
   });
-  function w4(i4, n3, r4, t4) {
-    var o4 = n3 in i4 && void 0 === i4.ownerSVGElement, e4 = y3(r4), f5 = r4.peek();
+  function w4(i4, n3, r5, t4) {
+    var o4 = n3 in i4 && void 0 === i4.ownerSVGElement, e4 = y3(r5), f5 = r5.peek();
     return { o: function(i5, n4) {
       e4.value = i5;
       f5 = i5.peek();
     }, d: j3(function() {
       this.N = F;
-      var r5 = e4.value.value;
-      if (f5 !== r5) {
+      var r6 = e4.value.value;
+      if (f5 !== r6) {
         f5 = void 0;
-        if (o4) i4[n3] = r5;
-        else if (null != r5 && (false !== r5 || "-" === n3[4])) i4.setAttribute(n3, r5);
+        if (o4) i4[n3] = r6;
+        else if (null != r6 && (false !== r6 || "-" === n3[4])) i4.setAttribute(n3, r6);
         else i4.removeAttribute(n3);
       } else f5 = void 0;
     }) };
   }
   g3("unmount", function(i4, n3) {
     if ("string" == typeof n3.type) {
-      var r4 = n3.__e;
-      if (r4) {
-        var t4 = r4.U;
+      var r5 = n3.__e;
+      if (r5) {
+        var t4 = r5.U;
         if (t4) {
-          r4.U = void 0;
+          r5.U = void 0;
           for (var o4 in t4) {
             var e4 = t4[o4];
             if (e4) e4.d();
@@ -964,13 +964,13 @@
     }
     i4(n3);
   });
-  g3("__h", function(i4, n3, r4, t4) {
+  g3("__h", function(i4, n3, r5, t4) {
     if (t4 < 3 || 9 === t4) n3.__$f |= 2;
-    i4(n3, r4, t4);
+    i4(n3, r5, t4);
   });
   C.prototype.shouldComponentUpdate = function(i4, n3) {
     if (this.__R) return true;
-    var r4 = this.__$u, t4 = r4 && void 0 !== r4.s;
+    var r5 = this.__$u, t4 = r5 && void 0 !== r5.s;
     for (var o4 in n3) return true;
     if (this.__f || "boolean" == typeof this.u && true === this.u) {
       var e4 = 2 & this.__$f;
@@ -1002,361 +1002,6 @@
   }
   function F() {
     if (1 === _3.push(this)) (l.requestAnimationFrame || q2)(x3);
-  }
-
-  // media/src/state.ts
-  var CHART_MAX = 25;
-  var TIME_PRESETS = [
-    { id: "1h", label: "1h", ms: 60 * 6e4 },
-    { id: "6h", label: "6h", ms: 6 * 60 * 6e4 },
-    { id: "24h", label: "24h", ms: 24 * 60 * 6e4 },
-    { id: "7d", label: "7d", ms: 7 * 864e5 },
-    { id: "30d", label: "30d", ms: 30 * 864e5 },
-    { id: "all", label: "All", ms: null }
-  ];
-  function makeTimeRange(preset) {
-    const p5 = TIME_PRESETS.find((t4) => t4.id === preset);
-    if (p5.ms === null) return { preset };
-    return { preset, since: Date.now() - p5.ms };
-  }
-  var timeRange = y3({ preset: "all" });
-  var rangedSearchResults = y3(null);
-  var dailyStats = y3([]);
-  var lifetimeStats = y3(null);
-  var burnRateData = y3(null);
-  var searchResults = y3(null);
-  var sessionTextFilter = y3("");
-  var sessionSortKey = y3("start_time");
-  function makeSetSignal() {
-    const s4 = y3(/* @__PURE__ */ new Set());
-    return {
-      get value() {
-        return s4.value;
-      },
-      peek() {
-        return s4.peek();
-      },
-      has(item) {
-        return s4.value.has(item);
-      },
-      add(item) {
-        const n3 = new Set(s4.value);
-        n3.add(item);
-        s4.value = n3;
-      },
-      delete(item) {
-        const n3 = new Set(s4.value);
-        n3.delete(item);
-        s4.value = n3;
-      },
-      toggle(item) {
-        const n3 = new Set(s4.value);
-        n3.has(item) ? n3.delete(item) : n3.add(item);
-        s4.value = n3;
-      },
-      clear() {
-        s4.value = /* @__PURE__ */ new Set();
-      },
-      get size() {
-        return s4.value.size;
-      }
-    };
-  }
-  var sessionSummary = y3(window.__INITIAL_SESSION_SUMMARY__ ?? null);
-  var toolCalls = y3(window.__INITIAL_TOOL_CALLS__ ?? {});
-  var sessionTimelines = y3({});
-  var blobCache = y3({});
-  var focusedSessionId = y3(null);
-  var sessionLimit = y3(25);
-  var selectedAgentFilter = y3("all");
-  var insightFilter = y3("all");
-  var activeTab = y3("sessions");
-  var swRetainedSessions = y3([]);
-  var swLastSessionCount = y3(0);
-  var dismissedSpanIds = makeSetSignal();
-  var lastSeenTraceIds = makeSetSignal();
-  var ignoredInsightKeys = makeSetSignal();
-  var vscode = null;
-  function setVscode(api) {
-    vscode = api;
-  }
-  function goToHelp(anchor) {
-    activeTab.value = "help";
-    setTimeout(() => {
-      const el = document.getElementById(anchor);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 80);
-  }
-  var COLORS = [
-    "#4fc3f7",
-    "#81c784",
-    "#ffb74d",
-    "#e57373",
-    "#ba68c8",
-    "#4dd0e1",
-    "#fff176",
-    "#a1887f",
-    "#90a4ae",
-    "#f06292",
-    "#aed581",
-    "#7986cb"
-  ];
-  var agentFilteredSessions = g2(() => {
-    const all = sessionSummary.value?.sessions ?? [];
-    const filter = selectedAgentFilter.value;
-    if (filter === "all") return all;
-    return all.filter((s4) => s4.source === filter);
-  });
-  var displaySessions = g2(() => {
-    const all = agentFilteredSessions.value;
-    const limit = sessionLimit.value;
-    if (limit >= all.length) return all;
-    return all.slice(0, limit);
-  });
-  var rangedSessions = g2(() => {
-    const range = timeRange.value;
-    const agent = selectedAgentFilter.value;
-    if (range.preset === "all") {
-      return agentFilteredSessions.value;
-    }
-    const since = range.since ?? 0;
-    const until = range.until ?? Date.now();
-    const allInMemory = agentFilteredSessions.value;
-    const inMemory = allInMemory.filter((s4) => {
-      if (!s4.startTime) return false;
-      const ms = new Date(s4.startTime).getTime();
-      return ms >= since && ms <= until;
-    });
-    const dbResults = rangedSearchResults.value;
-    if (!dbResults) return inMemory;
-    const dbIds = new Set(dbResults.sessions.map((s4) => s4.sessionId));
-    const merged = [
-      ...dbResults.sessions,
-      ...inMemory.filter((s4) => !dbIds.has(s4.sessionId))
-    ];
-    merged.sort((a4, b4) => Date.parse(b4.startTime || "0") - Date.parse(a4.startTime || "0"));
-    if (agent === "all") return merged;
-    return merged.filter((s4) => s4.source === agent);
-  });
-  var filteredSessions = g2(() => {
-    let sessions = rangedSessions.value;
-    const text = sessionTextFilter.value.toLowerCase().trim();
-    if (text) {
-      sessions = sessions.filter((s4) => (s4.userRequest ?? "").toLowerCase().includes(text));
-    }
-    const key = sessionSortKey.value;
-    if (key === "start_time") return sessions;
-    return [...sessions].sort((a4, b4) => {
-      switch (key) {
-        case "total_tokens":
-          return b4.inputTokens + b4.outputTokens - (a4.inputTokens + a4.outputTokens);
-        case "duration_ms":
-          return b4.durationMs - a4.durationMs;
-        case "errors":
-          return b4.errors - a4.errors;
-        default:
-          return 0;
-      }
-    });
-  });
-  var agentPresence = g2(() => {
-    const sessions = rangedSessions.value;
-    return {
-      claude: sessions.some((s4) => s4.source === "claude_code"),
-      copilot: sessions.some((s4) => s4.source === "copilot"),
-      codex: sessions.some((s4) => s4.source === "codex")
-    };
-  });
-
-  // media/src/utils.ts
-  function esc(s4) {
-    if (!s4) return "";
-    const d5 = document.createElement("div");
-    d5.textContent = String(s4);
-    return d5.innerHTML;
-  }
-  function syntaxHighlightJson(jsonStr) {
-    return esc(jsonStr).replace(/("(?:\\.|[^"\\])*")\s*:/g, '<span class="json-key">$1</span>:').replace(/:\s*("(?:\\.|[^"\\])*")/g, (_m, val) => ': <span class="json-string">' + val + "</span>").replace(/:\s*(\d+(?:\.\d+)?)/g, ': <span class="json-number">$1</span>').replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>').replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
-  }
-  function formatMs(ms) {
-    if (ms < 1) return "<1ms";
-    if (ms < 1e3) return ms.toFixed(0) + "ms";
-    if (ms < 6e4) return (ms / 1e3).toFixed(1) + "s";
-    if (ms < 36e5) return (ms / 6e4).toFixed(1) + "min";
-    return (ms / 36e5).toFixed(1) + "h";
-  }
-  function formatCompact(n3) {
-    return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(n3);
-  }
-  function getAgentSourceLabel(source) {
-    if (source === "claude_code") return "Claude";
-    if (source === "codex") return "Codex";
-    return "Copilot";
-  }
-  function getAgentColor(source) {
-    if (source === "claude_code") return "#FFB085";
-    if (source === "codex") return "#F0FF42";
-    if (source === "copilot") return "#00EAFF";
-    return "#90a4ae";
-  }
-  function getAllSessionsChronological() {
-    return sessionSummary.value?.sessions ?? [];
-  }
-  function formatSessionTime(sess) {
-    if (!sess?.startTime) return "\u2014";
-    const d5 = new Date(sess.startTime);
-    if (isNaN(d5.getTime())) return "\u2014";
-    return tsFormat(d5);
-  }
-  function tsFormat(d5) {
-    const p5 = (n3, w5 = 2) => String(n3).padStart(w5, "0");
-    return `${d5.getFullYear()}-${p5(d5.getMonth() + 1)}-${p5(d5.getDate())} ${p5(d5.getHours())}:${p5(d5.getMinutes())}:${p5(d5.getSeconds())}`;
-  }
-  function formatSessionTimeShort(sess) {
-    if (!sess?.startTime) return "\u2014";
-    const d5 = new Date(sess.startTime);
-    if (isNaN(d5.getTime())) return "\u2014";
-    const p5 = (n3) => String(n3).padStart(2, "0");
-    const now = /* @__PURE__ */ new Date();
-    if (d5.toDateString() === now.toDateString()) return `${p5(d5.getHours())}:${p5(d5.getMinutes())}:${p5(d5.getSeconds())}`;
-    return `${p5(d5.getMonth() + 1)}-${p5(d5.getDate())} ${p5(d5.getHours())}:${p5(d5.getMinutes())}`;
-  }
-  function getSessionGlobalNumber(sess) {
-    const all = getAllSessionsChronological();
-    if (!sess || all.length === 0) return 0;
-    const idx = all.indexOf(sess);
-    if (idx !== -1) return idx + 1;
-    for (let i4 = 0; i4 < all.length; i4++) {
-      const s4 = all[i4];
-      if (sess.sessionId && s4.sessionId === sess.sessionId) return i4 + 1;
-      if (sess.traceId && sess.startTime && s4.traceId === sess.traceId && s4.startTime === sess.startTime) return i4 + 1;
-      if (sess.traceId && sess.userRequest && s4.traceId === sess.traceId && s4.userRequest === sess.userRequest) return i4 + 1;
-    }
-    return 0;
-  }
-  function buildDisplaySummary(sessionsOverride) {
-    const sessions = sessionsOverride ?? displaySessions.value;
-    let totalInputTokens = 0, totalOutputTokens = 0, totalLlmCalls = 0, cacheRead = 0;
-    sessions.forEach((s4) => {
-      totalInputTokens += s4.inputTokens ?? 0;
-      totalOutputTokens += s4.outputTokens ?? 0;
-      totalLlmCalls += s4.totalLlmCalls ?? 0;
-      cacheRead += s4.cacheReadTokens ?? 0;
-    });
-    return {
-      sessions,
-      efficiency: {
-        totalInputTokens,
-        totalOutputTokens,
-        totalLlmCalls,
-        avgInputPerCall: totalLlmCalls > 0 ? Math.round(totalInputTokens / totalLlmCalls) : 0,
-        cacheHitRate: totalInputTokens > 0 ? cacheRead / totalInputTokens : 0,
-        toolDefWaste: sessionSummary.value?.efficiency?.toolDefWaste ?? 0
-      }
-    };
-  }
-  function formatLlmLabel(entry) {
-    const action = entry.action ?? "";
-    if (action.indexOf("called ") === 0) {
-      const tools = action.substring(7).split(/[,\s]+/).filter(Boolean);
-      const counts = {};
-      tools.forEach((t4) => {
-        counts[t4] = (counts[t4] ?? 0) + 1;
-      });
-      const parts = Object.keys(counts).map((t4) => {
-        const shortName = t4.replace(/^execute_tool\s*/, "");
-        return counts[t4] > 1 ? counts[t4] + "\xD7 " + shortName : shortName;
-      });
-      return "Decide \u2192 " + parts.join(", ");
-    }
-    if (action === "text response") return "Respond with answer";
-    return action || "LLM call";
-  }
-  function formatToolLabel(entry) {
-    const label = entry.label ?? "";
-    const parts = label.match(/^(\S+)\s*([\s\S]*)$/);
-    if (!parts) return label;
-    const toolName2 = parts[1];
-    const args = parts[2] ?? "";
-    if (!args.trim() && entry.toolInput) {
-      const raw = entry.toolInput.trimStart();
-      if (raw.startsWith("{")) {
-        try {
-          const parsed = JSON.parse(raw);
-          const fp = String(parsed.file_path || parsed.filePath || "");
-          if (fp) {
-            const base = fp.split("/").pop() || fp;
-            if (toolName2 === "MultiEdit" && Array.isArray(parsed.edits)) {
-              const count = parsed.edits.length;
-              return toolName2 + " " + base + (count > 1 ? " +" + (count - 1) : "");
-            }
-            return toolName2 + " " + base;
-          }
-          if (parsed.command) {
-            const cmd = String(parsed.command);
-            return "Bash " + (cmd.length > 60 ? cmd.slice(0, 57) + "\u2026" : cmd);
-          }
-          if (parsed.pattern) return toolName2 + " " + String(parsed.pattern);
-          if (parsed.query) return toolName2 + " " + String(parsed.query);
-        } catch {
-        }
-      } else {
-        const isFilePath = raw.startsWith("/") || raw.startsWith("~") || /^[A-Za-z]:[/\\]/.test(raw);
-        if (isFilePath) return toolName2 + " " + (raw.split("/").pop() || raw);
-        return "Bash " + (raw.length > 60 ? raw.slice(0, 57) + "\u2026" : raw);
-      }
-    }
-    switch (toolName2) {
-      case "read_file": {
-        const m4 = args.match(/^(\S+)\s*L(\d+)-(\d+)$/);
-        if (m4) return "Read " + m4[1] + " :" + m4[2] + "-" + m4[3];
-        return "Read " + args;
-      }
-      case "file_search": {
-        const file = args.replace(/^\*\*\//, "").split("/").pop() ?? args;
-        if (file.indexOf("*") !== -1) return "Find files matching " + file;
-        return "Find " + file;
-      }
-      case "grep_search": {
-        const gm = args.match(/^"([^"]*?)"\s+in\s+(.*)$/);
-        if (gm) {
-          const inFile = gm[2].replace(/^\*\*\//, "").split("/").pop() ?? gm[2];
-          return 'Grep "' + gm[1] + '" in ' + inFile;
-        }
-        return "Grep " + args;
-      }
-      case "list_dir":
-        return "List " + args + "/";
-      case "manage_todo_list": {
-        const tm = args.match(/(\d+)\s*items?\s*\(([^)]+)\)/);
-        if (tm) return "Update todos (" + tm[2] + ")";
-        const nm = args.match(/(\d+)\s*items?/);
-        if (nm) return "Update todos (" + nm[1] + " items)";
-        return "Check todos";
-      }
-      case "semantic_search":
-        return "Search codebase " + args;
-      case "replace_string_in_file":
-      case "multi_replace_string_in_file":
-        return "Edit " + args;
-      case "create_file":
-        return "Create " + args;
-      case "run_in_terminal":
-        return "Run: " + (args.length > 60 ? args.slice(0, 57) + "\u2026" : args);
-      case "explore_subagent":
-      case "runSubagent":
-        return "Sub-agent: " + args;
-      default:
-        return toolName2 + (args ? " " + args : "");
-    }
-  }
-  function formatToolResult(entry) {
-    const rs = entry.resultSummary ?? "";
-    if (!rs || rs === "empty") return "";
-    if (rs === "No todo list found.") return "none";
-    if (rs.match(/^Successfully/)) return "ok";
-    if (rs === "no list") return "none";
-    return rs;
   }
 
   // media/src/agentProfiles.ts
@@ -1694,6 +1339,373 @@
     return (session.timeline ?? []).filter((e4) => e4.type === "llm" || e4.type === "tool").reduce((sum, entry) => sum + Math.max(entry.durationMs ?? 0, 0), 0);
   }
 
+  // media/src/state.ts
+  var CHART_MAX = 25;
+  var TIME_PRESETS = [
+    { id: "1h", label: "1h", ms: 60 * 6e4 },
+    { id: "6h", label: "6h", ms: 6 * 60 * 6e4 },
+    { id: "24h", label: "24h", ms: 24 * 60 * 6e4 },
+    { id: "7d", label: "7d", ms: 7 * 864e5 },
+    { id: "30d", label: "30d", ms: 30 * 864e5 },
+    { id: "all", label: "All", ms: null }
+  ];
+  function makeTimeRange(preset) {
+    const p5 = TIME_PRESETS.find((t4) => t4.id === preset);
+    if (p5.ms === null) return { preset };
+    return { preset, since: Date.now() - p5.ms };
+  }
+  var timeRange = y3({ preset: "all" });
+  var rangedSearchResults = y3(null);
+  var dailyStats = y3([]);
+  var lifetimeStats = y3(null);
+  var burnRateData = y3(null);
+  var searchResults = y3(null);
+  var sessionTextFilter = y3("");
+  var sessionSortKey = y3("start_time");
+  var sessionSortDir = y3("desc");
+  function makeSetSignal() {
+    const s4 = y3(/* @__PURE__ */ new Set());
+    return {
+      get value() {
+        return s4.value;
+      },
+      peek() {
+        return s4.peek();
+      },
+      has(item) {
+        return s4.value.has(item);
+      },
+      add(item) {
+        const n3 = new Set(s4.value);
+        n3.add(item);
+        s4.value = n3;
+      },
+      delete(item) {
+        const n3 = new Set(s4.value);
+        n3.delete(item);
+        s4.value = n3;
+      },
+      toggle(item) {
+        const n3 = new Set(s4.value);
+        n3.has(item) ? n3.delete(item) : n3.add(item);
+        s4.value = n3;
+      },
+      clear() {
+        s4.value = /* @__PURE__ */ new Set();
+      },
+      get size() {
+        return s4.value.size;
+      }
+    };
+  }
+  var sessionSummary = y3(window.__INITIAL_SESSION_SUMMARY__ ?? null);
+  var toolCalls = y3(window.__INITIAL_TOOL_CALLS__ ?? {});
+  var sessionTimelines = y3({});
+  var blobCache = y3({});
+  var focusedSessionId = y3(null);
+  var sessionLimit = y3(25);
+  var selectedAgentFilter = y3("all");
+  var insightFilter = y3("all");
+  var activeTab = y3("sessions");
+  var swRetainedSessions = y3([]);
+  var swLastSessionCount = y3(0);
+  var dismissedSpanIds = makeSetSignal();
+  var lastSeenTraceIds = makeSetSignal();
+  var ignoredInsightKeys = makeSetSignal();
+  var vscode = null;
+  function setVscode(api) {
+    vscode = api;
+  }
+  function goToHelp(anchor) {
+    activeTab.value = "help";
+    setTimeout(() => {
+      const el = document.getElementById(anchor);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  }
+  var COLORS = [
+    "#4fc3f7",
+    "#81c784",
+    "#ffb74d",
+    "#e57373",
+    "#ba68c8",
+    "#4dd0e1",
+    "#fff176",
+    "#a1887f",
+    "#90a4ae",
+    "#f06292",
+    "#aed581",
+    "#7986cb"
+  ];
+  var agentFilteredSessions = g2(() => {
+    const all = sessionSummary.value?.sessions ?? [];
+    const filter = selectedAgentFilter.value;
+    if (filter === "all") return all;
+    return all.filter((s4) => s4.source === filter);
+  });
+  var displaySessions = g2(() => {
+    const all = agentFilteredSessions.value;
+    const limit = sessionLimit.value;
+    if (limit >= all.length) return all;
+    return all.slice(0, limit);
+  });
+  var rangedSessions = g2(() => {
+    const range = timeRange.value;
+    const agent = selectedAgentFilter.value;
+    if (range.preset === "all") {
+      return agentFilteredSessions.value;
+    }
+    const since = range.since ?? 0;
+    const until = range.until ?? Date.now();
+    const allInMemory = agentFilteredSessions.value;
+    const inMemory = allInMemory.filter((s4) => {
+      if (!s4.startTime) return false;
+      const ms = new Date(s4.startTime).getTime();
+      return ms >= since && ms <= until;
+    });
+    const dbResults = rangedSearchResults.value;
+    if (!dbResults) return inMemory;
+    const dbIds = new Set(dbResults.sessions.map((s4) => s4.sessionId));
+    const merged = [
+      ...dbResults.sessions,
+      ...inMemory.filter((s4) => !dbIds.has(s4.sessionId))
+    ];
+    merged.sort((a4, b4) => Date.parse(b4.startTime || "0") - Date.parse(a4.startTime || "0"));
+    if (agent === "all") return merged;
+    return merged.filter((s4) => s4.source === agent);
+  });
+  var filteredSessions = g2(() => {
+    let sessions = rangedSessions.value;
+    const text = sessionTextFilter.value.toLowerCase().trim();
+    if (text) {
+      sessions = sessions.filter((s4) => (s4.userRequest ?? "").toLowerCase().includes(text));
+    }
+    const key = sessionSortKey.value;
+    const dir = sessionSortDir.value;
+    if (key === "start_time") return dir === "asc" ? [...sessions].reverse() : sessions;
+    return [...sessions].sort((a4, b4) => {
+      let cmp = 0;
+      switch (key) {
+        case "total_tokens":
+          cmp = b4.inputTokens + b4.outputTokens - (a4.inputTokens + a4.outputTokens);
+          break;
+        case "duration_ms":
+          cmp = b4.durationMs - a4.durationMs;
+          break;
+        case "errors":
+          cmp = b4.errors - a4.errors;
+          break;
+        case "prompt":
+          cmp = (a4.userRequest ?? "").localeCompare(b4.userRequest ?? "");
+          break;
+        case "model":
+          cmp = (a4.model ?? "").localeCompare(b4.model ?? "");
+          break;
+        case "source":
+          cmp = (a4.source ?? "").localeCompare(b4.source ?? "");
+          break;
+        case "cost": {
+          const modeA = a4.source === "copilot" ? "token" : "token";
+          const costA = calcSessionCost(a4, modeA).totalUsd;
+          const costB = calcSessionCost(b4, modeA).totalUsd;
+          cmp = costB - costA;
+          break;
+        }
+      }
+      return dir === "asc" ? -cmp : cmp;
+    });
+  });
+  var agentPresence = g2(() => {
+    const sessions = rangedSessions.value;
+    return {
+      claude: sessions.some((s4) => s4.source === "claude_code"),
+      copilot: sessions.some((s4) => s4.source === "copilot"),
+      codex: sessions.some((s4) => s4.source === "codex")
+    };
+  });
+
+  // media/src/utils.ts
+  function esc(s4) {
+    if (!s4) return "";
+    const d5 = document.createElement("div");
+    d5.textContent = String(s4);
+    return d5.innerHTML;
+  }
+  function syntaxHighlightJson(jsonStr) {
+    return esc(jsonStr).replace(/("(?:\\.|[^"\\])*")\s*:/g, '<span class="json-key">$1</span>:').replace(/:\s*("(?:\\.|[^"\\])*")/g, (_m, val) => ': <span class="json-string">' + val + "</span>").replace(/:\s*(\d+(?:\.\d+)?)/g, ': <span class="json-number">$1</span>').replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>').replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
+  }
+  function formatMs(ms) {
+    if (ms < 1) return "<1ms";
+    if (ms < 1e3) return ms.toFixed(0) + "ms";
+    if (ms < 6e4) return (ms / 1e3).toFixed(1) + "s";
+    if (ms < 36e5) return (ms / 6e4).toFixed(1) + "min";
+    return (ms / 36e5).toFixed(1) + "h";
+  }
+  function formatCompact(n3) {
+    return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(n3);
+  }
+  function getAgentSourceLabel(source) {
+    if (source === "claude_code") return "Claude";
+    if (source === "codex") return "Codex";
+    return "Copilot";
+  }
+  function getAgentColor(source) {
+    if (source === "claude_code") return "#FFB085";
+    if (source === "codex") return "#F0FF42";
+    if (source === "copilot") return "#00EAFF";
+    return "#90a4ae";
+  }
+  function getAllSessionsChronological() {
+    return sessionSummary.value?.sessions ?? [];
+  }
+  function formatSessionTime(sess) {
+    if (!sess?.startTime) return "\u2014";
+    const d5 = new Date(sess.startTime);
+    if (isNaN(d5.getTime())) return "\u2014";
+    return tsFormat(d5);
+  }
+  function tsFormat(d5) {
+    const p5 = (n3, w5 = 2) => String(n3).padStart(w5, "0");
+    return `${d5.getFullYear()}-${p5(d5.getMonth() + 1)}-${p5(d5.getDate())} ${p5(d5.getHours())}:${p5(d5.getMinutes())}:${p5(d5.getSeconds())}`;
+  }
+  function getSessionGlobalNumber(sess) {
+    const all = getAllSessionsChronological();
+    if (!sess || all.length === 0) return 0;
+    const idx = all.indexOf(sess);
+    if (idx !== -1) return idx + 1;
+    for (let i4 = 0; i4 < all.length; i4++) {
+      const s4 = all[i4];
+      if (sess.sessionId && s4.sessionId === sess.sessionId) return i4 + 1;
+      if (sess.traceId && sess.startTime && s4.traceId === sess.traceId && s4.startTime === sess.startTime) return i4 + 1;
+      if (sess.traceId && sess.userRequest && s4.traceId === sess.traceId && s4.userRequest === sess.userRequest) return i4 + 1;
+    }
+    return 0;
+  }
+  function buildDisplaySummary(sessionsOverride) {
+    const sessions = sessionsOverride ?? displaySessions.value;
+    let totalInputTokens = 0, totalOutputTokens = 0, totalLlmCalls = 0, cacheRead = 0;
+    sessions.forEach((s4) => {
+      totalInputTokens += s4.inputTokens ?? 0;
+      totalOutputTokens += s4.outputTokens ?? 0;
+      totalLlmCalls += s4.totalLlmCalls ?? 0;
+      cacheRead += s4.cacheReadTokens ?? 0;
+    });
+    return {
+      sessions,
+      efficiency: {
+        totalInputTokens,
+        totalOutputTokens,
+        totalLlmCalls,
+        avgInputPerCall: totalLlmCalls > 0 ? Math.round(totalInputTokens / totalLlmCalls) : 0,
+        cacheHitRate: totalInputTokens > 0 ? cacheRead / totalInputTokens : 0,
+        toolDefWaste: sessionSummary.value?.efficiency?.toolDefWaste ?? 0
+      }
+    };
+  }
+  function formatLlmLabel(entry) {
+    const action = entry.action ?? "";
+    if (action.indexOf("called ") === 0) {
+      const tools = action.substring(7).split(/[,\s]+/).filter(Boolean);
+      const counts = {};
+      tools.forEach((t4) => {
+        counts[t4] = (counts[t4] ?? 0) + 1;
+      });
+      const parts = Object.keys(counts).map((t4) => {
+        const shortName = t4.replace(/^execute_tool\s*/, "");
+        return counts[t4] > 1 ? counts[t4] + "\xD7 " + shortName : shortName;
+      });
+      return "Decide \u2192 " + parts.join(", ");
+    }
+    if (action === "text response") return "Respond with answer";
+    return action || "LLM call";
+  }
+  function formatToolLabel(entry) {
+    const label = entry.label ?? "";
+    const parts = label.match(/^(\S+)\s*([\s\S]*)$/);
+    if (!parts) return label;
+    const toolName2 = parts[1];
+    const args = parts[2] ?? "";
+    if (!args.trim() && entry.toolInput) {
+      const raw = entry.toolInput.trimStart();
+      if (raw.startsWith("{")) {
+        try {
+          const parsed = JSON.parse(raw);
+          const fp = String(parsed.file_path || parsed.filePath || "");
+          if (fp) {
+            const base = fp.split("/").pop() || fp;
+            if (toolName2 === "MultiEdit" && Array.isArray(parsed.edits)) {
+              const count = parsed.edits.length;
+              return toolName2 + " " + base + (count > 1 ? " +" + (count - 1) : "");
+            }
+            return toolName2 + " " + base;
+          }
+          if (parsed.command) {
+            const cmd = String(parsed.command);
+            return "Bash " + (cmd.length > 60 ? cmd.slice(0, 57) + "\u2026" : cmd);
+          }
+          if (parsed.pattern) return toolName2 + " " + String(parsed.pattern);
+          if (parsed.query) return toolName2 + " " + String(parsed.query);
+        } catch {
+        }
+      } else {
+        const isFilePath = raw.startsWith("/") || raw.startsWith("~") || /^[A-Za-z]:[/\\]/.test(raw);
+        if (isFilePath) return toolName2 + " " + (raw.split("/").pop() || raw);
+        return "Bash " + (raw.length > 60 ? raw.slice(0, 57) + "\u2026" : raw);
+      }
+    }
+    switch (toolName2) {
+      case "read_file": {
+        const m4 = args.match(/^(\S+)\s*L(\d+)-(\d+)$/);
+        if (m4) return "Read " + m4[1] + " :" + m4[2] + "-" + m4[3];
+        return "Read " + args;
+      }
+      case "file_search": {
+        const file = args.replace(/^\*\*\//, "").split("/").pop() ?? args;
+        if (file.indexOf("*") !== -1) return "Find files matching " + file;
+        return "Find " + file;
+      }
+      case "grep_search": {
+        const gm = args.match(/^"([^"]*?)"\s+in\s+(.*)$/);
+        if (gm) {
+          const inFile = gm[2].replace(/^\*\*\//, "").split("/").pop() ?? gm[2];
+          return 'Grep "' + gm[1] + '" in ' + inFile;
+        }
+        return "Grep " + args;
+      }
+      case "list_dir":
+        return "List " + args + "/";
+      case "manage_todo_list": {
+        const tm = args.match(/(\d+)\s*items?\s*\(([^)]+)\)/);
+        if (tm) return "Update todos (" + tm[2] + ")";
+        const nm = args.match(/(\d+)\s*items?/);
+        if (nm) return "Update todos (" + nm[1] + " items)";
+        return "Check todos";
+      }
+      case "semantic_search":
+        return "Search codebase " + args;
+      case "replace_string_in_file":
+      case "multi_replace_string_in_file":
+        return "Edit " + args;
+      case "create_file":
+        return "Create " + args;
+      case "run_in_terminal":
+        return "Run: " + (args.length > 60 ? args.slice(0, 57) + "\u2026" : args);
+      case "explore_subagent":
+      case "runSubagent":
+        return "Sub-agent: " + args;
+      default:
+        return toolName2 + (args ? " " + args : "");
+    }
+  }
+  function formatToolResult(entry) {
+    const rs = entry.resultSummary ?? "";
+    if (!rs || rs === "empty") return "";
+    if (rs === "No todo list found.") return "none";
+    if (rs.match(/^Successfully/)) return "ok";
+    if (rs === "no list") return "none";
+    return rs;
+  }
+
   // node_modules/.pnpm/preact@10.29.1/node_modules/preact/jsx-runtime/dist/jsxRuntime.module.js
   var f4 = 0;
   function u4(e4, t4, n3, o4, i4, u5) {
@@ -1863,13 +1875,42 @@
         });
       }
     });
-    return /* @__PURE__ */ u4("div", { style: "margin-bottom:16px", children: [
-      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:230px;display:block" }),
-      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", style: "margin-top:2px", children: "\u2190 older \xB7 sessions \xB7 newer \u2192" })
-    ] });
+    return /* @__PURE__ */ u4("div", { style: "margin-bottom:16px", children: /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:230px;display:block" }) });
   }
 
+  // node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
+  function r4(e4) {
+    var t4, f5, n3 = "";
+    if ("string" == typeof e4 || "number" == typeof e4) n3 += e4;
+    else if ("object" == typeof e4) if (Array.isArray(e4)) {
+      var o4 = e4.length;
+      for (t4 = 0; t4 < o4; t4++) e4[t4] && (f5 = r4(e4[t4])) && (n3 && (n3 += " "), n3 += f5);
+    } else for (f5 in e4) e4[f5] && (n3 && (n3 += " "), n3 += f5);
+    return n3;
+  }
+  function clsx() {
+    for (var e4, t4, f5 = 0, n3 = "", o4 = arguments.length; f5 < o4; f5++) (e4 = arguments[f5]) && (t4 = r4(e4)) && (n3 && (n3 += " "), n3 += t4);
+    return n3;
+  }
+  var clsx_default = clsx;
+
   // media/src/tabs/Insights.tsx
+  var HELP_WHY = {
+    "help-context-bloat": "Every LLM turn receives the full conversation so far. Each extra token in context multiplies cost across every remaining turn \u2014 a 10K growth in one session can mean 50K+ extra tokens billed.",
+    "help-large-context": "Instruction files are sent on every LLM call in every session. 10,000 extra tokens in CLAUDE.md = 10,000 extra tokens per call, forever, regardless of task size.",
+    "help-files-repeated": "Each re-read appends the full file to context again. Re-reading a 500-line file 4 times wastes ~2,000 tokens on every subsequent call in that session.",
+    "help-high-turns": "Each additional LLM call costs tokens and time. Iterative discovery is ~10\xD7 more expensive than providing the same context upfront in the initial prompt.",
+    "help-duplicate-searches": "Repeated searches append identical results to context without progress. The growing context also makes the model more likely to repeat the search again.",
+    "help-tool-failures": "Each failure adds error text to context and forces a recovery turn. A cascade of 3 failures can waste 30,000+ tokens before a single useful edit is made.",
+    "help-large-results": "Tool results are appended to context in full. A 50 KB file read adds ~12,500 tokens to every subsequent call in that session \u2014 not just the call that read it.",
+    "help-tool-overhead": "Every LLM call includes all tool JSON schemas. 70+ tools = 8,000\u201315,000 overhead tokens per call that cannot be reduced by shortening your prompt.",
+    "help-cache-rate": "Cached tokens cost roughly 10\xD7 less than fresh tokens. Going from 0% to 60% cache hit rate cuts session cost by 80\u201390% with no change to model behavior.",
+    "help-tool-deadlock": "The agent is burning tokens repeating identical calls with zero progress. This loop runs until the context limit is hit \u2014 entire session cost with nothing accomplished.",
+    "help-state-spiral": "Conflicting constraints cause the agent to undo its own work. Each oscillation adds both the edit and the revert to context, accelerating cost with each cycle.",
+    "help-hallucination": "Each failed fix attempt adds the error to context, which anchors the model further from the real solution \u2014 the longer it runs, the harder it self-corrects.",
+    "help-runaway-steps": "Scope creep compounds: each extra step the agent takes grows context for all future steps. 90-step sessions can cost 10\u201320\xD7 a well-scoped 5-step equivalent.",
+    "help-context-accumulation": "Input tokens are growing while output shrinks \u2014 cost per call is compounding with diminishing returns. Continuing will likely hit the context limit with nothing saved."
+  };
   function generateInsights(summary, allSessions) {
     const insights = [];
     const { sessions, efficiency: eff } = summary;
@@ -1998,7 +2039,7 @@
       });
       if (largeResults.length > 0) {
         largeResults.sort((a4, b4) => b4.size - a4.size);
-        const totalKb = largeResults.reduce((s4, r4) => s4 + r4.size, 0) / 1024;
+        const totalKb = largeResults.reduce((s4, r5) => s4 + r5.size, 0) / 1024;
         const topResult = largeResults[0];
         insights.push({
           severity: totalKb > 100 ? "warning" : "info",
@@ -2006,7 +2047,7 @@
           sessionIdx: idx,
           helpId: "help-large-results",
           title: "[Session " + globalNum + "] Large tool results (" + totalKb.toFixed(0) + "KB)",
-          detail: largeResults.length + " tool call(s) returned large results: " + largeResults.slice(0, 3).map((r4) => r4.tool + " (" + (r4.size / 1024).toFixed(1) + "KB)").join(", ") + ".",
+          detail: largeResults.length + " tool call(s) returned large results: " + largeResults.slice(0, 3).map((r5) => r5.tool + " (" + (r5.size / 1024).toFixed(1) + "KB)").join(", ") + ".",
           action: topResult.tool.includes("read") ? "Use narrower reads \u2014 specify line ranges (e.g. read_file src/app.ts L1-50) instead of reading whole files." : "The largest result came from " + topResult.tool + " (" + (topResult.size / 1024).toFixed(0) + "KB). Use more targeted reads \u2014 specify line ranges with read_file, or tighter grep patterns."
         });
       }
@@ -2103,6 +2144,141 @@
       return (severityOrder[a4.severity] ?? 4) - (severityOrder[b4.severity] ?? 4);
     });
     return insights;
+  }
+  function InsightCard({ ins, isIgnored, sessions }) {
+    const icon = ins.severity.startsWith("loop") ? "\u21BA" : ins.severity === "warning" ? "\u26A0" : "\u2139";
+    const session = ins.sessionIdx !== void 0 ? sessions[ins.sessionIdx] : void 0;
+    const titleSessionMatch = ins.title.match(/^\[Session\s+\d+\]\s*(.*)$/);
+    const insightTitle = titleSessionMatch ? titleSessionMatch[1] : ins.title;
+    const sessionAgentColor = session ? getAgentColor(session.source) : "";
+    const sessionTimestamp = session ? formatSessionTime(session) : "";
+    const sessionPrompt = session?.userRequest || "";
+    const [copied, setCopied] = d2(false);
+    function buildAiPrompt() {
+      const lines = [ins.title, ""];
+      if (session?.userRequest && session.userRequest !== "[session in progress]") {
+        lines.push('Task: "' + session.userRequest + '"', "");
+      }
+      if (ins.detail) lines.push(ins.detail, "");
+      if (session) {
+        const topTools = Object.entries(session.toolCounts ?? {}).sort((a4, b4) => b4[1] - a4[1]).slice(0, 5).map(([t4, n3]) => "  " + t4 + " \xD7" + n3).join("\n");
+        if (topTools) lines.push("Top tools used:\n" + topTools, "");
+        if (session.filesChanged.length > 0)
+          lines.push("Files changed: " + session.filesChanged.slice(0, 5).join(", "), "");
+        const errors = session.timeline.filter((e4) => e4.isError && e4.errorMessage).slice(0, 3);
+        if (errors.length > 0)
+          lines.push("Error messages:\n" + errors.map((e4) => "  - " + (e4.errorMessage ?? "").slice(0, 120)).join("\n"), "");
+        lines.push("Session stats: " + session.totalLlmCalls + " LLM calls, " + session.totalToolCalls + " tool calls, " + (session.cacheHitRate * 100).toFixed(0) + "% cache hit rate", "");
+      }
+      lines.push("Action: " + ins.action);
+      return lines.join("\n");
+    }
+    function buildClipboardPrompt() {
+      const lines = [
+        "I'm using an AI coding agent and AgentLens detected the following issue in my session.",
+        "Please explain what's happening and suggest specific improvements to my workflow or prompt.",
+        "",
+        "--- Session context ---"
+      ];
+      if (session) {
+        lines.push(sessionTimestamp + " \xB7 " + getAgentSourceLabel(session.source));
+        if (session.userRequest && session.userRequest !== "[session in progress]")
+          lines.push('Task: "' + session.userRequest + '"');
+      } else {
+        lines.push("Across sessions");
+      }
+      lines.push("", "--- Insight ---", insightTitle);
+      if (ins.detail) lines.push("", ins.detail);
+      if (session) {
+        lines.push("", "--- Session data ---");
+        const topTools = Object.entries(session.toolCounts ?? {}).sort((a4, b4) => b4[1] - a4[1]).slice(0, 5).map(([t4, n3]) => t4 + " \xD7" + n3).join(", ");
+        if (topTools) lines.push("Top tools: " + topTools);
+        if (session.filesChanged.length > 0)
+          lines.push("Files changed: " + session.filesChanged.slice(0, 5).join(", "));
+        const errors = session.timeline.filter((e4) => e4.isError && e4.errorMessage).slice(0, 3);
+        if (errors.length > 0)
+          lines.push("Errors:\n" + errors.map((e4) => "  - " + (e4.errorMessage ?? "").slice(0, 120)).join("\n"));
+        lines.push("Stats: " + session.totalLlmCalls + " LLM calls \xB7 " + session.totalToolCalls + " tool calls \xB7 " + (session.cacheHitRate * 100).toFixed(0) + "% cache hit");
+      }
+      lines.push("", "--- Recommended action ---", ins.action);
+      return lines.join("\n");
+    }
+    function handleCopy() {
+      navigator.clipboard.writeText(buildClipboardPrompt()).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      });
+    }
+    return /* @__PURE__ */ u4("div", { class: clsx_default("insight-card", "insight-" + ins.severity), style: isIgnored ? "opacity:0.55" : "", children: [
+      /* @__PURE__ */ u4("div", { class: "insight-header", style: "align-items:flex-start;margin-bottom:4px", children: [
+        /* @__PURE__ */ u4("span", { class: "insight-icon", style: "margin-top:1px", children: icon }),
+        /* @__PURE__ */ u4("span", { class: "insight-title", style: "flex:1", children: insightTitle }),
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            class: "insight-ignore-btn",
+            title: "Copy prompt to clipboard",
+            onClick: handleCopy,
+            style: copied ? "color:var(--accent)" : "",
+            children: copied ? "\u2713" : "\u29C9"
+          }
+        ),
+        isIgnored ? /* @__PURE__ */ u4("button", { class: "insight-restore-btn", title: "Restore", onClick: () => ignoredInsightKeys.delete(ins.title), children: "Restore" }) : /* @__PURE__ */ u4("button", { class: "insight-ignore-btn", title: "Ignore", onClick: () => ignoredInsightKeys.add(ins.title), children: "Ignore" })
+      ] }),
+      session && /* @__PURE__ */ u4("div", { style: "margin-bottom:8px;margin-left:24px;display:flex;align-items:flex-start;gap:5px", children: [
+        /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px;background:" + sessionAgentColor }),
+        /* @__PURE__ */ u4("div", { style: "min-width:0", children: [
+          /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--fg);white-space:nowrap", children: sessionTimestamp }),
+          sessionPrompt && /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);font-style:italic;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px", title: sessionPrompt, children: sessionPrompt.length > 80 ? sessionPrompt.slice(0, 80) + "\u2026" : sessionPrompt })
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: "insight-action", style: "margin-bottom:8px", children: [
+        /* @__PURE__ */ u4("span", { class: "insight-action-label", children: [
+          "Action",
+          ins.helpId && HELP_WHY[ins.helpId] && /* @__PURE__ */ u4("span", { "data-tip": HELP_WHY[ins.helpId], style: "margin-left:4px;cursor:help;opacity:0.55;font-size:11px", children: "\u24D8" }),
+          ":"
+        ] }),
+        " ",
+        /* @__PURE__ */ u4("span", { style: "white-space:pre-wrap", children: ins.action })
+      ] }),
+      ins.detail && /* @__PURE__ */ u4("div", { class: "insight-detail", style: "white-space:pre-wrap", children: ins.detail }),
+      !isIgnored && (() => {
+        const buttonForAgent = (agent) => {
+          const label = getAgentSourceLabel(agent);
+          return {
+            agent,
+            label: "Copy for " + label,
+            color: getAgentColor(agent)
+          };
+        };
+        let buttons;
+        if (session) {
+          buttons = [buttonForAgent(session.source)];
+        } else {
+          const presence = agentPresence.value;
+          buttons = [
+            presence.copilot && buttonForAgent("copilot"),
+            presence.claude && buttonForAgent("claude_code"),
+            presence.codex && buttonForAgent("codex")
+          ].filter(Boolean);
+        }
+        if (buttons.length === 0) buttons.push({ agent: "generic", label: "Copy to Clipboard", color: "var(--accent)" });
+        const prompt = buildAiPrompt();
+        return /* @__PURE__ */ u4("div", { class: "insight-ask-ai-group", children: buttons.map((b4) => /* @__PURE__ */ u4(
+          "button",
+          {
+            class: "insight-ask-ai",
+            onClick: () => vscode?.postMessage({ type: "askAI", prompt, agent: b4.agent, label: ins.title }),
+            children: [
+              /* @__PURE__ */ u4("span", { style: "color:" + b4.color + ";font-size:8px", children: "\u25CF" }),
+              " ",
+              b4.label
+            ]
+          },
+          b4.agent
+        )) });
+      })()
+    ] });
   }
 
   // media/src/tabs/Traces.tsx
@@ -2652,7 +2828,7 @@
           }
         });
         nodes.forEach((n3) => {
-          const r4 = nR(n3);
+          const r5 = nR(n3);
           const isActive = n3.id === activeId;
           const inHL = activeId ? hlNodes.has(n3.id) : false;
           const dimmed = activeId && !inHL;
@@ -2661,14 +2837,14 @@
             ctx.shadowColor = n3.color;
             ctx.shadowBlur = 20;
             ctx.beginPath();
-            ctx.arc(n3.x, n3.y, r4 + 4, 0, Math.PI * 2);
+            ctx.arc(n3.x, n3.y, r5 + 4, 0, Math.PI * 2);
             ctx.strokeStyle = n3.color;
             ctx.lineWidth = 2;
             ctx.stroke();
             ctx.restore();
           }
           ctx.beginPath();
-          ctx.arc(n3.x, n3.y, r4, 0, Math.PI * 2);
+          ctx.arc(n3.x, n3.y, r5, 0, Math.PI * 2);
           ctx.fillStyle = isActive ? n3.color + "aa" : dimmed ? n3.color + "10" : n3.color + "28";
           ctx.fill();
           ctx.strokeStyle = dimmed ? n3.color + "30" : n3.color;
@@ -2686,7 +2862,7 @@
           }
           ctx.font = "9px sans-serif";
           ctx.fillStyle = dimmed ? muted + "30" : muted;
-          ctx.fillText(n3.type === "llm" ? "Turn " + n3.turnNum : "", n3.x, n3.y + r4 + 11);
+          ctx.fillText(n3.type === "llm" ? "Turn " + n3.turnNum : "", n3.x, n3.y + r5 + 11);
         });
         const tipId = st.clickedNodeId || st.hoverNodeId;
         if (tipId) {
@@ -2822,8 +2998,8 @@
           const my = (e4.clientY - rect.top - st.panY) / st.zoom;
           let found = null;
           for (const n3 of nodes) {
-            const r4 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
-            if (dx * dx + dy * dy <= r4 * r4) {
+            const r5 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
+            if (dx * dx + dy * dy <= r5 * r5) {
               found = n3.id;
               break;
             }
@@ -2851,8 +3027,8 @@
         const mx = (e4.clientX - rect.left - st.panX) / st.zoom;
         const my = (e4.clientY - rect.top - st.panY) / st.zoom;
         for (const n3 of nodes) {
-          const r4 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
-          if (dx * dx + dy * dy <= r4 * r4) {
+          const r5 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
+          if (dx * dx + dy * dy <= r5 * r5) {
             st.clickedNodeId = st.clickedNodeId === n3.id ? null : n3.id;
             draw();
             return;
@@ -2998,14 +3174,14 @@
       return /* @__PURE__ */ u4("div", { class: "empty-state", children: "No tool calls recorded for this session" });
     }
     const total = entries.reduce((sum, e4) => sum + e4[1], 0);
-    const r4 = 70, cx = 85, cy = 85, sw = 26;
+    const r5 = 70, cx = 85, cy = 85, sw = 26;
     const angleOffset = -Math.PI / 2;
     let currentAngle = angleOffset;
     function arcPath(startAngle, endAngle) {
-      const x1 = cx + r4 * Math.cos(startAngle), y1 = cy + r4 * Math.sin(startAngle);
-      const x22 = cx + r4 * Math.cos(endAngle), y22 = cy + r4 * Math.sin(endAngle);
+      const x1 = cx + r5 * Math.cos(startAngle), y1 = cy + r5 * Math.sin(startAngle);
+      const x22 = cx + r5 * Math.cos(endAngle), y22 = cy + r5 * Math.sin(endAngle);
       const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
-      return `M ${x1} ${y1} A ${r4} ${r4} 0 ${largeArc} 1 ${x22} ${y22}`;
+      return `M ${x1} ${y1} A ${r5} ${r5} 0 ${largeArc} 1 ${x22} ${y22}`;
     }
     const slices = entries.map((e4, i4) => {
       const pct = e4[1] / total;
@@ -3019,7 +3195,7 @@
       /* @__PURE__ */ u4("div", { class: "donut-container", children: [
         /* @__PURE__ */ u4("svg", { width: "170", height: "170", viewBox: "0 0 170 170", children: [
           slices.map(
-            (sl) => sl.pct >= 1 ? /* @__PURE__ */ u4("circle", { cx, cy, r: r4, fill: "none", stroke: sl.color, "stroke-width": sw }, sl.name) : /* @__PURE__ */ u4("path", { d: arcPath(sl.startA, sl.endA), fill: "none", stroke: sl.color, "stroke-width": sw, "stroke-linecap": "butt" }, sl.name)
+            (sl) => sl.pct >= 1 ? /* @__PURE__ */ u4("circle", { cx, cy, r: r5, fill: "none", stroke: sl.color, "stroke-width": sw }, sl.name) : /* @__PURE__ */ u4("path", { d: arcPath(sl.startA, sl.endA), fill: "none", stroke: sl.color, "stroke-width": sw, "stroke-linecap": "butt" }, sl.name)
           ),
           /* @__PURE__ */ u4("text", { x: cx, y: cy, "text-anchor": "middle", dy: "4", "font-size": "16", "font-weight": "bold", fill: "var(--fg)", children: total }),
           /* @__PURE__ */ u4("text", { x: cx, y: cy + 14, "text-anchor": "middle", "font-size": "9", fill: "var(--muted)", opacity: "0.7", children: "total" })
@@ -3146,10 +3322,7 @@
           ] }),
           sessInsights.length > 0 && /* @__PURE__ */ u4("div", { children: [
             /* @__PURE__ */ u4("div", { style: "font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:6px", children: "Insights" }),
-            sessInsights.slice(0, 4).map((ins) => /* @__PURE__ */ u4("div", { style: "margin-bottom:5px;padding:6px 10px;background:var(--hover);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;font-size:11px", children: [
-              /* @__PURE__ */ u4("div", { style: "font-weight:600;margin-bottom:1px", children: ins.title.replace(/^\[Session \d+\]\s*/, "") }),
-              /* @__PURE__ */ u4("div", { style: "color:var(--muted);font-size:10px", children: ins.action })
-            ] }, ins.title))
+            sessInsights.slice(0, 4).map((ins) => /* @__PURE__ */ u4(InsightCard, { ins, isIgnored: false, sessions: [sess] }, ins.title))
           ] })
         ] }),
         section === "trace" && /* @__PURE__ */ u4("div", { children: steps.length === 0 ? timelines[sess.sessionId] !== void 0 ? /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:12px 0", children: "No trace data for this session" }) : /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:12px 0", children: "Loading\u2026" }) : /* @__PURE__ */ u4("div", { class: "waterfall", children: [
@@ -3236,17 +3409,52 @@
     if (sessions.length === 0) {
       return /* @__PURE__ */ u4("div", { id: "sessions-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: hasAny ? "No sessions match the active filters." : "No sessions recorded yet." }) });
     }
+    const sortKey = sessionSortKey.value;
+    const sortDir = sessionSortDir.value;
+    function sortArrow(key) {
+      if (sortKey !== key) return /* @__PURE__ */ u4("span", { style: "opacity:0.3;margin-left:3px", children: "\u2195" });
+      return /* @__PURE__ */ u4("span", { style: "margin-left:3px;color:var(--accent)", children: sortDir === "desc" ? "\u25BC" : "\u25B2" });
+    }
+    function onSortClick(key) {
+      if (sessionSortKey.value === key) {
+        sessionSortDir.value = sessionSortDir.value === "desc" ? "asc" : "desc";
+      } else {
+        sessionSortKey.value = key;
+        sessionSortDir.value = "desc";
+      }
+    }
+    const thBase = "padding:3px 6px;font-size:10px;font-weight:600;white-space:nowrap;user-select:none";
+    const thSort = thBase + ";cursor:pointer;color:var(--fg)";
+    const thMuted = thBase + ";color:var(--muted);font-weight:500";
     return /* @__PURE__ */ u4("div", { id: "sessions-content", style: "overflow-x:auto", children: [
       /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
-        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border)", children: [
+        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:2px solid var(--vscode-panel-border)", children: [
           /* @__PURE__ */ u4("th", { style: "width:16px;padding:3px 4px 3px 8px" }),
-          /* @__PURE__ */ u4("th", { style: "width:10px;padding:3px 4px" }),
-          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:left;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Time" }),
-          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:left;font-size:10px;font-weight:500;color:var(--muted)", children: "Prompt" }),
-          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:left;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Model" }),
-          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:right;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Tokens" }),
-          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:right;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Duration" }),
-          /* @__PURE__ */ u4("th", { style: "padding:3px 8px 3px 6px;text-align:right;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Cost" })
+          /* @__PURE__ */ u4("th", { style: "width:10px;padding:3px 4px;" + thSort, onClick: () => onSortClick("source"), title: "Sort by agent", children: sortArrow("source") }),
+          /* @__PURE__ */ u4("th", { style: "text-align:left;" + thSort, onClick: () => onSortClick("start_time"), children: [
+            "Time",
+            sortArrow("start_time")
+          ] }),
+          /* @__PURE__ */ u4("th", { style: "text-align:left;" + thSort, onClick: () => onSortClick("prompt"), children: [
+            "Prompt",
+            sortArrow("prompt")
+          ] }),
+          /* @__PURE__ */ u4("th", { style: "text-align:left;" + thSort, onClick: () => onSortClick("model"), children: [
+            "Model",
+            sortArrow("model")
+          ] }),
+          /* @__PURE__ */ u4("th", { style: "text-align:right;" + thSort, onClick: () => onSortClick("total_tokens"), children: [
+            "Tokens",
+            sortArrow("total_tokens")
+          ] }),
+          /* @__PURE__ */ u4("th", { style: "text-align:right;" + thSort, onClick: () => onSortClick("duration_ms"), children: [
+            "Duration",
+            sortArrow("duration_ms")
+          ] }),
+          /* @__PURE__ */ u4("th", { style: "text-align:right;padding:3px 8px 3px 6px;" + thSort, onClick: () => onSortClick("cost"), children: [
+            "Cost",
+            sortArrow("cost")
+          ] })
         ] }) }),
         /* @__PURE__ */ u4("tbody", { children: sessions.map((sess) => /* @__PURE__ */ u4(SessionRow, { sess }, sess.sessionId)) })
       ] }),
@@ -3271,6 +3479,13 @@
     );
   }
   var growthStateRef = { current: null };
+  function formatGrowthLabel(sess) {
+    if (!sess?.startTime) return "\u2014";
+    const d5 = new Date(sess.startTime);
+    if (isNaN(d5.getTime())) return "\u2014";
+    const p5 = (n3) => String(n3).padStart(2, "0");
+    return `${p5(d5.getMonth() + 1)}-${p5(d5.getDate())} ${p5(d5.getHours())}:${p5(d5.getMinutes())}`;
+  }
   var BASE_MS = 900;
   function ContextGrowthChart({ sessions, timelines }) {
     const canvasRef = A2(null);
@@ -3315,7 +3530,7 @@
         if (llmEntries.length < 1) return;
         seriesData.push({
           sessionId: sess.sessionId,
-          label: formatSessionTimeShort(sess),
+          label: formatGrowthLabel(sess),
           color: getAgentColor(sess.source) || COLORS[seriesData.length % COLORS.length],
           points: llmEntries.map((e4, i4) => ({ turn: i4 + 1, tokens: e4.inputTokens ?? 0 }))
         });
@@ -3561,6 +3776,8 @@
       const barPad = sl > 100 ? 0 : sl > 50 ? 0.2 : sl > 20 ? 0.5 : 1;
       const halfSlot = slotW / 2;
       const halfBar = Math.max(0.5, halfSlot - barPad);
+      const dayKey = (t4) => t4 ? new Date(t4).toISOString().slice(0, 10) : "none";
+      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
       sessionData.forEach((s4, i4) => {
         const slotX = pad.left + i4 * slotW;
         const inH = s4.input / maxIn * chartH;
@@ -3573,6 +3790,22 @@
         ctx.arc(slotX + slotW / 2, pad.top + chartH + 7, 1.5, 0, Math.PI * 2);
         ctx.fillStyle = getAgentColor(s4.source);
         ctx.fill();
+        if (i4 > 0 && dayKey(s4.startTime) !== dayKey(sessionData[i4 - 1].startTime)) {
+          ctx.strokeStyle = gridColor;
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(slotX, pad.top);
+          ctx.lineTo(slotX, pad.top + chartH);
+          ctx.stroke();
+          const label = s4.startTime ? new Date(s4.startTime).toISOString().slice(5, 10) : "";
+          if (label) {
+            ctx.fillStyle = textColor;
+            ctx.font = "8px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillText(label, slotX + 2, pad.top + 1);
+          }
+        }
       });
     });
     const presentSources = new Set(sessions.map((s4) => s4.source).filter(Boolean));
@@ -3582,8 +3815,7 @@
       agentSources.length > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;gap:10px;justify-content:center;margin-top:4px;flex-wrap:wrap", children: agentSources.map((src) => /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)", children: [
         /* @__PURE__ */ u4("span", { style: `display:inline-block;width:7px;height:7px;border-radius:50%;background:${getAgentColor(src)}` }),
         getAgentSourceLabel(src)
-      ] }, src)) }),
-      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 older \xB7 sessions \xB7 newer \u2192" })
+      ] }, src)) })
     ] });
   }
 
@@ -3716,7 +3948,9 @@
     const copilotSess = sessions.filter((s4) => s4.source === "copilot");
     const claudeSess = sessions.filter((s4) => s4.source === "claude_code");
     const codexSess = sessions.filter((s4) => s4.source === "codex");
-    const chartSessions = rangedSessions.value.slice().reverse();
+    const timeOrdered = rangedSessions.value;
+    const pricedChartSess = timeOrdered.filter((s4) => s4.source === "copilot" || s4.source === "codex" || s4.source === "claude_code");
+    const chartSessions = timeOrdered.slice().reverse();
     chartSessions.slice(0, CHART_MAX).forEach((sess) => {
       if (!sessionTimelines.value[sess.sessionId] && vscode) {
         vscode.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
@@ -3784,7 +4018,7 @@
           /* @__PURE__ */ u4("svg", { width: "16", height: "8", viewBox: "0 0 16 8", children: /* @__PURE__ */ u4("line", { x1: "0", y1: "4", x2: "16", y2: "4", stroke: "rgba(186,104,200,0.9)", "stroke-width": "1.5", "stroke-dasharray": "4 2" }) }),
           "Daily total (right axis)"
         ] }),
-        /* @__PURE__ */ u4(CostBarChart, { sessions: pricedSess, mode }),
+        /* @__PURE__ */ u4(CostBarChart, { sessions: pricedChartSess, mode }),
         dayRows.length > 0 && /* @__PURE__ */ u4("div", { style: "overflow-x:auto;margin-bottom:8px", children: /* @__PURE__ */ u4("table", { style: "border-collapse:collapse;font-size:10px;min-width:100%;white-space:nowrap", children: [
           /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: ["Date", "Agent", "Model", "Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].map((h5) => /* @__PURE__ */ u4("th", { style: `padding:3px 8px 3px ${h5 === "Date" ? "0" : "6px"};color:var(--muted);font-weight:500;text-align:${["Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].includes(h5) ? "right" : "left"}`, children: h5 }, h5)) }) }),
           /* @__PURE__ */ u4("tbody", { children: dayRows.map(([day, d5]) => {
@@ -3847,14 +4081,14 @@
       /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
         /* @__PURE__ */ u4("span", { children: [
           /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" }),
-          " Input"
+          " Input tokens"
         ] }),
         /* @__PURE__ */ u4("span", { children: [
           /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" }),
-          " Output"
+          " Output tokens"
         ] })
       ] }),
-      /* @__PURE__ */ u4(SessionTokenChart, { sessions }),
+      /* @__PURE__ */ u4(SessionTokenChart, { sessions: timeOrdered }),
       /* @__PURE__ */ u4(SectionHead, { title: "CONTEXT GROWTH" }),
       /* @__PURE__ */ u4(ContextGrowthChart, { sessions: chartSessions.slice(0, CHART_MAX), timelines })
     ] });
@@ -4207,7 +4441,7 @@
       config: cfg,
       ...cfg.enabled ? evaluateAlert(cfg, displayed, efficiency, profiles) : { triggered: false }
     }));
-    const triggeredCount = results.filter((r4) => r4.triggered).length;
+    const triggeredCount = results.filter((r5) => r5.triggered).length;
     function updateAgentThreshold(source, metric, value) {
       const next = {
         ...profiles,
@@ -5832,8 +6066,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     const agent = selectedAgentFilter.value;
     const debounce = A2(null);
     const [loading, setLoading] = d2(false);
-    function fireSearch(r4) {
-      if (r4.preset === "all") {
+    function fireSearch(r5) {
+      if (r5.preset === "all") {
         rangedSearchResults.value = null;
         setLoading(false);
         return;
@@ -5843,15 +6077,15 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       debounce.current = setTimeout(() => {
         vscode?.postMessage({
           type: "searchSessions",
-          query: { since: r4.since, until: r4.until, limit: CHART_MAX, orderBy: "start_time", orderDir: "DESC" },
+          query: { since: r5.since, until: r5.until, limit: CHART_MAX, orderBy: "start_time", orderDir: "DESC" },
           context: "timeRange"
         });
       }, 120);
     }
     function selectPreset(id) {
-      const r4 = makeTimeRange(id);
-      timeRange.value = r4;
-      fireSearch(r4);
+      const r5 = makeTimeRange(id);
+      timeRange.value = r5;
+      fireSearch(r5);
     }
     y2(() => {
       if (rangedSearchResults.value !== null) setLoading(false);
@@ -5859,6 +6093,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     const count = rangedSessions.value.length;
     const total = rangedSearchResults.value?.totalCount;
     const isActive = range.preset !== "all";
+    const baseSessions = isActive ? rangedSessions.value : sessionSummary.value?.sessions ?? [];
+    const presentSources = new Set(baseSessions.map((s4) => s4.source));
     return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:0;padding:0 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0", children: [
       /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-right:6px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "Time" }),
       /* @__PURE__ */ u4("div", { style: "display:flex;gap:1px", children: TIME_PRESETS.map((p5) => /* @__PURE__ */ u4(
@@ -5878,7 +6114,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         /* @__PURE__ */ u4("span", { style: "width:1px;height:14px;background:var(--border);margin:0 8px;flex-shrink:0" }),
         /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;align-items:center", children: [
           /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-right:2px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "Agent" }),
-          AGENT_FILTER_OPTIONS.map((o4) => {
+          AGENT_FILTER_OPTIONS.filter((o4) => o4.value === "all" || presentSources.has(o4.value)).map((o4) => {
             const active = agent === o4.value;
             const displayColor = active && o4.activeColor ? o4.activeColor : o4.color;
             return /* @__PURE__ */ u4(
@@ -5911,42 +6147,20 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       )
     ] });
   }
-  var SORT_OPTIONS = [
-    { key: "start_time", label: "Recent" },
-    { key: "total_tokens", label: "Tokens" },
-    { key: "duration_ms", label: "Longest" }
-  ];
   function SearchFilterBar() {
     const text = sessionTextFilter.value;
-    const sort = sessionSortKey.value;
-    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap", children: [
-      /* @__PURE__ */ u4(
-        "input",
-        {
-          type: "text",
-          placeholder: "Filter sessions\u2026",
-          value: text,
-          onInput: (e4) => {
-            sessionTextFilter.value = e4.target.value;
-          },
-          style: "flex:1;min-width:120px;max-width:240px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-        }
-      ),
-      /* @__PURE__ */ u4("div", { style: "display:flex;gap:3px;align-items:center;flex-wrap:wrap", children: [
-        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-right:2px", children: "Sort" }),
-        SORT_OPTIONS.map((o4) => /* @__PURE__ */ u4(
-          "button",
-          {
-            class: "tab-mini" + (sort === o4.key ? " active" : ""),
-            onClick: () => {
-              sessionSortKey.value = o4.key;
-            },
-            children: o4.label
-          },
-          o4.key
-        ))
-      ] })
-    ] });
+    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0", children: /* @__PURE__ */ u4(
+      "input",
+      {
+        type: "text",
+        placeholder: "Filter sessions\u2026",
+        value: text,
+        onInput: (e4) => {
+          sessionTextFilter.value = e4.target.value;
+        },
+        style: "flex:1;min-width:120px;max-width:260px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+      }
+    ) });
   }
   function Tab({ id, label }) {
     const isActive = normalizeTabId(activeTab.value) === id;

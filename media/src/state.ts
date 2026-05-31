@@ -1,4 +1,5 @@
 import { signal, computed } from '@preact/signals'
+import { calcSessionCost } from './sessionMetrics'
 import type {
   FullSummary, SessionSummaryCard, TimelineEntry,
   AgentFilter, InsightFilter, VsCodeApi,
@@ -60,9 +61,10 @@ export const searchResults = signal<SearchResultData | null>(null)
 
 // ── Global session text filter + sort ─────────────────────────────────────────
 
-export type SortKey = 'start_time' | 'total_tokens' | 'duration_ms' | 'errors'
+export type SortKey = 'start_time' | 'total_tokens' | 'duration_ms' | 'errors' | 'prompt' | 'model' | 'source' | 'cost'
 export const sessionTextFilter = signal('')
 export const sessionSortKey = signal<SortKey>('start_time')
+export const sessionSortDir = signal<'asc' | 'desc'>('desc')
 
 // ── Set signal helper ─────────────────────────────────────────────────────────
 
@@ -198,14 +200,26 @@ export const filteredSessions = computed<SessionSummaryCard[]>(() => {
     sessions = sessions.filter(s => (s.userRequest ?? '').toLowerCase().includes(text))
   }
   const key = sessionSortKey.value
-  if (key === 'start_time') return sessions  // already newest-first from rangedSessions
+  const dir = sessionSortDir.value
+  if (key === 'start_time') return dir === 'asc' ? [...sessions].reverse() : sessions
   return [...sessions].sort((a, b) => {
+    let cmp = 0
     switch (key) {
-      case 'total_tokens': return (b.inputTokens + b.outputTokens) - (a.inputTokens + a.outputTokens)
-      case 'duration_ms':  return b.durationMs - a.durationMs
-      case 'errors':       return b.errors - a.errors
-      default:             return 0
+      case 'total_tokens': cmp = (b.inputTokens + b.outputTokens) - (a.inputTokens + a.outputTokens); break
+      case 'duration_ms':  cmp = b.durationMs - a.durationMs; break
+      case 'errors':       cmp = b.errors - a.errors; break
+      case 'prompt':       cmp = (a.userRequest ?? '').localeCompare(b.userRequest ?? ''); break
+      case 'model':        cmp = (a.model ?? '').localeCompare(b.model ?? ''); break
+      case 'source':       cmp = (a.source ?? '').localeCompare(b.source ?? ''); break
+      case 'cost': {
+        const modeA = (a.source === 'copilot') ? 'token' : 'token'
+        const costA = calcSessionCost(a, modeA).totalUsd
+        const costB = calcSessionCost(b, modeA).totalUsd
+        cmp = costB - costA
+        break
+      }
     }
+    return dir === 'asc' ? -cmp : cmp
   })
 })
 

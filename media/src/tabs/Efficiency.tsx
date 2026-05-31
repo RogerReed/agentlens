@@ -32,6 +32,14 @@ type GrowthSeries = {
 interface GrowthState { series: GrowthSeries[]; xPos: (t: number) => number; yPos: (tok: number) => number; chartH: number; pad: { top: number; left: number } }
 const growthStateRef: { current: GrowthState | null } = { current: null }
 
+function formatGrowthLabel(sess: { startTime?: string }): string {
+  if (!sess?.startTime) return '—'
+  const d = new Date(sess.startTime)
+  if (isNaN(d.getTime())) return '—'
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
 const BASE_MS = 900 // ms per session at 1× speed
 
 export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionSummaryCard[]; timelines: Record<string, import('../types').TimelineEntry[]> }) {
@@ -82,7 +90,7 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
       if (llmEntries.length < 1) return
       seriesData.push({
         sessionId: sess.sessionId,
-        label: formatSessionTimeShort(sess),
+        label: formatGrowthLabel(sess),
         color: getAgentColor(sess.source) || COLORS[seriesData.length % COLORS.length],
         points: llmEntries.map((e, i) => ({ turn: i + 1, tokens: e.inputTokens ?? 0 })),
       })
@@ -442,6 +450,9 @@ export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[]
     const halfSlot = slotW / 2
     const halfBar = Math.max(0.5, halfSlot - barPad)
 
+    const dayKey = (t: string) => t ? new Date(t).toISOString().slice(0, 10) : 'none'
+    const textColor = cs.getPropertyValue('--vscode-descriptionForeground').trim() || '#888'
+
     sessionData.forEach((s, i) => {
       const slotX = pad.left + i * slotW
       const inH = (s.input / maxIn) * chartH
@@ -452,6 +463,18 @@ export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[]
       ctx.beginPath()
       ctx.arc(slotX + slotW / 2, pad.top + chartH + 7, 1.5, 0, Math.PI * 2)
       ctx.fillStyle = getAgentColor(s.source); ctx.fill()
+      // Day boundary: vertical line + MM-DD label at the start of each new day
+      if (i > 0 && dayKey(s.startTime) !== dayKey(sessionData[i - 1].startTime)) {
+        ctx.strokeStyle = gridColor; ctx.lineWidth = 0.8
+        ctx.beginPath(); ctx.moveTo(slotX, pad.top); ctx.lineTo(slotX, pad.top + chartH); ctx.stroke()
+        const label = s.startTime ? new Date(s.startTime).toISOString().slice(5, 10) : ''
+        if (label) {
+          ctx.fillStyle = textColor
+          ctx.font = '8px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
+          ctx.textAlign = 'left'; ctx.textBaseline = 'top'
+          ctx.fillText(label, slotX + 2, pad.top + 1)
+        }
+      }
     })
   })
 
@@ -471,7 +494,6 @@ export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[]
           ))}
         </div>
       )}
-      <div class="heatmap-axis-label">← older · sessions · newer →</div>
     </>
   )
 }

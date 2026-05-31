@@ -87,8 +87,13 @@ export function Analytics() {
   const claudeSess  = sessions.filter(s => s.source === 'claude_code')
   const codexSess   = sessions.filter(s => s.source === 'codex')
 
+  // Charts always use time-ordered (newest-first) sessions so internal .reverse() gives oldest-first.
+  // filteredSessions may be sorted by cost/model/etc — that's only for the Sessions table.
+  const timeOrdered = rangedSessions.value
+  const pricedChartSess = timeOrdered.filter(s => s.source === 'copilot' || s.source === 'codex' || s.source === 'claude_code')
+
   // rangedSessions: time-range + agent filtered, with correct in-memory fallback while DB results load
-  const chartSessions = rangedSessions.value.slice().reverse()
+  const chartSessions = timeOrdered.slice().reverse()
 
   // Load timelines for context growth chart
   chartSessions.slice(0, CHART_MAX).forEach(sess => {
@@ -160,7 +165,7 @@ export function Analytics() {
             Daily total (right axis)
           </div>
 
-          <CostBarChart sessions={pricedSess} mode={mode} />
+          <CostBarChart sessions={pricedChartSess} mode={mode} />
 
           {/* Multi-dimensional cost table: date → agent, scrollable */}
           {dayRows.length > 0 && (
@@ -250,11 +255,11 @@ export function Analytics() {
       {/* Token usage per session */}
       <SectionHead title="TOKEN USAGE PER SESSION" />
       <div style="display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)">
-        <span><span style="display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" /> Input</span>
-        <span><span style="display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" /> Output</span>
+        <span><span style="display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" /> Input tokens</span>
+        <span><span style="display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" /> Output tokens</span>
       </div>
-      {/* Pass newest-first; SessionTokenChart reverses internally to oldest-first */}
-      <SessionTokenChart sessions={sessions} />
+      {/* Always pass newest-first (rangedSessions); chart reverses internally to oldest-first */}
+      <SessionTokenChart sessions={timeOrdered} />
 
       {/* Context growth — at the bottom */}
       <SectionHead title="CONTEXT GROWTH" />

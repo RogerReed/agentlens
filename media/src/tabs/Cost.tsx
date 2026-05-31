@@ -378,7 +378,6 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
   return (
     <div style="margin-bottom:16px">
       <canvas ref={canvasRef} style="width:100%;height:230px;display:block" />
-      <div class="heatmap-axis-label" style="margin-top:2px">← older · sessions · newer →</div>
     </div>
   )
 }
