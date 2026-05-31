@@ -3,19 +3,12 @@ import { esc } from '../utils'
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const VIEWS: [string, string][] = [
-  ['Efficiency',      'The default tab. Per-session metrics (turns, cache hit rate, error rate), a heat-scored session breakdown table, and a context growth chart showing input token accumulation across LLM calls within each session.'],
-  ['Cost',            'Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cross-session cost table. Estimates only — not your actual bill.'],
-  ['Recommendations', 'Actionable insights for improving prompt efficiency, plus loop and malfunction detection. Two signal categories: efficiency insights (token waste, cache, tool failures) and loop signals (tool deadlock, state spirals, error recurrence, runaway steps, context accumulation).'],
+  ['Sessions',        'Session list as a sortable table: timestamp, prompt, model, tokens, duration, and estimated cost per row. Click any row to expand in-place and drill into five sub-tabs — Overview (stat tiles, burn rate, insights), Trace (full waterfall of LLM calls and tool calls with arguments and results), Flow (turn-to-tool semantic graph), Tools (donut chart of tool distribution), and Files (modified files, clickable to open in the editor).'],
+  ['Analytics',       'Aggregate charts and metrics across all sessions in the active time range. Agent Breakdown cards show per-agent token totals, cache rates, and top tools. Estimated Cost shows a bar chart with a daily total overlay line, a day-grouped cost table (date → agent → model), and a cost table broken down by model. Token Usage Per Session shows slim bars oldest→newest with agent color dots. Context Growth shows input token accumulation per LLM turn across sessions.'],
   ['Alerts',          'Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts.'],
   ['Automation',      'Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay.'],
-  ['Traces',          'A human-readable timeline of each session — LLM calls with decisions, tool calls with arguments and results, token usage per step, and background overhead breakdown.'],
-  ['Search',          'Search and filter historical sessions stored in the database. Filter by request text, date range, and sort by recency, cost, duration, token count, or error count.'],
-  ['Files',           'Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed.'],
-  ['Flow',            'LLM turns and tool calls visualized as a semantic graph — one node per turn, one per unique tool, edges weighted by call frequency. Supports zoom, pan, and playback animation.'],
-  ['Agents',          'Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table.'],
-  ['Tools',           'Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool.'],
-  ['Export',          'Export OTEL spans as JSON files — full or redacted (prompt text, tool inputs, and tool results replaced with [redacted]). Replay either format with pnpm run demo to re-examine a past session without the original agent running.'],
-  ['Help',            'This tab — an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Recommendations and malfunction detection.'],
+  ['Export',          'Export all recorded sessions as a JSON file — full (includes prompt text) or redacted (prompt text removed, all other fields retained). Exports draw from the full session history in the database, not just the active window. Raw OTEL span export for session replay is planned but not yet available.'],
+  ['Help',            'This tab — an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Insights and malfunction detection.'],
 ]
 
 const TERMS: [string, string][] = [
@@ -30,7 +23,7 @@ const TERMS: [string, string][] = [
   ['Context Bloat',          'An efficiency insight triggered when input tokens grow significantly across turns within a session.'],
   ['Files Changed',          'Unique files that were created or modified by the agent during the current data collection period.'],
   ['Input Tokens',           'The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt.'],
-  ['Loop Signal',            'A behavioral signal in the Recommendations tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a ↺ icon.'],
+  ['Loop Signal',            'A behavioral signal in the Insights tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a ↺ icon.'],
   ['LLM',                    'Large Language Model. The underlying AI model (e.g. GPT-4o, Claude Sonnet) that generates text, answers questions, or produces code. The agent sends requests to the LLM as needed; the model itself does not manage tools or workflow. It is the engine that generates language and code for the agent to act on.'],
   ['LLM Call',               'A single request-response cycle to the language model. One session typically includes multiple LLM calls as the agent iterates.'],
   ['OTLP',                   'OpenTelemetry Protocol — the standard format used to collect and transmit telemetry from AI agents to this extension. AgentLens accepts trace spans and log-derived events.'],
@@ -187,7 +180,7 @@ function OverviewSection() {
       )}
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
-        <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable recommendations in real time — then helps you prompt your agents on inefficiencies to improve interactions.</p>
+        <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time — then helps you prompt your agents on inefficiencies to improve interactions.</p>
       </div>
     </div>
   )
@@ -379,7 +372,7 @@ function AgentOtelSection() {
             </div>
           ))}
         </div>
-        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side.</p>
+        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Insights, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side.</p>
       </div>
     </div>
   )
@@ -390,7 +383,7 @@ function InsightsSection() {
     <div class="help-section" id="help-insights">
       <h3 class="help-heading">{HELP_SECTIONS.insights.heading}</h3>
       <div class="help-overview-body">
-        <p>The <strong>Recommendations</strong> tab surfaces efficiency insights for <a href="#gl-tokens">token</a> waste, <a href="#gl-cache-hit-rate">cache</a> patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer <a href="#gl-turn">turns</a> and fewer tokens on the same work.</p>
+        <p>The <strong>Insights</strong> tab surfaces efficiency insights for <a href="#gl-tokens">token</a> waste, <a href="#gl-cache-hit-rate">cache</a> patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer <a href="#gl-turn">turns</a> and fewer tokens on the same work.</p>
         <div class="glossary">
           <InsightBlock id="help-context-bloat" title="Context Bloat"
             why="Every LLM turn receives the full conversation so far. When tool results are large — full file reads, wide search outputs — the context balloons quickly. Instruction files that repeat the same guidance across turns are another common cause."
@@ -448,7 +441,7 @@ function LoopsSection() {
     <div class="help-section" id="help-loops">
       <h3 class="help-heading">{HELP_SECTIONS.loops.heading}</h3>
       <div class="help-overview-body">
-        <p><a href="#gl-loop-signal">Loop signals</a> are behavioral patterns indicating the <a href="#gl-agent">agent</a> is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity.</p>
+        <p><a href="#gl-loop-signal">Loop signals</a> are behavioral patterns indicating the <a href="#gl-agent">agent</a> is stuck, oscillating, or spiraling into unproductive work. They appear in Insights with warning or critical severity.</p>
         <div class="glossary">
           <LoopBlock id="help-tool-deadlock" title="Tool Call Deadlock"            why="The same tool call — identical name and arguments — was executed 5+ times. The agent is not retaining the result, likely lost in a long context."
             example={`The agent ran <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">read_file src/types.ts</code> eight times in one session.`}
@@ -477,7 +470,7 @@ function LoopsSection() {
           />
         </div>
 
-        <p style="margin-top:16px;font-size:12px;color:var(--muted)">Loop signals appear first in the Recommendations list, sorted by severity. Use the <strong>Loops</strong> filter pill to view only malfunction signals. Use <strong>Ignore</strong> to dismiss a signal if it was intentional behavior.</p>
+        <p style="margin-top:16px;font-size:12px;color:var(--muted)">Loop signals appear first in the Insights list, sorted by severity. Use the <strong>Loops</strong> filter pill to view only malfunction signals. Use <strong>Ignore</strong> to dismiss a signal if it was intentional behavior.</p>
       </div>
     </div>
   )

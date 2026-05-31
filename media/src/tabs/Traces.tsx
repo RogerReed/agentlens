@@ -1,15 +1,16 @@
-import { useState } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 import {
-  displaySessions, sessionSummary, sessionTimelines, vscode,
+  filteredSessions, sessionSummary, sessionTimelines, focusedSessionId, vscode,
 } from '../state'
 import {
-  formatMs, formatCompact, syntaxHighlightJson, getSessionGlobalNumber,
+  formatMs, formatCompact, syntaxHighlightJson,
   getAgentDotHtml, formatLlmLabel, formatToolLabel, formatToolResult,
+  sessionDateKey, formatDayLabel, formatSessionTime,
 } from '../utils'
 import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry, BackgroundSpanSummary } from '../types'
 
-interface Step {
+export interface Step {
   entry: TimelineEntry
   offsetMs: number
   durationMs: number
@@ -201,7 +202,7 @@ function LongTextSection({ heading, text, id: _id, isJson }: { heading: string; 
   )
 }
 
-function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step: Step; idx: number; sessIdx: number; sessionDur: number; sessionModel: string }) {
+export function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step: Step; idx: number; sessIdx: number; sessionDur: number; sessionModel: string }) {
   const [open, setOpen] = useState(false)
   const entry = step.entry
   const entryCost = entry.type === 'llm' ? calcEntryCost(entry, sessionModel) : 0
@@ -218,14 +219,25 @@ function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step: Step;
     : entry.type === 'user_input' ? (entry.decision && entry.decision !== 'unknown' ? `${entry.label} (${entry.decision})` : entry.label)
     : entry.label || ''
 
-  // Show a subtitle for tool entries when toolInput is a raw string (not JSON args).
-  // For file paths show just the basename; for shell commands show the full command truncated.
+  // Show a subtitle with the full bash command (when the label had to truncate it).
   const toolSubtitle = (() => {
-    if (entry.type !== 'tool' || !entry.toolInput || entry.toolInput.trimStart().startsWith('{')) return null
-    const input = entry.toolInput
-    const isFilePath = input.startsWith('/') || input.startsWith('~') || /^[A-Za-z]:[/\\]/.test(input)
-    if (isFilePath) return input.split('/').pop() || input
-    return input.length > 90 ? input.slice(0, 90) + '…' : input
+    if (entry.type !== 'tool' || !entry.toolInput) return null
+    const raw = entry.toolInput.trimStart()
+    if (raw.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        if (parsed.command) {
+          // Show full command as subtitle when it was truncated in the label
+          const cmd = String(parsed.command)
+          return cmd.length > 60 ? cmd : null
+        }
+      } catch { /* ignore */ }
+      return null
+    }
+    // Raw string (Bash full_command or file path)
+    const isFilePath = raw.startsWith('/') || raw.startsWith('~') || /^[A-Za-z]:[/\\]/.test(raw)
+    if (isFilePath) return null  // file path already shown in label
+    return raw.length > 60 ? raw : null  // only show subtitle if it was truncated
   })()
 
   const subtitle = toolSubtitle
@@ -276,9 +288,10 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
 }) {
   const [collapsed, setCollapsed] = useState(!isFirst)
   const [promptExpanded, setPromptExpanded] = useState(false)
+  const isFocused = focusedSessionId.value === sess.sessionId
   const isLongPrompt = (sess.userRequest?.length ?? 0) > 100
 
-  const sessionNum = getSessionGlobalNumber(sess) || (totalCount - sessIdx)
+  const sessionTime = formatSessionTime(sess)
   const sessionStartMs = sess.startTime ? new Date(sess.startTime).getTime() : 0
   let sessionDur = sess.durationMs || 1
 
@@ -311,12 +324,12 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
   const outcomeLabel = sess.outcome === 'text_response' ? 'Responded' : sess.outcome === 'tool_calls' ? 'Tool calls' : null
 
   return (
-    <div class="wf-trace-group">
+    <div id={`trace-session-${sess.sessionId}`} class="wf-trace-group" style={isFocused ? 'outline:2px solid var(--vscode-focusBorder,#007fd4);border-radius:4px;outline-offset:1px' : ''}>
       <div class="wf-trace-header" onClick={toggle}>
         <span>
           <span class="wf-header-chevron">{collapsed ? '▶' : '▼'}</span>
-          <strong>{sessionNum}</strong>{' '}
           <span dangerouslySetInnerHTML={{ __html: getAgentDotHtml(sess.source) }} />{' '}
+          <span style="font-size:10px;color:var(--muted)">{sessionTime}</span>{' '}
           "{sess.userRequest.slice(0, 100)}{isLongPrompt ? '…' : ''}"
           {isLongPrompt && (
             <button class="sw-show-full-btn" style="margin-left:8px" onClick={e => { e.stopPropagation(); setPromptExpanded(v => !v) }}>
@@ -354,18 +367,68 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
   )
 }
 
+function DayGroup({ label, sessions, focusedId }: {
+  label: string
+  sessions: SessionSummaryCard[]
+  focusedId: string | null
+}) {
+  const [collapsed, setCollapsed] = useState(false)
+  return (
+    <div style="margin-bottom:4px">
+      <div
+        style="display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;user-select:none;border-bottom:1px solid var(--vscode-panel-border)"
+        onClick={() => setCollapsed(c => !c)}
+      >
+        <span style="font-size:10px;color:var(--muted)">{collapsed ? '▶' : '▼'}</span>
+        <span style="font-size:12px;font-weight:600;color:var(--foreground)">{label}</span>
+        <span style="font-size:10px;color:var(--muted)">{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
+      </div>
+      {!collapsed && sessions.map((sess, idx) => (
+        <SessionBlock
+          key={sess.traceId + idx}
+          sess={sess}
+          sessIdx={idx}
+          totalCount={sessions.length}
+          isFirst={idx === 0 && focusedId === null}
+        />
+      ))}
+    </div>
+  )
+}
+
 export function Traces() {
-  const base = displaySessions.value
+  const base = filteredSessions.value
   const summary = sessionSummary.value
+  const hasAny = (summary?.sessions?.length ?? 0) > 0
+  const focusedId = focusedSessionId.value
+
+  // Scroll to focused session when it changes
+  useEffect(() => {
+    if (!focusedId) return
+    const el = document.getElementById(`trace-session-${focusedId}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [focusedId])
 
   if (!summary?.sessions?.length) {
-    return <div id="summary-traces-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+    return <div id="summary-traces-content"><div class="empty-state">{hasAny ? 'No sessions match the active filters.' : 'No sessions recorded yet.'}</div></div>
   }
 
   const sessionsToShow = [...base].reverse()
   const totalLlmCalls = sessionsToShow.reduce((s, sess) => s + sess.totalLlmCalls, 0)
   const totalToolCalls = sessionsToShow.reduce((s, sess) => s + sess.totalToolCalls, 0)
   const totalTokens = sessionsToShow.reduce((s, sess) => s + sess.inputTokens + sess.outputTokens, 0)
+
+  // Group sessions by calendar day (newest day first)
+  const dayGroups: Array<{ key: string; label: string; sessions: typeof sessionsToShow }> = []
+  sessionsToShow.forEach(sess => {
+    const dk = sessionDateKey(sess) || 'unknown'
+    const last = dayGroups[dayGroups.length - 1]
+    if (last && last.key === dk) {
+      last.sessions.push(sess)
+    } else {
+      dayGroups.push({ key: dk, label: dk === 'unknown' ? 'Unknown date' : formatDayLabel(dk), sessions: [sess] })
+    }
+  })
 
   return (
     <div id="summary-traces-content">
@@ -375,22 +438,13 @@ export function Traces() {
         <div><strong class="tab-stat-val">{totalToolCalls}</strong> tool calls</div>
         <div><strong class="tab-stat-val">{formatCompact(totalTokens)}</strong> tokens</div>
       </div>
-      <div style="font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)">
-        Each agent exposes different OTEL data — some fields may be missing or estimated. See the Traces tab for raw span-level detail.
-      </div>
       <div class="waterfall">
-        {sessionsToShow.map((sess, idx) => (
-          <SessionBlock
-            key={sess.traceId + idx}
-            sess={sess}
-            sessIdx={idx}
-            totalCount={sessionsToShow.length}
-            isFirst={idx === 0}
-          />
-        ))}
         {sessionsToShow.length === 0 && (
-          <div class="empty-state">No sessions to display</div>
+          <div class="empty-state">No sessions in this time range</div>
         )}
+        {dayGroups.map(group => (
+          <DayGroup key={group.key} label={group.label} sessions={group.sessions} focusedId={focusedId} />
+        ))}
       </div>
       {summary.backgroundSpans?.length > 0 && (
         <BgSummaryBlock bgSpans={summary.backgroundSpans} />

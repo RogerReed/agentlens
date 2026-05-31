@@ -388,6 +388,74 @@ export function getAllSessionsChronological(): SessionSummaryCard[] {
   return sessionSummary.value?.sessions ?? []
 }
 
+// Canonical session timestamp: "YYYY-MM-DD HH:MM:SS" — used as the primary session identifier.
+export function formatSessionTime(sess: { startTime?: string }): string {
+  if (!sess?.startTime) return '—'
+  const d = new Date(sess.startTime)
+  if (isNaN(d.getTime())) return '—'
+  return tsFormat(d)
+}
+
+// Full ISO-like format for any Date.
+function tsFormat(d: Date): string {
+  const p = (n: number, w = 2) => String(n).padStart(w, '0')
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
+// Compact chart-axis label — drops date when within today, drops seconds for wider ranges.
+export function formatSessionTimeShort(sess: { startTime?: string }): string {
+  if (!sess?.startTime) return '—'
+  const d = new Date(sess.startTime)
+  if (isNaN(d.getTime())) return '—'
+  const p = (n: number) => String(n).padStart(2, '0')
+  const now = new Date()
+  if (d.toDateString() === now.toDateString()) return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+  return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+// Format an epoch ms value as a compact time/date label for chart axes.
+export function formatAxisTick(epochMs: number, spanMs: number): string {
+  const d = new Date(epochMs)
+  const p = (n: number) => String(n).padStart(2, '0')
+  if (spanMs < 86_400_000)         return `${p(d.getHours())}:${p(d.getMinutes())}`
+  if (spanMs < 7 * 86_400_000)     return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+  return `${p(d.getMonth()+1)}-${p(d.getDate())}`
+}
+
+// Generate 4-6 evenly-spaced tick positions for a time axis.
+export function generateTimeTicks(xMin: number, xMax: number): number[] {
+  const span = xMax - xMin
+  const intervals = [
+    60_000, 5*60_000, 10*60_000, 15*60_000, 30*60_000,
+    3600_000, 3*3600_000, 6*3600_000, 12*3600_000,
+    86_400_000, 2*86_400_000, 7*86_400_000,
+  ]
+  const target = span / 5
+  const interval = intervals.find(i => i >= target) ?? intervals[intervals.length - 1]
+  const start = Math.ceil(xMin / interval) * interval
+  const ticks: number[] = []
+  for (let t = start; t <= xMax; t += interval) ticks.push(t)
+  return ticks
+}
+
+// ISO date string "YYYY-MM-DD" for a session's start time.
+export function sessionDateKey(sess: { startTime?: string }): string {
+  if (!sess?.startTime) return ''
+  const d = new Date(sess.startTime)
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10)
+}
+
+// Friendly day label for grouping sessions.
+export function formatDayLabel(isoDate: string): string {
+  const d = new Date(isoDate + 'T00:00:00')
+  const today = new Date(); today.setHours(0,0,0,0)
+  const diff = today.getTime() - d.getTime()
+  if (diff < 86_400_000)       return 'Today'
+  if (diff < 2 * 86_400_000)   return 'Yesterday'
+  if (diff < 7 * 86_400_000)   return d.toLocaleDateString('en', { weekday: 'long' })
+  return d.toLocaleDateString('en', { month: 'short', day: 'numeric', year: diff > 365 * 86_400_000 ? 'numeric' : undefined })
+}
+
 export function getSessionGlobalNumber(sess: SessionSummaryCard): number {
   const all = getAllSessionsChronological()
   if (!sess || all.length === 0) return 0
@@ -409,8 +477,8 @@ export function getSessionOffset(): number {
   return all.length - limit
 }
 
-export function buildDisplaySummary() {
-  const sessions = displaySessions.value
+export function buildDisplaySummary(sessionsOverride?: SessionSummaryCard[]) {
+  const sessions = sessionsOverride ?? displaySessions.value
   let totalInputTokens = 0, totalOutputTokens = 0, totalLlmCalls = 0, cacheRead = 0
   sessions.forEach(s => {
     totalInputTokens += s.inputTokens ?? 0
@@ -478,12 +546,45 @@ export function formatLlmLabel(entry: { action?: string }): string {
   return action || 'LLM call'
 }
 
-export function formatToolLabel(entry: { label?: string }): string {
+export function formatToolLabel(entry: { label?: string; toolInput?: string }): string {
   const label = entry.label ?? ''
   const parts = label.match(/^(\S+)\s*([\s\S]*)$/)
   if (!parts) return label
   const toolName = parts[1]
   const args = parts[2] ?? ''
+
+  // For Claude Code tools the label is just the tool name with no args.
+  // Parse toolInput (JSON or raw string) to build a meaningful label.
+  if (!args.trim() && entry.toolInput) {
+    const raw = entry.toolInput.trimStart()
+    if (raw.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        const fp = String(parsed.file_path || parsed.filePath || '')
+        if (fp) {
+          const base = fp.split('/').pop() || fp
+          // MultiEdit may touch multiple files
+          if (toolName === 'MultiEdit' && Array.isArray(parsed.edits)) {
+            const count = (parsed.edits as unknown[]).length
+            return toolName + ' ' + base + (count > 1 ? ' +' + (count - 1) : '')
+          }
+          return toolName + ' ' + base
+        }
+        if (parsed.command) {
+          const cmd = String(parsed.command)
+          return 'Bash ' + (cmd.length > 60 ? cmd.slice(0, 57) + '…' : cmd)
+        }
+        if (parsed.pattern) return toolName + ' ' + String(parsed.pattern)
+        if (parsed.query)   return toolName + ' ' + String(parsed.query)
+      } catch { /* fall through */ }
+    } else {
+      // Raw string — bash command or file path
+      const isFilePath = raw.startsWith('/') || raw.startsWith('~') || /^[A-Za-z]:[/\\]/.test(raw)
+      if (isFilePath) return toolName + ' ' + (raw.split('/').pop() || raw)
+      return 'Bash ' + (raw.length > 60 ? raw.slice(0, 57) + '…' : raw)
+    }
+  }
+
   switch (toolName) {
     case 'read_file': {
       const m = args.match(/^(\S+)\s*L(\d+)-(\d+)$/)
@@ -518,7 +619,7 @@ export function formatToolLabel(entry: { label?: string }): string {
     case 'run_in_terminal': return 'Run: ' + (args.length > 60 ? args.slice(0, 57) + '…' : args)
     case 'explore_subagent':
     case 'runSubagent': return 'Sub-agent: ' + args
-    default: return toolName + ' ' + args
+    default: return toolName + (args ? ' ' + args : '')
   }
 }
 

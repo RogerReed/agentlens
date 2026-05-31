@@ -6,8 +6,6 @@ import { Span } from './types'
 
 export class SidebarPanel implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView
-  private agentFilter: string = 'all'
-  private sessionLimit: number = 10
   private collectorError: string | null = null
 
   constructor(
@@ -42,10 +40,6 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
           const { DashboardPanel } = require('./dashboardPanel')
           DashboardPanel.switchToTab(msg.tab)
         }, 300)
-      } else if (msg.type === 'setAgentFilter') {
-        this.setAgentFilter(msg.value)
-      } else if (msg.type === 'setSessionLimit') {
-        this.setSessionLimit(Number(msg.value) || 25)
       } else if (msg.type === 'clearAll') {
         vscode.commands.executeCommand('agentLens.clearSessions')
         this.refresh()
@@ -69,54 +63,35 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     })
   }
 
-  setAgentFilter(value: string) {
-    this.agentFilter = value
-    if (!this.view) {return}
-    const label = value === 'all' ? 'All' :
-      value === 'copilot' ? 'Copilot' :
-      value === 'claude_code' ? 'Claude' :
-      value === 'codex' ? 'Codex' : value
-    this.view.webview.postMessage({ type: 'agentFilterChanged', label, value })
-    const { DashboardPanel } = require('./dashboardPanel')
-    DashboardPanel.sendFilter(value, undefined)
-    this.refresh()
-  }
-
-  setSessionLimit(value: number) {
-    this.sessionLimit = value
-    const { DashboardPanel } = require('./dashboardPanel')
-    DashboardPanel.sendFilter(undefined, value)
-    this.refresh()
-  }
+  setAgentFilter(_value: string) { /* no-op: filtering is per-component in the dashboard */ }
+  setSessionLimit(_value: number) { /* no-op: session limit is per-component in the dashboard */ }
 
   private getSessions() {
-    const filter = this.agentFilter !== 'all'
-      ? { source: this.agentFilter as 'copilot' | 'claude_code' | 'codex' }
-      : undefined
-    return this.repo.listSessions(filter)
+    return this.repo.listSessions()
   }
 
   refresh() {
     if (!this.view) {return}
-    const limited = this.limitSessions(this.getSessions())
-    const sessionCount = limited.length
-    const cacheHitPct = limited.length > 0
-      ? Math.round(limited.reduce((a, s) => a + s.cacheHitRate, 0) / limited.length * 100) : 0
-    const avgTurns = limited.length > 0
-      ? Math.round(limited.reduce((a, s) => a + s.totalLlmCalls, 0) / limited.length * 10) / 10 : 0
-    const totalErrors = limited.reduce((a, s) => a + s.errors, 0)
-    const totalToolCalls = limited.reduce((a, s) => a + s.totalToolCalls, 0)
-    const totalInputTokens = limited.reduce((a, s) => a + s.inputTokens, 0)
-    const totalOutputTokens = limited.reduce((a, s) => a + s.outputTokens, 0)
+    const all = this.getSessions()
+    // Use most recent 25 for sidebar stats
+    const recent = all.slice(0, 25)
+    const sessionCount = all.length
+    const cacheHitPct = recent.length > 0
+      ? Math.round(recent.reduce((a, s) => a + s.cacheHitRate, 0) / recent.length * 100) : 0
+    const avgTurns = recent.length > 0
+      ? Math.round(recent.reduce((a, s) => a + s.totalLlmCalls, 0) / recent.length * 10) / 10 : 0
+    const totalErrors = recent.reduce((a, s) => a + s.errors, 0)
+    const totalToolCalls = recent.reduce((a, s) => a + s.totalToolCalls, 0)
+    const totalInputTokens = recent.reduce((a, s) => a + s.inputTokens, 0)
+    const totalOutputTokens = recent.reduce((a, s) => a + s.outputTokens, 0)
     const activity = this.getLastActivity()
     const AGENT_KEY_ORDER = ['copilot', 'claude_code', 'codex']
-    const agentSources = [...new Set(
-      this.repo.listSessions().map(s => s.source).filter(Boolean)
-    )].sort((a, b) => {
-      const ai = AGENT_KEY_ORDER.indexOf(a), bi = AGENT_KEY_ORDER.indexOf(b)
-      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
-    })
-    const latest = limited.length > 0 ? limited[0] : null  // newest-first
+    const agentSources = [...new Set(all.map(s => s.source).filter(Boolean))]
+      .sort((a, b) => {
+        const ai = AGENT_KEY_ORDER.indexOf(a), bi = AGENT_KEY_ORDER.indexOf(b)
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+      })
+    const latest = all.length > 0 ? all[0] : null  // newest-first
     const latestSession = latest ? {
       model: latest.model || '',
       source: latest.source,
@@ -125,19 +100,27 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       durationMs: latest.durationMs,
       errors: latest.errors,
       cacheHitRate: latest.cacheHitRate,
+      userRequest: latest.userRequest || '',
     } : null
+
+    // Burn rate for the most recent active session (< 2 min old)
+    const recentCutoff = Date.now() - 2 * 60_000
+    const activeSession = all.find(s => Date.parse(s.startTime) > recentCutoff)
+    const burnRateResult = activeSession
+      ? this.repo.queryBurnRate(activeSession.sessionId)
+      : null
+
     this.view.webview.postMessage({
       type: 'update', sessionCount, agentSources,
       totalInputTokens, totalOutputTokens,
       cacheHitPct, avgTurns, totalErrors, totalToolCalls,
       isActive: activity.isActive, lastActivityMs: activity.lastMs,
       latestSession,
+      burnRate: burnRateResult ? {
+        tokensPerMinute: Math.round(burnRateResult.burnRate.tokensPerMinute),
+        costPerHour: burnRateResult.burnRate.costPerHour,
+      } : null,
     })
-  }
-
-  private limitSessions<T>(sessions: T[]): T[] {
-    if (this.sessionLimit >= sessions.length) return sessions
-    return sessions.slice(0, this.sessionLimit)  // already newest-first
   }
 
   private getLastActivity(): { isActive: boolean; lastMs: number } {
@@ -154,19 +137,20 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
 
   private getHtml(webview: vscode.Webview) {
     const initActivity = this.getLastActivity()
-    const limited = this.limitSessions(this.getSessions())
-    const sessionCount = limited.length
-    const cacheHitPct = limited.length > 0
-      ? Math.round(limited.reduce((a, s) => a + s.cacheHitRate, 0) / limited.length * 100) : 0
-    const avgTurns = limited.length > 0
-      ? Math.round(limited.reduce((a, s) => a + s.totalLlmCalls, 0) / limited.length * 10) / 10 : 0
-    const totalErrors = limited.reduce((a, s) => a + s.errors, 0)
-    const totalToolCalls = limited.reduce((a, s) => a + s.totalToolCalls, 0)
+    const all = this.getSessions()
+    const recent = all.slice(0, 25)
+    const sessionCount = all.length
+    const cacheHitPct = recent.length > 0
+      ? Math.round(recent.reduce((a, s) => a + s.cacheHitRate, 0) / recent.length * 100) : 0
+    const avgTurns = recent.length > 0
+      ? Math.round(recent.reduce((a, s) => a + s.totalLlmCalls, 0) / recent.length * 10) / 10 : 0
+    const totalErrors = recent.reduce((a, s) => a + s.errors, 0)
+    const totalToolCalls = recent.reduce((a, s) => a + s.totalToolCalls, 0)
     const tokenTotals = {
-      input: limited.reduce((a, s) => a + s.inputTokens, 0),
-      output: limited.reduce((a, s) => a + s.outputTokens, 0),
+      input: recent.reduce((a, s) => a + s.inputTokens, 0),
+      output: recent.reduce((a, s) => a + s.outputTokens, 0),
     }
-    const latestSession = limited.length > 0 ? limited[0] : null  // newest-first
+    const latestSession = all.length > 0 ? all[0] : null  // newest-first
     function formatCompact(n: number): string {
       return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
     }
@@ -177,31 +161,12 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
 
     const sidebarJsUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', 'sidebar.js'))
 
-    const selectStyle = 'width:100%;padding:3px 6px;font-size:11px;background:var(--vscode-dropdown-background,var(--vscode-editor-background));color:var(--vscode-dropdown-foreground,var(--vscode-foreground));border:1px solid var(--vscode-dropdown-border,var(--vscode-panel-border));border-radius:3px;cursor:pointer'
-
-    const sessionLimitStr = String(this.sessionLimit)
-    const sessionOptions = [
-      { value: '1', label: 'Last 1' },
-      { value: '5', label: 'Last 5' },
-      { value: '10', label: 'Last 10' },
-      { value: '25', label: 'Last 25' },
-    ].map(o => `<option value="${o.value}"${o.value === sessionLimitStr ? ' selected' : ''}>${o.label}</option>`).join('')
-
-    const agentOptions = [
-      { value: 'all', label: 'All' },
-      { value: 'copilot', label: 'Copilot' },
-      { value: 'claude_code', label: 'Claude' },
-      { value: 'codex', label: 'Codex' },
-    ].map(o => `<option value="${o.value}"${o.value === this.agentFilter ? ' selected' : ''}>${o.label}</option>`).join('')
-
-    // Agent key is always based on ALL data, not the current agent filter
     const AGENT_KEY_ORDER = ['copilot', 'claude_code', 'codex']
-    const allAgentSources = [...new Set(
-      this.repo.listSessions().map(s => s.source).filter(Boolean)
-    )].sort((a, b) => {
-      const ai = AGENT_KEY_ORDER.indexOf(a), bi = AGENT_KEY_ORDER.indexOf(b)
-      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
-    })
+    const allAgentSources = [...new Set(all.map(s => s.source).filter(Boolean))]
+      .sort((a, b) => {
+        const ai = AGENT_KEY_ORDER.indexOf(a), bi = AGENT_KEY_ORDER.indexOf(b)
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+      })
     const agentSourcesJson = JSON.stringify(allAgentSources)
 
     return `<!DOCTYPE html>
@@ -249,20 +214,9 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
         <button onclick="document.getElementById('collector-error-banner').remove()" style="margin-top:6px;font-size:10px;padding:2px 8px;cursor:pointer;background:transparent;border:1px solid currentColor;border-radius:3px;color:inherit">Dismiss</button>
       </div>` : ''}
 
-      <!-- Filters -->
-      <div class="card" style="margin-bottom:6px;padding:7px 10px">
-        <div style="display:flex;gap:5px;align-items:flex-end">
-          <div style="flex:1;min-width:0">
-            <div class="filter-label">Sessions</div>
-            <select id="sessionLimitSelect" style="${selectStyle}">${sessionOptions}</select>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div class="filter-label">Agent</div>
-            <select id="agentFilterSelect" style="${selectStyle}">${agentOptions}</select>
-          </div>
-        </div>
-        <div id="agentKey" style="margin-top:6px"></div>
-      </div>
+      <!-- Agent key -->
+      <div id="agentKey" style="margin-bottom:6px"></div>
+
 
       <!-- Status + Sessions -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
@@ -275,8 +229,9 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
           <div class="label" id="statusLabel">${initActivity.lastMs === 0 ? 'No activity yet' : ''}</div>
         </div>
         <div class="card" style="margin-bottom:0">
-          <h3><span class="has-tip">Sessions<span class="tip">Prompt-to-response cycles in the selected window.</span></span></h3>
+          <h3><span class="has-tip">Sessions<span class="tip">Total prompt-to-response cycles recorded.</span></span></h3>
           <div class="metric" id="sessionCountLabel" style="font-size:18px">${sessionCount}</div>
+          <div class="label">Total</div>
         </div>
       </div>
 
@@ -350,6 +305,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
             durationMs: latestSession.durationMs,
             errors: latestSession.errors,
             cacheHitRate: latestSession.cacheHitRate,
+            userRequest: latestSession.userRequest,
           }) : 'null'}
         };
       </script>

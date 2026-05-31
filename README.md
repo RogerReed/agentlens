@@ -56,15 +56,16 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ## Features
 
 - **Telemetry Collection** — Built-in OpenTelemetry receiver captures traces and logs from Copilot, Claude Code, and Codex — no external infrastructure needed
-- **Session Dashboard** — See inside every agent run: human-readable session traces, context growth, tool calls, token usage, latency, errors, and file changes across interactive real-time panels
-- **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, with a per-session bar chart and cross-session cost table
-- **Recommendations & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns — with suggested prompts to correct course
+- **Sessions Table** — Drill into any session: expand a row to see a full waterfall trace, turn-to-tool flow graph, tool distribution chart, and modified files — all without leaving the session list
+- **Analytics** — Aggregate charts across the active time range: per-agent breakdown, estimated cost with a daily total overlay, token usage per session, and context growth
+- **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, broken down by model in a day-grouped table
+- **Efficiency & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns with suggested prompts to correct course
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat tool calls — per-agent or shared
-- **Session Replay** — Export spans to JSON and replay any past session into the dashboard without the original agent running
+- **Export** — Export all sessions as JSON (full or redacted) directly from the SQLite history; raw OTEL span export for replay support is planned
 
 ## Cost Estimation
 
-The **Cost** tab estimates the dollar cost of Copilot, Claude Code, and Codex sessions.
+The **Analytics** tab (Estimated Cost section) shows the dollar cost of Copilot, Claude Code, and Codex sessions.
 
 **Copilot** supports three billing models via a toggle:
 
@@ -76,25 +77,24 @@ The **Cost** tab estimates the dollar cost of Copilot, Claude Code, and Codex se
 
 **Claude Code** and **Codex** always use token-based pricing — no toggle required. Claude Code is billed against the Anthropic API at standard per-token rates (input, cache write, cache read, output) depending on model (Opus, Sonnet, or Haiku). Codex is billed against the OpenAI API.
 
-The tab shows a per-session cost bar chart and a cross-session cost table with per-agent subtotals and a combined total when sessions from multiple agents are present. Included Copilot models (GPT-4.1, GPT-5 mini) show $0 under token-based billing.
+The Estimated Cost section includes a per-session bar chart with a daily aggregate line (right axis), a multi-dimensional table grouped by date and agent showing input, output, cache create, cache read, total tokens, and cost, and a model breakdown table. Included Copilot models (GPT-4.1, GPT-5 mini) show $0 under token-based billing.
 
 All figures are estimates — not your actual bill. Rates are sourced from each provider's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
 
-Known gaps are listed at the bottom of the Cost tab per agent, including cache TTL ambiguity and fast-mode underestimation for Claude, long-context surcharges for Copilot and Codex, and the session turn count proxy used for Copilot request-based billing.
+## Exporting Session Data
 
-## Replaying Exported Spans
+The **Export** tab writes session summary files to your workspace root:
 
-The **Export** tab writes span files to your workspace root — `export_*.json` for full data or `export_redacted_*.json` with prompt text, tool inputs, and tool results replaced with `[redacted]`. Replay either to re-examine a past session without the original agent running:
+- `export_sessions_<timestamp>.json` — full export including prompt text, token counts, tool usage, file changes, and cost estimates for every recorded session
+- `export_sessions_<timestamp>.json` (redacted) — same structure with prompt text (`userRequest`) removed
 
-```bash
-pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json
-```
+Exports draw from the full SQLite session history, not just the active window, so all past sessions are included regardless of when they ran.
 
-Spans are sent to port `4318` — the VS Code extension or standalone server must be running. Pass `--speed N` to pace the replay proportionally to the original session timing.
+> **Note:** Session summary exports cannot be replayed with `pnpm run demo --file`. Replay requires raw OTEL span data, which is not yet persisted to disk. This is tracked as a planned enhancement.
 
 ## Recommendations & Malfunction Detection
 
-The **Recommendations** tab analyzes session data and surfaces two categories of signal:
+The **Sessions** tab (Overview sub-tab) and **Analytics** tab surface two categories of signal per session:
 
 **Efficiency insights** — problems you can fix by adjusting your prompts:
 

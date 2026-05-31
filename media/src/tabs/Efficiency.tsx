@@ -1,63 +1,95 @@
 import * as preact from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { sessionSummary, displaySessions, sessionTimelines, burnRateData, COLORS, vscode } from '../state'
+import { sessionSummary, displaySessions, rangedSessions, agentFilteredSessions, filteredSessions, sessionTimelines, burnRateData, focusedSessionId, CHART_MAX, COLORS, vscode, goToHelp, timeRange } from '../state'
 import {
   getSessionGlobalNumber,
-  formatMs, formatCompact, getAgentColor,
+  formatMs, formatCompact, getAgentColor, formatSessionTime, formatSessionTimeShort,
 } from '../utils'
 import type { SessionSummaryCard } from '../types'
 
 type HeatReason = { text: string; linkPhrase?: string; helpId?: string }
 
-// ── Context growth chart ──────────────────────────────────────────────────────
+export function TurnsLink() {
+  return (
+    <span
+      onClick={() => goToHelp('gl-turn')}
+      style="cursor:pointer;border-bottom:1px dotted currentColor"
+      title="View 'Turn' definition in glossary"
+    >Turns</span>
+  )
+}
 
-function ContextGrowthChart({ sessions, timelines }: { sessions: SessionSummaryCard[]; timelines: Record<string, import('../types').TimelineEntry[]> }) {
+// ── Context growth — each session is a line, x-axis = LLM turn number ─────────
+// One line per session shows how input tokens accumulate turn by turn.
+// Easier to compare growth profiles across sessions than a wall-clock view.
+
+type GrowthSeries = {
+  sessionId: string; label: string; color: string; focused: boolean
+  points: Array<{ turn: number; tokens: number }>
+}
+
+// Shared drawing state for click-detection
+interface GrowthState { series: GrowthSeries[]; xPos: (t: number) => number; yPos: (tok: number) => number; chartH: number; pad: { top: number; left: number } }
+const growthStateRef: { current: GrowthState | null } = { current: null }
+
+export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionSummaryCard[]; timelines: Record<string, import('../types').TimelineEntry[]> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const focusedId = focusedSessionId.value
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const seriesData: Array<{ label: string; points: number[]; color: string }> = []
-    let globalMax = 0, globalMin = Infinity, globalMaxPoints = 0
 
-    sessions.forEach((sess, idx) => {
-      const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0)
+    const seriesData: GrowthSeries[] = []
+    sessions.forEach(sess => {
+      const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? [])
+        .filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0)
       if (llmEntries.length < 1) return
-      const points = llmEntries.map(e => e.inputTokens ?? 0)
-      const max = Math.max(...points), min = Math.min(...points)
-      if (max > globalMax) globalMax = max
-      if (min < globalMin) globalMin = min
-      if (points.length > globalMaxPoints) globalMaxPoints = points.length
-      const sessionNum = getSessionGlobalNumber(sess) || (idx + 1)
-      seriesData.push({ label: '' + sessionNum, points, color: getAgentColor(sess.source) || COLORS[idx % COLORS.length] })
+      seriesData.push({
+        sessionId: sess.sessionId,
+        label: formatSessionTimeShort(sess),
+        color: getAgentColor(sess.source) || COLORS[seriesData.length % COLORS.length],
+        focused: focusedId === sess.sessionId,
+        points: llmEntries.map((e, i) => ({ turn: i + 1, tokens: e.inputTokens ?? 0 })),
+      })
     })
 
-    if (seriesData.length === 0) { canvas.style.display = 'none'; return }
+    if (seriesData.length === 0) { canvas.style.display = 'none'; growthStateRef.current = null; return }
     canvas.style.display = 'block'
 
-    const dataRange = globalMax - globalMin
-    const adjRange = dataRange === 0 ? (globalMax * 0.1 || 1) : dataRange
-    const yPad = adjRange * 0.1
-    const yMin = Math.max(0, globalMin - yPad), yMax = globalMax + yPad
+    const maxTurns = Math.max(...seriesData.map(s => s.points.length), 2)
+    const allTokens = seriesData.flatMap(s => s.points.map(p => p.tokens))
+    const rawMin = Math.min(...allTokens), rawMax = Math.max(...allTokens)
+    const spread = rawMax - rawMin || rawMax * 0.1 || 1
+    // Fit y-axis tightly to data — 10% padding on each side so lines spread out
+    const yMin = Math.max(0, rawMin - spread * 0.1)
+    const yMax = rawMax + spread * 0.1
 
     const dpr = window.devicePixelRatio || 1
     const rect = canvas.getBoundingClientRect()
     if (rect.width === 0 || rect.height === 0) return
-    canvas.width = rect.width * dpr
-    canvas.height = rect.height * dpr
+    canvas.width = rect.width * dpr; canvas.height = rect.height * dpr
     const ctx = canvas.getContext('2d')!
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     const w = rect.width, h = rect.height
     ctx.clearRect(0, 0, w, h)
 
-    const pad = { top: 8, right: 40, bottom: 24, left: 64 }
+    // Extra right padding for end-of-line labels
+    const pad = { top: 8, right: 80, bottom: 22, left: 56 }
     const chartW = w - pad.left - pad.right, chartH = h - pad.top - pad.bottom
+
+    const xPos = (turn: number) => pad.left + ((turn - 1) / Math.max(maxTurns - 1, 1)) * chartW
+    const yPos = (tok: number) => pad.top + chartH - ((tok - yMin) / (yMax - yMin)) * chartH
+
+    // Save state for click detection
+    growthStateRef.current = { series: seriesData, xPos, yPos, chartH, pad }
 
     const cs = getComputedStyle(document.body)
     const gridColor = cs.getPropertyValue('--vscode-panel-border').trim() || '#333'
     const textColor = cs.getPropertyValue('--vscode-descriptionForeground').trim() || '#888'
-    const fontStr = '10px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
+    const fontStr = '9px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
 
+    // Y gridlines + labels (fitted to data range)
     ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5
     for (let i = 0; i <= 4; i++) {
       const y = pad.top + chartH * i / 4
@@ -68,39 +100,76 @@ function ContextGrowthChart({ sessions, timelines }: { sessions: SessionSummaryC
       const val = yMax - (yMax - yMin) * i / 4
       if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i / 4)
     }
-    ctx.save()
-    ctx.translate(10, pad.top + chartH / 2)
-    ctx.rotate(-Math.PI / 2)
-    ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-    ctx.fillText('Input Tokens', 0, 0)
-    ctx.restore()
-    ctx.fillStyle = textColor; ctx.textAlign = 'center'; ctx.textBaseline = 'top'
-    ctx.fillText('Turns (LLM Calls)', pad.left + chartW / 2, pad.top + chartH + 10)
 
-    seriesData.forEach(series => {
-      const pts = series.points
-      const lastX = pad.left + (pts.length - 1) / Math.max(globalMaxPoints - 1, 1) * chartW
-      const lastY = pad.top + chartH - (pts[pts.length - 1] - yMin) / (yMax - yMin) * chartH
-      if (pts.length >= 2) {
-        ctx.beginPath()
-        for (let j = 0; j < pts.length; j++) {
-          const x = pad.left + j / Math.max(globalMaxPoints - 1, 1) * chartW
-          const y = pad.top + chartH - (pts[j] - yMin) / (yMax - yMin) * chartH
-          j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-        }
-        ctx.strokeStyle = series.color; ctx.lineWidth = 1.5; ctx.stroke()
-      }
-      // Always draw a dot at the last (or only) point — larger for single-point (in-progress) sessions
+    // X axis — turn number ticks
+    const xStep = maxTurns <= 10 ? 1 : maxTurns <= 30 ? 5 : maxTurns <= 100 ? 10 : 20
+    ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'top'
+    for (let t = 1; t <= maxTurns; t += xStep) {
+      const x = xPos(t)
+      ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5
+      ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + chartH); ctx.stroke()
+      ctx.fillText('T' + t, x, pad.top + chartH + 4)
+    }
+    if (maxTurns > 1 && (maxTurns - 1) % xStep !== 0) {
+      ctx.fillText('T' + maxTurns, xPos(maxTurns), pad.top + chartH + 4)
+    }
+
+    // Draw series — unfocused first so focused renders on top
+    const sorted = [...seriesData].sort((a, b) => (a.focused ? 1 : 0) - (b.focused ? 1 : 0))
+    sorted.forEach(series => {
+      const alpha = (focusedId && !series.focused) ? '30' : ''
+      ctx.strokeStyle = series.color + alpha
+      ctx.lineWidth = series.focused ? 2.5 : 1.5
+
       ctx.beginPath()
-      ctx.arc(lastX, lastY, pts.length === 1 ? 5 : 3, 0, Math.PI * 2)
-      ctx.fillStyle = series.color; ctx.fill()
-      ctx.fillStyle = series.color; ctx.font = 'bold 10px sans-serif'
-      ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
-      ctx.fillText(series.label, lastX + (pts.length === 1 ? 9 : 5), lastY)
+      series.points.forEach(({ turn, tokens }, j) => {
+        const x = xPos(turn), y = yPos(tokens)
+        j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+      })
+      ctx.stroke()
+
+      // Time label at the end of each line
+      const last = series.points[series.points.length - 1]
+      if (last) {
+        const lx = xPos(last.turn) + 4, ly = yPos(last.tokens)
+        ctx.fillStyle = series.color + (alpha || 'cc')
+        ctx.font = '8px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
+        ctx.fillText(series.label, lx, ly)
+      }
     })
   })
 
-  return <canvas ref={canvasRef} id="context-growth-chart" style="width:100%;height:180px;display:block" />
+  function handleCanvasClick(e: MouseEvent) {
+    const canvas = canvasRef.current; if (!canvas) return
+    const state = growthStateRef.current; if (!state || !state.series.length) return
+    const rect = canvas.getBoundingClientRect()
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top
+    let bestDist = 20, bestId = ''
+    state.series.forEach(s => {
+      s.points.forEach(({ turn, tokens }) => {
+        const dx = mx - state.xPos(turn), dy = my - state.yPos(tokens)
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist < bestDist) { bestDist = dist; bestId = s.sessionId }
+      })
+    })
+    if (bestId) focusedSessionId.value = focusedSessionId.peek() === bestId ? null : bestId
+  }
+
+  return (
+    <>
+      <canvas
+        ref={canvasRef}
+        id="context-growth-chart"
+        style="width:100%;height:200px;display:block;cursor:pointer"
+        onClick={handleCanvasClick}
+        title="Click a line to select that session"
+      />
+      <div style="text-align:center;font-size:9px;color:var(--muted);margin-top:2px">
+        <TurnsLink />
+      </div>
+    </>
+  )
 }
 
 const HELP_TOOLTIPS: Record<string, string> = {
@@ -128,7 +197,7 @@ function renderHeatReason(r: HeatReason): preact.JSX.Element {
 function SessionDiagRow({ reasons }: { reasons: HeatReason[] }) {
   return (
     <tr>
-      <td colSpan={11} style="padding:0">
+      <td colSpan={10} style="padding:0">
         <div style="padding:8px 16px 12px 32px;background:var(--vscode-editorWidget-background,var(--bg));border-top:1px solid var(--border);font-size:11px">
           <div style="font-weight:600;color:var(--muted);margin-bottom:4px;font-size:10px;text-transform:uppercase">What needs attention</div>
           {reasons.map((r, i) => (
@@ -147,31 +216,46 @@ function SessionRow({ sess, idx, heat, expanded, onToggle }: {
   sess: SessionSummaryCard; idx: number;
   heat: { score: number; reasons: HeatReason[] }; expanded: boolean; onToggle: () => void
 }) {
-  const realIdx = getSessionGlobalNumber(sess) || (idx + 1)
+  const timeLabel = formatSessionTime(sess)
   const cacheRate = sess.inputTokens > 0 ? ((sess.cacheReadTokens / sess.inputTokens) * 100).toFixed(0) : '—'
   const agentDotColor = getAgentColor(sess.source)
+  const isFocused = focusedSessionId.value === sess.sessionId
 
   let rowBg = ''
-  if (heat.score > 60) rowBg = 'rgba(255,50,50,' + (0.15 + Math.min(heat.score - 60, 40) / 40 * 0.25) + ')'
+  if (isFocused) rowBg = 'rgba(55,148,255,0.12)'
+  else if (heat.score > 60) rowBg = 'rgba(255,50,50,' + (0.15 + Math.min(heat.score - 60, 40) / 40 * 0.25) + ')'
   else if (heat.score > 30) rowBg = 'rgba(255,140,0,' + (0.12 + (heat.score - 30) / 30 * 0.18) + ')'
   else if (heat.score > 10) rowBg = 'rgba(255,180,50,' + (0.10 + (heat.score - 10) / 20 * 0.15) + ')'
 
+  function handleRowClick() {
+    focusedSessionId.value = isFocused ? null : sess.sessionId
+    onToggle()
+  }
+
   return (
     <>
-      <tr style={'background:' + (rowBg || 'transparent') + ';cursor:pointer'} onClick={onToggle}>
-        <td style="text-align:center;font-weight:bold;white-space:nowrap">
-          <span style="font-size:9px;color:var(--muted);margin-right:3px">{expanded ? '▼' : '▶'}</span>{realIdx} <span style={'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + agentDotColor + ';vertical-align:middle'} />
-        </td>
-        <td style="text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title={sess.userRequest}>
-          {(sess.userRequest ?? '').slice(0, 60)}{(sess.userRequest ?? '').length > 60 ? '…' : ''}
-          {(() => {
-            const br = burnRateData.value
-            if (!br || br.sessionId !== sess.sessionId) return null
-            const tpm = br.burnRate.tokensPerMinute
-            const cph = br.burnRate.costPerHour
-            const label = formatCompact(Math.round(tpm)) + ' tok/min' + (cph > 0.001 ? ' · $' + cph.toFixed(2) + '/hr' : '')
-            return <span style="margin-left:6px;padding:1px 5px;background:var(--vscode-charts-green,#81c784);color:#000;border-radius:3px;font-size:9px;font-weight:600;vertical-align:middle" data-tip={'Active session burn rate: ' + label}>{label}</span>
-          })()}
+      <tr style={'background:' + (rowBg || 'transparent') + ';cursor:pointer' + (isFocused ? ';outline:1px solid var(--vscode-focusBorder,#007fd4)' : '')} onClick={handleRowClick}>
+        <td style="text-align:left;min-width:130px;padding:4px 8px">
+          <div style="display:flex;align-items:flex-start;gap:4px">
+            <span style="font-size:9px;color:var(--muted);flex-shrink:0;margin-top:2px">{expanded ? '▼' : '▶'}</span>
+            <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px;background:' + agentDotColor} />
+            <div>
+              <div style="font-size:10px;color:var(--foreground);white-space:nowrap">{timeLabel}</div>
+              {(sess.userRequest ?? '').length > 0 && (
+                <div style="font-size:9px;color:var(--muted);margin-top:1px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:italic" title={sess.userRequest}>
+                  {(sess.userRequest ?? '').slice(0, 55)}{(sess.userRequest ?? '').length > 55 ? '…' : ''}
+                </div>
+              )}
+              {(() => {
+                const br = burnRateData.value
+                if (!br || br.sessionId !== sess.sessionId) return null
+                const tpm = br.burnRate.tokensPerMinute
+                const cph = br.burnRate.costPerHour
+                const label = formatCompact(Math.round(tpm)) + ' tok/min' + (cph > 0.001 ? ' · $' + cph.toFixed(2) + '/hr' : '')
+                return <span style="padding:1px 5px;background:var(--vscode-charts-green,#81c784);color:#000;border-radius:3px;font-size:9px;font-weight:600" data-tip={'Active session burn rate: ' + label}>{label}</span>
+              })()}
+            </div>
+          </div>
         </td>
         <td style="text-align:left;white-space:nowrap;color:var(--muted);font-size:10px" title={sess.model}>{sess.model ? sess.model.split('/').pop() : '—'}</td>
         <td style="text-align:left;white-space:nowrap;font-size:10px;font-family:monospace;color:var(--muted)" title={sess.conversationId || ''}>
@@ -190,9 +274,9 @@ function SessionRow({ sess, idx, heat, expanded, onToggle }: {
   )
 }
 
-// ── Token usage per session chart (moved from Tokens tab) ────────────────────
+// ── Token usage per session — evenly-spaced bars, x-axis labeled with timestamps
 
-function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[] }) {
+export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -201,24 +285,28 @@ function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[] }) {
     const rect = canvas.getBoundingClientRect()
     if (rect.width === 0 || rect.height === 0) return
 
-    const sessionData = sessions.map((sess, idx) => {
-      const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0
-      const num = getSessionGlobalNumber(sess) || (idx + 1)
-      return input + output > 0 ? { session: num, input, output, source: sess.source } : null
-    }).filter(Boolean).reverse() as Array<{ session: number; input: number; output: number; source: string }>
+    // Oldest → newest left → right
+    const sessionData = [...sessions].reverse()
+      .map(sess => {
+        const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0
+        return input + output > 0
+          ? { startTime: sess.startTime, input, output, source: sess.source }
+          : null
+      })
+      .filter(Boolean) as Array<{ startTime: string; input: number; output: number; source: string }>
 
     if (sessionData.length === 0) { canvas.style.display = 'none'; return }
     canvas.style.display = 'block'
 
     const dpr = window.devicePixelRatio || 1
-    const drect = canvas.getBoundingClientRect()
-    canvas.width = drect.width * dpr; canvas.height = drect.height * dpr
+    canvas.width = rect.width * dpr; canvas.height = rect.height * dpr
     const ctx = canvas.getContext('2d')!
     ctx.scale(dpr, dpr)
-    const w = drect.width, h = drect.height
+    const w = rect.width, h = rect.height
     ctx.clearRect(0, 0, w, h)
 
-    const pad = { top: 8, right: 44, bottom: 34, left: 44 }
+    // No X-axis time labels — just slim bars + agent color dot beneath each
+    const pad = { top: 8, right: 44, bottom: 14, left: 44 }
     const chartW = w - pad.left - pad.right, chartH = h - pad.top - pad.bottom
 
     const maxIn  = Math.max(...sessionData.map(s => s.input))  || 1
@@ -226,50 +314,48 @@ function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[] }) {
 
     const cs = getComputedStyle(document.body)
     const gridColor = cs.getPropertyValue('--vscode-panel-border').trim() || '#333'
-    const textColor = cs.getPropertyValue('--vscode-descriptionForeground').trim() || '#888'
-    const fontStr = '10px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
+    const fontStr = '9px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
 
     ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5
     for (let i = 0; i <= 4; i++) {
-      const y = pad.top + (chartH * i / 4)
+      const y = pad.top + chartH * i / 4
       ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke()
     }
     ctx.fillStyle = '#FFB74D'; ctx.font = fontStr; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
     for (let i = 0; i <= 4; i++) {
       const val = maxIn * (4 - i) / 4
-      if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + (chartH * i / 4))
+      if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i / 4)
     }
     ctx.fillStyle = '#81C784'; ctx.textAlign = 'left'
     for (let i = 0; i <= 4; i++) {
       const val = maxOut * (4 - i) / 4
-      if (val > 0) ctx.fillText(formatCompact(val), pad.left + chartW + 4, pad.top + (chartH * i / 4))
+      if (val > 0) ctx.fillText(formatCompact(val), pad.left + chartW + 4, pad.top + chartH * i / 4)
     }
 
-    const barGap = 8
     const sl = sessionData.length
-    const groupWidth = Math.max(12, (chartW - barGap * (sl + 1)) / sl)
-    const halfBar = groupWidth / 2
-    const totalBarsW = sl * groupWidth + (sl + 1) * barGap
-    const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top'
+    // Slot-based sizing: fill full chart width regardless of session count
+    const slotW = chartW / Math.max(sl, 1)
+    const barPad = sl > 100 ? 0 : sl > 50 ? 0.2 : sl > 20 ? 0.5 : 1
+    const halfSlot = slotW / 2
+    const halfBar = Math.max(0.5, halfSlot - barPad)
 
     sessionData.forEach((s, i) => {
-      const x = offsetX + i * (groupWidth + barGap)
+      const slotX = pad.left + i * slotW
       const inH = (s.input / maxIn) * chartH
-      ctx.fillStyle = '#FFB74D'; ctx.fillRect(x, pad.top + chartH - inH, halfBar, inH)
+      ctx.fillStyle = '#FFB74D'; ctx.fillRect(slotX + barPad, pad.top + chartH - inH, halfBar, inH)
       const outH = (s.output / maxOut) * chartH
-      ctx.fillStyle = '#81C784'; ctx.fillRect(x + halfBar, pad.top + chartH - outH, halfBar, outH)
-      ctx.fillStyle = textColor; ctx.fillText('' + s.session, x + groupWidth / 2, pad.top + chartH + 4)
+      ctx.fillStyle = '#81C784'; ctx.fillRect(slotX + halfSlot, pad.top + chartH - outH, halfBar, outH)
+      // Agent color dot below bar
       ctx.beginPath()
-      ctx.arc(x + groupWidth / 2, pad.top + chartH + 18, 3, 0, Math.PI * 2)
+      ctx.arc(slotX + slotW / 2, pad.top + chartH + 7, 1.5, 0, Math.PI * 2)
       ctx.fillStyle = getAgentColor(s.source); ctx.fill()
     })
   })
 
   return (
     <>
-      <canvas ref={canvasRef} style="width:100%;height:200px;display:block" />
-      <div class="heatmap-axis-label">← Session (latest to earliest) →</div>
+      <canvas ref={canvasRef} style="width:100%;height:160px;display:block" />
+      <div class="heatmap-axis-label">← older · sessions · newer →</div>
     </>
   )
 }
@@ -278,11 +364,25 @@ export function Efficiency() {
   const summary = sessionSummary.value
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set([0]))
 
-  if (!summary?.sessions?.length) {
-    return <div id="efficiency-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+  const hasAny = (summary?.sessions?.length ?? 0) > 0
+
+  const displaySess = filteredSessions.value
+  const range = timeRange.value
+  const isTimeFiltered = range.preset !== 'all'
+
+  // When a time range filter returns no sessions show a clear empty state rather
+  // than a mostly-blank tab (rangedSessions falls back to live data while loading,
+  // so empty here means the query completed with 0 results).
+  if (displaySess.length === 0) {
+    return (
+      <div id="efficiency-content">
+        <div class="empty-state">
+          {hasAny ? 'No sessions match the active filters.' : 'No sessions recorded yet.'}
+        </div>
+      </div>
+    )
   }
 
-  const displaySess = displaySessions.value
   const breakdownSessions = displaySess.slice().reverse()
 
   // Request timeline for any session not yet loaded — needed for context growth chart and heat scores.
@@ -313,25 +413,43 @@ export function Efficiency() {
   let totLlm = 0, totTool = 0, totIn = 0, totOut = 0, totDur = 0, totErr = 0
   breakdownSessions.forEach(s => { totLlm += s.totalLlmCalls; totTool += s.totalToolCalls; totIn += s.inputTokens; totOut += s.outputTokens; totDur += s.durationMs; totErr += s.errors })
 
-  const sessionsWithGrowth = breakdownSessions.filter(sess =>
-    (timelines[sess.sessionId] ?? sess.timeline ?? []).filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0).length >= 1
-  )
+  const totalSessionCount = sessionSummary.value?.sessions?.length ?? breakdownSessions.length
+
+  // For the growth chart, use ALL in-memory sessions (bypasses the sessionLimit cap)
+  // so sessions from all agent types appear, not just the most recent N.
+  // For time-bounded ranges, rangedSessions already contains the right set.
+  const chartSessions = isTimeFiltered
+    ? displaySess.slice().reverse().slice(0, CHART_MAX)
+    : agentFilteredSessions.value.slice().reverse().slice(0, CHART_MAX)
+
+  // Load timelines for chart sessions too (they may differ from breakdownSessions)
+  chartSessions.forEach(sess => {
+    if (!timelines[sess.sessionId]) {
+      vscode?.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
+    }
+  })
 
   return (
     <div id="efficiency-content">
-      {sessionsWithGrowth.length > 0 && (
-        <>
-          <h3 class="has-metric-tip" style="margin:24px 0 12px;font-size:13px;color:var(--muted)" data-tip="Input tokens sent per LLM call within each session. Rising lines indicate context accumulation. A sharp drop mid-session indicates context compaction. A single dot marks an in-progress session with one LLM call so far.">CONTEXT GROWTH PER SESSION</h3>
-          <ContextGrowthChart sessions={breakdownSessions} timelines={timelines} />
-          <div style="font-size:10px;color:var(--muted);opacity:0.7;margin:4px 0 12px 2px">
-            Suggestion: If the graph appears crowded, consider refining the view by selecting fewer sessions (such as “Last 5”) or filtering by a specific agent to enhance clarity.
+      {/* Context Growth — turn-based x-axis */}
+      <h3 class="has-metric-tip" style="margin:0 0 4px;font-size:13px;color:var(--muted)" data-tip="Input tokens per LLM call by turn number. Each line is one session — steeper = faster context growth. Click a line to select that session.">CONTEXT GROWTH</h3>
+      <ContextGrowthChart sessions={chartSessions} timelines={timelines} />
+
+      {/* Token Usage — right below Context Growth */}
+      {displaySess.length > 0 && (
+        <div style="margin-top:16px">
+          <h3 style="margin:0 0 4px;font-size:13px;color:var(--muted)">TOKEN USAGE PER SESSION</h3>
+          <div style="display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)">
+            <span><span style="display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" /> Input</span>
+            <span><span style="display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" /> Output</span>
           </div>
-        </>
+          <SessionTokenChart sessions={displaySess.slice(0, CHART_MAX)} />
+        </div>
       )}
 
       {breakdownSessions.length > 0 && (
         <>
-          <h3 class="has-metric-tip" style="margin:24px 0 12px;font-size:13px;color:var(--muted)" data-tip="Per-session metrics with heat coloring. Warmer colors indicate higher token usage or more errors. Expand a row to see efficiency notes.">SESSION BREAKDOWN</h3>
+          <h3 class="has-metric-tip" style="margin:24px 0 8px;font-size:13px;color:var(--muted)" data-tip="Per-session metrics with heat coloring. Warmer colors indicate higher token usage or more errors. Click a row to focus it — Traces and Flow will open to that session.">SESSION BREAKDOWN</h3>
           <div style="display:flex;gap:16px;margin-bottom:4px;font-size:10px;color:var(--muted);align-items:center">
             <span style="font-weight:600">Usage:</span>
             <span class="flex-4"><span style="display:inline-block;width:12px;height:10px;border-radius:2px;background:var(--vscode-editorWidget-background,var(--bg));border:1px solid var(--border)"></span> Minimal</span>
@@ -342,8 +460,7 @@ export function Efficiency() {
           <table class="tool-insights-table">
             <thead>
               <tr>
-                <th style="text-align:center" data-tip="Session number">#</th>
-                <th style="text-align:left" data-tip="The user prompt that started this session">Prompt</th>
+                <th style="text-align:left;min-width:130px" data-tip="Agent type (dot color), session start time, and initial prompt — click a row to focus it in Traces and Flow">Session</th>
                 <th style="text-align:left" data-tip="LLM model used">Model</th>
                 <th style="text-align:left" data-tip="Conversation thread ID — groups multiple sessions from the same chat thread. Copilot and Codex report this; Claude sessions are standalone with no conversation wrapper.">Conv ID</th>
                 <th class="right" data-tip="LLM round-trips">LLM Calls</th>
@@ -374,7 +491,7 @@ export function Efficiency() {
             </tbody>
             <tfoot>
               <tr>
-                <td /><td style="text-align:left"><strong>Total</strong></td>
+                <td style="text-align:left;padding:4px 8px"><strong>Total</strong></td>
                 <td /><td />
                 <td class="right"><strong>{totLlm}</strong></td>
                 <td class="right"><strong>{totTool}</strong></td>
@@ -387,18 +504,6 @@ export function Efficiency() {
             </tfoot>
           </table>
         </>
-      )}
-
-      {/* Token usage per session */}
-      {displaySess.length > 0 && (
-        <div style="margin-top:32px">
-          <h3 style="margin:0 0 8px;font-size:13px;color:var(--muted)">TOKEN USAGE PER SESSION</h3>
-          <div style="display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)">
-            <span><span style="display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" /> Input</span>
-            <span><span style="display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" /> Output</span>
-          </div>
-          <SessionTokenChart sessions={displaySess} />
-        </div>
       )}
 
       </div>

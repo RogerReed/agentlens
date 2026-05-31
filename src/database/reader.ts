@@ -63,7 +63,7 @@ export class DatabaseReader {
     limit?: number
   }): SessionSummaryCard[] {
     let sql = 'SELECT * FROM sessions'
-    const conditions: string[] = []
+    const conditions: string[] = ["session_id NOT LIKE 'synth-%'"]
 
     if (filter?.source) {
       conditions.push(`source = '${filter.source}'`)
@@ -227,6 +227,40 @@ export class DatabaseReader {
     }))
   }
 
+  /** Returns hourly token + cost stats. `day` is 'YYYY-MM-DD HH' (UTC). */
+  queryHourlyStats(options: { since: number; source?: string }): DailyStatRow[] {
+    const sourceParam = options.source ?? null
+    const sql = `
+      SELECT
+        strftime('%Y-%m-%d %H', start_time / 1000, 'unixepoch') AS day,
+        SUM(input_tokens)        AS total_tokens,
+        SUM(cache_read_tokens)   AS cache_read_tokens,
+        SUM(cache_create_tokens) AS cache_create_tokens,
+        SUM(output_tokens)       AS output_tokens,
+        SUM(cost_usd)            AS cost_usd,
+        COUNT(*)                 AS session_count
+      FROM sessions
+      WHERE start_time > ${options.since}
+        AND is_sidechain = 0
+        ${sourceParam !== null ? `AND source = '${this._esc(sourceParam)}'` : ''}
+      GROUP BY day
+      ORDER BY day ASC`
+
+    const results = this.db.exec(sql)
+    if (!results[0]) return []
+    const { columns, values } = results[0]
+    const col = (row: unknown[], name: string) => row[columns.indexOf(name)]
+    return values.map(row => ({
+      day:               col(row, 'day') as string,
+      totalTokens:       (col(row, 'total_tokens') as number) ?? 0,
+      cacheReadTokens:   (col(row, 'cache_read_tokens') as number) ?? 0,
+      cacheCreateTokens: (col(row, 'cache_create_tokens') as number) ?? 0,
+      outputTokens:      (col(row, 'output_tokens') as number) ?? 0,
+      costUsd:           (col(row, 'cost_usd') as number) ?? 0,
+      sessionCount:      (col(row, 'session_count') as number) ?? 0,
+    }))
+  }
+
   queryLifetimeStats(): LifetimeStats {
     const results = this.db.exec(`
       SELECT
@@ -253,7 +287,7 @@ export class DatabaseReader {
   }
 
   searchSessions(query: SearchQuery): { sessions: SessionSummaryCard[]; totalCount: number } {
-    const conditions: string[] = ['is_sidechain = 0']
+    const conditions: string[] = ['is_sidechain = 0', "session_id NOT LIKE 'synth-%'"]
     if (query.text)        conditions.push(`user_request LIKE '%${this._esc(query.text)}%'`)
     if (query.source)      conditions.push(`source = '${this._esc(query.source)}'`)
     if (query.model)       conditions.push(`model = '${this._esc(query.model)}'`)

@@ -29,13 +29,13 @@
     n3 && n3.parentNode && n3.parentNode.removeChild(n3);
   }
   function k(l5, u5, t4) {
-    var i4, r5, o4, e4 = {};
-    for (o4 in u5) "key" == o4 ? i4 = u5[o4] : "ref" == o4 ? r5 = u5[o4] : e4[o4] = u5[o4];
+    var i4, r4, o4, e4 = {};
+    for (o4 in u5) "key" == o4 ? i4 = u5[o4] : "ref" == o4 ? r4 = u5[o4] : e4[o4] = u5[o4];
     if (arguments.length > 2 && (e4.children = arguments.length > 3 ? n.call(arguments, 2) : t4), "function" == typeof l5 && null != l5.defaultProps) for (o4 in l5.defaultProps) void 0 === e4[o4] && (e4[o4] = l5.defaultProps[o4]);
-    return x(l5, e4, i4, r5, null);
+    return x(l5, e4, i4, r4, null);
   }
-  function x(n3, t4, i4, r5, o4) {
-    var e4 = { type: n3, props: t4, key: i4, ref: r5, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: void 0, __v: null == o4 ? ++u : o4, __i: -1, __u: 0 };
+  function x(n3, t4, i4, r4, o4) {
+    var e4 = { type: n3, props: t4, key: i4, ref: r4, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: void 0, __v: null == o4 ? ++u : o4, __i: -1, __u: 0 };
     return null == o4 && null != l.vnode && l.vnode(e4), e4;
   }
   function S(n3) {
@@ -51,8 +51,8 @@
   }
   function I(n3) {
     if (n3.__P && n3.__d) {
-      var u5 = n3.__v, t4 = u5.__e, i4 = [], r5 = [], o4 = m({}, u5);
-      o4.__v = u5.__v + 1, l.vnode && l.vnode(o4), q(n3.__P, o4, u5, n3.__n, n3.__P.namespaceURI, 32 & u5.__u ? [t4] : null, i4, null == t4 ? $(u5) : t4, !!(32 & u5.__u), r5), o4.__v = u5.__v, o4.__.__k[o4.__i] = o4, D(i4, o4, r5), u5.__e = u5.__ = null, o4.__e != t4 && P(o4);
+      var u5 = n3.__v, t4 = u5.__e, i4 = [], r4 = [], o4 = m({}, u5);
+      o4.__v = u5.__v + 1, l.vnode && l.vnode(o4), q(n3.__P, o4, u5, n3.__n, n3.__P.namespaceURI, 32 & u5.__u ? [t4] : null, i4, null == t4 ? $(u5) : t4, !!(32 & u5.__u), r4), o4.__v = u5.__v, o4.__.__k[o4.__i] = o4, D(i4, o4, r4), u5.__e = u5.__ = null, o4.__e != t4 && P(o4);
     }
   }
   function P(n3) {
@@ -70,21 +70,21 @@
       i.length = H.__r = 0;
     }
   }
-  function L(n3, l5, u5, t4, i4, r5, o4, e4, f5, c4, s4) {
+  function L(n3, l5, u5, t4, i4, r4, o4, e4, f5, c4, s4) {
     var a4, h5, p5, v4, y5, _4, g4, m4 = t4 && t4.__k || w, b4 = l5.length;
-    for (f5 = T(u5, l5, m4, f5, b4), a4 = 0; a4 < b4; a4++) null != (p5 = u5.__k[a4]) && (h5 = -1 != p5.__i && m4[p5.__i] || d, p5.__i = a4, _4 = q(n3, p5, h5, i4, r5, o4, e4, f5, c4, s4), v4 = p5.__e, p5.ref && h5.ref != p5.ref && (h5.ref && J(h5.ref, null, p5), s4.push(p5.ref, p5.__c || v4, p5)), null == y5 && null != v4 && (y5 = v4), (g4 = !!(4 & p5.__u)) || h5.__k === p5.__k ? (f5 = j(p5, f5, n3, g4), g4 && h5.__e && (h5.__e = null)) : "function" == typeof p5.type && void 0 !== _4 ? f5 = _4 : v4 && (f5 = v4.nextSibling), p5.__u &= -7);
+    for (f5 = T(u5, l5, m4, f5, b4), a4 = 0; a4 < b4; a4++) null != (p5 = u5.__k[a4]) && (h5 = -1 != p5.__i && m4[p5.__i] || d, p5.__i = a4, _4 = q(n3, p5, h5, i4, r4, o4, e4, f5, c4, s4), v4 = p5.__e, p5.ref && h5.ref != p5.ref && (h5.ref && J(h5.ref, null, p5), s4.push(p5.ref, p5.__c || v4, p5)), null == y5 && null != v4 && (y5 = v4), (g4 = !!(4 & p5.__u)) || h5.__k === p5.__k ? (f5 = j(p5, f5, n3, g4), g4 && h5.__e && (h5.__e = null)) : "function" == typeof p5.type && void 0 !== _4 ? f5 = _4 : v4 && (f5 = v4.nextSibling), p5.__u &= -7);
     return u5.__e = y5, f5;
   }
   function T(n3, l5, u5, t4, i4) {
-    var r5, o4, e4, f5, c4, s4 = u5.length, a4 = s4, h5 = 0;
-    for (n3.__k = new Array(i4), r5 = 0; r5 < i4; r5++) null != (o4 = l5[r5]) && "boolean" != typeof o4 && "function" != typeof o4 ? ("string" == typeof o4 || "number" == typeof o4 || "bigint" == typeof o4 || o4.constructor == String ? o4 = n3.__k[r5] = x(null, o4, null, null, null) : g(o4) ? o4 = n3.__k[r5] = x(S, { children: o4 }, null, null, null) : void 0 === o4.constructor && o4.__b > 0 ? o4 = n3.__k[r5] = x(o4.type, o4.props, o4.key, o4.ref ? o4.ref : null, o4.__v) : n3.__k[r5] = o4, f5 = r5 + h5, o4.__ = n3, o4.__b = n3.__b + 1, e4 = null, -1 != (c4 = o4.__i = O(o4, u5, f5, a4)) && (a4--, (e4 = u5[c4]) && (e4.__u |= 2)), null == e4 || null == e4.__v ? (-1 == c4 && (i4 > s4 ? h5-- : i4 < s4 && h5++), "function" != typeof o4.type && (o4.__u |= 4)) : c4 != f5 && (c4 == f5 - 1 ? h5-- : c4 == f5 + 1 ? h5++ : (c4 > f5 ? h5-- : h5++, o4.__u |= 4))) : n3.__k[r5] = null;
-    if (a4) for (r5 = 0; r5 < s4; r5++) null != (e4 = u5[r5]) && 0 == (2 & e4.__u) && (e4.__e == t4 && (t4 = $(e4)), K(e4, e4));
+    var r4, o4, e4, f5, c4, s4 = u5.length, a4 = s4, h5 = 0;
+    for (n3.__k = new Array(i4), r4 = 0; r4 < i4; r4++) null != (o4 = l5[r4]) && "boolean" != typeof o4 && "function" != typeof o4 ? ("string" == typeof o4 || "number" == typeof o4 || "bigint" == typeof o4 || o4.constructor == String ? o4 = n3.__k[r4] = x(null, o4, null, null, null) : g(o4) ? o4 = n3.__k[r4] = x(S, { children: o4 }, null, null, null) : void 0 === o4.constructor && o4.__b > 0 ? o4 = n3.__k[r4] = x(o4.type, o4.props, o4.key, o4.ref ? o4.ref : null, o4.__v) : n3.__k[r4] = o4, f5 = r4 + h5, o4.__ = n3, o4.__b = n3.__b + 1, e4 = null, -1 != (c4 = o4.__i = O(o4, u5, f5, a4)) && (a4--, (e4 = u5[c4]) && (e4.__u |= 2)), null == e4 || null == e4.__v ? (-1 == c4 && (i4 > s4 ? h5-- : i4 < s4 && h5++), "function" != typeof o4.type && (o4.__u |= 4)) : c4 != f5 && (c4 == f5 - 1 ? h5-- : c4 == f5 + 1 ? h5++ : (c4 > f5 ? h5-- : h5++, o4.__u |= 4))) : n3.__k[r4] = null;
+    if (a4) for (r4 = 0; r4 < s4; r4++) null != (e4 = u5[r4]) && 0 == (2 & e4.__u) && (e4.__e == t4 && (t4 = $(e4)), K(e4, e4));
     return t4;
   }
   function j(n3, l5, u5, t4) {
-    var i4, r5;
+    var i4, r4;
     if ("function" == typeof n3.type) {
-      for (i4 = n3.__k, r5 = 0; i4 && r5 < i4.length; r5++) i4[r5] && (i4[r5].__ = n3, l5 = j(i4[r5], l5, u5, t4));
+      for (i4 = n3.__k, r4 = 0; i4 && r4 < i4.length; r4++) i4[r4] && (i4[r4].__ = n3, l5 = j(i4[r4], l5, u5, t4));
       return l5;
     }
     n3.__e != l5 && (t4 && (l5 && n3.type && !l5.parentNode && (l5 = $(n3)), u5.insertBefore(n3.__e, l5 || null)), l5 = n3.__e);
@@ -94,10 +94,10 @@
     return l5;
   }
   function O(n3, l5, u5, t4) {
-    var i4, r5, o4, e4 = n3.key, f5 = n3.type, c4 = l5[u5], s4 = null != c4 && 0 == (2 & c4.__u);
+    var i4, r4, o4, e4 = n3.key, f5 = n3.type, c4 = l5[u5], s4 = null != c4 && 0 == (2 & c4.__u);
     if (null === c4 && null == e4 || s4 && e4 == c4.key && f5 == c4.type) return u5;
     if (t4 > (s4 ? 1 : 0)) {
-      for (i4 = u5 - 1, r5 = u5 + 1; i4 >= 0 || r5 < l5.length; ) if (null != (c4 = l5[o4 = i4 >= 0 ? i4-- : r5++]) && 0 == (2 & c4.__u) && e4 == c4.key && f5 == c4.type) return o4;
+      for (i4 = u5 - 1, r4 = u5 + 1; i4 >= 0 || r4 < l5.length; ) if (null != (c4 = l5[o4 = i4 >= 0 ? i4-- : r4++]) && 0 == (2 & c4.__u) && e4 == c4.key && f5 == c4.type) return o4;
     }
     return -1;
   }
@@ -105,13 +105,13 @@
     "-" == l5[0] ? n3.setProperty(l5, null == u5 ? "" : u5) : n3[l5] = null == u5 ? "" : "number" != typeof u5 || _.test(l5) ? u5 : u5 + "px";
   }
   function N(n3, l5, u5, t4, i4) {
-    var r5, o4;
+    var r4, o4;
     n: if ("style" == l5) if ("string" == typeof u5) n3.style.cssText = u5;
     else {
       if ("string" == typeof t4 && (n3.style.cssText = t4 = ""), t4) for (l5 in t4) u5 && l5 in u5 || z(n3.style, l5, "");
       if (u5) for (l5 in u5) t4 && u5[l5] == t4[l5] || z(n3.style, l5, u5[l5]);
     }
-    else if ("o" == l5[0] && "n" == l5[1]) r5 = l5 != (l5 = l5.replace(a, "$1")), o4 = l5.toLowerCase(), l5 = o4 in n3 || "onFocusOut" == l5 || "onFocusIn" == l5 ? o4.slice(2) : l5.slice(2), n3.l || (n3.l = {}), n3.l[l5 + r5] = u5, u5 ? t4 ? u5[s] = t4[s] : (u5[s] = h, n3.addEventListener(l5, r5 ? v : p, r5)) : n3.removeEventListener(l5, r5 ? v : p, r5);
+    else if ("o" == l5[0] && "n" == l5[1]) r4 = l5 != (l5 = l5.replace(a, "$1")), o4 = l5.toLowerCase(), l5 = o4 in n3 || "onFocusOut" == l5 || "onFocusIn" == l5 ? o4.slice(2) : l5.slice(2), n3.l || (n3.l = {}), n3.l[l5 + r4] = u5, u5 ? t4 ? u5[s] = t4[s] : (u5[s] = h, n3.addEventListener(l5, r4 ? v : p, r4)) : n3.removeEventListener(l5, r4 ? v : p, r4);
     else {
       if ("http://www.w3.org/2000/svg" == i4) l5 = l5.replace(/xlink(H|:h)/, "h").replace(/sName$/, "s");
       else if ("width" != l5 && "height" != l5 && "href" != l5 && "list" != l5 && "form" != l5 && "tabIndex" != l5 && "download" != l5 && "rowSpan" != l5 && "colSpan" != l5 && "role" != l5 && "popover" != l5 && l5 in n3) try {
@@ -132,7 +132,7 @@
       }
     };
   }
-  function q(n3, u5, t4, i4, r5, o4, e4, f5, c4, s4) {
+  function q(n3, u5, t4, i4, r4, o4, e4, f5, c4, s4) {
     var a4, h5, p5, v4, y5, d5, _4, k3, x4, M, $2, I2, P2, A3, H2, T4 = u5.type;
     if (void 0 !== u5.constructor) return null;
     128 & t4.__u && (c4 = !!(32 & t4.__u), o4 = [f5 = u5.__e = t4.__e]), (a4 = l.__b) && a4(u5);
@@ -153,7 +153,7 @@
       else do {
         h5.__d = false, I2 && I2(u5), a4 = h5.render(h5.props, h5.state, h5.context), h5.state = h5.__s;
       } while (h5.__d && ++P2 < 25);
-      h5.state = h5.__s, null != h5.getChildContext && (i4 = m(m({}, i4), h5.getChildContext())), x4 && !p5 && null != h5.getSnapshotBeforeUpdate && (d5 = h5.getSnapshotBeforeUpdate(v4, y5)), A3 = null != a4 && a4.type === S && null == a4.key ? E(a4.props.children) : a4, f5 = L(n3, g(A3) ? A3 : [A3], u5, t4, i4, r5, o4, e4, f5, c4, s4), h5.base = u5.__e, u5.__u &= -161, h5.__h.length && e4.push(h5), _4 && (h5.__E = h5.__ = null);
+      h5.state = h5.__s, null != h5.getChildContext && (i4 = m(m({}, i4), h5.getChildContext())), x4 && !p5 && null != h5.getSnapshotBeforeUpdate && (d5 = h5.getSnapshotBeforeUpdate(v4, y5)), A3 = null != a4 && a4.type === S && null == a4.key ? E(a4.props.children) : a4, f5 = L(n3, g(A3) ? A3 : [A3], u5, t4, i4, r4, o4, e4, f5, c4, s4), h5.base = u5.__e, u5.__u &= -161, h5.__h.length && e4.push(h5), _4 && (h5.__E = h5.__ = null);
     } catch (n4) {
       if (u5.__v = null, c4 || null != o4) if (n4.then) {
         for (u5.__u |= c4 ? 160 : 128; f5 && 8 == f5.nodeType && f5.nextSibling; ) f5 = f5.nextSibling;
@@ -165,7 +165,7 @@
       else u5.__e = t4.__e, u5.__k = t4.__k, n4.then || B(u5);
       l.__e(n4, u5, t4);
     }
-    else null == o4 && u5.__v == t4.__v ? (u5.__k = t4.__k, u5.__e = t4.__e) : f5 = u5.__e = G(t4.__e, u5, t4, i4, r5, o4, e4, c4, s4);
+    else null == o4 && u5.__v == t4.__v ? (u5.__k = t4.__k, u5.__e = t4.__e) : f5 = u5.__e = G(t4.__e, u5, t4, i4, r4, o4, e4, c4, s4);
     return (a4 = l.diffed) && a4(u5), 128 & u5.__u ? void 0 : f5;
   }
   function B(n3) {
@@ -186,7 +186,7 @@
   function E(n3) {
     return "object" != typeof n3 || null == n3 || n3.__b > 0 ? n3 : g(n3) ? n3.map(E) : m({}, n3);
   }
-  function G(u5, t4, i4, r5, o4, e4, f5, c4, s4) {
+  function G(u5, t4, i4, r4, o4, e4, f5, c4, s4) {
     var a4, h5, p5, v4, y5, w5, _4, m4 = i4.props || d, k3 = t4.props, x4 = t4.type;
     if ("svg" == x4 ? o4 = "http://www.w3.org/2000/svg" : "math" == x4 ? o4 = "http://www.w3.org/1998/Math/MathML" : o4 || (o4 = "http://www.w3.org/1999/xhtml"), null != e4) {
       for (a4 = 0; a4 < e4.length; a4++) if ((y5 = e4[a4]) && "setAttribute" in y5 == !!x4 && (x4 ? y5.localName == x4 : 3 == y5.nodeType)) {
@@ -204,7 +204,7 @@
       for (a4 in m4) y5 = m4[a4], "dangerouslySetInnerHTML" == a4 ? p5 = y5 : "children" == a4 || a4 in k3 || "value" == a4 && "defaultValue" in k3 || "checked" == a4 && "defaultChecked" in k3 || N(u5, a4, null, y5, o4);
       for (a4 in k3) y5 = k3[a4], "children" == a4 ? v4 = y5 : "dangerouslySetInnerHTML" == a4 ? h5 = y5 : "value" == a4 ? w5 = y5 : "checked" == a4 ? _4 = y5 : c4 && "function" != typeof y5 || m4[a4] === y5 || N(u5, a4, y5, m4[a4], o4);
       if (h5) c4 || p5 && (h5.__html == p5.__html || h5.__html == u5.innerHTML) || (u5.innerHTML = h5.__html), t4.__k = [];
-      else if (p5 && (u5.innerHTML = ""), L("template" == t4.type ? u5.content : u5, g(v4) ? v4 : [v4], t4, i4, r5, "foreignObject" == x4 ? "http://www.w3.org/1999/xhtml" : o4, e4, f5, e4 ? e4[0] : i4.__k && $(i4, 0), c4, s4), null != e4) for (a4 = e4.length; a4--; ) b(e4[a4]);
+      else if (p5 && (u5.innerHTML = ""), L("template" == t4.type ? u5.content : u5, g(v4) ? v4 : [v4], t4, i4, r4, "foreignObject" == x4 ? "http://www.w3.org/1999/xhtml" : o4, e4, f5, e4 ? e4[0] : i4.__k && $(i4, 0), c4, s4), null != e4) for (a4 = e4.length; a4--; ) b(e4[a4]);
       c4 || (a4 = "value", "progress" == x4 && null == w5 ? u5.removeAttribute("value") : null != w5 && (w5 !== u5[a4] || "progress" == x4 && !w5 || "option" == x4 && w5 != m4[a4]) && N(u5, a4, w5, m4[a4], o4), a4 = "checked", null != _4 && _4 != u5[a4] && N(u5, a4, _4, m4[a4], o4));
     }
     return u5;
@@ -220,7 +220,7 @@
     }
   }
   function K(n3, u5, t4) {
-    var i4, r5;
+    var i4, r4;
     if (l.unmount && l.unmount(n3), (i4 = n3.ref) && (i4.current && i4.current != n3.__e || J(i4, null, u5)), null != (i4 = n3.__c)) {
       if (i4.componentWillUnmount) try {
         i4.componentWillUnmount();
@@ -229,19 +229,19 @@
       }
       i4.base = i4.__P = null;
     }
-    if (i4 = n3.__k) for (r5 = 0; r5 < i4.length; r5++) i4[r5] && K(i4[r5], u5, t4 || "function" != typeof n3.type);
+    if (i4 = n3.__k) for (r4 = 0; r4 < i4.length; r4++) i4[r4] && K(i4[r4], u5, t4 || "function" != typeof n3.type);
     t4 || b(n3.__e), n3.__c = n3.__ = n3.__e = void 0;
   }
   function Q(n3, l5, u5) {
     return this.constructor(n3, u5);
   }
   function R(u5, t4, i4) {
-    var r5, o4, e4, f5;
-    t4 == document && (t4 = document.documentElement), l.__ && l.__(u5, t4), o4 = (r5 = "function" == typeof i4) ? null : i4 && i4.__k || t4.__k, e4 = [], f5 = [], q(t4, u5 = (!r5 && i4 || t4).__k = k(S, null, [u5]), o4 || d, d, t4.namespaceURI, !r5 && i4 ? [i4] : o4 ? null : t4.firstChild ? n.call(t4.childNodes) : null, e4, !r5 && i4 ? i4 : o4 ? o4.__e : t4.firstChild, r5, f5), D(e4, u5, f5);
+    var r4, o4, e4, f5;
+    t4 == document && (t4 = document.documentElement), l.__ && l.__(u5, t4), o4 = (r4 = "function" == typeof i4) ? null : i4 && i4.__k || t4.__k, e4 = [], f5 = [], q(t4, u5 = (!r4 && i4 || t4).__k = k(S, null, [u5]), o4 || d, d, t4.namespaceURI, !r4 && i4 ? [i4] : o4 ? null : t4.firstChild ? n.call(t4.childNodes) : null, e4, !r4 && i4 ? i4 : o4 ? o4.__e : t4.firstChild, r4, f5), D(e4, u5, f5);
   }
   n = w.slice, l = { __e: function(n3, l5, u5, t4) {
-    for (var i4, r5, o4; l5 = l5.__; ) if ((i4 = l5.__c) && !i4.__) try {
-      if ((r5 = i4.constructor) && null != r5.getDerivedStateFromError && (i4.setState(r5.getDerivedStateFromError(n3)), o4 = i4.__d), null != i4.componentDidCatch && (i4.componentDidCatch(n3, t4 || {}), o4 = i4.__d), o4) return i4.__E = i4;
+    for (var i4, r4, o4; l5 = l5.__; ) if ((i4 = l5.__c) && !i4.__) try {
+      if ((r4 = i4.constructor) && null != r4.getDerivedStateFromError && (i4.setState(r4.getDerivedStateFromError(n3)), o4 = i4.__d), null != i4.componentDidCatch && (i4.componentDidCatch(n3, t4 || {}), o4 = i4.__d), o4) return i4.__E = i4;
     } catch (l6) {
       n3 = l6;
     }
@@ -282,33 +282,33 @@
   function h2(n3, u5, i4) {
     var o4 = p2(t2++, 2);
     if (o4.t = n3, !o4.__c && (o4.__ = [i4 ? i4(u5) : D2(void 0, u5), function(n4) {
-      var t4 = o4.__N ? o4.__N[0] : o4.__[0], r5 = o4.t(t4, n4);
-      t4 !== r5 && (o4.__N = [r5, o4.__[1]], o4.__c.setState({}));
+      var t4 = o4.__N ? o4.__N[0] : o4.__[0], r4 = o4.t(t4, n4);
+      t4 !== r4 && (o4.__N = [r4, o4.__[1]], o4.__c.setState({}));
     }], o4.__c = r2, !r2.__f)) {
-      var f5 = function(n4, t4, r5) {
+      var f5 = function(n4, t4, r4) {
         if (!o4.__c.__H) return true;
         var u6 = o4.__c.__H.__.filter(function(n5) {
           return n5.__c;
         });
         if (u6.every(function(n5) {
           return !n5.__N;
-        })) return !c4 || c4.call(this, n4, t4, r5);
+        })) return !c4 || c4.call(this, n4, t4, r4);
         var i5 = o4.__c.props !== n4;
         return u6.some(function(n5) {
           if (n5.__N) {
             var t5 = n5.__[0];
             n5.__ = n5.__N, n5.__N = void 0, t5 !== n5.__[0] && (i5 = true);
           }
-        }), c4 && c4.call(this, n4, t4, r5) || i5;
+        }), c4 && c4.call(this, n4, t4, r4) || i5;
       };
       r2.__f = true;
       var c4 = r2.shouldComponentUpdate, e4 = r2.componentWillUpdate;
-      r2.componentWillUpdate = function(n4, t4, r5) {
+      r2.componentWillUpdate = function(n4, t4, r4) {
         if (this.__e) {
           var u6 = c4;
-          c4 = void 0, f5(n4, t4, r5), c4 = u6;
+          c4 = void 0, f5(n4, t4, r4), c4 = u6;
         }
-        e4 && e4.call(this, n4, t4, r5);
+        e4 && e4.call(this, n4, t4, r4);
       }, r2.shouldComponentUpdate = f5;
     }
     return o4.__N || o4.__;
@@ -322,17 +322,17 @@
       return { current: n3 };
     }, []);
   }
-  function T2(n3, r5) {
+  function T2(n3, r4) {
     var u5 = p2(t2++, 7);
-    return C2(u5.__H, r5) && (u5.__ = n3(), u5.__H = r5, u5.__h = n3), u5.__;
+    return C2(u5.__H, r4) && (u5.__ = n3(), u5.__H = r4, u5.__h = n3), u5.__;
   }
   function j2() {
     for (var n3; n3 = f2.shift(); ) {
       var t4 = n3.__H;
       if (n3.__P && t4) try {
         t4.__h.some(z2), t4.__h.some(B2), t4.__h = [];
-      } catch (r5) {
-        t4.__h = [], c2.__e(r5, n3.__v);
+      } catch (r4) {
+        t4.__h = [], c2.__e(r4, n3.__v);
       }
     }
   }
@@ -358,29 +358,29 @@
         n4.__h.some(z2), n4.__h = n4.__h.filter(function(n5) {
           return !n5.__ || B2(n5);
         });
-      } catch (r5) {
+      } catch (r4) {
         t4.some(function(n5) {
           n5.__h && (n5.__h = []);
-        }), t4 = [], c2.__e(r5, n4.__v);
+        }), t4 = [], c2.__e(r4, n4.__v);
       }
     }), l2 && l2(n3, t4);
   }, c2.unmount = function(n3) {
     m2 && m2(n3);
-    var t4, r5 = n3.__c;
-    r5 && r5.__H && (r5.__H.__.some(function(n4) {
+    var t4, r4 = n3.__c;
+    r4 && r4.__H && (r4.__H.__.some(function(n4) {
       try {
         z2(n4);
       } catch (n5) {
         t4 = n5;
       }
-    }), r5.__H = void 0, t4 && c2.__e(t4, r5.__v));
+    }), r4.__H = void 0, t4 && c2.__e(t4, r4.__v));
   };
   var k2 = "function" == typeof requestAnimationFrame;
   function w2(n3) {
-    var t4, r5 = function() {
+    var t4, r4 = function() {
       clearTimeout(u5), k2 && cancelAnimationFrame(t4), setTimeout(n3);
-    }, u5 = setTimeout(r5, 35);
-    k2 && (t4 = requestAnimationFrame(r5));
+    }, u5 = setTimeout(r4, 35);
+    k2 && (t4 = requestAnimationFrame(r4));
   }
   function z2(n3) {
     var t4 = r2, u5 = n3.__c;
@@ -391,8 +391,8 @@
     n3.__c = n3.__(), r2 = t4;
   }
   function C2(n3, t4) {
-    return !n3 || n3.length !== t4.length || t4.some(function(t5, r5) {
-      return t5 !== n3[r5];
+    return !n3 || n3.length !== t4.length || t4.some(function(t5, r4) {
+      return t5 !== n3[r4];
     });
   }
   function D2(n3, t4) {
@@ -417,7 +417,7 @@
         h3 = void 0;
         v3++;
         while (void 0 !== n3) {
-          var r5 = n3.u;
+          var r4 = n3.u;
           n3.u = void 0;
           n3.f &= -3;
           if (!(8 & n3.f) && w3(n3)) try {
@@ -428,7 +428,7 @@
               t4 = true;
             }
           }
-          n3 = r5;
+          n3 = r4;
         }
       }
       v3 = 0;
@@ -517,18 +517,18 @@
   l3.prototype.U = function(i4) {
     var t4 = this;
     if (void 0 !== this.t) {
-      var n3 = i4.e, r5 = i4.x;
+      var n3 = i4.e, r4 = i4.x;
       if (void 0 !== n3) {
-        n3.x = r5;
+        n3.x = r4;
         i4.e = void 0;
       }
-      if (void 0 !== r5) {
-        r5.e = n3;
+      if (void 0 !== r4) {
+        r4.e = n3;
         i4.x = void 0;
       }
       if (i4 === this.t) {
-        this.t = r5;
-        if (void 0 === r5) o3(function() {
+        this.t = r4;
+        if (void 0 === r4) o3(function() {
           var i5;
           null == (i5 = t4.Z) || i5.call(t4);
         });
@@ -610,15 +610,15 @@
   function b2(i4) {
     var t4 = i4.s, n3 = void 0;
     while (void 0 !== t4) {
-      var r5 = t4.p;
+      var r4 = t4.p;
       if (-1 === t4.i) {
         t4.S.U(t4);
-        if (void 0 !== r5) r5.n = t4.n;
-        if (void 0 !== t4.n) t4.n.p = r5;
+        if (void 0 !== r4) r4.n = t4.n;
+        if (void 0 !== t4.n) t4.n.p = r4;
       } else n3 = t4;
       t4.S.n = t4.r;
       if (void 0 !== t4.r) t4.r = void 0;
-      t4 = r5;
+      t4 = r4;
     }
     i4.s = n3;
   }
@@ -785,9 +785,9 @@
       n3.d();
       throw i5;
     }
-    var r5 = n3.d.bind(n3);
-    r5[Symbol.dispose] = r5;
-    return r5;
+    var r4 = n3.d.bind(n3);
+    r4[Symbol.dispose] = r4;
+    return r4;
   }
 
   // node_modules/.pnpm/@preact+signals@2.9.0_preact@10.29.1/node_modules/@preact/signals/dist/signals.module.js
@@ -799,8 +799,8 @@
   j3(function() {
     l4 = this.N;
   })();
-  function g3(i4, r5) {
-    l[i4] = r5.bind(null, l[i4] || function() {
+  function g3(i4, r4) {
+    l[i4] = r4.bind(null, l[i4] || function() {
     });
   }
   function b3(i4) {
@@ -849,12 +849,12 @@
   } }, __b: { configurable: true, value: 1 } });
   g3("__b", function(i4, n3) {
     if ("string" == typeof n3.type) {
-      var r5, t4 = n3.props;
+      var r4, t4 = n3.props;
       for (var o4 in t4) if ("children" !== o4) {
         var e4 = t4[o4];
         if (e4 instanceof l3) {
-          if (!r5) n3.__np = r5 = {};
-          r5[o4] = e4;
+          if (!r4) n3.__np = r4 = {};
+          r4[o4] = e4;
           t4[o4] = e4.peek();
         }
       }
@@ -865,40 +865,40 @@
     i4(n3);
     if (n3.type !== S) {
       b3();
-      var r5, o4 = n3.__c;
+      var r4, o4 = n3.__c;
       if (o4) {
         o4.__$f &= -2;
-        if (void 0 === (r5 = o4.__$u)) o4.__$u = r5 = (function(i5, n4) {
-          var r6;
+        if (void 0 === (r4 = o4.__$u)) o4.__$u = r4 = (function(i5, n4) {
+          var r5;
           j3(function() {
-            r6 = this;
+            r5 = this;
           }, { name: n4 });
-          r6.c = i5;
-          return r6;
+          r5.c = i5;
+          return r5;
         })(function() {
           var i5;
-          if (p4) null == (i5 = r5.y) || i5.call(r5);
+          if (p4) null == (i5 = r4.y) || i5.call(r4);
           o4.__$f |= 1;
           o4.setState({});
         }, "function" == typeof n3.type ? n3.type.displayName || n3.type.name : "");
       }
       d4 = o4;
-      b3(r5);
+      b3(r4);
     }
   });
-  g3("__e", function(i4, n3, r5, t4) {
+  g3("__e", function(i4, n3, r4, t4) {
     b3();
     d4 = void 0;
-    i4(n3, r5, t4);
+    i4(n3, r4, t4);
   });
   g3("diffed", function(i4, n3) {
     b3();
     d4 = void 0;
-    var r5;
-    if ("string" == typeof n3.type && (r5 = n3.__e)) {
+    var r4;
+    if ("string" == typeof n3.type && (r4 = n3.__e)) {
       var t4 = n3.__np, o4 = n3.props;
       if (t4) {
-        var e4 = r5.U;
+        var e4 = r4.U;
         if (e4) for (var f5 in e4) {
           var u5 = e4[f5];
           if (void 0 !== u5 && !(f5 in t4)) {
@@ -908,12 +908,12 @@
         }
         else {
           e4 = {};
-          r5.U = e4;
+          r4.U = e4;
         }
         for (var a4 in t4) {
           var c4 = e4[a4], v4 = t4[a4];
           if (void 0 === c4) {
-            c4 = w4(r5, a4, v4);
+            c4 = w4(r4, a4, v4);
             e4[a4] = c4;
           } else c4.o(v4, o4);
         }
@@ -922,29 +922,29 @@
     }
     i4(n3);
   });
-  function w4(i4, n3, r5, t4) {
-    var o4 = n3 in i4 && void 0 === i4.ownerSVGElement, e4 = y3(r5), f5 = r5.peek();
+  function w4(i4, n3, r4, t4) {
+    var o4 = n3 in i4 && void 0 === i4.ownerSVGElement, e4 = y3(r4), f5 = r4.peek();
     return { o: function(i5, n4) {
       e4.value = i5;
       f5 = i5.peek();
     }, d: j3(function() {
       this.N = F;
-      var r6 = e4.value.value;
-      if (f5 !== r6) {
+      var r5 = e4.value.value;
+      if (f5 !== r5) {
         f5 = void 0;
-        if (o4) i4[n3] = r6;
-        else if (null != r6 && (false !== r6 || "-" === n3[4])) i4.setAttribute(n3, r6);
+        if (o4) i4[n3] = r5;
+        else if (null != r5 && (false !== r5 || "-" === n3[4])) i4.setAttribute(n3, r5);
         else i4.removeAttribute(n3);
       } else f5 = void 0;
     }) };
   }
   g3("unmount", function(i4, n3) {
     if ("string" == typeof n3.type) {
-      var r5 = n3.__e;
-      if (r5) {
-        var t4 = r5.U;
+      var r4 = n3.__e;
+      if (r4) {
+        var t4 = r4.U;
         if (t4) {
-          r5.U = void 0;
+          r4.U = void 0;
           for (var o4 in t4) {
             var e4 = t4[o4];
             if (e4) e4.d();
@@ -964,13 +964,13 @@
     }
     i4(n3);
   });
-  g3("__h", function(i4, n3, r5, t4) {
+  g3("__h", function(i4, n3, r4, t4) {
     if (t4 < 3 || 9 === t4) n3.__$f |= 2;
-    i4(n3, r5, t4);
+    i4(n3, r4, t4);
   });
   C.prototype.shouldComponentUpdate = function(i4, n3) {
     if (this.__R) return true;
-    var r5 = this.__$u, t4 = r5 && void 0 !== r5.s;
+    var r4 = this.__$u, t4 = r4 && void 0 !== r4.s;
     for (var o4 in n3) return true;
     if (this.__f || "boolean" == typeof this.u && true === this.u) {
       var e4 = 2 & this.__$f;
@@ -1005,10 +1005,28 @@
   }
 
   // media/src/state.ts
+  var CHART_MAX = 25;
+  var TIME_PRESETS = [
+    { id: "1h", label: "1h", ms: 60 * 6e4 },
+    { id: "6h", label: "6h", ms: 6 * 60 * 6e4 },
+    { id: "24h", label: "24h", ms: 24 * 60 * 6e4 },
+    { id: "7d", label: "7d", ms: 7 * 864e5 },
+    { id: "30d", label: "30d", ms: 30 * 864e5 },
+    { id: "all", label: "All", ms: null }
+  ];
+  function makeTimeRange(preset) {
+    const p5 = TIME_PRESETS.find((t4) => t4.id === preset);
+    if (p5.ms === null) return { preset };
+    return { preset, since: Date.now() - p5.ms };
+  }
+  var timeRange = y3({ preset: "all" });
+  var rangedSearchResults = y3(null);
   var dailyStats = y3([]);
   var lifetimeStats = y3(null);
   var burnRateData = y3(null);
   var searchResults = y3(null);
+  var sessionTextFilter = y3("");
+  var sessionSortKey = y3("start_time");
   function makeSetSignal() {
     const s4 = y3(/* @__PURE__ */ new Set());
     return {
@@ -1048,10 +1066,11 @@
   var toolCalls = y3(window.__INITIAL_TOOL_CALLS__ ?? {});
   var sessionTimelines = y3({});
   var blobCache = y3({});
-  var sessionLimit = y3(10);
+  var focusedSessionId = y3(null);
+  var sessionLimit = y3(25);
   var selectedAgentFilter = y3("all");
   var insightFilter = y3("all");
-  var activeTab = y3("efficiency");
+  var activeTab = y3("sessions");
   var swRetainedSessions = y3([]);
   var swLastSessionCount = y3(0);
   var dismissedSpanIds = makeSetSignal();
@@ -1060,6 +1079,13 @@
   var vscode = null;
   function setVscode(api) {
     vscode = api;
+  }
+  function goToHelp(anchor) {
+    activeTab.value = "help";
+    setTimeout(() => {
+      const el = document.getElementById(anchor);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
   }
   var COLORS = [
     "#4fc3f7",
@@ -1085,10 +1111,56 @@
     const all = agentFilteredSessions.value;
     const limit = sessionLimit.value;
     if (limit >= all.length) return all;
-    return all.slice(all.length - limit);
+    return all.slice(0, limit);
+  });
+  var rangedSessions = g2(() => {
+    const range = timeRange.value;
+    const agent = selectedAgentFilter.value;
+    if (range.preset === "all") {
+      return agentFilteredSessions.value;
+    }
+    const since = range.since ?? 0;
+    const until = range.until ?? Date.now();
+    const allInMemory = agentFilteredSessions.value;
+    const inMemory = allInMemory.filter((s4) => {
+      if (!s4.startTime) return false;
+      const ms = new Date(s4.startTime).getTime();
+      return ms >= since && ms <= until;
+    });
+    const dbResults = rangedSearchResults.value;
+    if (!dbResults) return inMemory;
+    const dbIds = new Set(dbResults.sessions.map((s4) => s4.sessionId));
+    const merged = [
+      ...dbResults.sessions,
+      ...inMemory.filter((s4) => !dbIds.has(s4.sessionId))
+    ];
+    merged.sort((a4, b4) => Date.parse(b4.startTime || "0") - Date.parse(a4.startTime || "0"));
+    if (agent === "all") return merged;
+    return merged.filter((s4) => s4.source === agent);
+  });
+  var filteredSessions = g2(() => {
+    let sessions = rangedSessions.value;
+    const text = sessionTextFilter.value.toLowerCase().trim();
+    if (text) {
+      sessions = sessions.filter((s4) => (s4.userRequest ?? "").toLowerCase().includes(text));
+    }
+    const key = sessionSortKey.value;
+    if (key === "start_time") return sessions;
+    return [...sessions].sort((a4, b4) => {
+      switch (key) {
+        case "total_tokens":
+          return b4.inputTokens + b4.outputTokens - (a4.inputTokens + a4.outputTokens);
+        case "duration_ms":
+          return b4.durationMs - a4.durationMs;
+        case "errors":
+          return b4.errors - a4.errors;
+        default:
+          return 0;
+      }
+    });
   });
   var agentPresence = g2(() => {
-    const sessions = displaySessions.value;
+    const sessions = rangedSessions.value;
     return {
       claude: sessions.some((s4) => s4.source === "claude_code"),
       copilot: sessions.some((s4) => s4.source === "copilot"),
@@ -1130,6 +1202,25 @@
   function getAllSessionsChronological() {
     return sessionSummary.value?.sessions ?? [];
   }
+  function formatSessionTime(sess) {
+    if (!sess?.startTime) return "\u2014";
+    const d5 = new Date(sess.startTime);
+    if (isNaN(d5.getTime())) return "\u2014";
+    return tsFormat(d5);
+  }
+  function tsFormat(d5) {
+    const p5 = (n3, w5 = 2) => String(n3).padStart(w5, "0");
+    return `${d5.getFullYear()}-${p5(d5.getMonth() + 1)}-${p5(d5.getDate())} ${p5(d5.getHours())}:${p5(d5.getMinutes())}:${p5(d5.getSeconds())}`;
+  }
+  function formatSessionTimeShort(sess) {
+    if (!sess?.startTime) return "\u2014";
+    const d5 = new Date(sess.startTime);
+    if (isNaN(d5.getTime())) return "\u2014";
+    const p5 = (n3) => String(n3).padStart(2, "0");
+    const now = /* @__PURE__ */ new Date();
+    if (d5.toDateString() === now.toDateString()) return `${p5(d5.getHours())}:${p5(d5.getMinutes())}:${p5(d5.getSeconds())}`;
+    return `${p5(d5.getMonth() + 1)}-${p5(d5.getDate())} ${p5(d5.getHours())}:${p5(d5.getMinutes())}`;
+  }
   function getSessionGlobalNumber(sess) {
     const all = getAllSessionsChronological();
     if (!sess || all.length === 0) return 0;
@@ -1143,8 +1234,8 @@
     }
     return 0;
   }
-  function buildDisplaySummary() {
-    const sessions = displaySessions.value;
+  function buildDisplaySummary(sessionsOverride) {
+    const sessions = sessionsOverride ?? displaySessions.value;
     let totalInputTokens = 0, totalOutputTokens = 0, totalLlmCalls = 0, cacheRead = 0;
     sessions.forEach((s4) => {
       totalInputTokens += s4.inputTokens ?? 0;
@@ -1163,10 +1254,6 @@
         toolDefWaste: sessionSummary.value?.efficiency?.toolDefWaste ?? 0
       }
     };
-  }
-  function getAgentDotHtml(source) {
-    if (!source) return "";
-    return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getAgentColor(source)};vertical-align:middle" title="${getAgentSourceLabel(source)}"></span>`;
   }
   function formatLlmLabel(entry) {
     const action = entry.action ?? "";
@@ -1191,6 +1278,34 @@
     if (!parts) return label;
     const toolName2 = parts[1];
     const args = parts[2] ?? "";
+    if (!args.trim() && entry.toolInput) {
+      const raw = entry.toolInput.trimStart();
+      if (raw.startsWith("{")) {
+        try {
+          const parsed = JSON.parse(raw);
+          const fp = String(parsed.file_path || parsed.filePath || "");
+          if (fp) {
+            const base = fp.split("/").pop() || fp;
+            if (toolName2 === "MultiEdit" && Array.isArray(parsed.edits)) {
+              const count = parsed.edits.length;
+              return toolName2 + " " + base + (count > 1 ? " +" + (count - 1) : "");
+            }
+            return toolName2 + " " + base;
+          }
+          if (parsed.command) {
+            const cmd = String(parsed.command);
+            return "Bash " + (cmd.length > 60 ? cmd.slice(0, 57) + "\u2026" : cmd);
+          }
+          if (parsed.pattern) return toolName2 + " " + String(parsed.pattern);
+          if (parsed.query) return toolName2 + " " + String(parsed.query);
+        } catch {
+        }
+      } else {
+        const isFilePath = raw.startsWith("/") || raw.startsWith("~") || /^[A-Za-z]:[/\\]/.test(raw);
+        if (isFilePath) return toolName2 + " " + (raw.split("/").pop() || raw);
+        return "Bash " + (raw.length > 60 ? raw.slice(0, 57) + "\u2026" : raw);
+      }
+    }
     switch (toolName2) {
       case "read_file": {
         const m4 = args.match(/^(\S+)\s*L(\d+)-(\d+)$/);
@@ -1232,7 +1347,7 @@
       case "runSubagent":
         return "Sub-agent: " + args;
       default:
-        return toolName2 + " " + args;
+        return toolName2 + (args ? " " + args : "");
     }
   }
   function formatToolResult(entry) {
@@ -1242,932 +1357,6 @@
     if (rs.match(/^Successfully/)) return "ok";
     if (rs === "no list") return "none";
     return rs;
-  }
-
-  // node_modules/.pnpm/preact@10.29.1/node_modules/preact/jsx-runtime/dist/jsxRuntime.module.js
-  var f4 = 0;
-  function u4(e4, t4, n3, o4, i4, u5) {
-    t4 || (t4 = {});
-    var a4, c4, p5 = t4;
-    if ("ref" in p5) for (c4 in p5 = {}, t4) "ref" == c4 ? a4 = t4[c4] : p5[c4] = t4[c4];
-    var l5 = { type: e4, props: p5, key: n3, ref: a4, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: void 0, __v: --f4, __i: -1, __u: 0, __source: i4, __self: u5 };
-    if ("function" == typeof e4 && (a4 = e4.defaultProps)) for (c4 in a4) void 0 === p5[c4] && (p5[c4] = a4[c4]);
-    return l.vnode && l.vnode(l5), l5;
-  }
-
-  // media/src/tabs/Efficiency.tsx
-  function ContextGrowthChart({ sessions, timelines }) {
-    const canvasRef = A2(null);
-    y2(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const seriesData = [];
-      let globalMax = 0, globalMin = Infinity, globalMaxPoints = 0;
-      sessions.forEach((sess, idx) => {
-        const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
-        if (llmEntries.length < 1) return;
-        const points = llmEntries.map((e4) => e4.inputTokens ?? 0);
-        const max = Math.max(...points), min = Math.min(...points);
-        if (max > globalMax) globalMax = max;
-        if (min < globalMin) globalMin = min;
-        if (points.length > globalMaxPoints) globalMaxPoints = points.length;
-        const sessionNum = getSessionGlobalNumber(sess) || idx + 1;
-        seriesData.push({ label: "" + sessionNum, points, color: getAgentColor(sess.source) || COLORS[idx % COLORS.length] });
-      });
-      if (seriesData.length === 0) {
-        canvas.style.display = "none";
-        return;
-      }
-      canvas.style.display = "block";
-      const dataRange = globalMax - globalMin;
-      const adjRange = dataRange === 0 ? globalMax * 0.1 || 1 : dataRange;
-      const yPad = adjRange * 0.1;
-      const yMin = Math.max(0, globalMin - yPad), yMax = globalMax + yPad;
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const w5 = rect.width, h5 = rect.height;
-      ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 40, bottom: 24, left: 64 };
-      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
-      const cs = getComputedStyle(document.body);
-      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
-      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
-      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
-      ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 0.5;
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const y5 = pad.top + chartH * i4 / 4;
-        ctx.beginPath();
-        ctx.moveTo(pad.left, y5);
-        ctx.lineTo(pad.left + chartW, y5);
-        ctx.stroke();
-      }
-      ctx.fillStyle = textColor;
-      ctx.font = fontStr;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const val = yMax - (yMax - yMin) * i4 / 4;
-        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
-      }
-      ctx.save();
-      ctx.translate(10, pad.top + chartH / 2);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillStyle = textColor;
-      ctx.font = fontStr;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("Input Tokens", 0, 0);
-      ctx.restore();
-      ctx.fillStyle = textColor;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillText("Turns (LLM Calls)", pad.left + chartW / 2, pad.top + chartH + 10);
-      seriesData.forEach((series) => {
-        const pts = series.points;
-        const lastX = pad.left + (pts.length - 1) / Math.max(globalMaxPoints - 1, 1) * chartW;
-        const lastY = pad.top + chartH - (pts[pts.length - 1] - yMin) / (yMax - yMin) * chartH;
-        if (pts.length >= 2) {
-          ctx.beginPath();
-          for (let j4 = 0; j4 < pts.length; j4++) {
-            const x4 = pad.left + j4 / Math.max(globalMaxPoints - 1, 1) * chartW;
-            const y5 = pad.top + chartH - (pts[j4] - yMin) / (yMax - yMin) * chartH;
-            j4 === 0 ? ctx.moveTo(x4, y5) : ctx.lineTo(x4, y5);
-          }
-          ctx.strokeStyle = series.color;
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-        }
-        ctx.beginPath();
-        ctx.arc(lastX, lastY, pts.length === 1 ? 5 : 3, 0, Math.PI * 2);
-        ctx.fillStyle = series.color;
-        ctx.fill();
-        ctx.fillStyle = series.color;
-        ctx.font = "bold 10px sans-serif";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "middle";
-        ctx.fillText(series.label, lastX + (pts.length === 1 ? 9 : 5), lastY);
-      });
-    });
-    return /* @__PURE__ */ u4("canvas", { ref: canvasRef, id: "context-growth-chart", style: "width:100%;height:180px;display:block" });
-  }
-  var HELP_TOOLTIPS = {
-    "help-tool-failures": "Failures come from guessed file paths or unavailable commands. Provide exact paths and tell the agent which tools and runtimes are available.",
-    "help-high-turns": "Prompt describes the goal but not the location. Add explicit file paths, stopping conditions, and break multi-step tasks into separate prompts.",
-    "help-cache-rate": "Cache breaks when the prompt prefix changes between calls. Keep static instructions identical at the top; avoid timestamps in instruction files.",
-    "help-large-context": "Large instruction files make every session start expensive. Audit and trim instruction files; move reference docs out of instruction files.",
-    "help-context-bloat": "Tool results and instruction files expand context each turn. Keep instruction files under 4 KB; use line-ranged reads instead of full file reads."
-  };
-  function renderHeatReason(r5) {
-    if (!r5.linkPhrase || !r5.helpId) return /* @__PURE__ */ u4("span", { style: "color:var(--fg)", children: r5.text });
-    const idx = r5.text.indexOf(r5.linkPhrase);
-    if (idx === -1) return /* @__PURE__ */ u4("span", { style: "color:var(--fg)", children: r5.text });
-    const before = r5.text.slice(0, idx);
-    const after = r5.text.slice(idx + r5.linkPhrase.length);
-    const tip = HELP_TOOLTIPS[r5.helpId] || "";
-    return /* @__PURE__ */ u4("span", { style: "color:var(--fg)", children: [
-      before,
-      /* @__PURE__ */ u4("span", { "data-tip": tip, style: "border-bottom:1px dotted currentColor;cursor:help", children: r5.linkPhrase }),
-      after
-    ] });
-  }
-  function SessionDiagRow({ reasons }) {
-    return /* @__PURE__ */ u4("tr", { children: /* @__PURE__ */ u4("td", { colSpan: 11, style: "padding:0", children: /* @__PURE__ */ u4("div", { style: "padding:8px 16px 12px 32px;background:var(--vscode-editorWidget-background,var(--bg));border-top:1px solid var(--border);font-size:11px", children: [
-      /* @__PURE__ */ u4("div", { style: "font-weight:600;color:var(--muted);margin-bottom:4px;font-size:10px;text-transform:uppercase", children: "What needs attention" }),
-      reasons.map((r5, i4) => /* @__PURE__ */ u4("div", { style: "display:flex;align-items:baseline;gap:6px;margin-bottom:3px", children: [
-        /* @__PURE__ */ u4("span", { style: "color:var(--error);flex-shrink:0", children: "\u2022" }),
-        renderHeatReason(r5)
-      ] }, i4))
-    ] }) }) });
-  }
-  function SessionRow({ sess, idx, heat, expanded, onToggle }) {
-    const realIdx = getSessionGlobalNumber(sess) || idx + 1;
-    const cacheRate = sess.inputTokens > 0 ? (sess.cacheReadTokens / sess.inputTokens * 100).toFixed(0) : "\u2014";
-    const agentDotColor = getAgentColor(sess.source);
-    let rowBg = "";
-    if (heat.score > 60) rowBg = "rgba(255,50,50," + (0.15 + Math.min(heat.score - 60, 40) / 40 * 0.25) + ")";
-    else if (heat.score > 30) rowBg = "rgba(255,140,0," + (0.12 + (heat.score - 30) / 30 * 0.18) + ")";
-    else if (heat.score > 10) rowBg = "rgba(255,180,50," + (0.1 + (heat.score - 10) / 20 * 0.15) + ")";
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("tr", { style: "background:" + (rowBg || "transparent") + ";cursor:pointer", onClick: onToggle, children: [
-        /* @__PURE__ */ u4("td", { style: "text-align:center;font-weight:bold;white-space:nowrap", children: [
-          /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);margin-right:3px", children: expanded ? "\u25BC" : "\u25B6" }),
-          realIdx,
-          " ",
-          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + agentDotColor + ";vertical-align:middle" })
-        ] }),
-        /* @__PURE__ */ u4("td", { style: "text-align:left;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: sess.userRequest, children: [
-          (sess.userRequest ?? "").slice(0, 60),
-          (sess.userRequest ?? "").length > 60 ? "\u2026" : "",
-          (() => {
-            const br = burnRateData.value;
-            if (!br || br.sessionId !== sess.sessionId) return null;
-            const tpm = br.burnRate.tokensPerMinute;
-            const cph = br.burnRate.costPerHour;
-            const label = formatCompact(Math.round(tpm)) + " tok/min" + (cph > 1e-3 ? " \xB7 $" + cph.toFixed(2) + "/hr" : "");
-            return /* @__PURE__ */ u4("span", { style: "margin-left:6px;padding:1px 5px;background:var(--vscode-charts-green,#81c784);color:#000;border-radius:3px;font-size:9px;font-weight:600;vertical-align:middle", "data-tip": "Active session burn rate: " + label, children: label });
-          })()
-        ] }),
-        /* @__PURE__ */ u4("td", { style: "text-align:left;white-space:nowrap;color:var(--muted);font-size:10px", title: sess.model, children: sess.model ? sess.model.split("/").pop() : "\u2014" }),
-        /* @__PURE__ */ u4("td", { style: "text-align:left;white-space:nowrap;font-size:10px;font-family:monospace;color:var(--muted)", title: sess.conversationId || "", children: sess.conversationId ? sess.conversationId.slice(0, 8) : "\u2014" }),
-        /* @__PURE__ */ u4("td", { class: "right", children: sess.totalLlmCalls }),
-        /* @__PURE__ */ u4("td", { class: "right", children: sess.totalToolCalls }),
-        /* @__PURE__ */ u4("td", { class: "right", children: sess.inputTokens.toLocaleString() }),
-        /* @__PURE__ */ u4("td", { class: "right", children: sess.outputTokens.toLocaleString() }),
-        /* @__PURE__ */ u4("td", { class: "right", children: [
-          cacheRate,
-          "%"
-        ] }),
-        /* @__PURE__ */ u4("td", { class: "right", children: formatMs(sess.durationMs) }),
-        /* @__PURE__ */ u4("td", { style: "text-align:right" + (sess.errors > 0 ? ";color:var(--error)" : ""), children: sess.errors })
-      ] }),
-      expanded && heat.reasons.length > 0 && /* @__PURE__ */ u4(SessionDiagRow, { reasons: heat.reasons })
-    ] });
-  }
-  function SessionTokenChart({ sessions }) {
-    const canvasRef = A2(null);
-    y2(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      const sessionData = sessions.map((sess, idx) => {
-        const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0;
-        const num = getSessionGlobalNumber(sess) || idx + 1;
-        return input + output > 0 ? { session: num, input, output, source: sess.source } : null;
-      }).filter(Boolean).reverse();
-      if (sessionData.length === 0) {
-        canvas.style.display = "none";
-        return;
-      }
-      canvas.style.display = "block";
-      const dpr = window.devicePixelRatio || 1;
-      const drect = canvas.getBoundingClientRect();
-      canvas.width = drect.width * dpr;
-      canvas.height = drect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      ctx.scale(dpr, dpr);
-      const w5 = drect.width, h5 = drect.height;
-      ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 44, bottom: 34, left: 44 };
-      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
-      const maxIn = Math.max(...sessionData.map((s4) => s4.input)) || 1;
-      const maxOut = Math.max(...sessionData.map((s4) => s4.output)) || 1;
-      const cs = getComputedStyle(document.body);
-      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
-      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
-      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
-      ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 0.5;
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const y5 = pad.top + chartH * i4 / 4;
-        ctx.beginPath();
-        ctx.moveTo(pad.left, y5);
-        ctx.lineTo(pad.left + chartW, y5);
-        ctx.stroke();
-      }
-      ctx.fillStyle = "#FFB74D";
-      ctx.font = fontStr;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const val = maxIn * (4 - i4) / 4;
-        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
-      }
-      ctx.fillStyle = "#81C784";
-      ctx.textAlign = "left";
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const val = maxOut * (4 - i4) / 4;
-        if (val > 0) ctx.fillText(formatCompact(val), pad.left + chartW + 4, pad.top + chartH * i4 / 4);
-      }
-      const barGap = 8;
-      const sl = sessionData.length;
-      const groupWidth = Math.max(12, (chartW - barGap * (sl + 1)) / sl);
-      const halfBar = groupWidth / 2;
-      const totalBarsW = sl * groupWidth + (sl + 1) * barGap;
-      const offsetX = pad.left + (chartW - totalBarsW) / 2 + barGap;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      sessionData.forEach((s4, i4) => {
-        const x4 = offsetX + i4 * (groupWidth + barGap);
-        const inH = s4.input / maxIn * chartH;
-        ctx.fillStyle = "#FFB74D";
-        ctx.fillRect(x4, pad.top + chartH - inH, halfBar, inH);
-        const outH = s4.output / maxOut * chartH;
-        ctx.fillStyle = "#81C784";
-        ctx.fillRect(x4 + halfBar, pad.top + chartH - outH, halfBar, outH);
-        ctx.fillStyle = textColor;
-        ctx.fillText("" + s4.session, x4 + groupWidth / 2, pad.top + chartH + 4);
-        ctx.beginPath();
-        ctx.arc(x4 + groupWidth / 2, pad.top + chartH + 18, 3, 0, Math.PI * 2);
-        ctx.fillStyle = getAgentColor(s4.source);
-        ctx.fill();
-      });
-    });
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:200px;display:block" }),
-      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
-    ] });
-  }
-  function Efficiency() {
-    const summary = sessionSummary.value;
-    const [expandedRows, setExpandedRows] = d2(/* @__PURE__ */ new Set([0]));
-    if (!summary?.sessions?.length) {
-      return /* @__PURE__ */ u4("div", { id: "efficiency-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    const displaySess = displaySessions.value;
-    const breakdownSessions = displaySess.slice().reverse();
-    const timelines = sessionTimelines.value;
-    breakdownSessions.forEach((sess) => {
-      if (!timelines[sess.sessionId]) {
-        vscode?.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
-      }
-    });
-    const sessionHeats = breakdownSessions.map((sess) => {
-      let score = 0;
-      const reasons = [];
-      if (sess.errors > 0) {
-        score += Math.min(sess.errors * 25, 40);
-        reasons.push({ text: sess.errors + " error" + (sess.errors > 1 ? "s" : "") + " \u2014 be explicit about file locations and command availability to avoid failed tool calls", linkPhrase: "be explicit about file locations and command availability", helpId: "help-tool-failures" });
-      }
-      if (sess.totalLlmCalls > 8) {
-        score += Math.min((sess.totalLlmCalls - 8) * 4, 30);
-        reasons.push({ text: sess.totalLlmCalls + " LLM calls \u2014 break the task into smaller pieces with explicit stopping conditions", linkPhrase: "break the task into smaller pieces with explicit stopping conditions", helpId: "help-high-turns" });
-      }
-      const cacheRateNum = sess.inputTokens > 0 ? sess.cacheReadTokens / sess.inputTokens * 100 : 100;
-      if (cacheRateNum < 50 && sess.inputTokens > 5e3) {
-        score += Math.min((50 - cacheRateNum) * 0.5, 20);
-        reasons.push({ text: "Cache hit rate " + cacheRateNum.toFixed(0) + "% \u2014 keep static content at the top of prompts so the cache prefix stays stable", linkPhrase: "keep static content at the top of prompts so the cache prefix stays stable", helpId: "help-cache-rate" });
-      }
-      if (sess.inputTokens > 1e5) {
-        score += 10;
-        reasons.push({ text: sess.inputTokens.toLocaleString() + " input tokens \u2014 audit your instruction files and remove verbose examples", linkPhrase: "audit your instruction files and remove verbose examples", helpId: "help-large-context" });
-      }
-      const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
-      if (llmEntries.length >= 3) {
-        const first = llmEntries[0].inputTokens ?? 0, last = llmEntries[llmEntries.length - 1].inputTokens ?? 0;
-        const growthPct = first > 0 ? (last - first) / first * 100 : 0;
-        if (growthPct > 50) {
-          score += Math.min(growthPct / 10, 15);
-          reasons.push({ text: "Context grew " + growthPct.toFixed(0) + "% \u2014 review instruction file sizes and use narrower tool reads", linkPhrase: "review instruction file sizes and use narrower tool reads", helpId: "help-context-bloat" });
-        }
-      }
-      return { score: Math.min(score, 100), reasons };
-    });
-    let totLlm = 0, totTool = 0, totIn = 0, totOut = 0, totDur = 0, totErr = 0;
-    breakdownSessions.forEach((s4) => {
-      totLlm += s4.totalLlmCalls;
-      totTool += s4.totalToolCalls;
-      totIn += s4.inputTokens;
-      totOut += s4.outputTokens;
-      totDur += s4.durationMs;
-      totErr += s4.errors;
-    });
-    const sessionsWithGrowth = breakdownSessions.filter(
-      (sess) => (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0).length >= 1
-    );
-    return /* @__PURE__ */ u4("div", { id: "efficiency-content", children: [
-      sessionsWithGrowth.length > 0 && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Input tokens sent per LLM call within each session. Rising lines indicate context accumulation. A sharp drop mid-session indicates context compaction. A single dot marks an in-progress session with one LLM call so far.", children: "CONTEXT GROWTH PER SESSION" }),
-        /* @__PURE__ */ u4(ContextGrowthChart, { sessions: breakdownSessions, timelines }),
-        /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);opacity:0.7;margin:4px 0 12px 2px", children: "Suggestion: If the graph appears crowded, consider refining the view by selecting fewer sessions (such as \u201CLast 5\u201D) or filtering by a specific agent to enhance clarity." })
-      ] }),
-      breakdownSessions.length > 0 && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("h3", { class: "has-metric-tip", style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", "data-tip": "Per-session metrics with heat coloring. Warmer colors indicate higher token usage or more errors. Expand a row to see efficiency notes.", children: "SESSION BREAKDOWN" }),
-        /* @__PURE__ */ u4("div", { style: "display:flex;gap:16px;margin-bottom:4px;font-size:10px;color:var(--muted);align-items:center", children: [
-          /* @__PURE__ */ u4("span", { style: "font-weight:600", children: "Usage:" }),
-          /* @__PURE__ */ u4("span", { class: "flex-4", children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:12px;height:10px;border-radius:2px;background:var(--vscode-editorWidget-background,var(--bg));border:1px solid var(--border)" }),
-            " Minimal"
-          ] }),
-          /* @__PURE__ */ u4("span", { class: "flex-4", children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:12px;height:10px;border-radius:2px;background:rgba(255,180,50,0.25);border:1px solid rgba(255,180,50,0.4)" }),
-            " Light"
-          ] }),
-          /* @__PURE__ */ u4("span", { class: "flex-4", children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:12px;height:10px;border-radius:2px;background:rgba(255,140,0,0.30);border:1px solid rgba(255,140,0,0.5)" }),
-            " Moderate"
-          ] }),
-          /* @__PURE__ */ u4("span", { class: "flex-4", children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:12px;height:10px;border-radius:2px;background:rgba(255,50,50,0.35);border:1px solid rgba(255,50,50,0.5)" }),
-            " Heavy"
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("table", { class: "tool-insights-table", children: [
-          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("th", { style: "text-align:center", "data-tip": "Session number", children: "#" }),
-            /* @__PURE__ */ u4("th", { style: "text-align:left", "data-tip": "The user prompt that started this session", children: "Prompt" }),
-            /* @__PURE__ */ u4("th", { style: "text-align:left", "data-tip": "LLM model used", children: "Model" }),
-            /* @__PURE__ */ u4("th", { style: "text-align:left", "data-tip": "Conversation thread ID \u2014 groups multiple sessions from the same chat thread. Copilot and Codex report this; Claude sessions are standalone with no conversation wrapper.", children: "Conv ID" }),
-            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "LLM round-trips", children: "LLM Calls" }),
-            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Tool invocations", children: "Tool Calls" }),
-            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Total input tokens", children: "Input Tokens" }),
-            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Total output tokens", children: "Output Tokens" }),
-            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Cache hit rate", children: "Cache Hit" }),
-            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Wall-clock duration", children: "Duration" }),
-            /* @__PURE__ */ u4("th", { class: "right", "data-tip": "Error count", children: "Errors" })
-          ] }) }),
-          /* @__PURE__ */ u4("tbody", { children: breakdownSessions.map((sess, idx) => /* @__PURE__ */ u4(
-            SessionRow,
-            {
-              sess,
-              idx,
-              heat: sessionHeats[idx],
-              expanded: expandedRows.has(idx),
-              onToggle: () => setExpandedRows((prev) => {
-                const next = new Set(prev);
-                next.has(idx) ? next.delete(idx) : next.add(idx);
-                return next;
-              })
-            },
-            sess.traceId + idx
-          )) }),
-          /* @__PURE__ */ u4("tfoot", { children: /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("td", {}),
-            /* @__PURE__ */ u4("td", { style: "text-align:left", children: /* @__PURE__ */ u4("strong", { children: "Total" }) }),
-            /* @__PURE__ */ u4("td", {}),
-            /* @__PURE__ */ u4("td", {}),
-            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: totLlm }) }),
-            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: totTool }) }),
-            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: totIn.toLocaleString() }) }),
-            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: totOut.toLocaleString() }) }),
-            /* @__PURE__ */ u4("td", {}),
-            /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: formatMs(totDur) }) }),
-            /* @__PURE__ */ u4("td", { style: "text-align:right" + (totErr > 0 ? ";color:var(--error)" : ""), children: /* @__PURE__ */ u4("strong", { children: totErr }) })
-          ] }) })
-        ] })
-      ] }),
-      displaySess.length > 0 && /* @__PURE__ */ u4("div", { style: "margin-top:32px", children: [
-        /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "TOKEN USAGE PER SESSION" }),
-        /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
-          /* @__PURE__ */ u4("span", { children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" }),
-            " Input"
-          ] }),
-          /* @__PURE__ */ u4("span", { children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" }),
-            " Output"
-          ] })
-        ] }),
-        /* @__PURE__ */ u4(SessionTokenChart, { sessions: displaySess })
-      ] })
-    ] });
-  }
-
-  // node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
-  function r4(e4) {
-    var t4, f5, n3 = "";
-    if ("string" == typeof e4 || "number" == typeof e4) n3 += e4;
-    else if ("object" == typeof e4) if (Array.isArray(e4)) {
-      var o4 = e4.length;
-      for (t4 = 0; t4 < o4; t4++) e4[t4] && (f5 = r4(e4[t4])) && (n3 && (n3 += " "), n3 += f5);
-    } else for (f5 in e4) e4[f5] && (n3 && (n3 += " "), n3 += f5);
-    return n3;
-  }
-  function clsx() {
-    for (var e4, t4, f5 = 0, n3 = "", o4 = arguments.length; f5 < o4; f5++) (e4 = arguments[f5]) && (t4 = r4(e4)) && (n3 && (n3 += " "), n3 += t4);
-    return n3;
-  }
-  var clsx_default = clsx;
-
-  // media/src/tabs/Recommendations.tsx
-  function recommendationScopeLabel(filter) {
-    if (filter === "loop") return "loop recommendations";
-    if (filter === "efficiency") return "efficiency recommendations";
-    return "recommendations";
-  }
-  function noActiveTakeawayText(filter) {
-    if (filter === "loop") return "No active loop or malfunction signals in this view.";
-    if (filter === "efficiency") return "No active efficiency issues in this view.";
-    return "No significant inefficiencies detected. Token usage looks healthy.";
-  }
-  function summarizeTakeaways(insights) {
-    const summary = {
-      loopCount: 0,
-      hasContextBloat: false,
-      hasCacheIssue: false,
-      hasToolIssue: false,
-      hasRepeatedOperations: false
-    };
-    for (const insight of insights) {
-      const title = insight.title.toLowerCase();
-      if (insight.category === "loop") summary.loopCount++;
-      if (title.includes("context grew") || title.includes("starts with")) summary.hasContextBloat = true;
-      if (title.includes("cache hit")) summary.hasCacheIssue = true;
-      if (title.includes("tool failure") || title.includes("tool definitions") || title.includes("large tool")) summary.hasToolIssue = true;
-      if (title.includes("files read multiple") || title.includes("duplicate searches") || title.includes("files appear")) summary.hasRepeatedOperations = true;
-    }
-    return summary;
-  }
-  var HELP_WHY = {
-    "help-context-bloat": "Every LLM turn receives the full conversation so far. Each extra token in context multiplies cost across every remaining turn \u2014 a 10K growth in one session can mean 50K+ extra tokens billed.",
-    "help-large-context": "Instruction files are sent on every LLM call in every session. 10,000 extra tokens in CLAUDE.md = 10,000 extra tokens per call, forever, regardless of task size.",
-    "help-files-repeated": "Each re-read appends the full file to context again. Re-reading a 500-line file 4 times wastes ~2,000 tokens on every subsequent call in that session.",
-    "help-high-turns": "Each additional LLM call costs tokens and time. Iterative discovery is ~10\xD7 more expensive than providing the same context upfront in the initial prompt.",
-    "help-duplicate-searches": "Repeated searches append identical results to context without progress. The growing context also makes the model more likely to repeat the search again.",
-    "help-tool-failures": "Each failure adds error text to context and forces a recovery turn. A cascade of 3 failures can waste 30,000+ tokens before a single useful edit is made.",
-    "help-large-results": "Tool results are appended to context in full. A 50 KB file read adds ~12,500 tokens to every subsequent call in that session \u2014 not just the call that read it.",
-    "help-tool-overhead": "Every LLM call includes all tool JSON schemas. 70+ tools = 8,000\u201315,000 overhead tokens per call that cannot be reduced by shortening your prompt.",
-    "help-cache-rate": "Cached tokens cost roughly 10\xD7 less than fresh tokens. Going from 0% to 60% cache hit rate cuts session cost by 80\u201390% with no change to model behavior.",
-    "help-tool-deadlock": "The agent is burning tokens repeating identical calls with zero progress. This loop runs until the context limit is hit \u2014 entire session cost with nothing accomplished.",
-    "help-state-spiral": "Conflicting constraints cause the agent to undo its own work. Each oscillation adds both the edit and the revert to context, accelerating cost with each cycle.",
-    "help-hallucination": "Each failed fix attempt adds the error to context, which anchors the model further from the real solution \u2014 the longer it runs, the harder it self-corrects.",
-    "help-runaway-steps": "Scope creep compounds: each extra step the agent takes grows context for all future steps. 90-step sessions can cost 10\u201320\xD7 a well-scoped 5-step equivalent.",
-    "help-context-accumulation": "Input tokens are growing while output shrinks \u2014 cost per call is compounding with diminishing returns. Continuing will likely hit the context limit with nothing saved."
-  };
-  function generateInsights(summary, allSessions) {
-    const insights = [];
-    const { sessions, efficiency: eff } = summary;
-    if (!sessions.length) return insights;
-    sessions.forEach((sess, idx) => {
-      const llmEntries = (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
-      const globalNum = getSessionGlobalNumber(sess) || idx + 1;
-      const reqSnippet = (sess.userRequest ?? "").slice(0, 60);
-      if (llmEntries.length >= 3) {
-        const first = llmEntries[0].inputTokens ?? 0;
-        const last = llmEntries[llmEntries.length - 1].inputTokens ?? 0;
-        const growth = last - first;
-        const growthPct = first > 0 ? growth / first * 100 : 0;
-        if (growthPct > 20 && growth > 2e3) {
-          insights.push({
-            severity: "warning",
-            category: "efficiency",
-            sessionIdx: idx,
-            helpId: "help-context-bloat",
-            title: "[Session " + globalNum + "] Context grew " + growthPct.toFixed(0) + "%",
-            detail: "Input tokens grew from " + first.toLocaleString() + " to " + last.toLocaleString() + " (+" + growth.toLocaleString() + " tokens) across " + llmEntries.length + " LLM calls" + (reqSnippet ? ' for "' + reqSnippet + '"' : "") + ".",
-            action: "The first call used " + first.toLocaleString() + " tokens \u2014 audit your instruction files (CLAUDE.md, .agent.md, system prompt). Remove verbose examples and anything the agent can discover via tools. Target <5,000 tokens for combined static instructions."
-          });
-        }
-      }
-      const fileReads = {};
-      (sess.timeline ?? []).forEach((e4) => {
-        if (e4.type !== "tool") return;
-        const m4 = (e4.label ?? "").match(/^read_file\s+(\S+)/);
-        if (m4) fileReads[m4[1]] = (fileReads[m4[1]] ?? 0) + 1;
-      });
-      const repeats = Object.keys(fileReads).filter((f5) => fileReads[f5] > 1);
-      if (repeats.length > 0) {
-        const topFile = repeats.sort((a4, b4) => fileReads[b4] - fileReads[a4])[0];
-        insights.push({
-          severity: "info",
-          category: "efficiency",
-          sessionIdx: idx,
-          helpId: "help-files-repeated",
-          title: "[Session " + globalNum + "] Files read multiple times",
-          detail: repeats.map((f5) => f5 + " (" + fileReads[f5] + "\xD7)").join(", ") + ".",
-          action: repeats.length === 1 ? "The agent read " + topFile + " " + fileReads[topFile] + " times. Mention its path explicitly at the start of your prompt so the agent finds it without re-reading." : "The agent re-read " + repeats.length + " files, most often " + topFile + " (" + fileReads[topFile] + '\xD7). Try opening with the key paths listed: e.g. "The main files are: ' + repeats.slice(0, 2).join(", ") + '".'
-        });
-      }
-      if (sess.totalLlmCalls > 8 && (sess.userRequest ?? "").length < 80) {
-        const topTools = Object.entries(sess.toolCounts ?? {}).sort((a4, b4) => b4[1] - a4[1]).slice(0, 3).map(([t4, n3]) => t4 + " \xD7" + n3).join(", ");
-        insights.push({
-          severity: "info",
-          category: "efficiency",
-          sessionIdx: idx,
-          helpId: "help-high-turns",
-          title: "[Session " + globalNum + "] " + sess.totalLlmCalls + " LLM calls",
-          detail: '"' + reqSnippet + '" required ' + sess.totalLlmCalls + " LLM calls and " + sess.totalToolCalls + " tool calls" + (topTools ? " (" + topTools + ")" : "") + ".",
-          action: "For a " + sess.totalLlmCalls + "-turn session, break the task into smaller pieces with explicit stopping conditions. Provide specific file paths and line numbers so the agent spends turns doing instead of exploring."
-        });
-      }
-      const firstLlm = (sess.timeline ?? []).find((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
-      if (firstLlm && (firstLlm.inputTokens ?? 0) > 15e3) {
-        insights.push({
-          severity: "warning",
-          category: "efficiency",
-          sessionIdx: idx,
-          helpId: "help-large-context",
-          title: "[Session " + globalNum + "] Starts with " + (firstLlm.inputTokens ?? 0).toLocaleString() + " input tokens",
-          detail: "The very first LLM call already has " + (firstLlm.inputTokens ?? 0).toLocaleString() + " tokens before any tool results are added.",
-          action: "Audit your instruction files \u2014 " + (firstLlm.inputTokens ?? 0).toLocaleString() + " tokens before the first tool call is the baseline overhead. Remove verbose examples and information the agent can discover via tools. Target <5,000 tokens for combined instructions."
-        });
-      }
-      const searches = {};
-      (sess.timeline ?? []).forEach((e4) => {
-        if (e4.type !== "tool") return;
-        const m4 = (e4.label ?? "").match(/^(grep_search|file_search)\s+(.+)$/);
-        if (m4) {
-          const key = m4[1] + ":" + m4[2].replace(/\s+/g, " ").trim();
-          searches[key] = (searches[key] ?? 0) + 1;
-        }
-      });
-      const dupes = Object.keys(searches).filter((k3) => searches[k3] > 1);
-      if (dupes.length > 0) {
-        const examples = dupes.slice(0, 2).map((d5) => {
-          const [, pattern] = d5.split(":");
-          return '"' + pattern?.trim().slice(0, 40) + '"';
-        });
-        insights.push({
-          severity: "info",
-          category: "efficiency",
-          sessionIdx: idx,
-          helpId: "help-duplicate-searches",
-          title: "[Session " + globalNum + "] Duplicate searches",
-          detail: dupes.length + " search pattern(s) repeated: " + examples.join(", ") + ".",
-          action: 'These repeated searches suggest the agent was uncertain where to look. Include directory names or specific file paths in your prompt \u2014 e.g. "search in src/api/" instead of a broad pattern.'
-        });
-      }
-      const failedTools = {};
-      (sess.timeline ?? []).forEach((e4) => {
-        if (e4.type === "tool" && e4.isError) {
-          const t4 = (e4.label ?? "").split(" ")[0];
-          failedTools[t4] = (failedTools[t4] ?? 0) + 1;
-        }
-      });
-      const failedEntries = Object.keys(failedTools);
-      if (failedEntries.length > 0) {
-        const totalFails = failedEntries.reduce((s4, t4) => s4 + failedTools[t4], 0);
-        const toolAdvice = failedEntries.slice(0, 3).map((t4) => {
-          const n3 = failedTools[t4];
-          if (t4 === "bash" || t4 === "run_command") return t4 + " \xD7" + n3 + " (check the command exists in your environment)";
-          if (t4 === "read_file" || t4 === "view") return t4 + " \xD7" + n3 + " (verify file paths are correct)";
-          if (t4 === "grep_search" || t4 === "search_files") return t4 + " \xD7" + n3 + " (use more specific patterns)";
-          return t4 + " \xD7" + n3;
-        }).join("; ");
-        insights.push({
-          severity: totalFails > 2 ? "warning" : "info",
-          category: "efficiency",
-          sessionIdx: idx,
-          helpId: "help-tool-failures",
-          title: "[Session " + globalNum + "] " + totalFails + " tool failure(s)",
-          detail: "Failed: " + toolAdvice + ". Each failure forces an extra LLM call to recover.",
-          action: "Tool failures happen when the agent guesses paths or uses incorrect arguments. Be explicit in your prompt about file locations and command availability."
-        });
-      }
-      const largeResults = [];
-      (sess.timeline ?? []).forEach((e4) => {
-        if (e4.type === "tool" && e4.fullResult && e4.fullResult.length > 1e4) {
-          largeResults.push({ tool: (e4.label ?? "").split(" ")[0], size: e4.fullResult.length });
-        }
-      });
-      if (largeResults.length > 0) {
-        largeResults.sort((a4, b4) => b4.size - a4.size);
-        const totalKb = largeResults.reduce((s4, r5) => s4 + r5.size, 0) / 1024;
-        const topResult = largeResults[0];
-        insights.push({
-          severity: totalKb > 100 ? "warning" : "info",
-          category: "efficiency",
-          sessionIdx: idx,
-          helpId: "help-large-results",
-          title: "[Session " + globalNum + "] Large tool results (" + totalKb.toFixed(0) + "KB)",
-          detail: largeResults.length + " tool call(s) returned large results: " + largeResults.slice(0, 3).map((r5) => r5.tool + " (" + (r5.size / 1024).toFixed(1) + "KB)").join(", ") + ".",
-          action: topResult.tool.includes("read") ? "Use narrower reads \u2014 specify line ranges (e.g. read_file src/app.ts L1-50) instead of reading whole files." : "The largest result came from " + topResult.tool + " (" + (topResult.size / 1024).toFixed(0) + "KB). Use more targeted reads \u2014 specify line ranges with read_file, or tighter grep patterns."
-        });
-      }
-      const loopHelpIds = {
-        exact_tool_repeat: "help-tool-deadlock",
-        edit_revert_cycle: "help-state-spiral",
-        error_recurrence: "help-hallucination",
-        runaway_steps: "help-runaway-steps",
-        token_runaway: "help-context-accumulation"
-      };
-      (sess.loopSignals ?? []).forEach((sig) => {
-        const examplesText = sig.examples?.length > 0 ? "\n\nExamples: " + sig.examples.join(" \xB7 ") : "";
-        insights.push({
-          severity: "loop-" + sig.severity,
-          category: "loop",
-          sessionIdx: idx,
-          helpId: loopHelpIds[sig.type],
-          title: "[Session " + globalNum + "] " + sig.patternName + " \u2014 " + sig.evidence,
-          detail: examplesText.trim(),
-          action: sig.action ?? sig.evidence,
-          _loopType: sig.type
-        });
-      });
-    });
-    const crossSessions = allSessions ?? sessions;
-    if (crossSessions.length >= 3) {
-      const fileStats = {};
-      for (const sess of crossSessions) {
-        const hasProblems = (sess.errors ?? 0) > 0 || (sess.loopSignals?.length ?? 0) > 0;
-        const files = [.../* @__PURE__ */ new Set([...sess.filesRead, ...sess.filesChanged, ...sess.filesSearched])];
-        for (const f5 of files) {
-          if (!fileStats[f5]) fileStats[f5] = { total: 0, problems: 0 };
-          fileStats[f5].total++;
-          if (hasProblems) fileStats[f5].problems++;
-        }
-      }
-      const troubleFiles = Object.entries(fileStats).filter(([, v4]) => v4.total >= 3 && v4.problems / v4.total >= 0.6).sort((a4, b4) => b4[1].problems - a4[1].problems).slice(0, 4);
-      if (troubleFiles.length > 0) {
-        const names = troubleFiles.map(([f5]) => f5.split("/").pop() || f5);
-        insights.push({
-          severity: "warning",
-          category: "efficiency",
-          helpId: "help-files-repeated",
-          title: troubleFiles.length + " file(s) appear in most sessions with errors or loops",
-          detail: troubleFiles.map(
-            ([f5, v4]) => (f5.split("/").pop() || f5) + ": " + v4.problems + "/" + v4.total + " sessions had issues"
-          ).join("\n"),
-          action: "These files appear frequently alongside agent difficulties: " + names.join(", ") + ". They may have conflicting constraints, be poorly documented for the agent, or be referenced with inconsistent paths. Consider adding a brief description of their role to your instruction files so the agent has reliable context before touching them."
-        });
-      }
-      const recentN = Math.min(crossSessions.length, 8);
-      const recent = crossSessions.slice(-recentN);
-      const older = crossSessions.slice(0, -recentN);
-      if (older.length >= 3) {
-        const avgRecent = recent.reduce((s4, sess) => s4 + sess.cacheHitRate, 0) / recent.length;
-        const avgOlder = older.reduce((s4, sess) => s4 + sess.cacheHitRate, 0) / older.length;
-        const drop = avgOlder - avgRecent;
-        if (drop > 0.15 && avgOlder > 0.3) {
-          insights.push({
-            severity: "warning",
-            category: "efficiency",
-            helpId: "help-cache-rate",
-            title: "Cache hit rate declining \u2014 " + (avgOlder * 100).toFixed(0) + "% \u2192 " + (avgRecent * 100).toFixed(0) + "%",
-            detail: "Average cache hit rate dropped " + (drop * 100).toFixed(0) + "% over your last " + recentN + " sessions.",
-            action: "Cache hit rate drops when the stable prefix of your prompts changes. Recent changes to your instruction files (CLAUDE.md, .agent.md, system prompt) may be invalidating cached context. Keep static content at the top of prompts and avoid putting dynamic data (timestamps, file counts) in instructions."
-          });
-        }
-      }
-    }
-    if (eff.toolDefWaste > 0.25) {
-      insights.push({
-        severity: "warning",
-        category: "efficiency",
-        helpId: "help-tool-overhead",
-        title: "Tool definitions consuming ~" + (eff.toolDefWaste * 100).toFixed(0) + "% of context",
-        detail: "A significant portion of each prompt is spent describing available tool schemas to the model.",
-        action: 'Use tool restrictions in your .agent.md files with "tools:" to limit which tools are available.'
-      });
-    }
-    if (eff.totalLlmCalls > 3 && eff.cacheHitRate < 0.5) {
-      insights.push({
-        severity: "warning",
-        category: "efficiency",
-        helpId: "help-cache-rate",
-        title: "Low prompt cache hit rate (" + (eff.cacheHitRate * 100).toFixed(0) + "%)",
-        detail: "Less than half of input tokens are being served from cache.",
-        action: "Cache works best when the beginning of the prompt stays stable across turns. Keep static content at the top of your prompts."
-      });
-    }
-    const severityOrder = { "loop-critical": 0, "loop-warning": 1, "warning": 2, "info": 3 };
-    insights.sort((a4, b4) => {
-      const aIdx = a4.sessionIdx ?? -1, bIdx = b4.sessionIdx ?? -1;
-      if (aIdx !== bIdx) return bIdx - aIdx;
-      return (severityOrder[a4.severity] ?? 4) - (severityOrder[b4.severity] ?? 4);
-    });
-    return insights;
-  }
-  function InsightCard({ ins, isIgnored, sessions }) {
-    const icon = ins.severity.startsWith("loop") ? "\u21BA" : ins.severity === "warning" ? "\u26A0" : "\u2139";
-    const session = ins.sessionIdx !== void 0 ? sessions[ins.sessionIdx] : void 0;
-    const sessionNum = session ? getSessionGlobalNumber(session) : 0;
-    const titleSessionMatch = session && sessionNum > 0 ? ins.title.match(/^\[Session\s+\d+\]\s*(.*)$/) : null;
-    const sessionModel = session?.model || "";
-    const sessionAgentLabel = session ? getAgentSourceLabel(session.source) : "";
-    const sessionAgentColor = session ? getAgentColor(session.source) : "";
-    function buildAiPrompt() {
-      const lines = [ins.title, ""];
-      if (session?.userRequest && session.userRequest !== "[session in progress]") {
-        lines.push('Task: "' + session.userRequest + '"', "");
-      }
-      if (ins.detail) lines.push(ins.detail, "");
-      if (session) {
-        const topTools = Object.entries(session.toolCounts ?? {}).sort((a4, b4) => b4[1] - a4[1]).slice(0, 5).map(([t4, n3]) => "  " + t4 + " \xD7" + n3).join("\n");
-        if (topTools) lines.push("Top tools used:\n" + topTools, "");
-        if (session.filesChanged.length > 0)
-          lines.push("Files changed: " + session.filesChanged.slice(0, 5).join(", "), "");
-        const errors = session.timeline.filter((e4) => e4.isError && e4.errorMessage).slice(0, 3);
-        if (errors.length > 0)
-          lines.push("Error messages:\n" + errors.map((e4) => "  - " + (e4.errorMessage ?? "").slice(0, 120)).join("\n"), "");
-        lines.push("Session stats: " + session.totalLlmCalls + " LLM calls, " + session.totalToolCalls + " tool calls, " + (session.cacheHitRate * 100).toFixed(0) + "% cache hit rate", "");
-      }
-      lines.push("Recommendation: " + ins.action);
-      return lines.join("\n");
-    }
-    return /* @__PURE__ */ u4("div", { class: clsx_default("insight-card", "insight-" + ins.severity), style: isIgnored ? "opacity:0.55" : "", children: [
-      /* @__PURE__ */ u4("div", { class: "insight-header", children: [
-        /* @__PURE__ */ u4("span", { class: "insight-icon", children: icon }),
-        /* @__PURE__ */ u4("span", { class: "insight-title", style: "flex:1", children: titleSessionMatch ? /* @__PURE__ */ u4(S, { children: [
-          /* @__PURE__ */ u4("span", { children: [
-            "[Session ",
-            sessionNum,
-            sessionModel ? ` \u2013 ${sessionModel}` : "",
-            "]"
-          ] }),
-          " ",
-          /* @__PURE__ */ u4(
-            "span",
-            {
-              title: sessionAgentLabel,
-              "aria-label": sessionAgentLabel,
-              style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + sessionAgentColor + ";vertical-align:middle"
-            }
-          ),
-          " ",
-          /* @__PURE__ */ u4("span", { children: titleSessionMatch[1] })
-        ] }) : ins.title }),
-        isIgnored ? /* @__PURE__ */ u4("button", { class: "insight-restore-btn", title: "Restore", onClick: () => ignoredInsightKeys.delete(ins.title), children: "Restore" }) : /* @__PURE__ */ u4("button", { class: "insight-ignore-btn", title: "Ignore", onClick: () => ignoredInsightKeys.add(ins.title), children: "Ignore" })
-      ] }),
-      ins.detail && /* @__PURE__ */ u4("div", { class: "insight-detail", style: "white-space:pre-wrap", children: ins.detail }),
-      /* @__PURE__ */ u4("div", { class: "insight-action", children: [
-        /* @__PURE__ */ u4("span", { class: "insight-action-label", children: [
-          "Recommendation",
-          ins.helpId && HELP_WHY[ins.helpId] && /* @__PURE__ */ u4("span", { "data-tip": HELP_WHY[ins.helpId], style: "margin-left:4px;cursor:help;opacity:0.55;font-size:11px", children: "\u24D8" }),
-          ":"
-        ] }),
-        " ",
-        /* @__PURE__ */ u4("span", { style: "white-space:pre-wrap", children: ins.action })
-      ] }),
-      !isIgnored && (() => {
-        const buttonForAgent = (agent) => {
-          const label = getAgentSourceLabel(agent);
-          return {
-            agent,
-            label: "Copy for " + label,
-            color: getAgentColor(agent)
-          };
-        };
-        let buttons;
-        if (session) {
-          buttons = [buttonForAgent(session.source)];
-        } else {
-          const presence = agentPresence.value;
-          buttons = [
-            presence.copilot && buttonForAgent("copilot"),
-            presence.claude && buttonForAgent("claude_code"),
-            presence.codex && buttonForAgent("codex")
-          ].filter(Boolean);
-        }
-        if (buttons.length === 0) buttons.push({ agent: "generic", label: "Copy to Clipboard", color: "var(--accent)" });
-        const prompt = buildAiPrompt();
-        return /* @__PURE__ */ u4("div", { class: "insight-ask-ai-group", children: buttons.map((b4) => /* @__PURE__ */ u4(
-          "button",
-          {
-            class: "insight-ask-ai",
-            onClick: () => vscode?.postMessage({ type: "askAI", prompt, agent: b4.agent, label: ins.title }),
-            children: [
-              /* @__PURE__ */ u4("span", { style: "color:" + b4.color + ";font-size:8px", children: "\u25CF" }),
-              " ",
-              b4.label
-            ]
-          },
-          b4.agent
-        )) });
-      })()
-    ] });
-  }
-  function IgnoredSection({ insights, sessions }) {
-    const [open, setOpen] = d2(false);
-    return /* @__PURE__ */ u4("div", { style: "margin-top:12px", children: [
-      /* @__PURE__ */ u4(
-        "h3",
-        {
-          style: "margin:28px 0 12px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;cursor:pointer",
-          onClick: () => setOpen((v4) => !v4),
-          children: [
-            /* @__PURE__ */ u4("span", { children: open ? "\u25BC" : "\u25B6" }),
-            "IGNORED (",
-            insights.length,
-            ")"
-          ]
-        }
-      ),
-      open && insights.map((ins) => /* @__PURE__ */ u4(InsightCard, { ins, isIgnored: true, sessions }, ins.title))
-    ] });
-  }
-  function Recommendations() {
-    const filter = insightFilter.value;
-    const ignored = ignoredInsightKeys.value;
-    const allSessions = displaySessions.value;
-    if (!allSessions.length) {
-      return /* @__PURE__ */ u4("div", { id: "recommendations-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    const displaySummary = buildDisplaySummary();
-    const allInsights = generateInsights(displaySummary, allSessions);
-    let loopCount = 0;
-    let effCount = 0;
-    const active = [];
-    const ignoredList = [];
-    for (const insight of allInsights) {
-      const isIgnored = ignored.has(insight.title);
-      if (!isIgnored) {
-        if (insight.category === "loop") loopCount++;
-        if (insight.category === "efficiency") effCount++;
-      }
-      if (filter === "all" || insight.category === filter) {
-        if (isIgnored) ignoredList.push(insight);
-        else active.push(insight);
-      }
-    }
-    const sessions = displaySummary.sessions;
-    const takeaways = summarizeTakeaways(active);
-    const scopeLabel = recommendationScopeLabel(filter);
-    return /* @__PURE__ */ u4("div", { id: "recommendations-content", children: [
-      /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)", children: /* @__PURE__ */ u4("strong", { children: "Recommendations are based on general heuristics and may include false positives. Review suggestions carefully and consider your specific context before making changes." }) }),
-      /* @__PURE__ */ u4("div", { style: "padding:12px 16px;margin:0 0 16px;border-radius:6px;border:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));font-size:12px", children: [
-        /* @__PURE__ */ u4("div", { class: "section-label", children: "Key Takeaways" }),
-        active.length > 0 ? /* @__PURE__ */ u4("ul", { style: "margin:0;padding:0 0 0 16px;list-style:disc", children: [
-          takeaways.loopCount > 0 && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: [
-            takeaways.loopCount,
-            " agent loop or malfunction signal",
-            takeaways.loopCount > 1 ? "s" : "",
-            " detected"
-          ] }),
-          takeaways.hasContextBloat && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: "Context bloat detected \u2014 input tokens growing significantly across turns" }),
-          takeaways.hasCacheIssue && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: "Low prompt cache hit rate \u2014 tokens are being re-processed instead of cached" }),
-          takeaways.hasToolIssue && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: "Tool inefficiency detected" }),
-          takeaways.hasRepeatedOperations && /* @__PURE__ */ u4("li", { style: "margin-bottom:2px", children: "Repeated file or search operations detected" })
-        ] }) : /* @__PURE__ */ u4("div", { style: "color:var(--vscode-testing-iconPassed,#4caf50)", children: [
-          "\u2713 ",
-          noActiveTakeawayText(filter)
-        ] })
-      ] }),
-      /* @__PURE__ */ u4("div", { class: "insight-filter-bar", children: [
-        { key: "all", label: "All", badge: loopCount + effCount },
-        { key: "loop", label: "Loops", badge: loopCount },
-        { key: "efficiency", label: "Inefficiencies", badge: effCount }
-      ].map((p5) => /* @__PURE__ */ u4(
-        "button",
-        {
-          class: clsx_default("insight-filter-pill", { active: filter === p5.key }),
-          onClick: () => {
-            insightFilter.value = p5.key;
-          },
-          children: [
-            p5.label,
-            p5.badge > 0 && /* @__PURE__ */ u4("span", { class: "insight-filter-badge", children: p5.badge })
-          ]
-        },
-        p5.key
-      )) }),
-      active.length > 0 ? /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);margin-bottom:12px", children: [
-          active.length,
-          " recommendation",
-          active.length !== 1 ? "s" : "",
-          ", newest sessions first"
-        ] }),
-        active.map((ins) => /* @__PURE__ */ u4(InsightCard, { ins, isIgnored: false, sessions }, ins.title))
-      ] }) : ignoredList.length > 0 ? /* @__PURE__ */ u4("div", { class: "insight-card insight-success", children: [
-        /* @__PURE__ */ u4("div", { class: "insight-header", children: [
-          /* @__PURE__ */ u4("span", { class: "insight-icon", children: "\u2713" }),
-          /* @__PURE__ */ u4("span", { class: "insight-title", children: [
-            "All ",
-            scopeLabel,
-            " addressed or ignored"
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("div", { class: "insight-detail", children: "New ones will appear as your session data changes." })
-      ] }) : /* @__PURE__ */ u4("div", { class: "insight-card insight-success", children: [
-        /* @__PURE__ */ u4("div", { class: "insight-header", children: [
-          /* @__PURE__ */ u4("span", { class: "insight-icon", children: "\u2713" }),
-          /* @__PURE__ */ u4("span", { class: "insight-title", children: [
-            "No ",
-            scopeLabel,
-            " detected"
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("div", { class: "insight-detail", children: "Token usage, cache rates, and session patterns look reasonable." })
-      ] }),
-      ignoredList.length > 0 && /* @__PURE__ */ u4(IgnoredSection, { insights: ignoredList, sessions })
-    ] });
   }
 
   // media/src/agentProfiles.ts
@@ -2505,6 +1694,2087 @@
     return (session.timeline ?? []).filter((e4) => e4.type === "llm" || e4.type === "tool").reduce((sum, entry) => sum + Math.max(entry.durationMs ?? 0, 0), 0);
   }
 
+  // node_modules/.pnpm/preact@10.29.1/node_modules/preact/jsx-runtime/dist/jsxRuntime.module.js
+  var f4 = 0;
+  function u4(e4, t4, n3, o4, i4, u5) {
+    t4 || (t4 = {});
+    var a4, c4, p5 = t4;
+    if ("ref" in p5) for (c4 in p5 = {}, t4) "ref" == c4 ? a4 = t4[c4] : p5[c4] = t4[c4];
+    var l5 = { type: e4, props: p5, key: n3, ref: a4, __k: null, __: null, __b: 0, __e: null, __c: null, constructor: void 0, __v: --f4, __i: -1, __u: 0, __source: i4, __self: u5 };
+    if ("function" == typeof e4 && (a4 = e4.defaultProps)) for (c4 in a4) void 0 === p5[c4] && (p5[c4] = a4[c4]);
+    return l.vnode && l.vnode(l5), l5;
+  }
+
+  // media/src/tabs/Cost.tsx
+  function fmtUsd2(usd) {
+    if (usd === 0) return "$0.00";
+    if (usd < 1e-3) return "<$0.001";
+    if (usd < 1) return "$" + usd.toFixed(3);
+    return "$" + usd.toFixed(2);
+  }
+  function sessionCostMode(session, mode) {
+    return session.source === "codex" || session.source === "claude_code" ? "token" : mode;
+  }
+  function CostBarChart({ sessions, mode }) {
+    const canvasRef = A2(null);
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const data = sessions.map((sess) => {
+        const cost = calcSessionCost(sess, sessionCostMode(sess, mode));
+        return { cost: cost.totalUsd, unknown: cost.modelUnknown, startTime: sess.startTime, source: sess.source };
+      }).reverse();
+      const dayKey = (t4) => t4 ? new Date(t4).toISOString().slice(0, 10) : "none";
+      const dayTotals = /* @__PURE__ */ new Map();
+      data.forEach((d5) => {
+        const dk = dayKey(d5.startTime);
+        dayTotals.set(dk, (dayTotals.get(dk) ?? 0) + d5.cost);
+      });
+      const maxDailyTotal = Math.max(...Array.from(dayTotals.values()), 1e-4);
+      const maxCost = Math.max(...data.map((d5) => d5.cost), 1e-4);
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w5 = rect.width, h5 = rect.height;
+      ctx.clearRect(0, 0, w5, h5);
+      const pad = { top: 8, right: 58, bottom: 52, left: 64 };
+      const chartW = w5 - pad.left - pad.right;
+      const chartH = h5 - pad.top - pad.bottom;
+      const cs = getComputedStyle(document.body);
+      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
+      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
+      const fontStr = "9px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 0.5;
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const y5 = pad.top + chartH * i4 / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y5);
+        ctx.lineTo(pad.left + chartW, y5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = textColor;
+      ctx.font = fontStr;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxCost * (4 - i4) / 4;
+        ctx.fillText("$" + val.toFixed(val < 0.01 ? 3 : 2), pad.left - 4, pad.top + chartH * i4 / 4);
+      }
+      ctx.fillStyle = "rgba(186,104,200,0.85)";
+      ctx.textAlign = "left";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxDailyTotal * (4 - i4) / 4;
+        ctx.fillText("$" + val.toFixed(val < 0.1 ? 3 : 2), pad.left + chartW + 4, pad.top + chartH * i4 / 4);
+      }
+      const n3 = data.length;
+      const slotW = chartW / Math.max(n3, 1);
+      const barPad = n3 > 100 ? 0 : n3 > 50 ? 0.3 : n3 > 20 ? 0.7 : 1.2;
+      const barW = Math.max(0.5, slotW - barPad * 2);
+      const offsetX = pad.left;
+      data.forEach((d5, i4) => {
+        const x4 = offsetX + i4 * slotW + barPad;
+        const barH = d5.cost / maxCost * chartH;
+        const y5 = pad.top + chartH - barH;
+        const color = d5.unknown ? "#666" : getAgentColor(d5.source);
+        if (barH < 1) {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x4, pad.top + chartH);
+          ctx.lineTo(x4 + barW, pad.top + chartH);
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = color;
+          ctx.fillRect(x4, y5, barW, barH);
+        }
+        if (d5.unknown) {
+          ctx.fillStyle = "#999";
+          ctx.font = fontStr;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          ctx.fillText("?", x4 + barW / 2, pad.top + chartH - 2);
+        }
+      });
+      const dayGroups = /* @__PURE__ */ new Map();
+      data.forEach((d5, i4) => {
+        const dk = dayKey(d5.startTime);
+        if (!dayGroups.has(dk)) dayGroups.set(dk, { start: i4, end: i4 });
+        dayGroups.get(dk).end = i4;
+      });
+      if (n3 > 0) {
+        const labelFont = "8px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+        let isFirst = true;
+        for (const [dk, { start, end }] of dayGroups) {
+          const x1 = offsetX + start * slotW + barPad;
+          const x22 = offsetX + end * slotW + barPad + barW;
+          if (!isFirst) {
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 0.8;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(x1, pad.top);
+            ctx.lineTo(x1, pad.top + chartH);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          isFirst = false;
+          const labelX = (x1 + x22) / 2;
+          const d5 = /* @__PURE__ */ new Date(dk + "T12:00:00Z");
+          const label = isNaN(d5.getTime()) ? dk : d5.toLocaleDateString(void 0, { month: "short", day: "numeric" });
+          ctx.save();
+          ctx.translate(labelX, pad.top + chartH + 6);
+          ctx.rotate(-Math.PI / 2);
+          ctx.font = labelFont;
+          ctx.fillStyle = textColor;
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
+        }
+      }
+      if (n3 > 0 && dayGroups.size > 0) {
+        const pts = [];
+        for (const [dk, { start, end }] of dayGroups) {
+          const x1 = offsetX + start * slotW + barPad;
+          const x22 = offsetX + end * slotW + barPad + barW;
+          const midX = (x1 + x22) / 2;
+          const daily = dayTotals.get(dk) ?? 0;
+          const lineY = pad.top + chartH * (1 - daily / maxDailyTotal);
+          pts.push({ x: midX, y: lineY });
+        }
+        ctx.strokeStyle = "rgba(186,104,200,0.9)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        pts.forEach((p5, i4) => {
+          i4 === 0 ? ctx.moveTo(p5.x, p5.y) : ctx.lineTo(p5.x, p5.y);
+        });
+        ctx.stroke();
+        ctx.fillStyle = "rgba(186,104,200,0.95)";
+        pts.forEach((p5) => {
+          ctx.beginPath();
+          ctx.arc(p5.x, p5.y, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+    });
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:230px;display:block" }),
+      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 older \xB7 sessions \xB7 newer \u2192" })
+    ] });
+  }
+
+  // media/src/tabs/Insights.tsx
+  function generateInsights(summary, allSessions) {
+    const insights = [];
+    const { sessions, efficiency: eff } = summary;
+    if (!sessions.length) return insights;
+    sessions.forEach((sess, idx) => {
+      const llmEntries = (sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+      const globalNum = getSessionGlobalNumber(sess) || idx + 1;
+      const reqSnippet = (sess.userRequest ?? "").slice(0, 60);
+      if (llmEntries.length >= 3) {
+        const first = llmEntries[0].inputTokens ?? 0;
+        const last = llmEntries[llmEntries.length - 1].inputTokens ?? 0;
+        const growth = last - first;
+        const growthPct = first > 0 ? growth / first * 100 : 0;
+        if (growthPct > 20 && growth > 2e3) {
+          insights.push({
+            severity: "warning",
+            category: "efficiency",
+            sessionIdx: idx,
+            helpId: "help-context-bloat",
+            title: "[Session " + globalNum + "] Context grew " + growthPct.toFixed(0) + "%",
+            detail: "Input tokens grew from " + first.toLocaleString() + " to " + last.toLocaleString() + " (+" + growth.toLocaleString() + " tokens) across " + llmEntries.length + " LLM calls" + (reqSnippet ? ' for "' + reqSnippet + '"' : "") + ".",
+            action: "The first call used " + first.toLocaleString() + " tokens \u2014 audit your instruction files (CLAUDE.md, .agent.md, system prompt). Remove verbose examples and anything the agent can discover via tools. Target <5,000 tokens for combined static instructions."
+          });
+        }
+      }
+      const fileReads = {};
+      (sess.timeline ?? []).forEach((e4) => {
+        if (e4.type !== "tool") return;
+        const m4 = (e4.label ?? "").match(/^read_file\s+(\S+)/);
+        if (m4) fileReads[m4[1]] = (fileReads[m4[1]] ?? 0) + 1;
+      });
+      const repeats = Object.keys(fileReads).filter((f5) => fileReads[f5] > 1);
+      if (repeats.length > 0) {
+        const topFile = repeats.sort((a4, b4) => fileReads[b4] - fileReads[a4])[0];
+        insights.push({
+          severity: "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-files-repeated",
+          title: "[Session " + globalNum + "] Files read multiple times",
+          detail: repeats.map((f5) => f5 + " (" + fileReads[f5] + "\xD7)").join(", ") + ".",
+          action: repeats.length === 1 ? "The agent read " + topFile + " " + fileReads[topFile] + " times. Mention its path explicitly at the start of your prompt so the agent finds it without re-reading." : "The agent re-read " + repeats.length + " files, most often " + topFile + " (" + fileReads[topFile] + '\xD7). Try opening with the key paths listed: e.g. "The main files are: ' + repeats.slice(0, 2).join(", ") + '".'
+        });
+      }
+      if (sess.totalLlmCalls > 8 && (sess.userRequest ?? "").length < 80) {
+        const topTools = Object.entries(sess.toolCounts ?? {}).sort((a4, b4) => b4[1] - a4[1]).slice(0, 3).map(([t4, n3]) => t4 + " \xD7" + n3).join(", ");
+        insights.push({
+          severity: "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-high-turns",
+          title: "[Session " + globalNum + "] " + sess.totalLlmCalls + " LLM calls",
+          detail: '"' + reqSnippet + '" required ' + sess.totalLlmCalls + " LLM calls and " + sess.totalToolCalls + " tool calls" + (topTools ? " (" + topTools + ")" : "") + ".",
+          action: "For a " + sess.totalLlmCalls + "-turn session, break the task into smaller pieces with explicit stopping conditions. Provide specific file paths and line numbers so the agent spends turns doing instead of exploring."
+        });
+      }
+      const firstLlm = (sess.timeline ?? []).find((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+      if (firstLlm && (firstLlm.inputTokens ?? 0) > 15e3) {
+        insights.push({
+          severity: "warning",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-large-context",
+          title: "[Session " + globalNum + "] Starts with " + (firstLlm.inputTokens ?? 0).toLocaleString() + " input tokens",
+          detail: "The very first LLM call already has " + (firstLlm.inputTokens ?? 0).toLocaleString() + " tokens before any tool results are added.",
+          action: "Audit your instruction files \u2014 " + (firstLlm.inputTokens ?? 0).toLocaleString() + " tokens before the first tool call is the baseline overhead. Remove verbose examples and information the agent can discover via tools. Target <5,000 tokens for combined instructions."
+        });
+      }
+      const searches = {};
+      (sess.timeline ?? []).forEach((e4) => {
+        if (e4.type !== "tool") return;
+        const m4 = (e4.label ?? "").match(/^(grep_search|file_search)\s+(.+)$/);
+        if (m4) {
+          const key = m4[1] + ":" + m4[2].replace(/\s+/g, " ").trim();
+          searches[key] = (searches[key] ?? 0) + 1;
+        }
+      });
+      const dupes = Object.keys(searches).filter((k3) => searches[k3] > 1);
+      if (dupes.length > 0) {
+        const examples = dupes.slice(0, 2).map((d5) => {
+          const [, pattern] = d5.split(":");
+          return '"' + pattern?.trim().slice(0, 40) + '"';
+        });
+        insights.push({
+          severity: "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-duplicate-searches",
+          title: "[Session " + globalNum + "] Duplicate searches",
+          detail: dupes.length + " search pattern(s) repeated: " + examples.join(", ") + ".",
+          action: 'These repeated searches suggest the agent was uncertain where to look. Include directory names or specific file paths in your prompt \u2014 e.g. "search in src/api/" instead of a broad pattern.'
+        });
+      }
+      const failedTools = {};
+      (sess.timeline ?? []).forEach((e4) => {
+        if (e4.type === "tool" && e4.isError) {
+          const t4 = (e4.label ?? "").split(" ")[0];
+          failedTools[t4] = (failedTools[t4] ?? 0) + 1;
+        }
+      });
+      const failedEntries = Object.keys(failedTools);
+      if (failedEntries.length > 0) {
+        const totalFails = failedEntries.reduce((s4, t4) => s4 + failedTools[t4], 0);
+        const toolAdvice = failedEntries.slice(0, 3).map((t4) => {
+          const n3 = failedTools[t4];
+          if (t4 === "bash" || t4 === "run_command") return t4 + " \xD7" + n3 + " (check the command exists in your environment)";
+          if (t4 === "read_file" || t4 === "view") return t4 + " \xD7" + n3 + " (verify file paths are correct)";
+          if (t4 === "grep_search" || t4 === "search_files") return t4 + " \xD7" + n3 + " (use more specific patterns)";
+          return t4 + " \xD7" + n3;
+        }).join("; ");
+        insights.push({
+          severity: totalFails > 2 ? "warning" : "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-tool-failures",
+          title: "[Session " + globalNum + "] " + totalFails + " tool failure(s)",
+          detail: "Failed: " + toolAdvice + ". Each failure forces an extra LLM call to recover.",
+          action: "Tool failures happen when the agent guesses paths or uses incorrect arguments. Be explicit in your prompt about file locations and command availability."
+        });
+      }
+      const largeResults = [];
+      (sess.timeline ?? []).forEach((e4) => {
+        if (e4.type === "tool" && e4.fullResult && e4.fullResult.length > 1e4) {
+          largeResults.push({ tool: (e4.label ?? "").split(" ")[0], size: e4.fullResult.length });
+        }
+      });
+      if (largeResults.length > 0) {
+        largeResults.sort((a4, b4) => b4.size - a4.size);
+        const totalKb = largeResults.reduce((s4, r4) => s4 + r4.size, 0) / 1024;
+        const topResult = largeResults[0];
+        insights.push({
+          severity: totalKb > 100 ? "warning" : "info",
+          category: "efficiency",
+          sessionIdx: idx,
+          helpId: "help-large-results",
+          title: "[Session " + globalNum + "] Large tool results (" + totalKb.toFixed(0) + "KB)",
+          detail: largeResults.length + " tool call(s) returned large results: " + largeResults.slice(0, 3).map((r4) => r4.tool + " (" + (r4.size / 1024).toFixed(1) + "KB)").join(", ") + ".",
+          action: topResult.tool.includes("read") ? "Use narrower reads \u2014 specify line ranges (e.g. read_file src/app.ts L1-50) instead of reading whole files." : "The largest result came from " + topResult.tool + " (" + (topResult.size / 1024).toFixed(0) + "KB). Use more targeted reads \u2014 specify line ranges with read_file, or tighter grep patterns."
+        });
+      }
+      const loopHelpIds = {
+        exact_tool_repeat: "help-tool-deadlock",
+        edit_revert_cycle: "help-state-spiral",
+        error_recurrence: "help-hallucination",
+        runaway_steps: "help-runaway-steps",
+        token_runaway: "help-context-accumulation"
+      };
+      (sess.loopSignals ?? []).forEach((sig) => {
+        const examplesText = sig.examples?.length > 0 ? "\n\nExamples: " + sig.examples.join(" \xB7 ") : "";
+        insights.push({
+          severity: "loop-" + sig.severity,
+          category: "loop",
+          sessionIdx: idx,
+          helpId: loopHelpIds[sig.type],
+          title: "[Session " + globalNum + "] " + sig.patternName + " \u2014 " + sig.evidence,
+          detail: examplesText.trim(),
+          action: sig.action ?? sig.evidence,
+          _loopType: sig.type
+        });
+      });
+    });
+    const crossSessions = allSessions ?? sessions;
+    if (crossSessions.length >= 3) {
+      const fileStats = {};
+      for (const sess of crossSessions) {
+        const hasProblems = (sess.errors ?? 0) > 0 || (sess.loopSignals?.length ?? 0) > 0;
+        const files = [.../* @__PURE__ */ new Set([...sess.filesRead, ...sess.filesChanged, ...sess.filesSearched])];
+        for (const f5 of files) {
+          if (!fileStats[f5]) fileStats[f5] = { total: 0, problems: 0 };
+          fileStats[f5].total++;
+          if (hasProblems) fileStats[f5].problems++;
+        }
+      }
+      const troubleFiles = Object.entries(fileStats).filter(([, v4]) => v4.total >= 3 && v4.problems / v4.total >= 0.6).sort((a4, b4) => b4[1].problems - a4[1].problems).slice(0, 4);
+      if (troubleFiles.length > 0) {
+        const names = troubleFiles.map(([f5]) => f5.split("/").pop() || f5);
+        insights.push({
+          severity: "warning",
+          category: "efficiency",
+          helpId: "help-files-repeated",
+          title: troubleFiles.length + " file(s) appear in most sessions with errors or loops",
+          detail: troubleFiles.map(
+            ([f5, v4]) => (f5.split("/").pop() || f5) + ": " + v4.problems + "/" + v4.total + " sessions had issues"
+          ).join("\n"),
+          action: "These files appear frequently alongside agent difficulties: " + names.join(", ") + ". They may have conflicting constraints, be poorly documented for the agent, or be referenced with inconsistent paths. Consider adding a brief description of their role to your instruction files so the agent has reliable context before touching them."
+        });
+      }
+      const recentN = Math.min(crossSessions.length, 8);
+      const recent = crossSessions.slice(-recentN);
+      const older = crossSessions.slice(0, -recentN);
+      if (older.length >= 3) {
+        const avgRecent = recent.reduce((s4, sess) => s4 + sess.cacheHitRate, 0) / recent.length;
+        const avgOlder = older.reduce((s4, sess) => s4 + sess.cacheHitRate, 0) / older.length;
+        const drop = avgOlder - avgRecent;
+        if (drop > 0.15 && avgOlder > 0.3) {
+          insights.push({
+            severity: "warning",
+            category: "efficiency",
+            helpId: "help-cache-rate",
+            title: "Cache hit rate declining \u2014 " + (avgOlder * 100).toFixed(0) + "% \u2192 " + (avgRecent * 100).toFixed(0) + "%",
+            detail: "Average cache hit rate dropped " + (drop * 100).toFixed(0) + "% over your last " + recentN + " sessions.",
+            action: "Cache hit rate drops when the stable prefix of your prompts changes. Recent changes to your instruction files (CLAUDE.md, .agent.md, system prompt) may be invalidating cached context. Keep static content at the top of prompts and avoid putting dynamic data (timestamps, file counts) in instructions."
+          });
+        }
+      }
+    }
+    if (eff.toolDefWaste > 0.25) {
+      insights.push({
+        severity: "warning",
+        category: "efficiency",
+        helpId: "help-tool-overhead",
+        title: "Tool definitions consuming ~" + (eff.toolDefWaste * 100).toFixed(0) + "% of context",
+        detail: "A significant portion of each prompt is spent describing available tool schemas to the model.",
+        action: 'Use tool restrictions in your .agent.md files with "tools:" to limit which tools are available.'
+      });
+    }
+    if (eff.totalLlmCalls > 3 && eff.cacheHitRate < 0.5) {
+      insights.push({
+        severity: "warning",
+        category: "efficiency",
+        helpId: "help-cache-rate",
+        title: "Low prompt cache hit rate (" + (eff.cacheHitRate * 100).toFixed(0) + "%)",
+        detail: "Less than half of input tokens are being served from cache.",
+        action: "Cache works best when the beginning of the prompt stays stable across turns. Keep static content at the top of your prompts."
+      });
+    }
+    const severityOrder = { "loop-critical": 0, "loop-warning": 1, "warning": 2, "info": 3 };
+    insights.sort((a4, b4) => {
+      const aIdx = a4.sessionIdx ?? -1, bIdx = b4.sessionIdx ?? -1;
+      if (aIdx !== bIdx) return bIdx - aIdx;
+      return (severityOrder[a4.severity] ?? 4) - (severityOrder[b4.severity] ?? 4);
+    });
+    return insights;
+  }
+
+  // media/src/tabs/Traces.tsx
+  function StepDetail({ step, idx, sessIdx, sessionModel }) {
+    const [showOutput, setShowOutput] = d2(false);
+    const entry = step.entry;
+    if (entry.type === "llm") {
+      const PREVIEW_LEN = 400;
+      const isLongResponse = (entry.responseText?.length ?? 0) > PREVIEW_LEN;
+      const entryCost = calcEntryCost(entry, sessionModel);
+      return /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Model" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.model || "unknown" })
+        ] }),
+        ((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Token Usage" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: [
+            /* @__PURE__ */ u4("span", { class: "sw-token-in", children: [
+              (entry.inputTokens ?? 0).toLocaleString(),
+              " input"
+            ] }),
+            /* @__PURE__ */ u4("span", { class: "sw-token-arrow", children: " \u2192 " }),
+            /* @__PURE__ */ u4("span", { class: "sw-token-out", children: [
+              (entry.outputTokens ?? 0).toLocaleString(),
+              " output"
+            ] })
+          ] })
+        ] }),
+        entryCost > 0 && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Cost" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: fmtUsd(entryCost) })
+        ] }),
+        entry.responseText && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: [
+            "Response",
+            isLongResponse && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setShowOutput((v4) => !v4), children: showOutput ? "Collapse" : "Show full response" })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", style: "white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.5", children: [
+            showOutput ? entry.responseText : entry.responseText.slice(0, PREVIEW_LEN),
+            isLongResponse && !showOutput && /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2026" })
+          ] })
+        ] }),
+        entry.thinking && /* @__PURE__ */ u4(LongTextSection, { heading: "Reasoning", text: entry.thinking, id: "sw-thinking-" + sessIdx + "-" + idx }),
+        (entry.ttft ?? 0) > 0 && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Time to First Token" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(entry.ttft) })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
+        ] }),
+        entry.action && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Stop reason" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.action })
+        ] }),
+        entry.timestamp && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Timestamp" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value sw-detail-muted", children: entry.timestamp })
+        ] })
+      ] });
+    }
+    if (entry.type === "tool") {
+      const toolParts = (entry.label ?? "").match(/^(\S+)\s*([\s\S]*)$/);
+      const tName = toolParts ? toolParts[1] : entry.label;
+      const tArgs = toolParts ? toolParts[2] : "";
+      const isRaw = entry.toolInput && !entry.toolInput.trimStart().startsWith("{");
+      const isFilePath = isRaw && (entry.toolInput.startsWith("/") || entry.toolInput.startsWith("~") || /^[A-Za-z]:[/\\]/.test(entry.toolInput));
+      const inputHeading = !isRaw ? "Arguments" : isFilePath ? "File" : "Command";
+      const inputText = isRaw ? entry.toolInput : tArgs || entry.toolInput || "";
+      const resultText = entry.fullResult || entry.resultSummary || "";
+      return /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Tool" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: /* @__PURE__ */ u4("code", { children: tName }) })
+        ] }),
+        inputText && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: inputHeading }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: /* @__PURE__ */ u4("code", { style: "white-space:pre-wrap;word-break:break-all", children: inputText }) })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
+        ] }),
+        entry.decision && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Decision" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value", style: entry.decision === "rejected" ? "color:var(--error)" : "color:#8ec96b", children: entry.decision })
+        ] }),
+        resultText && /* @__PURE__ */ u4(LongTextSection, { heading: "Result", text: resultText, id: "sw-result-" + sessIdx + "-" + idx, isJson: true }),
+        entry.isError && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading err", children: "Error" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value err", children: "This step failed" })
+        ] }),
+        entry.timestamp && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Timestamp" }),
+          /* @__PURE__ */ u4("div", { class: "sw-detail-value sw-detail-muted", children: entry.timestamp })
+        ] })
+      ] });
+    }
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+        /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Background Task" }),
+        /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.label || "" })
+      ] }),
+      /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
+        /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
+        /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
+      ] })
+    ] });
+  }
+  function LongTextSection({ heading, text, id: _id, isJson }) {
+    const [expanded, setExpanded] = d2(false);
+    const maxPreviewChars = 600;
+    const isLong = text.length > maxPreviewChars;
+    let formatted = text.length > 6e3 ? text.slice(0, 6e3) + "\n... [truncated " + (text.length - 6e3).toLocaleString() + " chars]" : text;
+    if (formatted.length <= 2e3) {
+      try {
+        formatted = JSON.stringify(JSON.parse(formatted), null, 2);
+      } catch {
+      }
+    }
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: [
+        heading,
+        isLong && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setExpanded((v4) => !v4), children: expanded ? "Collapse" : "Show full" })
+      ] }) }),
+      !isLong || !expanded ? /* @__PURE__ */ u4("pre", { class: "sw-full-result-pre", style: "margin:0 0 8px", children: isJson && formatted.length <= 2e3 ? /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: syntaxHighlightJson(isLong ? text.slice(0, maxPreviewChars) : formatted) } }) : isLong ? text.slice(0, maxPreviewChars) + "\u2026" : formatted }) : /* @__PURE__ */ u4("pre", { class: "sw-full-result-pre", style: "margin:0 0 8px", children: isJson && formatted.length <= 2e3 ? /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: syntaxHighlightJson(formatted) } }) : formatted })
+    ] });
+  }
+  function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }) {
+    const [open, setOpen] = d2(false);
+    const entry = step.entry;
+    const entryCost = entry.type === "llm" ? calcEntryCost(entry, sessionModel) : 0;
+    let badgeLabel, barColor;
+    if (entry.type === "llm") {
+      badgeLabel = "LLM";
+      barColor = "var(--accent)";
+    } else if (entry.type === "tool") {
+      badgeLabel = "TOOL";
+      barColor = "#B8E986";
+    } else if (entry.type === "user_input") {
+      badgeLabel = "USER";
+      barColor = "#F5A623";
+    } else {
+      badgeLabel = "BG";
+      barColor = "var(--muted)";
+    }
+    if (entry.isError) barColor = "var(--error)";
+    const rowLabel = entry.type === "llm" ? formatLlmLabel(entry) : entry.type === "tool" ? formatToolLabel(entry) + (formatToolResult(entry) ? " \u2192 " + formatToolResult(entry) : "") : entry.type === "user_input" ? entry.decision && entry.decision !== "unknown" ? `${entry.label} (${entry.decision})` : entry.label : entry.label || "";
+    const toolSubtitle = (() => {
+      if (entry.type !== "tool" || !entry.toolInput) return null;
+      const raw = entry.toolInput.trimStart();
+      if (raw.startsWith("{")) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed.command) {
+            const cmd = String(parsed.command);
+            return cmd.length > 60 ? cmd : null;
+          }
+        } catch {
+        }
+        return null;
+      }
+      const isFilePath = raw.startsWith("/") || raw.startsWith("~") || /^[A-Za-z]:[/\\]/.test(raw);
+      if (isFilePath) return null;
+      return raw.length > 60 ? raw : null;
+    })();
+    const subtitle = toolSubtitle;
+    const left = sessionDur > 0 ? step.offsetMs / sessionDur * 100 : 0;
+    const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100;
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { class: "wf-row", onClick: () => setOpen((v4) => !v4), children: [
+        /* @__PURE__ */ u4("div", { class: "wf-label", title: subtitle ? rowLabel + " \u2014 " + subtitle : rowLabel, children: [
+          /* @__PURE__ */ u4("span", { class: "wf-indent" }),
+          /* @__PURE__ */ u4("span", { class: "sw-chevron", children: open ? "\u25BC" : "\u25B6" }),
+          /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + barColor + ";color:#000", children: badgeLabel }),
+          /* @__PURE__ */ u4("span", { style: "display:inline-flex;flex-direction:column;min-width:0", children: [
+            /* @__PURE__ */ u4("span", { class: "wf-name", children: rowLabel }),
+            subtitle && /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px", children: subtitle })
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "wf-bar-area", children: /* @__PURE__ */ u4("div", { class: "wf-bar", style: `left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`, children: /* @__PURE__ */ u4("div", { class: "wf-bar-inner", style: "background:" + barColor + ";opacity:" + (entry.isError ? "1" : "0.7") }) }) }),
+        /* @__PURE__ */ u4("div", { class: "wf-info", children: [
+          formatMs(step.durationMs),
+          entry.type === "llm" && ((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);white-space:nowrap;margin-top:2px", children: [
+            "\u2191",
+            formatCompact(entry.inputTokens ?? 0),
+            " \u2193",
+            formatCompact(entry.outputTokens ?? 0)
+          ] }),
+          entryCost > 0 && /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);white-space:nowrap", children: [
+            "~",
+            fmtUsd(entryCost)
+          ] })
+        ] })
+      ] }),
+      open && /* @__PURE__ */ u4("div", { class: "sw-detail open", children: /* @__PURE__ */ u4(StepDetail, { step, idx, sessIdx, sessionModel }) })
+    ] });
+  }
+
+  // media/src/tabs/Flow.tsx
+  var LLM_COLOR = "#3794FF";
+  var TOOL_COLOR = "#B8E986";
+  var ERR_COLOR = "#f44747";
+  var TURN_X = 130;
+  var TOOL_X = 380;
+  var LLM_R = 26;
+  var TOOL_R = 22;
+  function createInferredTurnEntry(sess, tools, index) {
+    const sourceLabel = getAgentSourceLabel(sess.source);
+    return {
+      type: "llm",
+      spanId: "flow-inferred-turn-" + index,
+      label: sourceLabel + " tool phase",
+      model: sess.model || sourceLabel,
+      durationMs: 0,
+      action: "Inferred turn for tool events emitted before a response",
+      isError: tools.some((t4) => t4.isError),
+      timestamp: tools[0]?.timestamp || sess.startTime
+    };
+  }
+  function buildTurnGroups(sess, timeline) {
+    const turns = [];
+    let pendingTools = [];
+    const pushInferredTurn = () => {
+      if (pendingTools.length === 0) {
+        return;
+      }
+      turns.push({
+        entry: createInferredTurnEntry(sess, pendingTools, turns.length),
+        tools: pendingTools
+      });
+      pendingTools = [];
+    };
+    for (const entry of timeline) {
+      if (entry.type === "llm") {
+        if (turns.length === 0) {
+          pushInferredTurn();
+        } else {
+          turns[turns.length - 1].tools = pendingTools;
+          pendingTools = [];
+        }
+        turns.push({ entry, tools: [] });
+      } else if (entry.type === "tool") {
+        pendingTools.push(entry);
+      }
+    }
+    if (pendingTools.length > 0) {
+      if (turns.length > 0) {
+        turns[turns.length - 1].tools = pendingTools;
+      } else {
+        pushInferredTurn();
+      }
+    }
+    return turns;
+  }
+  function isInferredTurn(entry) {
+    return entry.spanId.startsWith("flow-inferred-turn-");
+  }
+  function FlowCanvas({ sess, height = 520 }) {
+    const [isPlaying, setIsPlaying] = d2(false);
+    const speedRef = A2(800);
+    const setIsPlayingRef = A2(setIsPlaying);
+    setIsPlayingRef.current = setIsPlaying;
+    const progressId = "flow-prog-" + sess.sessionId;
+    const canvasRef = A2(null);
+    const stateRef = A2({
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      dragging: false,
+      didDrag: false,
+      lastMX: 0,
+      lastMY: 0,
+      hoverNodeId: null,
+      clickedNodeId: null,
+      nodes: [],
+      edges: [],
+      playbackTurns: [],
+      playbackIdx: 0,
+      playbackPlaying: false,
+      playbackTimer: null
+    });
+    if (!sessionTimelines.value[sess.sessionId] && vscode) {
+      vscode.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
+    }
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const st = stateRef.current;
+      if (st.playbackTimer) {
+        clearInterval(st.playbackTimer);
+        st.playbackTimer = null;
+      }
+      st.playbackPlaying = false;
+      st.playbackIdx = 0;
+      st.clickedNodeId = null;
+      setIsPlayingRef.current(false);
+      const loadedTimeline = sessionTimelines.value[sess.sessionId] ?? sess.timeline;
+      const timeline = (loadedTimeline ?? []).filter((e4) => e4.type !== "background");
+      const turns = buildTurnGroups(sess, timeline);
+      const toolData = /* @__PURE__ */ new Map();
+      turns.forEach((turn, ti) => {
+        const seenThisTurn = /* @__PURE__ */ new Set();
+        turn.tools.forEach((t4) => {
+          const name = t4.label || "tool";
+          if (!toolData.has(name)) toolData.set(name, { count: 0, totalMs: 0, errors: 0, turns: [] });
+          const d5 = toolData.get(name);
+          d5.count++;
+          d5.totalMs += t4.durationMs || 0;
+          if (t4.isError) d5.errors++;
+          if (!seenThisTurn.has(name)) {
+            d5.turns.push(ti);
+            seenThisTurn.add(name);
+          }
+        });
+      });
+      const N2 = turns.length;
+      const TURN_SPACING = N2 <= 1 ? 100 : Math.max(65, Math.min(100, Math.floor(480 / Math.max(N2 - 1, 1))));
+      const TOOL_MIN_GAP = 68;
+      const START_Y = 70;
+      const nodes = [];
+      const edges = [];
+      const nodeIdxMap = {};
+      turns.forEach((turn, i4) => {
+        const inferred = isInferredTurn(turn.entry);
+        const node = {
+          id: "llm-" + i4,
+          x: TURN_X,
+          y: START_Y + i4 * TURN_SPACING,
+          color: turn.entry.isError ? ERR_COLOR : LLM_COLOR,
+          type: "llm",
+          label: "T" + (i4 + 1),
+          subLabel: inferred ? turn.tools.length + "\xD7" : (turn.entry.inputTokens ?? 0) > 0 ? Math.round((turn.entry.inputTokens ?? 0) / 1e3) + "K" : "",
+          turnNum: i4 + 1,
+          totalTurns: turns.length,
+          inputTokens: turn.entry.inputTokens ?? 0,
+          outputTokens: turn.entry.outputTokens ?? 0,
+          costUsd: inferred ? void 0 : calcEntryCost(turn.entry, sess.model ?? "") || void 0,
+          model: turn.entry.model ?? turn.entry.label ?? "",
+          durationMs: turn.entry.durationMs ?? 0,
+          action: turn.entry.action ?? "",
+          note: inferred ? "Tool events arrived before a response event, so Flow anchors them to this inferred turn." : void 0,
+          toolsUsed: [...new Set(turn.tools.map((t4) => t4.label || "tool"))],
+          isError: turn.entry.isError
+        };
+        nodeIdxMap[node.id] = nodes.length;
+        nodes.push(node);
+      });
+      for (let i4 = 0; i4 < turns.length - 1; i4++) {
+        edges.push({ from: nodeIdxMap["llm-" + i4], to: nodeIdxMap["llm-" + (i4 + 1)], count: 1, kind: "seq" });
+      }
+      const toolNames = Array.from(toolData.keys());
+      const toolTargetY = (name) => {
+        const d5 = toolData.get(name);
+        const avg = d5.turns.reduce((a4, b4) => a4 + b4, 0) / d5.turns.length;
+        return START_Y + avg * TURN_SPACING;
+      };
+      const sortedTools = [...toolNames].sort((a4, b4) => toolTargetY(a4) - toolTargetY(b4));
+      let prevY = -Infinity;
+      const toolY = {};
+      for (const name of sortedTools) {
+        const ty = Math.max(toolTargetY(name), prevY + TOOL_MIN_GAP);
+        toolY[name] = ty;
+        prevY = ty;
+      }
+      if (sortedTools.length > 0) {
+        const turnsCenter = START_Y + (N2 - 1) * TURN_SPACING / 2;
+        const toolsFirst = toolY[sortedTools[0]];
+        const toolsLast = toolY[sortedTools[sortedTools.length - 1]];
+        const toolsCenter = (toolsFirst + toolsLast) / 2;
+        const shift = turnsCenter - toolsCenter;
+        sortedTools.forEach((name) => {
+          toolY[name] += shift;
+        });
+      }
+      sortedTools.forEach((name) => {
+        const d5 = toolData.get(name);
+        const node = {
+          id: "tool-" + name,
+          x: TOOL_X,
+          y: toolY[name],
+          color: d5.errors > 0 ? ERR_COLOR : TOOL_COLOR,
+          type: "tool",
+          label: name.length > 14 ? name.slice(0, 13) + "\u2026" : name,
+          fullLabel: name,
+          subLabel: d5.count + "\xD7",
+          callCount: d5.count,
+          totalDurationMs: d5.totalMs,
+          avgDurationMs: d5.count > 0 ? Math.round(d5.totalMs / d5.count) : 0,
+          errorCount: d5.errors,
+          usedInTurns: d5.turns
+        };
+        nodeIdxMap[node.id] = nodes.length;
+        nodes.push(node);
+      });
+      turns.forEach((turn, ti) => {
+        const perTool = {};
+        turn.tools.forEach((t4) => {
+          const n3 = t4.label || "tool";
+          perTool[n3] = (perTool[n3] || 0) + 1;
+        });
+        Object.entries(perTool).forEach(([name, count]) => {
+          const from = nodeIdxMap["llm-" + ti];
+          const to = nodeIdxMap["tool-" + name];
+          if (from !== void 0 && to !== void 0) {
+            edges.push({ from, to, count, kind: "use" });
+          }
+        });
+      });
+      st.nodes = nodes;
+      st.edges = edges;
+      st.playbackTurns = turns.map((_4, i4) => nodeIdxMap["llm-" + i4]).filter((i4) => i4 !== void 0);
+      function nR(n3) {
+        return n3.type === "llm" ? LLM_R : TOOL_R;
+      }
+      function centerGraph() {
+        if (!canvas || nodes.length === 0) return;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        nodes.forEach((n3) => {
+          const pad = nR(n3) + 34;
+          if (n3.x - pad < minX) minX = n3.x - pad;
+          if (n3.y - pad < minY) minY = n3.y - pad;
+          if (n3.x + pad > maxX) maxX = n3.x + pad;
+          if (n3.y + pad > maxY) maxY = n3.y + pad;
+        });
+        const gW = maxX - minX + 40, gH = maxY - minY + 40;
+        const rect = canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        st.zoom = Math.max(0.15, Math.min(rect.width / gW, rect.height / gH, 1.4));
+        st.panX = rect.width / 2 - (minX + maxX) / 2 * st.zoom;
+        st.panY = rect.height / 2 - (minY + maxY) / 2 * st.zoom;
+      }
+      function draw() {
+        if (!canvas) return;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        ctx.save();
+        ctx.translate(st.panX, st.panY);
+        ctx.scale(st.zoom, st.zoom);
+        const cs = getComputedStyle(document.body);
+        const fg = cs.getPropertyValue("--fg").trim() || "#ccc";
+        const muted = cs.getPropertyValue("--muted").trim() || "#666";
+        if (turns.length === 0) {
+          ctx.restore();
+          ctx.font = "13px sans-serif";
+          ctx.fillStyle = muted;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("No timeline data for this session", rect.width / 2, rect.height / 2);
+          return;
+        }
+        const activeId = st.clickedNodeId || st.hoverNodeId;
+        const hlNodes = /* @__PURE__ */ new Set();
+        const hlEdges = /* @__PURE__ */ new Set();
+        if (activeId) {
+          hlNodes.add(activeId);
+          edges.forEach((e4, ei) => {
+            const fn = nodes[e4.from], tn = nodes[e4.to];
+            if (fn.id === activeId || tn.id === activeId) {
+              hlEdges.add(ei);
+              hlNodes.add(fn.id);
+              hlNodes.add(tn.id);
+            }
+          });
+        }
+        const llmNodes = nodes.filter((n3) => n3.type === "llm");
+        if (llmNodes.length >= 2) {
+          const spineX = TURN_X - 44;
+          ctx.save();
+          ctx.setLineDash([4, 5]);
+          ctx.strokeStyle = LLM_COLOR + "40";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(spineX, llmNodes[0].y);
+          ctx.lineTo(spineX, llmNodes[llmNodes.length - 1].y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          llmNodes.forEach((n3) => {
+            ctx.strokeStyle = LLM_COLOR + "38";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(spineX, n3.y);
+            ctx.lineTo(n3.x - LLM_R, n3.y);
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+        edges.forEach((e4, ei) => {
+          const a4 = nodes[e4.from], b4 = nodes[e4.to];
+          const isHl = activeId ? hlEdges.has(ei) : false;
+          const dimmed = activeId && !isHl;
+          if (e4.kind === "seq") {
+            const ax = a4.x + 8, ay = a4.y + LLM_R;
+            const bx = b4.x + 8, by = b4.y - LLM_R;
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(bx, by);
+            ctx.strokeStyle = dimmed ? LLM_COLOR + "18" : isHl ? LLM_COLOR : LLM_COLOR + "50";
+            ctx.lineWidth = isHl ? 2.5 : 1.5;
+            ctx.stroke();
+            const ang = Math.atan2(by - ay, bx - ax), aLen = 7;
+            ctx.beginPath();
+            ctx.moveTo(bx, by);
+            ctx.lineTo(bx - aLen * Math.cos(ang - 0.4), by - aLen * Math.sin(ang - 0.4));
+            ctx.lineTo(bx - aLen * Math.cos(ang + 0.4), by - aLen * Math.sin(ang + 0.4));
+            ctx.closePath();
+            ctx.fillStyle = dimmed ? LLM_COLOR + "18" : isHl ? LLM_COLOR : LLM_COLOR + "60";
+            ctx.fill();
+          } else {
+            const sx = a4.x + LLM_R, sy = a4.y;
+            const ex = b4.x - TOOL_R, ey = b4.y;
+            const span = TOOL_X - TURN_X;
+            const cp1x = sx + span * 0.45, cp1y = sy;
+            const cp2x = ex - span * 0.45, cp2y = ey;
+            const alpha = dimmed ? 0.08 : isHl ? 1 : Math.min(0.75, 0.28 + e4.count * 0.1);
+            const lw = isHl ? 2.5 : Math.min(4, 1 + e4.count * 0.5);
+            const hexA = Math.round(alpha * 255).toString(16).padStart(2, "0");
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, ex, ey);
+            ctx.strokeStyle = a4.color + hexA;
+            ctx.lineWidth = lw;
+            ctx.stroke();
+            const ang = Math.atan2(ey - cp2y, ex - cp2x), aLen = 7;
+            ctx.beginPath();
+            ctx.moveTo(ex, ey);
+            ctx.lineTo(ex - aLen * Math.cos(ang - 0.4), ey - aLen * Math.sin(ang - 0.4));
+            ctx.lineTo(ex - aLen * Math.cos(ang + 0.4), ey - aLen * Math.sin(ang + 0.4));
+            ctx.closePath();
+            ctx.fillStyle = a4.color + hexA;
+            ctx.fill();
+            if (e4.count > 1 && !dimmed) {
+              const mx = (sx + ex) / 2, my = (sy + ey) / 2 - 9;
+              ctx.font = "bold 9px sans-serif";
+              ctx.fillStyle = a4.color + "cc";
+              ctx.textAlign = "center";
+              ctx.textBaseline = "middle";
+              ctx.fillText(e4.count + "\xD7", mx, my);
+            }
+          }
+        });
+        nodes.forEach((n3) => {
+          const r4 = nR(n3);
+          const isActive = n3.id === activeId;
+          const inHL = activeId ? hlNodes.has(n3.id) : false;
+          const dimmed = activeId && !inHL;
+          if (isActive) {
+            ctx.save();
+            ctx.shadowColor = n3.color;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(n3.x, n3.y, r4 + 4, 0, Math.PI * 2);
+            ctx.strokeStyle = n3.color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+          }
+          ctx.beginPath();
+          ctx.arc(n3.x, n3.y, r4, 0, Math.PI * 2);
+          ctx.fillStyle = isActive ? n3.color + "aa" : dimmed ? n3.color + "10" : n3.color + "28";
+          ctx.fill();
+          ctx.strokeStyle = dimmed ? n3.color + "30" : n3.color;
+          ctx.lineWidth = isActive ? 3 : inHL ? 2.5 : 2;
+          ctx.stroke();
+          ctx.font = (isActive ? "bold " : "") + "10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = dimmed ? muted + "40" : fg;
+          ctx.fillText(n3.label, n3.x, n3.y - (n3.subLabel ? 4 : 0));
+          if (n3.subLabel) {
+            ctx.font = "8px sans-serif";
+            ctx.fillStyle = dimmed ? muted + "30" : n3.type === "llm" ? "#7bb3ff" : n3.color === ERR_COLOR ? "#f99" : "#8ec96b";
+            ctx.fillText(n3.subLabel, n3.x, n3.y + 7);
+          }
+          ctx.font = "9px sans-serif";
+          ctx.fillStyle = dimmed ? muted + "30" : muted;
+          ctx.fillText(n3.type === "llm" ? "Turn " + n3.turnNum : "", n3.x, n3.y + r4 + 11);
+        });
+        const tipId = st.clickedNodeId || st.hoverNodeId;
+        if (tipId) {
+          const hn = nodes.find((n3) => n3.id === tipId);
+          if (hn) {
+            const trunc = (s4, max) => s4 && s4.length > max ? s4.slice(0, max) + "\u2026" : s4 || "";
+            const lines = [];
+            if (hn.type === "llm") {
+              lines.push({ value: "Turn " + hn.turnNum + " of " + hn.totalTurns, bold: true, color: hn.color });
+              if (hn.model) lines.push({ label: "Model", value: trunc(hn.model, 42) });
+              if (hn.note) lines.push({ label: "Note", value: hn.note });
+              if ((hn.inputTokens ?? 0) > 0 || (hn.outputTokens ?? 0) > 0)
+                lines.push({ label: "Tokens", value: (hn.inputTokens ?? 0).toLocaleString() + " in \u2192 " + (hn.outputTokens ?? 0).toLocaleString() + " out" });
+              if ((hn.costUsd ?? 0) > 0)
+                lines.push({ label: "Cost", value: fmtUsd(hn.costUsd) });
+              if (hn.durationMs) lines.push({ label: "Duration", value: formatMs(hn.durationMs) });
+              if (hn.action) lines.push({ label: "Outcome", value: hn.action });
+              if (hn.toolsUsed?.length) lines.push({ label: "Tools used", value: hn.toolsUsed.slice(0, 5).join(", ") + (hn.toolsUsed.length > 5 ? " +" + (hn.toolsUsed.length - 5) + " more" : "") });
+              if (hn.isError) lines.push({ label: "Error", value: "This LLM call failed", color: ERR_COLOR });
+            } else {
+              lines.push({ value: hn.fullLabel || hn.label, bold: true, color: hn.color });
+              lines.push({ label: "Total calls", value: String(hn.callCount) });
+              if ((hn.usedInTurns?.length ?? 0) > 0)
+                lines.push({ label: "Used in turns", value: "T" + (hn.usedInTurns ?? []).map((t4) => t4 + 1).join(", T") });
+              if (hn.avgDurationMs) lines.push({ label: "Avg duration", value: formatMs(hn.avgDurationMs) });
+              if (hn.totalDurationMs) lines.push({ label: "Total time", value: formatMs(hn.totalDurationMs) });
+              if (hn.errorCount) lines.push({ label: "Errors", value: hn.errorCount + " failed call(s)", color: ERR_COLOR });
+            }
+            ctx.font = "11px sans-serif";
+            const lineH = 19, padX = 12, padY = 10;
+            let labelW = 0, valueW = 0;
+            lines.forEach((line) => {
+              if (line.label) {
+                ctx.font = "bold 10px sans-serif";
+                const lw = ctx.measureText(line.label + ":").width;
+                if (lw > labelW) labelW = lw;
+              }
+              ctx.font = line.bold ? "bold 12px sans-serif" : "11px sans-serif";
+              const vw = ctx.measureText(line.value).width;
+              if (vw > valueW) valueW = vw;
+            });
+            const gapW = 10, contentW = Math.max(labelW + gapW + valueW, valueW);
+            const boxW = Math.min(contentW + padX * 2, 390);
+            const boxH = lines.length * lineH + padY * 2 + 4;
+            let boxX = hn.x + nR(hn) + 14;
+            const boxY = hn.y - boxH / 2;
+            if (hn.x + nR(hn) + 14 + boxW > rect.width / st.zoom - st.panX / st.zoom - 20) {
+              boxX = hn.x - nR(hn) - 14 - boxW;
+            }
+            const br = 7;
+            ctx.fillStyle = "rgba(22,22,26,0.97)";
+            ctx.strokeStyle = hn.color;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(boxX + br, boxY);
+            ctx.lineTo(boxX + boxW - br, boxY);
+            ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + br);
+            ctx.lineTo(boxX + boxW, boxY + boxH - br);
+            ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - br, boxY + boxH);
+            ctx.lineTo(boxX + br, boxY + boxH);
+            ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - br);
+            ctx.lineTo(boxX, boxY + br);
+            ctx.quadraticCurveTo(boxX, boxY, boxX + br, boxY);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = hn.color + "cc";
+            ctx.fillRect(boxX, boxY + br, 3, boxH - br * 2);
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            let dividerDrawn = false;
+            lines.forEach((line, li) => {
+              const ly = boxY + padY + li * lineH + 2;
+              if (line.label) {
+                if (!dividerDrawn) {
+                  dividerDrawn = true;
+                  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+                  ctx.lineWidth = 0.5;
+                  ctx.beginPath();
+                  ctx.moveTo(boxX + 10, ly - 4);
+                  ctx.lineTo(boxX + boxW - 10, ly - 4);
+                  ctx.stroke();
+                }
+                ctx.font = "bold 10px sans-serif";
+                ctx.fillStyle = "#777";
+                ctx.fillText(line.label + ":", boxX + padX + 4, ly + 1);
+                ctx.font = "11px sans-serif";
+                ctx.fillStyle = line.color || "#ddd";
+                ctx.fillText(line.value, boxX + padX + 4 + labelW + gapW, ly);
+              } else {
+                ctx.font = line.bold ? "bold 12px sans-serif" : "11px sans-serif";
+                ctx.fillStyle = line.color || "#fff";
+                ctx.fillText(line.value, boxX + padX + 4, ly);
+              }
+            });
+          }
+        }
+        ctx.restore();
+      }
+      requestAnimationFrame(() => {
+        centerGraph();
+        draw();
+      });
+      const onWheel = (e4) => {
+        e4.preventDefault();
+        const f5 = e4.deltaY < 0 ? 1.1 : 0.9;
+        const wx = (e4.offsetX - st.panX) / st.zoom, wy = (e4.offsetY - st.panY) / st.zoom;
+        st.zoom = Math.max(0.1, Math.min(5, st.zoom * f5));
+        st.panX = e4.offsetX - wx * st.zoom;
+        st.panY = e4.offsetY - wy * st.zoom;
+        draw();
+      };
+      const onMouseDown = (e4) => {
+        st.dragging = true;
+        st.didDrag = false;
+        st.lastMX = e4.offsetX;
+        st.lastMY = e4.offsetY;
+        canvas.style.cursor = "grabbing";
+      };
+      const onMouseMove = (e4) => {
+        if (st.dragging) {
+          st.didDrag = true;
+          st.panX += e4.offsetX - st.lastMX;
+          st.panY += e4.offsetY - st.lastMY;
+          st.lastMX = e4.offsetX;
+          st.lastMY = e4.offsetY;
+          draw();
+          return;
+        }
+        if (!st.playbackPlaying) {
+          const rect = canvas.getBoundingClientRect();
+          const mx = (e4.clientX - rect.left - st.panX) / st.zoom;
+          const my = (e4.clientY - rect.top - st.panY) / st.zoom;
+          let found = null;
+          for (const n3 of nodes) {
+            const r4 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
+            if (dx * dx + dy * dy <= r4 * r4) {
+              found = n3.id;
+              break;
+            }
+          }
+          if (found !== st.hoverNodeId) {
+            st.hoverNodeId = found;
+            canvas.style.cursor = found ? "pointer" : "grab";
+            draw();
+          }
+        }
+      };
+      const onMouseUp = () => {
+        st.dragging = false;
+        canvas.style.cursor = "grab";
+      };
+      const onMouseLeave = () => {
+        st.dragging = false;
+        st.hoverNodeId = null;
+        canvas.style.cursor = "grab";
+        draw();
+      };
+      const onClick = (e4) => {
+        if (st.didDrag) return;
+        const rect = canvas.getBoundingClientRect();
+        const mx = (e4.clientX - rect.left - st.panX) / st.zoom;
+        const my = (e4.clientY - rect.top - st.panY) / st.zoom;
+        for (const n3 of nodes) {
+          const r4 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
+          if (dx * dx + dy * dy <= r4 * r4) {
+            st.clickedNodeId = st.clickedNodeId === n3.id ? null : n3.id;
+            draw();
+            return;
+          }
+        }
+        st.clickedNodeId = null;
+        draw();
+      };
+      canvas.addEventListener("wheel", onWheel, { passive: false });
+      canvas.addEventListener("mousedown", onMouseDown);
+      canvas.addEventListener("mousemove", onMouseMove);
+      canvas.addEventListener("mouseup", onMouseUp);
+      canvas.addEventListener("mouseleave", onMouseLeave);
+      canvas.addEventListener("click", onClick);
+      canvas.__flowDraw = draw;
+      canvas.__flowCenter = centerGraph;
+      return () => {
+        if (st.playbackTimer) clearInterval(st.playbackTimer);
+        canvas.removeEventListener("wheel", onWheel);
+        canvas.removeEventListener("mousedown", onMouseDown);
+        canvas.removeEventListener("mousemove", onMouseMove);
+        canvas.removeEventListener("mouseup", onMouseUp);
+        canvas.removeEventListener("mouseleave", onMouseLeave);
+        canvas.removeEventListener("click", onClick);
+      };
+    }, [sess.sessionId, sessionTimelines.value[sess.sessionId]]);
+    function handleZoomIn() {
+      const c4 = canvasRef.current;
+      if (!c4) return;
+      stateRef.current.zoom = Math.min(5, stateRef.current.zoom * 1.3);
+      c4.__flowDraw?.();
+    }
+    function handleZoomOut() {
+      const c4 = canvasRef.current;
+      if (!c4) return;
+      stateRef.current.zoom = Math.max(0.1, stateRef.current.zoom / 1.3);
+      c4.__flowDraw?.();
+    }
+    function handleReset() {
+      const c4 = canvasRef.current;
+      if (!c4) return;
+      c4.__flowCenter?.();
+      c4.__flowDraw?.();
+    }
+    function handlePlayPause() {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const st = stateRef.current;
+      const draw = canvas.__flowDraw;
+      if (!draw) return;
+      const prog = document.getElementById(progressId);
+      if (st.playbackPlaying) {
+        if (st.playbackTimer) clearInterval(st.playbackTimer);
+        st.playbackTimer = null;
+        st.playbackPlaying = false;
+        st.clickedNodeId = null;
+        setIsPlaying(false);
+        if (prog) prog.textContent = "";
+        draw();
+        return;
+      }
+      if (st.playbackTurns.length === 0) return;
+      st.playbackPlaying = true;
+      setIsPlaying(true);
+      st.playbackIdx = 0;
+      st.clickedNodeId = st.nodes[st.playbackTurns[0]]?.id ?? null;
+      if (prog) prog.textContent = "1 / " + st.playbackTurns.length;
+      draw();
+      st.playbackTimer = setInterval(() => {
+        if (st.playbackIdx >= st.playbackTurns.length - 1) {
+          clearInterval(st.playbackTimer);
+          st.playbackTimer = null;
+          st.playbackPlaying = false;
+          st.clickedNodeId = null;
+          setIsPlayingRef.current(false);
+          if (prog) prog.textContent = "";
+          draw();
+          return;
+        }
+        st.playbackIdx++;
+        st.clickedNodeId = st.nodes[st.playbackTurns[st.playbackIdx]]?.id ?? null;
+        if (prog) prog.textContent = st.playbackIdx + 1 + " / " + st.playbackTurns.length;
+        draw();
+      }, speedRef.current);
+    }
+    return /* @__PURE__ */ u4("div", { children: [
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:6px", children: [
+        /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleZoomIn, children: "+" }),
+        /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleZoomOut, children: "\u2212" }),
+        /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleReset, children: "Reset" }),
+        /* @__PURE__ */ u4("span", { style: "width:1px;height:16px;background:var(--border);margin:0 2px" }),
+        /* @__PURE__ */ u4("button", { class: "flow-btn", title: "Animate turn sequence", onClick: handlePlayPause, children: isPlaying ? "\u23F8" : "\u25B6" }),
+        /* @__PURE__ */ u4(
+          "select",
+          {
+            class: "toolbar-select",
+            onChange: (e4) => {
+              speedRef.current = parseInt(e4.target.value) || 800;
+            },
+            children: [
+              /* @__PURE__ */ u4("option", { value: "2000", children: "Slow" }),
+              /* @__PURE__ */ u4("option", { value: "800", selected: true, children: "Normal" }),
+              /* @__PURE__ */ u4("option", { value: "300", children: "Fast" })
+            ]
+          }
+        ),
+        /* @__PURE__ */ u4("span", { id: progressId, style: "font-size:10px;color:var(--muted)" })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted);flex-wrap:wrap;align-items:center", children: [
+        [
+          { color: LLM_COLOR, label: "LLM turn" },
+          { color: TOOL_COLOR, label: "Tool" },
+          { color: ERR_COLOR, label: "Error" }
+        ].map(({ color, label }) => /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px", children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:9px;height:9px;border-radius:50%;background:" + color + "30;border:1.5px solid " + color }),
+          label
+        ] }, label)),
+        /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "Edge thickness = call freq" })
+      ] }),
+      /* @__PURE__ */ u4(
+        "canvas",
+        {
+          ref: canvasRef,
+          style: `width:100%;height:${height}px;display:block;border:1px solid var(--border);border-radius:4px;cursor:grab`
+        }
+      )
+    ] });
+  }
+
+  // media/src/tabs/Tools.tsx
+  function ToolsChart({ sessions }) {
+    const counts = {};
+    const toolAgents = {};
+    sessions.forEach((sess) => {
+      Object.entries(sess.toolCounts ?? {}).forEach(([tool, count]) => {
+        counts[tool] = (counts[tool] ?? 0) + count;
+        if (!toolAgents[tool]) toolAgents[tool] = {};
+        toolAgents[tool][sess.source] = true;
+      });
+    });
+    const entries = Object.entries(counts).sort((a4, b4) => b4[1] - a4[1]);
+    if (entries.length === 0) {
+      return /* @__PURE__ */ u4("div", { class: "empty-state", children: "No tool calls recorded for this session" });
+    }
+    const total = entries.reduce((sum, e4) => sum + e4[1], 0);
+    const r4 = 70, cx = 85, cy = 85, sw = 26;
+    const angleOffset = -Math.PI / 2;
+    let currentAngle = angleOffset;
+    function arcPath(startAngle, endAngle) {
+      const x1 = cx + r4 * Math.cos(startAngle), y1 = cy + r4 * Math.sin(startAngle);
+      const x22 = cx + r4 * Math.cos(endAngle), y22 = cy + r4 * Math.sin(endAngle);
+      const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+      return `M ${x1} ${y1} A ${r4} ${r4} 0 ${largeArc} 1 ${x22} ${y22}`;
+    }
+    const slices = entries.map((e4, i4) => {
+      const pct = e4[1] / total;
+      const sliceAngle = pct * 2 * Math.PI;
+      const color = COLORS[i4 % COLORS.length];
+      const startA = currentAngle;
+      currentAngle += sliceAngle;
+      return { name: e4[0], count: e4[1], pct, color, startA, endA: currentAngle };
+    });
+    return /* @__PURE__ */ u4("div", { children: [
+      /* @__PURE__ */ u4("div", { class: "donut-container", children: [
+        /* @__PURE__ */ u4("svg", { width: "170", height: "170", viewBox: "0 0 170 170", children: [
+          slices.map(
+            (sl) => sl.pct >= 1 ? /* @__PURE__ */ u4("circle", { cx, cy, r: r4, fill: "none", stroke: sl.color, "stroke-width": sw }, sl.name) : /* @__PURE__ */ u4("path", { d: arcPath(sl.startA, sl.endA), fill: "none", stroke: sl.color, "stroke-width": sw, "stroke-linecap": "butt" }, sl.name)
+          ),
+          /* @__PURE__ */ u4("text", { x: cx, y: cy, "text-anchor": "middle", dy: "4", "font-size": "16", "font-weight": "bold", fill: "var(--fg)", children: total }),
+          /* @__PURE__ */ u4("text", { x: cx, y: cy + 14, "text-anchor": "middle", "font-size": "9", fill: "var(--muted)", opacity: "0.7", children: "total" })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "donut-legend", children: slices.map((sl) => /* @__PURE__ */ u4("div", { class: "donut-legend-item", children: [
+          /* @__PURE__ */ u4("div", { class: "donut-legend-color", style: "background:" + sl.color }),
+          /* @__PURE__ */ u4("span", { children: [
+            sl.name,
+            " (",
+            sl.count,
+            ", ",
+            (sl.pct * 100).toFixed(1),
+            "%)"
+          ] })
+        ] }, sl.name)) })
+      ] }),
+      /* @__PURE__ */ u4("table", { class: "tool-insights-table", style: "margin-top:16px", children: [
+        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
+          /* @__PURE__ */ u4("th", { children: "Tool" }),
+          /* @__PURE__ */ u4("th", { children: "Calls" }),
+          /* @__PURE__ */ u4("th", { children: "%" }),
+          /* @__PURE__ */ u4("th", { children: "Agents" })
+        ] }) }),
+        /* @__PURE__ */ u4("tbody", { children: entries.map(([name, callCount]) => {
+          const agents = toolAgents[name] ? Object.keys(toolAgents[name]) : [];
+          return /* @__PURE__ */ u4("tr", { children: [
+            /* @__PURE__ */ u4("td", { children: name }),
+            /* @__PURE__ */ u4("td", { class: "right", children: callCount }),
+            /* @__PURE__ */ u4("td", { class: "right", children: [
+              (callCount / total * 100).toFixed(1),
+              "%"
+            ] }),
+            /* @__PURE__ */ u4("td", { children: agents.map((a4) => /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + getAgentColor(a4) + ";vertical-align:middle;margin-right:4px", title: getAgentSourceLabel(a4) }, a4)) })
+          ] }, name);
+        }) }),
+        /* @__PURE__ */ u4("tfoot", { children: /* @__PURE__ */ u4("tr", { children: [
+          /* @__PURE__ */ u4("td", { children: /* @__PURE__ */ u4("strong", { children: "Total" }) }),
+          /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: total }) }),
+          /* @__PURE__ */ u4("td", {}),
+          /* @__PURE__ */ u4("td", {})
+        ] }) })
+      ] })
+    ] });
+  }
+
+  // media/src/tabs/Sessions.tsx
+  function SessionDetail({ sess }) {
+    const [section, setSection] = d2("overview");
+    const timelines = sessionTimelines.value;
+    const timeline = timelines[sess.sessionId] ?? sess.timeline ?? [];
+    const cost = calcSessionCost(sess, "token");
+    const cacheRate = sess.inputTokens > 0 ? Math.round(sess.cacheReadTokens / sess.inputTokens * 100) : 0;
+    const burnRate = burnRateData.value;
+    if (!timelines[sess.sessionId] && vscode) {
+      vscode.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
+    }
+    const ignored = ignoredInsightKeys.value;
+    const summary = buildDisplaySummary([sess]);
+    const sessInsights = generateInsights(summary, [sess]).filter((i4) => !ignored.has(i4.title));
+    const visibleEntries = timeline.filter((e4) => e4.type !== "background");
+    const sessionStartMs = sess.startTime ? new Date(sess.startTime).getTime() : 0;
+    let sessionDur = sess.durationMs || 1;
+    const steps = visibleEntries.map((entry) => {
+      const entryStart = entry.timestamp ? new Date(entry.timestamp).getTime() : 0;
+      const offset = sessionStartMs > 0 && entryStart > 0 ? entryStart - sessionStartMs : 0;
+      return { entry, offsetMs: Math.max(offset, 0), durationMs: entry.durationMs || 0 };
+    });
+    if (steps.length > 0) {
+      const maxEnd = Math.max(...steps.map((s4) => s4.offsetMs + s4.durationMs));
+      if (maxEnd > sessionDur) sessionDur = maxEnd;
+    }
+    if (sessionDur <= 0) sessionDur = 1;
+    const navBtn = (s4, label) => /* @__PURE__ */ u4(
+      "button",
+      {
+        onClick: (e4) => {
+          e4.stopPropagation();
+          setSection(s4);
+        },
+        style: [
+          "padding:3px 10px;font-size:11px;cursor:pointer;border:none;border-bottom:2px solid transparent;background:transparent;",
+          section === s4 ? "color:var(--fg);border-bottom-color:var(--accent);font-weight:600" : "color:var(--muted)"
+        ].join(""),
+        children: label
+      }
+    );
+    return /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border)", onClick: (e4) => e4.stopPropagation(), children: [
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:0;padding:0 8px;border-bottom:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));overflow-x:auto", children: [
+        navBtn("overview", "Overview"),
+        navBtn("trace", `Trace${visibleEntries.length > 0 ? " (" + visibleEntries.length + ")" : ""}`),
+        navBtn("flow", "Flow"),
+        navBtn("tools", "Tools"),
+        navBtn("files", `Files${sess.filesChanged.length > 0 ? " (" + sess.filesChanged.length + ")" : ""}`)
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "padding:12px 14px", children: [
+        section === "overview" && /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("div", { style: "display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:10px", children: [
+            { k: "LLM calls", v: String(sess.totalLlmCalls) },
+            { k: "Tool calls", v: String(sess.totalToolCalls) },
+            { k: "Input tokens", v: formatCompact(sess.inputTokens) },
+            { k: "Output tokens", v: formatCompact(sess.outputTokens) },
+            { k: "Cache hit", v: cacheRate + "%" },
+            { k: "Duration", v: formatMs(sess.durationMs) },
+            ...sess.errors > 0 ? [{ k: "Errors", v: String(sess.errors) }] : [],
+            ...!cost.modelUnknown && cost.totalUsd > 0 ? [{ k: "Est. cost", v: fmtUsd2(cost.totalUsd) }] : []
+          ].map(({ k: k3, v: v4 }) => /* @__PURE__ */ u4("div", { style: "background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:5px 8px", children: [
+            /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px", children: k3 }),
+            /* @__PURE__ */ u4("div", { style: "font-size:14px;font-weight:600;color:var(--vscode-textLink-foreground,#4fc3f7)", children: v4 })
+          ] }, k3)) }),
+          burnRate && burnRate.sessionId === sess.sessionId && /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;padding:6px 10px;border-radius:4px;border-left:3px solid #56D364;background:var(--hover);font-size:11px", children: [
+            /* @__PURE__ */ u4("span", { style: "color:#56D364;font-weight:600", children: [
+              formatCompact(Math.round(burnRate.burnRate.tokensPerMinute)),
+              " tok/min"
+            ] }),
+            burnRate.burnRate.costPerHour > 1e-3 && /* @__PURE__ */ u4("span", { style: "color:var(--muted);margin-left:8px", children: [
+              "~",
+              fmtUsd2(burnRate.burnRate.costPerHour),
+              "/hr"
+            ] }),
+            burnRate.projection && /* @__PURE__ */ u4("span", { style: "color:var(--muted);margin-left:8px", children: [
+              burnRate.projection.contextFillPct.toFixed(0),
+              "% context used"
+            ] })
+          ] }),
+          sessInsights.length > 0 && /* @__PURE__ */ u4("div", { children: [
+            /* @__PURE__ */ u4("div", { style: "font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:6px", children: "Insights" }),
+            sessInsights.slice(0, 4).map((ins) => /* @__PURE__ */ u4("div", { style: "margin-bottom:5px;padding:6px 10px;background:var(--hover);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;font-size:11px", children: [
+              /* @__PURE__ */ u4("div", { style: "font-weight:600;margin-bottom:1px", children: ins.title.replace(/^\[Session \d+\]\s*/, "") }),
+              /* @__PURE__ */ u4("div", { style: "color:var(--muted);font-size:10px", children: ins.action })
+            ] }, ins.title))
+          ] })
+        ] }),
+        section === "trace" && /* @__PURE__ */ u4("div", { children: steps.length === 0 ? timelines[sess.sessionId] !== void 0 ? /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:12px 0", children: "No trace data for this session" }) : /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:12px 0", children: "Loading\u2026" }) : /* @__PURE__ */ u4("div", { class: "waterfall", children: [
+          /* @__PURE__ */ u4("div", { class: "wf-time-ruler", children: Array.from({ length: 6 }, (_4, t4) => /* @__PURE__ */ u4("span", { children: formatMs(sessionDur * t4 / 5) }, t4)) }),
+          steps.map((step, si) => /* @__PURE__ */ u4(
+            StepRow,
+            {
+              step,
+              idx: si,
+              sessIdx: 0,
+              sessionDur,
+              sessionModel: sess.model ?? ""
+            },
+            step.entry.spanId + si
+          ))
+        ] }) }),
+        section === "flow" && /* @__PURE__ */ u4(FlowCanvas, { sess, height: 420 }),
+        section === "tools" && /* @__PURE__ */ u4(ToolsChart, { sessions: [sess] }),
+        section === "files" && /* @__PURE__ */ u4("div", { children: sess.filesChanged.length === 0 ? /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:12px 0", children: "No files modified" }) : /* @__PURE__ */ u4("div", { style: "display:flex;flex-direction:column;gap:3px", children: [
+          sess.filesChanged.map((f5) => /* @__PURE__ */ u4(
+            "div",
+            {
+              style: `display:flex;align-items:center;gap:8px;padding:4px 8px;background:var(--hover);border-radius:4px;font-size:11px${vscode ? ";cursor:pointer" : ""}`,
+              onClick: () => vscode?.postMessage({ type: "openFile", filePath: f5 }),
+              title: vscode ? "Click to open in editor" : f5,
+              children: [
+                /* @__PURE__ */ u4("span", { style: "color:var(--vscode-charts-green,#81c784);font-size:10px;flex-shrink:0", children: "M" }),
+                /* @__PURE__ */ u4("span", { style: `font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap${vscode ? ";color:var(--vscode-textLink-foreground,#4fc3f7)" : ""}`, children: f5 })
+              ]
+            },
+            f5
+          )),
+          sess.filesChangedNote && /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-top:3px", children: sess.filesChangedNote })
+        ] }) })
+      ] })
+    ] });
+  }
+  function SessionRow({ sess }) {
+    const [expanded, setExpanded] = d2(false);
+    const isFocused = focusedSessionId.value === sess.sessionId;
+    const cost = calcSessionCost(sess, "token");
+    const color = getAgentColor(sess.source);
+    const prompt = sess.userRequest ?? "";
+    function toggle() {
+      const next = !expanded;
+      setExpanded(next);
+      focusedSessionId.value = next ? sess.sessionId : null;
+    }
+    const rowBg = isFocused ? "var(--hover)" : "transparent";
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4(
+        "tr",
+        {
+          onClick: toggle,
+          style: `cursor:pointer;background:${rowBg};border-bottom:1px solid var(--vscode-panel-border)`,
+          children: [
+            /* @__PURE__ */ u4("td", { style: "padding:4px 4px 4px 8px;width:16px;color:var(--muted);font-size:9px;white-space:nowrap", children: expanded ? "\u25BC" : "\u25B6" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 4px;width:10px", children: /* @__PURE__ */ u4("span", { style: `display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0` }) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums", children: formatSessionTime(sess) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 6px;max-width:0;width:100%", children: /* @__PURE__ */ u4(
+              "span",
+              {
+                style: "display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)",
+                title: prompt,
+                children: prompt || /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2014" })
+              }
+            ) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis", children: sess.model || "\u2014" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 6px;text-align:right;white-space:nowrap;font-size:10px;color:var(--muted)", children: formatCompact(sess.inputTokens + sess.outputTokens) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 6px;text-align:right;white-space:nowrap;font-size:10px;color:var(--muted)", children: formatMs(sess.durationMs) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 6px;text-align:right;white-space:nowrap;font-size:10px", children: !cost.modelUnknown && cost.totalUsd > 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--vscode-charts-green,#81c784)", children: fmtUsd2(cost.totalUsd) }) : sess.errors > 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--error)", children: [
+              sess.errors,
+              " err"
+            ] }) : /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2014" }) })
+          ]
+        }
+      ),
+      expanded && /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border)", children: /* @__PURE__ */ u4("td", { colspan: 8, style: "padding:0", children: /* @__PURE__ */ u4(SessionDetail, { sess }) }) })
+    ] });
+  }
+  function Sessions() {
+    const sessions = filteredSessions.value;
+    const hasAny = (sessionSummary.value?.sessions?.length ?? 0) > 0;
+    if (sessions.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "sessions-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: hasAny ? "No sessions match the active filters." : "No sessions recorded yet." }) });
+    }
+    return /* @__PURE__ */ u4("div", { id: "sessions-content", style: "overflow-x:auto", children: [
+      /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
+        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border)", children: [
+          /* @__PURE__ */ u4("th", { style: "width:16px;padding:3px 4px 3px 8px" }),
+          /* @__PURE__ */ u4("th", { style: "width:10px;padding:3px 4px" }),
+          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:left;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Time" }),
+          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:left;font-size:10px;font-weight:500;color:var(--muted)", children: "Prompt" }),
+          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:left;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Model" }),
+          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:right;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Tokens" }),
+          /* @__PURE__ */ u4("th", { style: "padding:3px 6px;text-align:right;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Duration" }),
+          /* @__PURE__ */ u4("th", { style: "padding:3px 8px 3px 6px;text-align:right;font-size:10px;font-weight:500;color:var(--muted);white-space:nowrap", children: "Cost" })
+        ] }) }),
+        /* @__PURE__ */ u4("tbody", { children: sessions.map((sess) => /* @__PURE__ */ u4(SessionRow, { sess }, sess.sessionId)) })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);padding:6px 8px", children: [
+        sessions.length,
+        " session",
+        sessions.length !== 1 ? "s" : ""
+      ] })
+    ] });
+  }
+
+  // media/src/tabs/Efficiency.tsx
+  function TurnsLink() {
+    return /* @__PURE__ */ u4(
+      "span",
+      {
+        onClick: () => goToHelp("gl-turn"),
+        style: "cursor:pointer;border-bottom:1px dotted currentColor",
+        title: "View 'Turn' definition in glossary",
+        children: "Turns"
+      }
+    );
+  }
+  var growthStateRef = { current: null };
+  function ContextGrowthChart({ sessions, timelines }) {
+    const canvasRef = A2(null);
+    const focusedId = focusedSessionId.value;
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const seriesData = [];
+      sessions.forEach((sess) => {
+        const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+        if (llmEntries.length < 1) return;
+        seriesData.push({
+          sessionId: sess.sessionId,
+          label: formatSessionTimeShort(sess),
+          color: getAgentColor(sess.source) || COLORS[seriesData.length % COLORS.length],
+          focused: focusedId === sess.sessionId,
+          points: llmEntries.map((e4, i4) => ({ turn: i4 + 1, tokens: e4.inputTokens ?? 0 }))
+        });
+      });
+      if (seriesData.length === 0) {
+        canvas.style.display = "none";
+        growthStateRef.current = null;
+        return;
+      }
+      canvas.style.display = "block";
+      const maxTurns = Math.max(...seriesData.map((s4) => s4.points.length), 2);
+      const allTokens = seriesData.flatMap((s4) => s4.points.map((p5) => p5.tokens));
+      const rawMin = Math.min(...allTokens), rawMax = Math.max(...allTokens);
+      const spread = rawMax - rawMin || rawMax * 0.1 || 1;
+      const yMin = Math.max(0, rawMin - spread * 0.1);
+      const yMax = rawMax + spread * 0.1;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w5 = rect.width, h5 = rect.height;
+      ctx.clearRect(0, 0, w5, h5);
+      const pad = { top: 8, right: 80, bottom: 22, left: 56 };
+      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
+      const xPos = (turn) => pad.left + (turn - 1) / Math.max(maxTurns - 1, 1) * chartW;
+      const yPos = (tok) => pad.top + chartH - (tok - yMin) / (yMax - yMin) * chartH;
+      growthStateRef.current = { series: seriesData, xPos, yPos, chartH, pad };
+      const cs = getComputedStyle(document.body);
+      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
+      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
+      const fontStr = "9px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 0.5;
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const y5 = pad.top + chartH * i4 / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y5);
+        ctx.lineTo(pad.left + chartW, y5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = textColor;
+      ctx.font = fontStr;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = yMax - (yMax - yMin) * i4 / 4;
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
+      }
+      const xStep = maxTurns <= 10 ? 1 : maxTurns <= 30 ? 5 : maxTurns <= 100 ? 10 : 20;
+      ctx.fillStyle = textColor;
+      ctx.font = fontStr;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      for (let t4 = 1; t4 <= maxTurns; t4 += xStep) {
+        const x4 = xPos(t4);
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x4, pad.top);
+        ctx.lineTo(x4, pad.top + chartH);
+        ctx.stroke();
+        ctx.fillText("T" + t4, x4, pad.top + chartH + 4);
+      }
+      if (maxTurns > 1 && (maxTurns - 1) % xStep !== 0) {
+        ctx.fillText("T" + maxTurns, xPos(maxTurns), pad.top + chartH + 4);
+      }
+      const sorted = [...seriesData].sort((a4, b4) => (a4.focused ? 1 : 0) - (b4.focused ? 1 : 0));
+      sorted.forEach((series) => {
+        const alpha = focusedId && !series.focused ? "30" : "";
+        ctx.strokeStyle = series.color + alpha;
+        ctx.lineWidth = series.focused ? 2.5 : 1.5;
+        ctx.beginPath();
+        series.points.forEach(({ turn, tokens }, j4) => {
+          const x4 = xPos(turn), y5 = yPos(tokens);
+          j4 === 0 ? ctx.moveTo(x4, y5) : ctx.lineTo(x4, y5);
+        });
+        ctx.stroke();
+        const last = series.points[series.points.length - 1];
+        if (last) {
+          const lx = xPos(last.turn) + 4, ly = yPos(last.tokens);
+          ctx.fillStyle = series.color + (alpha || "cc");
+          ctx.font = "8px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          ctx.fillText(series.label, lx, ly);
+        }
+      });
+    });
+    function handleCanvasClick(e4) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const state = growthStateRef.current;
+      if (!state || !state.series.length) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e4.clientX - rect.left, my = e4.clientY - rect.top;
+      let bestDist = 20, bestId = "";
+      state.series.forEach((s4) => {
+        s4.points.forEach(({ turn, tokens }) => {
+          const dx = mx - state.xPos(turn), dy = my - state.yPos(tokens);
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestId = s4.sessionId;
+          }
+        });
+      });
+      if (bestId) focusedSessionId.value = focusedSessionId.peek() === bestId ? null : bestId;
+    }
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4(
+        "canvas",
+        {
+          ref: canvasRef,
+          id: "context-growth-chart",
+          style: "width:100%;height:200px;display:block;cursor:pointer",
+          onClick: handleCanvasClick,
+          title: "Click a line to select that session"
+        }
+      ),
+      /* @__PURE__ */ u4("div", { style: "text-align:center;font-size:9px;color:var(--muted);margin-top:2px", children: /* @__PURE__ */ u4(TurnsLink, {}) })
+    ] });
+  }
+  function SessionTokenChart({ sessions }) {
+    const canvasRef = A2(null);
+    y2(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const sessionData = [...sessions].reverse().map((sess) => {
+        const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0;
+        return input + output > 0 ? { startTime: sess.startTime, input, output, source: sess.source } : null;
+      }).filter(Boolean);
+      if (sessionData.length === 0) {
+        canvas.style.display = "none";
+        return;
+      }
+      canvas.style.display = "block";
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      const w5 = rect.width, h5 = rect.height;
+      ctx.clearRect(0, 0, w5, h5);
+      const pad = { top: 8, right: 44, bottom: 14, left: 44 };
+      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
+      const maxIn = Math.max(...sessionData.map((s4) => s4.input)) || 1;
+      const maxOut = Math.max(...sessionData.map((s4) => s4.output)) || 1;
+      const cs = getComputedStyle(document.body);
+      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
+      const fontStr = "9px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 0.5;
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const y5 = pad.top + chartH * i4 / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y5);
+        ctx.lineTo(pad.left + chartW, y5);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#FFB74D";
+      ctx.font = fontStr;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxIn * (4 - i4) / 4;
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
+      }
+      ctx.fillStyle = "#81C784";
+      ctx.textAlign = "left";
+      for (let i4 = 0; i4 <= 4; i4++) {
+        const val = maxOut * (4 - i4) / 4;
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left + chartW + 4, pad.top + chartH * i4 / 4);
+      }
+      const sl = sessionData.length;
+      const slotW = chartW / Math.max(sl, 1);
+      const barPad = sl > 100 ? 0 : sl > 50 ? 0.2 : sl > 20 ? 0.5 : 1;
+      const halfSlot = slotW / 2;
+      const halfBar = Math.max(0.5, halfSlot - barPad);
+      sessionData.forEach((s4, i4) => {
+        const slotX = pad.left + i4 * slotW;
+        const inH = s4.input / maxIn * chartH;
+        ctx.fillStyle = "#FFB74D";
+        ctx.fillRect(slotX + barPad, pad.top + chartH - inH, halfBar, inH);
+        const outH = s4.output / maxOut * chartH;
+        ctx.fillStyle = "#81C784";
+        ctx.fillRect(slotX + halfSlot, pad.top + chartH - outH, halfBar, outH);
+        ctx.beginPath();
+        ctx.arc(slotX + slotW / 2, pad.top + chartH + 7, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = getAgentColor(s4.source);
+        ctx.fill();
+      });
+    });
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:160px;display:block" }),
+      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 older \xB7 sessions \xB7 newer \u2192" })
+    ] });
+  }
+
+  // media/src/tabs/Agents.tsx
+  function computeStats(sessions) {
+    let totalInput = 0, totalOutput = 0, totalCache = 0;
+    let totalLlm = 0, totalTools = 0, ttftSum = 0, ttftCount = 0, durSum = 0;
+    const toolCounts = {};
+    sessions.forEach((s4) => {
+      totalInput += s4.inputTokens ?? 0;
+      totalOutput += s4.outputTokens ?? 0;
+      totalCache += (s4.cacheReadTokens ?? 0) + (s4.cacheCreateTokens ?? 0);
+      totalLlm += s4.totalLlmCalls ?? 0;
+      totalTools += s4.totalToolCalls ?? 0;
+      durSum += s4.durationMs ?? 0;
+      Object.keys(s4.toolCounts ?? {}).forEach((t4) => {
+        toolCounts[t4] = (toolCounts[t4] ?? 0) + s4.toolCounts[t4];
+      });
+      (s4.timeline ?? []).forEach((e4) => {
+        if (e4.type === "llm" && e4.ttft) {
+          ttftSum += e4.ttft;
+          ttftCount++;
+        }
+      });
+    });
+    return {
+      sessions: sessions.length,
+      totalInput,
+      totalOutput,
+      totalCache,
+      totalLlm,
+      totalTools,
+      avgTtft: ttftCount > 0 ? Math.round(ttftSum / ttftCount) : 0,
+      avgDuration: sessions.length > 0 ? Math.round(durSum / sessions.length) : 0,
+      cacheHitRate: totalInput > 0 ? totalCache / totalInput : 0,
+      toolCounts
+    };
+  }
+
+  // media/src/tabs/Analytics.tsx
+  function SectionHead({ title, tip }) {
+    return /* @__PURE__ */ u4(
+      "h3",
+      {
+        class: tip ? "has-metric-tip" : void 0,
+        style: "margin:16px 0 6px;font-size:12px;color:var(--muted)",
+        "data-tip": tip,
+        children: title
+      }
+    );
+  }
+  function AgentCard({ source, sessions }) {
+    const s4 = computeStats(sessions);
+    if (s4.sessions === 0) return null;
+    const color = getAgentColor(source);
+    const label = getAgentSourceLabel(source);
+    const topTools = Object.entries(s4.toolCounts).sort((a4, b4) => b4[1] - a4[1]).slice(0, 4);
+    return /* @__PURE__ */ u4("div", { style: `background:var(--card-bg);border:1px solid var(--border);border-left:3px solid ${color};border-radius:6px;padding:12px 14px;flex:1;min-width:180px`, children: [
+      /* @__PURE__ */ u4("div", { style: `display:flex;align-items:center;gap:6px;margin-bottom:10px`, children: [
+        /* @__PURE__ */ u4("span", { style: `display:inline-block;width:8px;height:8px;border-radius:50%;background:${color}` }),
+        /* @__PURE__ */ u4("span", { style: "font-weight:600;font-size:13px", children: label }),
+        /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted);margin-left:auto", children: [
+          s4.sessions,
+          " session",
+          s4.sessions !== 1 ? "s" : ""
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px", children: [
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "LLM calls" }),
+          " ",
+          /* @__PURE__ */ u4("strong", { children: s4.totalLlm })
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "Tool calls" }),
+          " ",
+          /* @__PURE__ */ u4("strong", { children: s4.totalTools })
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "Input tokens" }),
+          " ",
+          /* @__PURE__ */ u4("strong", { children: formatCompact(s4.totalInput) })
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "Output tokens" }),
+          " ",
+          /* @__PURE__ */ u4("strong", { children: formatCompact(s4.totalOutput) })
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "Cache hit" }),
+          " ",
+          /* @__PURE__ */ u4("strong", { children: [
+            (s4.cacheHitRate * 100).toFixed(0),
+            "%"
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "Avg dur" }),
+          " ",
+          /* @__PURE__ */ u4("strong", { children: formatMs(s4.avgDuration) })
+        ] }),
+        s4.avgTtft > 0 && /* @__PURE__ */ u4("div", { children: [
+          /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "Avg TTFT" }),
+          " ",
+          /* @__PURE__ */ u4("strong", { children: formatMs(s4.avgTtft) })
+        ] })
+      ] }),
+      topTools.length > 0 && /* @__PURE__ */ u4("div", { style: "margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--muted)", children: [
+        /* @__PURE__ */ u4("div", { style: "margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px", children: "Top tools" }),
+        topTools.map(([t4, n3]) => /* @__PURE__ */ u4("div", { style: "display:flex;justify-content:space-between;margin-bottom:1px", children: [
+          /* @__PURE__ */ u4("span", { style: "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px", children: t4 }),
+          /* @__PURE__ */ u4("span", { style: "color:var(--fg);margin-left:6px;flex-shrink:0", children: [
+            n3,
+            "\xD7"
+          ] })
+        ] }, t4))
+      ] })
+    ] });
+  }
+  function Analytics() {
+    const [mode, setMode] = d2("token");
+    const sessions = filteredSessions.value;
+    const allFiltered = agentFilteredSessions.value;
+    const timelines = sessionTimelines.value;
+    const hasAny = (sessionSummary.value?.sessions?.length ?? 0) > 0;
+    if (sessions.length === 0) {
+      return /* @__PURE__ */ u4("div", { id: "analytics-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: hasAny ? "No sessions match the active filters." : "No sessions recorded yet." }) });
+    }
+    const pricedSess = sessions.filter((s4) => s4.source === "copilot" || s4.source === "codex" || s4.source === "claude_code");
+    const copilotSess = sessions.filter((s4) => s4.source === "copilot");
+    const claudeSess = sessions.filter((s4) => s4.source === "claude_code");
+    const codexSess = sessions.filter((s4) => s4.source === "codex");
+    const chartSessions = rangedSessions.value.slice().reverse();
+    chartSessions.slice(0, CHART_MAX).forEach((sess) => {
+      if (!sessionTimelines.value[sess.sessionId] && vscode) {
+        vscode.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
+      }
+    });
+    const disclaimer = /* @__PURE__ */ u4("div", { style: "font-size:11px;background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:6px 10px;margin-bottom:8px;color:var(--muted)", children: [
+      "Estimates only \u2014 not your actual bill. Rates last updated: ",
+      PRICING_LAST_UPDATED
+    ] });
+    const dayMap = /* @__PURE__ */ new Map();
+    pricedSess.forEach((sess) => {
+      const day = sess.startTime ? new Date(sess.startTime).toISOString().slice(0, 10) : "unknown";
+      const effMode = sess.source === "codex" || sess.source === "claude_code" ? "token" : mode;
+      const cost = calcSessionCost(sess, effMode).totalUsd;
+      if (!dayMap.has(day)) dayMap.set(day, { input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0, agents: /* @__PURE__ */ new Map() });
+      const de = dayMap.get(day);
+      de.input += sess.inputTokens;
+      de.output += sess.outputTokens;
+      de.cacheCreate += sess.cacheCreateTokens ?? 0;
+      de.cacheRead += sess.cacheReadTokens;
+      de.cost += cost;
+      if (!de.agents.has(sess.source)) de.agents.set(sess.source, { source: sess.source, input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0, models: /* @__PURE__ */ new Set() });
+      const ae = de.agents.get(sess.source);
+      ae.input += sess.inputTokens;
+      ae.output += sess.outputTokens;
+      ae.cacheCreate += sess.cacheCreateTokens ?? 0;
+      ae.cacheRead += sess.cacheReadTokens;
+      ae.cost += cost;
+      if (sess.model) ae.models.add(sess.model);
+    });
+    const dayRows = [...dayMap.entries()].sort((a4, b4) => a4[0].localeCompare(b4[0]));
+    const grand = dayRows.reduce((g4, [, d5]) => ({
+      input: g4.input + d5.input,
+      output: g4.output + d5.output,
+      cacheCreate: g4.cacheCreate + d5.cacheCreate,
+      cacheRead: g4.cacheRead + d5.cacheRead,
+      cost: g4.cost + d5.cost
+    }), { input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0 });
+    const fmtN = (n3) => n3.toLocaleString();
+    return /* @__PURE__ */ u4("div", { id: "analytics-content", children: [
+      (copilotSess.length > 0 || claudeSess.length > 0 || codexSess.length > 0) && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4(SectionHead, { title: "AGENT BREAKDOWN" }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;flex-wrap:wrap", children: [
+          copilotSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "copilot", sessions: copilotSess }),
+          claudeSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "claude_code", sessions: claudeSess }),
+          codexSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "codex", sessions: codexSess })
+        ] })
+      ] }),
+      pricedSess.length > 0 && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4(SectionHead, { title: "ESTIMATED COST" }),
+        disclaimer,
+        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px", children: [
+          /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px;flex-shrink:0", children: [
+            copilotSess.length > 0 && /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("copilot"), title: "Copilot" }),
+            codexSess.length > 0 && /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("codex"), title: "Codex" }),
+            claudeSess.length > 0 && /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("claude_code"), title: "Claude" }),
+            /* @__PURE__ */ u4("span", { style: mode !== "token" ? "opacity:0.45" : "", children: "token-based" })
+          ] }),
+          copilotSess.length > 0 && /* @__PURE__ */ u4(S, { children: [
+            /* @__PURE__ */ u4("span", { style: "color:var(--border)", children: "\xB7" }),
+            /* @__PURE__ */ u4("span", { style: "font-size:10px;flex-shrink:0", children: "Copilot alt:" }),
+            /* @__PURE__ */ u4(
+              "button",
+              {
+                class: "tab-mini" + (mode === "request-annual" ? " active" : ""),
+                onClick: () => setMode(mode === "request-annual" ? "token" : "request-annual"),
+                children: "Annual (Jun 2026+)"
+              }
+            ),
+            /* @__PURE__ */ u4(
+              "button",
+              {
+                class: "tab-mini" + (mode === "request" ? " active" : ""),
+                onClick: () => setMode(mode === "request" ? "token" : "request"),
+                children: "Request"
+              }
+            )
+          ] })
+        ] }),
+        /* @__PURE__ */ u4(CostBarChart, { sessions: pricedSess.slice().reverse(), mode }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);margin-top:3px;margin-bottom:12px", children: [
+          /* @__PURE__ */ u4("svg", { width: "16", height: "8", viewBox: "0 0 16 8", children: /* @__PURE__ */ u4("line", { x1: "0", y1: "4", x2: "16", y2: "4", stroke: "rgba(186,104,200,0.9)", "stroke-width": "1.5", "stroke-dasharray": "4 2" }) }),
+          "Daily total (right axis)"
+        ] }),
+        dayRows.length > 0 && /* @__PURE__ */ u4("div", { style: "overflow-x:auto;margin-bottom:8px", children: /* @__PURE__ */ u4("table", { style: "border-collapse:collapse;font-size:10px;min-width:100%;white-space:nowrap", children: [
+          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: ["Date", "Agent", "Model", "Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].map((h5) => /* @__PURE__ */ u4("th", { style: `padding:3px 8px 3px ${h5 === "Date" ? "0" : "6px"};color:var(--muted);font-weight:500;text-align:${["Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].includes(h5) ? "right" : "left"}`, children: h5 }, h5)) }) }),
+          /* @__PURE__ */ u4("tbody", { children: dayRows.map(([day, d5]) => {
+            const agents = [...d5.agents.entries()].sort((a4, b4) => b4[1].cost - a4[1].cost);
+            const dayTotal = d5.input + d5.output + d5.cacheCreate + d5.cacheRead;
+            return /* @__PURE__ */ u4(S, { children: [
+              /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border);background:var(--hover)", children: [
+                /* @__PURE__ */ u4("td", { style: "padding:3px 8px 3px 0;font-weight:600", children: day }),
+                /* @__PURE__ */ u4("td", { style: "padding:3px 8px;color:var(--muted)", children: "All" }),
+                /* @__PURE__ */ u4("td", { style: "padding:3px 8px" }),
+                /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums", children: fmtN(d5.input) }),
+                /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums", children: fmtN(d5.output) }),
+                /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums", children: fmtN(d5.cacheCreate) }),
+                /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums", children: fmtN(d5.cacheRead) }),
+                /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-variant-numeric:tabular-nums", children: fmtN(dayTotal) }),
+                /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--vscode-charts-green,#81c784);font-weight:600", children: fmtUsd2(d5.cost) })
+              ] }, day),
+              agents.map(([src, ae]) => {
+                const agentTotal = ae.input + ae.output + ae.cacheCreate + ae.cacheRead;
+                const modelList = [...ae.models].join(", ") || "\u2014";
+                return /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px 3px 0" }),
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px", children: [
+                    /* @__PURE__ */ u4("span", { style: "display:inline-block;width:5px;height:5px;border-radius:50%;background:" + getAgentColor(src) + ";vertical-align:middle;margin-right:4px" }),
+                    getAgentSourceLabel(src)
+                  ] }),
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px;color:var(--muted);font-family:monospace;font-size:9px", children: modelList }),
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: fmtN(ae.input) }),
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: fmtN(ae.output) }),
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: fmtN(ae.cacheCreate) }),
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: fmtN(ae.cacheRead) }),
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: fmtN(agentTotal) }),
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--vscode-charts-green,#81c784)", children: fmtUsd2(ae.cost) })
+                ] }, day + src);
+              })
+            ] });
+          }) }),
+          /* @__PURE__ */ u4("tfoot", { children: /* @__PURE__ */ u4("tr", { style: "border-top:2px solid var(--border)", children: [
+            /* @__PURE__ */ u4("td", { style: "padding:3px 8px 3px 0;font-weight:600", children: "Total" }),
+            /* @__PURE__ */ u4("td", { style: "padding:3px 8px" }),
+            /* @__PURE__ */ u4("td", { style: "padding:3px 8px" }),
+            /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums", children: fmtN(grand.input) }),
+            /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums", children: fmtN(grand.output) }),
+            /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums", children: fmtN(grand.cacheCreate) }),
+            /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums", children: fmtN(grand.cacheRead) }),
+            /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums", children: fmtN(grand.input + grand.output + grand.cacheCreate + grand.cacheRead) }),
+            /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;font-weight:600;color:var(--vscode-charts-green,#81c784)", children: fmtUsd2(grand.cost) })
+          ] }) })
+        ] }) })
+      ] }),
+      /* @__PURE__ */ u4(SectionHead, { title: "TOKEN USAGE PER SESSION" }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
+        /* @__PURE__ */ u4("span", { children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#FFB74D;border-radius:1px;vertical-align:middle" }),
+          " Input"
+        ] }),
+        /* @__PURE__ */ u4("span", { children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:10px;height:3px;background:#81C784;border-radius:1px;vertical-align:middle" }),
+          " Output"
+        ] })
+      ] }),
+      /* @__PURE__ */ u4(SessionTokenChart, { sessions }),
+      /* @__PURE__ */ u4(
+        SectionHead,
+        {
+          title: "CONTEXT GROWTH",
+          tip: "Input tokens per LLM call by turn number \u2014 how fast the context window fills each session. Each line is one session; steeper = faster growth."
+        }
+      ),
+      /* @__PURE__ */ u4(ContextGrowthChart, { sessions: chartSessions.slice(0, CHART_MAX), timelines })
+    ] });
+  }
+
   // media/src/AgentThresholdValues.tsx
   var DISPLAY_AGENT_ORDER = ["copilot", "claude_code", "codex"];
   function ThresholdShell({ label, children }) {
@@ -2805,12 +4075,6 @@
         return { triggered: false };
     }
   }
-  function computeAlertCount() {
-    const configs = getAlertConfigs();
-    const profiles = getAgentProfiles();
-    const { sessions, efficiency } = buildDisplaySummary();
-    return configs.filter((cfg) => cfg.enabled && evaluateAlert(cfg, sessions, efficiency, profiles).triggered).length;
-  }
   var firedAlertKeys = /* @__PURE__ */ new Set();
   function checkAlerts() {
     const configs = getAlertConfigs();
@@ -2858,7 +4122,7 @@
       config: cfg,
       ...cfg.enabled ? evaluateAlert(cfg, displayed, efficiency, profiles) : { triggered: false }
     }));
-    const triggeredCount = results.filter((r5) => r5.triggered).length;
+    const triggeredCount = results.filter((r4) => r4.triggered).length;
     function updateAgentThreshold(source, metric, value) {
       const next = {
         ...profiles,
@@ -3018,2106 +4282,6 @@
     ] });
   }
 
-  // media/src/tabs/Cost.tsx
-  function fmtUsd2(usd) {
-    if (usd === 0) return "$0.00";
-    if (usd < 1e-3) return "<$0.001";
-    if (usd < 1) return "$" + usd.toFixed(3);
-    return "$" + usd.toFixed(2);
-  }
-  function fmtCredits(credits) {
-    if (credits === 0) return "0";
-    if (credits < 0.1) return "<0.1";
-    return credits.toFixed(1);
-  }
-  function sessionCostMode(session, mode) {
-    return session.source === "codex" || session.source === "claude_code" ? "token" : mode;
-  }
-  function HistoryChart({ rows }) {
-    const [hovered, setHovered] = d2(null);
-    if (rows.length === 0) {
-      return /* @__PURE__ */ u4("div", { class: "empty-state", style: "margin-bottom:16px", children: "No historical data yet \u2014 sessions will appear here as they are recorded." });
-    }
-    const W = 600, H2 = 180;
-    const pad = { top: 12, right: 48, bottom: 28, left: 52 };
-    const chartW = W - pad.left - pad.right;
-    const chartH = H2 - pad.top - pad.bottom;
-    const maxTokens = Math.max(...rows.map((r5) => r5.totalTokens + r5.cacheReadTokens + r5.cacheCreateTokens), 1);
-    const maxCost = Math.max(...rows.map((r5) => r5.costUsd), 1e-3);
-    const barW = Math.max(4, Math.floor(chartW / rows.length) - 2);
-    const gap = Math.max(1, Math.floor((chartW - barW * rows.length) / (rows.length + 1)));
-    const startX = pad.left + gap;
-    const gridLines = [0, 1, 2, 3, 4].map((i4) => ({
-      y: pad.top + chartH * (1 - i4 / 4),
-      label: formatCompact(Math.round(maxTokens * i4 / 4))
-    }));
-    const costPoints = rows.map((r5, i4) => {
-      const cx = startX + i4 * (barW + gap) + barW / 2;
-      const cy = r5.costUsd > 0 ? pad.top + chartH * (1 - r5.costUsd / maxCost) : pad.top + chartH;
-      return `${cx},${cy}`;
-    });
-    const hovRow = hovered !== null ? rows[hovered] : null;
-    return /* @__PURE__ */ u4("div", { style: "position:relative;margin-bottom:8px", children: [
-      /* @__PURE__ */ u4(
-        "svg",
-        {
-          viewBox: `0 0 ${W} ${H2}`,
-          style: "width:100%;height:180px;display:block",
-          onMouseLeave: () => setHovered(null),
-          children: [
-            gridLines.map((gl) => /* @__PURE__ */ u4("g", { children: [
-              /* @__PURE__ */ u4("line", { x1: pad.left, y1: gl.y, x2: W - pad.right, y2: gl.y, stroke: "var(--vscode-panel-border,#333)", "stroke-width": "0.5" }),
-              /* @__PURE__ */ u4("text", { x: pad.left - 4, y: gl.y, "text-anchor": "end", "dominant-baseline": "middle", fill: "var(--vscode-descriptionForeground,#888)", "font-size": "9", children: gl.label })
-            ] }, gl.y)),
-            [0, 1, 2, 3, 4].map((i4) => /* @__PURE__ */ u4("text", { x: W - pad.right + 4, y: pad.top + chartH * (1 - i4 / 4), "text-anchor": "start", "dominant-baseline": "middle", fill: "var(--vscode-descriptionForeground,#888)", "font-size": "9", children: "$" + (maxCost * i4 / 4).toFixed(maxCost < 0.1 ? 3 : 2) }, i4)),
-            rows.map((r5, i4) => {
-              const x4 = startX + i4 * (barW + gap);
-              const inputOnlyH = (r5.totalTokens - r5.outputTokens) / maxTokens * chartH;
-              const cacheReadH = r5.cacheReadTokens / maxTokens * chartH;
-              const cacheCreateH = r5.cacheCreateTokens / maxTokens * chartH;
-              const outputH = r5.outputTokens / maxTokens * chartH;
-              let yBase = pad.top + chartH;
-              const bars = [
-                { fill: "var(--vscode-charts-blue,#4fc3f7)", height: Math.max(0, inputOnlyH) },
-                { fill: "var(--vscode-charts-green,#81c784)", height: Math.max(0, cacheReadH) },
-                { fill: "var(--vscode-charts-yellow,#ffb74d)", height: Math.max(0, cacheCreateH) },
-                { fill: "var(--vscode-charts-red,#e57373)", height: Math.max(0, outputH) }
-              ];
-              return /* @__PURE__ */ u4("g", { onMouseEnter: () => setHovered(i4), style: "cursor:default", children: [
-                bars.map((bar, bi) => {
-                  if (bar.height < 0.5) return null;
-                  yBase -= bar.height;
-                  return /* @__PURE__ */ u4("rect", { x: x4, y: yBase, width: barW, height: bar.height, fill: bar.fill, opacity: hovered === i4 ? 1 : 0.85 }, bi);
-                }),
-                /* @__PURE__ */ u4("text", { x: x4 + barW / 2, y: H2 - pad.bottom + 10, "text-anchor": "middle", fill: "var(--vscode-descriptionForeground,#888)", "font-size": "8", children: r5.day.slice(5) })
-              ] }, i4);
-            }),
-            rows.length > 1 && /* @__PURE__ */ u4(
-              "polyline",
-              {
-                points: costPoints.join(" "),
-                fill: "none",
-                stroke: "var(--vscode-charts-purple,#ba68c8)",
-                "stroke-width": "1.5",
-                "stroke-dasharray": "3 2",
-                opacity: "0.9"
-              }
-            ),
-            rows.map((r5, i4) => {
-              if (r5.costUsd === 0) return null;
-              const cx = startX + i4 * (barW + gap) + barW / 2;
-              const cy = pad.top + chartH * (1 - r5.costUsd / maxCost);
-              return /* @__PURE__ */ u4("circle", { cx, cy, r: "2.5", fill: "var(--vscode-charts-purple,#ba68c8)" }, i4);
-            })
-          ]
-        }
-      ),
-      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;font-size:10px;color:var(--muted);margin-top:2px;flex-wrap:wrap", children: [
-        ["var(--vscode-charts-blue,#4fc3f7)", "Input tok"],
-        ["var(--vscode-charts-green,#81c784)", "Cache read"],
-        ["var(--vscode-charts-yellow,#ffb74d)", "Cache write"],
-        ["var(--vscode-charts-red,#e57373)", "Output tok"],
-        ["var(--vscode-charts-purple,#ba68c8)", "Cost (dashed line)"]
-      ].map(([color, label]) => /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px", children: [
-        /* @__PURE__ */ u4("span", { style: `display:inline-block;width:8px;height:8px;border-radius:2px;background:${color}` }),
-        label
-      ] }, label)) }),
-      hovRow && /* @__PURE__ */ u4("div", { style: "position:absolute;top:4px;right:4px;background:var(--vscode-editorWidget-background,#252526);border:1px solid var(--vscode-panel-border,#333);border-radius:4px;padding:8px 10px;font-size:11px;line-height:1.8;pointer-events:none;z-index:10;min-width:150px", children: [
-        /* @__PURE__ */ u4("div", { style: "font-weight:600;margin-bottom:2px", children: hovRow.day }),
-        /* @__PURE__ */ u4("div", { style: "color:var(--muted)", children: [
-          hovRow.sessionCount,
-          " session",
-          hovRow.sessionCount !== 1 ? "s" : ""
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          "Input: ",
-          /* @__PURE__ */ u4("strong", { children: formatCompact(hovRow.totalTokens) })
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          "Cache read: ",
-          formatCompact(hovRow.cacheReadTokens)
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          "Cache write: ",
-          formatCompact(hovRow.cacheCreateTokens)
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          "Output: ",
-          formatCompact(hovRow.outputTokens)
-        ] }),
-        /* @__PURE__ */ u4("div", { style: "margin-top:4px;color:var(--vscode-charts-purple,#ba68c8)", children: [
-          "Cost: ",
-          /* @__PURE__ */ u4("strong", { children: "$" + hovRow.costUsd.toFixed(3) })
-        ] })
-      ] })
-    ] });
-  }
-  function CostBarChart({ sessions, mode }) {
-    const canvasRef = A2(null);
-    y2(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const data = sessions.map((sess, idx) => {
-        const cost = calcSessionCost(sess, sessionCostMode(sess, mode));
-        return { cost: cost.totalUsd, unknown: cost.modelUnknown, session: getSessionGlobalNumber(sess) || idx + 1, source: sess.source };
-      }).reverse();
-      const maxCost = Math.max(...data.map((d5) => d5.cost), 1e-4);
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const w5 = rect.width, h5 = rect.height;
-      ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 16, bottom: 30, left: 64 };
-      const chartW = w5 - pad.left - pad.right;
-      const chartH = h5 - pad.top - pad.bottom;
-      const cs = getComputedStyle(document.body);
-      const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
-      const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
-      const fontStr = "10px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
-      ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 0.5;
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const y5 = pad.top + chartH * i4 / 4;
-        ctx.beginPath();
-        ctx.moveTo(pad.left, y5);
-        ctx.lineTo(pad.left + chartW, y5);
-        ctx.stroke();
-      }
-      ctx.fillStyle = textColor;
-      ctx.font = fontStr;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const val = maxCost * (4 - i4) / 4;
-        ctx.fillText("$" + val.toFixed(val < 0.01 ? 3 : 2), pad.left - 4, pad.top + chartH * i4 / 4);
-      }
-      const barGap = 6;
-      const barW = Math.max(10, (chartW - barGap * (data.length + 1)) / data.length);
-      const offsetX = pad.left + (chartW - (data.length * barW + (data.length + 1) * barGap)) / 2 + barGap;
-      data.forEach((d5, i4) => {
-        const x4 = offsetX + i4 * (barW + barGap);
-        const barH = d5.cost / maxCost * chartH;
-        const y5 = pad.top + chartH - barH;
-        const color = d5.unknown ? "#666" : getAgentColor(d5.source);
-        if (barH < 1) {
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(x4, pad.top + chartH);
-          ctx.lineTo(x4 + barW, pad.top + chartH);
-          ctx.stroke();
-        } else {
-          ctx.fillStyle = color;
-          ctx.fillRect(x4, y5, barW, barH);
-        }
-        ctx.fillStyle = textColor;
-        ctx.font = fontStr;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        ctx.fillText(String(d5.session), x4 + barW / 2, pad.top + chartH + 4);
-        if (d5.unknown) {
-          ctx.fillStyle = "#999";
-          ctx.textBaseline = "bottom";
-          ctx.fillText("?", x4 + barW / 2, pad.top + chartH - 3);
-        }
-      });
-    });
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:180px;display:block" }),
-      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 Session (latest to earliest) \u2192" })
-    ] });
-  }
-  function Cost() {
-    const sessions = displaySessions.value;
-    const [mode, setMode] = d2("token");
-    const copilotSessions = sessions.filter((s4) => s4.source === "copilot");
-    const codexSessions = sessions.filter((s4) => s4.source === "codex");
-    const claudeSessions = sessions.filter((s4) => s4.source === "claude_code");
-    const pricedSessions = sessions.filter((s4) => s4.source === "copilot" || s4.source === "codex" || s4.source === "claude_code");
-    const disclaimer = /* @__PURE__ */ u4("div", { style: "font-size:11px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:8px 10px;margin-bottom:16px;line-height:1.6;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap", children: [
-      /* @__PURE__ */ u4("span", { children: [
-        /* @__PURE__ */ u4("strong", { style: "color:var(--foreground)", children: "Estimates only" }),
-        " \u2014 not your actual bill. ",
-        /* @__PURE__ */ u4("a", { href: "#cost-known-gaps", style: "color:inherit;text-decoration:underline;text-underline-offset:2px", children: "See known gaps." })
-      ] }),
-      /* @__PURE__ */ u4("span", { style: "white-space:nowrap", children: [
-        "Rates last updated: ",
-        PRICING_LAST_UPDATED
-      ] })
-    ] });
-    if (pricedSessions.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "cost-content", children: [
-        disclaimer,
-        /* @__PURE__ */ u4("div", { class: "empty-state", children: "No Copilot, Claude, or Codex sessions recorded \u2014 start a session to see cost estimates" })
-      ] });
-    }
-    const copilotCosts = copilotSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, mode) }));
-    const codexCosts = codexSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, "token") }));
-    const claudeCosts = claudeSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, "token") }));
-    const allCosts = pricedSessions.map((s4) => ({ session: s4, cost: calcSessionCost(s4, sessionCostMode(s4, mode)) }));
-    const copilotTotalUsd = copilotCosts.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
-    const copilotTotalCredits = copilotTotalUsd / 0.01;
-    const copilotAnyUnknown = copilotCosts.some((c4) => c4.cost.modelUnknown);
-    const codexTotalUsd = codexCosts.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
-    const codexAnyUnknown = codexCosts.some((c4) => c4.cost.modelUnknown);
-    const claudeTotalUsd = claudeCosts.reduce((sum, c4) => sum + c4.cost.totalUsd, 0);
-    const claudeAnyUnknown = claudeCosts.some((c4) => c4.cost.modelUnknown);
-    const sessionRows = allCosts.slice().sort((a4, b4) => {
-      const na = getSessionGlobalNumber(a4.session) ?? 0;
-      const nb = getSessionGlobalNumber(b4.session) ?? 0;
-      return nb - na;
-    });
-    const showCreditsCol = mode === "token";
-    return /* @__PURE__ */ u4("div", { id: "cost-content", children: [
-      disclaimer,
-      /* @__PURE__ */ u4("div", { style: "display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap", children: [
-        copilotSessions.length > 0 && /* @__PURE__ */ u4(S, { children: [
-          /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + getAgentColor("copilot") + ";vertical-align:middle;margin-right:5px" }),
-            "Copilot \u2014 Select pricing model"
-          ] }),
-          /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;flex-wrap:wrap", children: [
-            /* @__PURE__ */ u4(
-              "button",
-              {
-                class: "tab-mini" + (mode === "token" ? " active" : ""),
-                onClick: () => setMode("token"),
-                title: "Token-based AI Credits billing, effective Jun 1, 2026",
-                children: "Token-based (from Jun 1, 2026)"
-              }
-            ),
-            /* @__PURE__ */ u4(
-              "button",
-              {
-                class: "tab-mini" + (mode === "request" ? " active" : ""),
-                onClick: () => setMode("request"),
-                title: "Request-based billing with model multipliers, active before Jun 1, 2026",
-                children: "Request-based (pre-Jun 1, 2026)"
-              }
-            ),
-            /* @__PURE__ */ u4(
-              "button",
-              {
-                class: "tab-mini" + (mode === "request-annual" ? " active" : ""),
-                onClick: () => setMode("request-annual"),
-                title: "Annual plan holders staying on request billing after Jun 1, 2026 face significantly higher multipliers",
-                children: "Annual plan request-based (post-Jun 1, 2026)"
-              }
-            )
-          ] })
-        ] }),
-        codexSessions.length > 0 && /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: [
-          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + getAgentColor("codex") + ";vertical-align:middle;margin-right:5px" }),
-          "Codex \u2014 Always uses token-based pricing"
-        ] }),
-        claudeSessions.length > 0 && /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: [
-          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;background:" + getAgentColor("claude_code") + ";vertical-align:middle;margin-right:5px" }),
-          "Claude \u2014 Always uses token-based pricing"
-        ] })
-      ] }),
-      (() => {
-        const stats = dailyStats.value;
-        const lifetime = lifetimeStats.value;
-        const agentFilter = selectedAgentFilter.value;
-        const filteredStats = agentFilter !== "all" ? stats : stats;
-        return /* @__PURE__ */ u4("div", { style: "margin-bottom:24px", children: [
-          /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "30-DAY TOKEN & COST HISTORY" }),
-          /* @__PURE__ */ u4(HistoryChart, { rows: filteredStats }),
-          lifetime && lifetime.totalSessions > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;gap:20px;font-size:11px;color:var(--muted);flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--vscode-panel-border)", children: [
-            /* @__PURE__ */ u4("span", { children: [
-              lifetime.totalSessions,
-              " total sessions"
-            ] }),
-            /* @__PURE__ */ u4("span", { children: [
-              formatCompact(lifetime.totalTokens),
-              " total tokens"
-            ] }),
-            /* @__PURE__ */ u4("span", { style: "color:var(--foreground)", children: [
-              "~",
-              "$" + lifetime.totalCostUsd.toFixed(2),
-              " estimated lifetime cost"
-            ] }),
-            lifetime.oldestSessionMs > 0 && /* @__PURE__ */ u4("span", { children: [
-              new Date(lifetime.oldestSessionMs).toISOString().slice(0, 10),
-              " \u2192 ",
-              new Date(lifetime.newestSessionMs).toISOString().slice(0, 10)
-            ] })
-          ] })
-        ] });
-      })(),
-      /* @__PURE__ */ u4("h3", { style: "margin:0 0 8px;font-size:13px;color:var(--muted)", children: "ESTIMATED COST PER SESSION" }),
-      /* @__PURE__ */ u4(CostBarChart, { sessions: pricedSessions, mode }),
-      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 8px;font-size:13px;color:var(--muted)", children: "SESSION COST TABLE" }),
-      /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
-        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border);color:var(--muted);text-align:left", children: [
-          /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "#" }),
-          /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Agent" }),
-          /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Model" }),
-          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Turns" }),
-          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Input tok" }),
-          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Output tok" }),
-          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Cache read" }),
-          /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Est. cost" }),
-          showCreditsCol && /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", "data-tip": "Copilot AI Credits (1 credit = $0.01); not applicable to Codex", children: "AI Credits" })
-        ] }) }),
-        /* @__PURE__ */ u4("tbody", { children: sessionRows.map(({ session: s4, cost }) => {
-          const num = getSessionGlobalNumber(s4);
-          const rawInput = Math.max(0, s4.inputTokens - s4.cacheReadTokens - s4.cacheCreateTokens);
-          const isCopilot = s4.source === "copilot";
-          return /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border)", children: [
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;color:var(--muted)", children: num }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px", children: [
-              /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor(s4.source) + ";margin-right:5px;vertical-align:middle" }),
-              getAgentSourceLabel(s4.source)
-            ] }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;color:var(--muted);font-size:10px", children: s4.model || "\u2014" }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: s4.turns }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(rawInput) }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(s4.outputTokens) }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: s4.cacheReadTokens > 0 ? formatCompact(s4.cacheReadTokens) : "\u2014" }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-weight:600", children: cost.modelUnknown ? /* @__PURE__ */ u4("span", { style: "color:var(--muted)", "data-tip": 'Model "' + s4.model + '" not in rate table \u2014 add rates in pricing.ts', children: "~$?" }) : fmtUsd2(cost.totalUsd) }),
-            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: !isCopilot ? "\u2014" : cost.modelUnknown ? "?" : fmtCredits(cost.aiCredits) })
-          ] }, s4.sessionId);
-        }) }),
-        /* @__PURE__ */ u4("tfoot", { children: [
-          copilotSessions.length > 0 && /* @__PURE__ */ u4("tr", { style: "border-top:1px solid var(--vscode-panel-border)", children: [
-            /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:5px 8px;text-align:right;color:var(--muted);font-size:10px", children: [
-              "Copilot (",
-              copilotSessions.length,
-              " session",
-              copilotSessions.length !== 1 ? "s" : "",
-              ")"
-            ] }),
-            /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;font-weight:600", children: [
-              copilotAnyUnknown ? "~" : "",
-              fmtUsd2(copilotTotalUsd)
-            ] }),
-            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: [
-              copilotAnyUnknown ? "~" : "",
-              fmtCredits(copilotTotalCredits)
-            ] })
-          ] }),
-          codexSessions.length > 0 && /* @__PURE__ */ u4("tr", { style: "border-top:1px solid var(--vscode-panel-border)", children: [
-            /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:5px 8px;text-align:right;color:var(--muted);font-size:10px", children: [
-              "Codex (",
-              codexSessions.length,
-              " session",
-              codexSessions.length !== 1 ? "s" : "",
-              ")"
-            ] }),
-            /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;font-weight:600", children: [
-              codexAnyUnknown ? "~" : "",
-              fmtUsd2(codexTotalUsd)
-            ] }),
-            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
-          ] }),
-          claudeSessions.length > 0 && /* @__PURE__ */ u4("tr", { style: "border-top:1px solid var(--vscode-panel-border)", children: [
-            /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:5px 8px;text-align:right;color:var(--muted);font-size:10px", children: [
-              "Claude (",
-              claudeSessions.length,
-              " session",
-              claudeSessions.length !== 1 ? "s" : "",
-              ")"
-            ] }),
-            /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;font-weight:600", children: [
-              claudeAnyUnknown ? "~" : "",
-              fmtUsd2(claudeTotalUsd)
-            ] }),
-            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:5px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
-          ] }),
-          [copilotSessions, codexSessions, claudeSessions].filter((s4) => s4.length > 0).length > 1 && /* @__PURE__ */ u4("tr", { style: "border-top:2px solid var(--vscode-panel-border);font-weight:600", children: [
-            /* @__PURE__ */ u4("td", { colSpan: 7, style: "padding:6px 8px;text-align:right;color:var(--muted)", children: [
-              "Total (",
-              pricedSessions.length,
-              " session",
-              pricedSessions.length !== 1 ? "s" : "",
-              ")"
-            ] }),
-            /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right", children: [
-              copilotAnyUnknown || codexAnyUnknown || claudeAnyUnknown ? "~" : "",
-              fmtUsd2(copilotTotalUsd + codexTotalUsd + claudeTotalUsd)
-            ] }),
-            showCreditsCol && /* @__PURE__ */ u4("td", { style: "padding:6px 8px;text-align:right;color:var(--muted)", children: "\u2014" })
-          ] })
-        ] })
-      ] }) }),
-      /* @__PURE__ */ u4("div", { style: "margin-top:16px;font-size:10px;color:var(--muted);line-height:1.6", children: [
-        mode === "token" ? "Token-based AI Credits: effective Jun 1, 2026. Per-turn chart uses input+output only; session totals include cache tokens." : mode === "request" ? "Request-based: active before Jun 1, 2026. Cost = multiplier \xD7 $0.04 per user prompt. Models marked 0\xD7 (e.g. GPT-4.1) are free under this model." : "Annual plan request-based: for annual-plan holders staying on old billing after Jun 1, 2026. Multipliers are significantly higher on this plan post-June.",
-        codexSessions.length > 0 && " Codex sessions use token-based pricing regardless of the Copilot billing model selected above.",
-        claudeSessions.length > 0 && " Claude sessions use Anthropic API token-based pricing regardless of the Copilot billing model selected above."
-      ] }),
-      /* @__PURE__ */ u4("div", { id: "cost-known-gaps", style: "margin-top:24px;padding-top:16px;border-top:1px solid var(--vscode-panel-border);font-size:11px;color:var(--muted);line-height:1.7", children: [
-        /* @__PURE__ */ u4("strong", { style: "color:var(--foreground);font-size:12px", children: "Known gaps" }),
-        /* @__PURE__ */ u4("div", { style: "margin-top:8px", children: [
-          /* @__PURE__ */ u4("span", { style: "font-size:10px;text-transform:uppercase;letter-spacing:.4px", children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("copilot") + ";vertical-align:middle;margin-right:4px" }),
-            "Copilot"
-          ] }),
-          /* @__PURE__ */ u4("ul", { style: "margin:4px 0 0;padding-left:18px", children: [
-            /* @__PURE__ */ u4("li", { children: "Long-context surcharges are not applied \u2014 GPT-5.4 (prompts >272K tokens) and Gemini 2.5 Pro / 3.1 Pro (prompts >200K tokens) have higher rates above those thresholds, which require per-prompt token counts not available in session telemetry." }),
-            /* @__PURE__ */ u4("li", { children: [
-              "Models not in the rate table are shown as ",
-              /* @__PURE__ */ u4("strong", { children: "~$?" }),
-              " \u2014 this can happen when GitHub releases a new model after the last rate update, or when the model ID in telemetry doesn't match the published name."
-            ] }),
-            /* @__PURE__ */ u4("li", { children: "Request-based cost uses session turn count as a proxy for billable prompts, which may not match exactly for all session shapes." })
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("div", { style: "margin-top:12px", children: [
-          /* @__PURE__ */ u4("span", { style: "font-size:10px;text-transform:uppercase;letter-spacing:.4px", children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("codex") + ";vertical-align:middle;margin-right:4px" }),
-            "Codex"
-          ] }),
-          /* @__PURE__ */ u4("ul", { style: "margin:4px 0 0;padding-left:18px", children: [
-            /* @__PURE__ */ u4("li", { children: "Long-context surcharges are not applied \u2014 GPT-5.5 has a higher-rate tier above an unconfirmed token threshold." }),
-            /* @__PURE__ */ u4("li", { children: [
-              "Reasoning tokens (",
-              /* @__PURE__ */ u4("code", { children: "codex.usage.reasoning_output_tokens" }),
-              ") are included in output token counts and billed at the standard output rate. A separate reasoning rate has not been confirmed from official sources."
-            ] }),
-            /* @__PURE__ */ u4("li", { children: [
-              "Models not in the rate table are shown as ",
-              /* @__PURE__ */ u4("strong", { children: "~$?" }),
-              ". The official Codex rate card (",
-              /* @__PURE__ */ u4("code", { children: "help.openai.com" }),
-              ") may list additional model aliases not yet captured here."
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("div", { style: "margin-top:12px", children: [
-          /* @__PURE__ */ u4("span", { style: "font-size:10px;text-transform:uppercase;letter-spacing:.4px", children: [
-            /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("claude_code") + ";vertical-align:middle;margin-right:4px" }),
-            "Claude"
-          ] }),
-          /* @__PURE__ */ u4("ul", { style: "margin:4px 0 0;padding-left:18px", children: [
-            /* @__PURE__ */ u4("li", { children: "Cache write TTL cannot be determined from telemetry. Claude Code uses 5-minute prompt caches by default (1.25\xD7 input rate); if 1-hour caches are active (2\xD7 input rate), cost will be underestimated by ~37%." }),
-            /* @__PURE__ */ u4("li", { children: [
-              "Fast mode (",
-              /* @__PURE__ */ u4("code", { children: "/fast" }),
-              "): Opus fast-mode requests are billed at $30 input / $150 output per MTok \u2014 6\xD7 the standard Opus rate. The model ID in telemetry does not indicate fast mode, so fast-mode sessions are costed at the standard Opus rate and will be significantly underestimated."
-            ] }),
-            /* @__PURE__ */ u4("li", { children: "Opus 4.7 tokenizer change (from Apr 16, 2026) generates up to 35% more tokens for the same text. Per-token prices are unchanged; sessions before and after this date are not directly cost-comparable." }),
-            /* @__PURE__ */ u4("li", { children: [
-              "Models not in the rate table are shown as ",
-              /* @__PURE__ */ u4("strong", { children: "~$?" }),
-              ". Older Claude models (claude-3-5-sonnet, claude-3-opus, etc.) may appear in imported historical sessions."
-            ] })
-          ] })
-        ] })
-      ] })
-    ] });
-  }
-
-  // media/src/tabs/Traces.tsx
-  function BgSummaryBlock({ bgSpans }) {
-    const [open, setOpen] = d2(false);
-    if (!bgSpans?.length) return null;
-    const groups = {};
-    let totalTokens = 0;
-    bgSpans.forEach((bg) => {
-      const key = bg.purpose || bg.name || "Unknown";
-      if (!groups[key]) groups[key] = { count: 0, tokens: 0, model: bg.model || "" };
-      groups[key].count++;
-      const tok = (bg.inputTokens ?? 0) + (bg.outputTokens ?? 0);
-      groups[key].tokens += tok;
-      totalTokens += tok;
-    });
-    const descriptions = {
-      "Generate chat title": "Creates the title shown in the chat history sidebar.",
-      "Generate progress messages": "Produces the status messages shown while the agent works.",
-      "Extension language model call": "LLM call made by a VS Code extension \u2014 often used for completions or inline suggestions."
-    };
-    const purposes = Object.keys(groups).sort((a4, b4) => groups[b4].tokens - groups[a4].tokens);
-    return /* @__PURE__ */ u4("div", { class: "sw-bg-group", children: [
-      /* @__PURE__ */ u4("div", { class: "sw-bg-header", onClick: () => setOpen((v4) => !v4), children: [
-        /* @__PURE__ */ u4("span", { class: "sw-bg-chevron", children: open ? "\u25BC" : "\u25B6" }),
-        " ",
-        /* @__PURE__ */ u4("span", { children: "Background Overhead" }),
-        /* @__PURE__ */ u4("span", { class: "sw-bg-summary", children: [
-          bgSpans.length,
-          " calls \xB7 ",
-          totalTokens.toLocaleString(),
-          " tokens"
-        ] })
-      ] }),
-      open && /* @__PURE__ */ u4("div", { class: "sw-bg-body", children: [
-        /* @__PURE__ */ u4("div", { class: "sw-bg-note", children: "Automatic LLM calls that ran alongside this prompt. These are not part of your agent session but still consume tokens." }),
-        purposes.map((purpose) => /* @__PURE__ */ u4("div", { class: "sw-bg-item", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-bg-item-header", children: [
-            /* @__PURE__ */ u4("span", { class: "sw-bg-item-name", children: purpose }),
-            /* @__PURE__ */ u4("span", { class: "sw-bg-item-stats", children: [
-              groups[purpose].count,
-              "\xD7 \xB7 ",
-              groups[purpose].tokens.toLocaleString(),
-              " tok \xB7 ",
-              groups[purpose].model
-            ] })
-          ] }),
-          descriptions[purpose] && /* @__PURE__ */ u4("div", { class: "sw-bg-item-desc", children: descriptions[purpose] })
-        ] }, purpose))
-      ] })
-    ] });
-  }
-  function StepDetail({ step, idx, sessIdx, sessionModel }) {
-    const [showOutput, setShowOutput] = d2(false);
-    const entry = step.entry;
-    if (entry.type === "llm") {
-      const PREVIEW_LEN = 400;
-      const isLongResponse = (entry.responseText?.length ?? 0) > PREVIEW_LEN;
-      const entryCost = calcEntryCost(entry, sessionModel);
-      return /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Model" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.model || "unknown" })
-        ] }),
-        ((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Token Usage" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: [
-            /* @__PURE__ */ u4("span", { class: "sw-token-in", children: [
-              (entry.inputTokens ?? 0).toLocaleString(),
-              " input"
-            ] }),
-            /* @__PURE__ */ u4("span", { class: "sw-token-arrow", children: " \u2192 " }),
-            /* @__PURE__ */ u4("span", { class: "sw-token-out", children: [
-              (entry.outputTokens ?? 0).toLocaleString(),
-              " output"
-            ] })
-          ] })
-        ] }),
-        entryCost > 0 && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Cost" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: fmtUsd(entryCost) })
-        ] }),
-        entry.responseText && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: [
-            "Response",
-            isLongResponse && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setShowOutput((v4) => !v4), children: showOutput ? "Collapse" : "Show full response" })
-          ] }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", style: "white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.5", children: [
-            showOutput ? entry.responseText : entry.responseText.slice(0, PREVIEW_LEN),
-            isLongResponse && !showOutput && /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2026" })
-          ] })
-        ] }),
-        entry.thinking && /* @__PURE__ */ u4(LongTextSection, { heading: "Reasoning", text: entry.thinking, id: "sw-thinking-" + sessIdx + "-" + idx }),
-        (entry.ttft ?? 0) > 0 && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Time to First Token" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(entry.ttft) })
-        ] }),
-        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
-        ] }),
-        entry.action && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Stop reason" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.action })
-        ] }),
-        entry.timestamp && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Timestamp" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value sw-detail-muted", children: entry.timestamp })
-        ] })
-      ] });
-    }
-    if (entry.type === "tool") {
-      const toolParts = (entry.label ?? "").match(/^(\S+)\s*([\s\S]*)$/);
-      const tName = toolParts ? toolParts[1] : entry.label;
-      const tArgs = toolParts ? toolParts[2] : "";
-      const isRaw = entry.toolInput && !entry.toolInput.trimStart().startsWith("{");
-      const isFilePath = isRaw && (entry.toolInput.startsWith("/") || entry.toolInput.startsWith("~") || /^[A-Za-z]:[/\\]/.test(entry.toolInput));
-      const inputHeading = !isRaw ? "Arguments" : isFilePath ? "File" : "Command";
-      const inputText = isRaw ? entry.toolInput : tArgs || entry.toolInput || "";
-      const resultText = entry.fullResult || entry.resultSummary || "";
-      return /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Tool" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: /* @__PURE__ */ u4("code", { children: tName }) })
-        ] }),
-        inputText && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: inputHeading }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: /* @__PURE__ */ u4("code", { style: "white-space:pre-wrap;word-break:break-all", children: inputText }) })
-        ] }),
-        /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
-        ] }),
-        entry.decision && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Decision" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value", style: entry.decision === "rejected" ? "color:var(--error)" : "color:#8ec96b", children: entry.decision })
-        ] }),
-        resultText && /* @__PURE__ */ u4(LongTextSection, { heading: "Result", text: resultText, id: "sw-result-" + sessIdx + "-" + idx, isJson: true }),
-        entry.isError && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading err", children: "Error" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value err", children: "This step failed" })
-        ] }),
-        entry.timestamp && /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-          /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Timestamp" }),
-          /* @__PURE__ */ u4("div", { class: "sw-detail-value sw-detail-muted", children: entry.timestamp })
-        ] })
-      ] });
-    }
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-        /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Background Task" }),
-        /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: entry.label || "" })
-      ] }),
-      /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: [
-        /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: "Duration" }),
-        /* @__PURE__ */ u4("div", { class: "sw-detail-value", children: formatMs(step.durationMs) })
-      ] })
-    ] });
-  }
-  function LongTextSection({ heading, text, id: _id, isJson }) {
-    const [expanded, setExpanded] = d2(false);
-    const maxPreviewChars = 600;
-    const isLong = text.length > maxPreviewChars;
-    let formatted = text.length > 6e3 ? text.slice(0, 6e3) + "\n... [truncated " + (text.length - 6e3).toLocaleString() + " chars]" : text;
-    if (formatted.length <= 2e3) {
-      try {
-        formatted = JSON.stringify(JSON.parse(formatted), null, 2);
-      } catch {
-      }
-    }
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("div", { class: "sw-detail-section", children: /* @__PURE__ */ u4("div", { class: "sw-detail-heading", children: [
-        heading,
-        isLong && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: () => setExpanded((v4) => !v4), children: expanded ? "Collapse" : "Show full" })
-      ] }) }),
-      !isLong || !expanded ? /* @__PURE__ */ u4("pre", { class: "sw-full-result-pre", style: "margin:0 0 8px", children: isJson && formatted.length <= 2e3 ? /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: syntaxHighlightJson(isLong ? text.slice(0, maxPreviewChars) : formatted) } }) : isLong ? text.slice(0, maxPreviewChars) + "\u2026" : formatted }) : /* @__PURE__ */ u4("pre", { class: "sw-full-result-pre", style: "margin:0 0 8px", children: isJson && formatted.length <= 2e3 ? /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: syntaxHighlightJson(formatted) } }) : formatted })
-    ] });
-  }
-  function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }) {
-    const [open, setOpen] = d2(false);
-    const entry = step.entry;
-    const entryCost = entry.type === "llm" ? calcEntryCost(entry, sessionModel) : 0;
-    let badgeLabel, barColor;
-    if (entry.type === "llm") {
-      badgeLabel = "LLM";
-      barColor = "var(--accent)";
-    } else if (entry.type === "tool") {
-      badgeLabel = "TOOL";
-      barColor = "#B8E986";
-    } else if (entry.type === "user_input") {
-      badgeLabel = "USER";
-      barColor = "#F5A623";
-    } else {
-      badgeLabel = "BG";
-      barColor = "var(--muted)";
-    }
-    if (entry.isError) barColor = "var(--error)";
-    const rowLabel = entry.type === "llm" ? formatLlmLabel(entry) : entry.type === "tool" ? formatToolLabel(entry) + (formatToolResult(entry) ? " \u2192 " + formatToolResult(entry) : "") : entry.type === "user_input" ? entry.decision && entry.decision !== "unknown" ? `${entry.label} (${entry.decision})` : entry.label : entry.label || "";
-    const toolSubtitle = (() => {
-      if (entry.type !== "tool" || !entry.toolInput || entry.toolInput.trimStart().startsWith("{")) return null;
-      const input = entry.toolInput;
-      const isFilePath = input.startsWith("/") || input.startsWith("~") || /^[A-Za-z]:[/\\]/.test(input);
-      if (isFilePath) return input.split("/").pop() || input;
-      return input.length > 90 ? input.slice(0, 90) + "\u2026" : input;
-    })();
-    const subtitle = toolSubtitle;
-    const left = sessionDur > 0 ? step.offsetMs / sessionDur * 100 : 0;
-    const width = sessionDur > 0 ? Math.max(step.durationMs / sessionDur * 100, 0.5) : 100;
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("div", { class: "wf-row", onClick: () => setOpen((v4) => !v4), children: [
-        /* @__PURE__ */ u4("div", { class: "wf-label", title: subtitle ? rowLabel + " \u2014 " + subtitle : rowLabel, children: [
-          /* @__PURE__ */ u4("span", { class: "wf-indent" }),
-          /* @__PURE__ */ u4("span", { class: "sw-chevron", children: open ? "\u25BC" : "\u25B6" }),
-          /* @__PURE__ */ u4("span", { class: "wf-type-badge", style: "background:" + barColor + ";color:#000", children: badgeLabel }),
-          /* @__PURE__ */ u4("span", { style: "display:inline-flex;flex-direction:column;min-width:0", children: [
-            /* @__PURE__ */ u4("span", { class: "wf-name", children: rowLabel }),
-            subtitle && /* @__PURE__ */ u4("span", { style: "font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px", children: subtitle })
-          ] })
-        ] }),
-        /* @__PURE__ */ u4("div", { class: "wf-bar-area", children: /* @__PURE__ */ u4("div", { class: "wf-bar", style: `left:${left.toFixed(2)}%;width:${width.toFixed(2)}%`, children: /* @__PURE__ */ u4("div", { class: "wf-bar-inner", style: "background:" + barColor + ";opacity:" + (entry.isError ? "1" : "0.7") }) }) }),
-        /* @__PURE__ */ u4("div", { class: "wf-info", children: [
-          formatMs(step.durationMs),
-          entry.type === "llm" && ((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);white-space:nowrap;margin-top:2px", children: [
-            "\u2191",
-            formatCompact(entry.inputTokens ?? 0),
-            " \u2193",
-            formatCompact(entry.outputTokens ?? 0)
-          ] }),
-          entryCost > 0 && /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);white-space:nowrap", children: [
-            "~",
-            fmtUsd(entryCost)
-          ] })
-        ] })
-      ] }),
-      open && /* @__PURE__ */ u4("div", { class: "sw-detail open", children: /* @__PURE__ */ u4(StepDetail, { step, idx, sessIdx, sessionModel }) })
-    ] });
-  }
-  function SessionBlock({ sess, sessIdx, totalCount, isFirst }) {
-    const [collapsed, setCollapsed] = d2(!isFirst);
-    const [promptExpanded, setPromptExpanded] = d2(false);
-    const isLongPrompt = (sess.userRequest?.length ?? 0) > 100;
-    const sessionNum = getSessionGlobalNumber(sess) || totalCount - sessIdx;
-    const sessionStartMs = sess.startTime ? new Date(sess.startTime).getTime() : 0;
-    let sessionDur = sess.durationMs || 1;
-    const timelines = sessionTimelines.value;
-    const loadedTimeline = timelines[sess.sessionId];
-    const isLoading = !collapsed && loadedTimeline === void 0;
-    const toggle = () => {
-      const opening = collapsed;
-      setCollapsed((v4) => !v4);
-      if (opening && loadedTimeline === void 0) {
-        if (vscode) vscode.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
-      }
-    };
-    const timeline = loadedTimeline ?? sess.timeline ?? [];
-    const steps = timeline.map((entry) => {
-      const entryStart = entry.timestamp ? new Date(entry.timestamp).getTime() : 0;
-      const offset = sessionStartMs > 0 && entryStart > 0 ? entryStart - sessionStartMs : 0;
-      return { entry, offsetMs: Math.max(offset, 0), durationMs: entry.durationMs || 0 };
-    });
-    if (steps.length > 0) {
-      const maxEnd = Math.max(...steps.map((s4) => s4.offsetMs + s4.durationMs));
-      if (maxEnd > sessionDur) sessionDur = maxEnd;
-    }
-    if (sessionDur <= 0) sessionDur = 1;
-    const errorCount = sess.errors || 0;
-    const outcomeLabel = sess.outcome === "text_response" ? "Responded" : sess.outcome === "tool_calls" ? "Tool calls" : null;
-    return /* @__PURE__ */ u4("div", { class: "wf-trace-group", children: [
-      /* @__PURE__ */ u4("div", { class: "wf-trace-header", onClick: toggle, children: [
-        /* @__PURE__ */ u4("span", { children: [
-          /* @__PURE__ */ u4("span", { class: "wf-header-chevron", children: collapsed ? "\u25B6" : "\u25BC" }),
-          /* @__PURE__ */ u4("strong", { children: sessionNum }),
-          " ",
-          /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getAgentDotHtml(sess.source) } }),
-          " ",
-          '"',
-          sess.userRequest.slice(0, 100),
-          isLongPrompt ? "\u2026" : "",
-          '"',
-          isLongPrompt && /* @__PURE__ */ u4("button", { class: "sw-show-full-btn", style: "margin-left:8px", onClick: (e4) => {
-            e4.stopPropagation();
-            setPromptExpanded((v4) => !v4);
-          }, children: promptExpanded ? "Collapse" : "Show full prompt" })
-        ] }),
-        /* @__PURE__ */ u4("span", { class: "wf-trace-stats", children: [
-          steps.length,
-          " steps \xB7 ",
-          formatMs(sessionDur),
-          " \xB7 ",
-          sess.model,
-          errorCount > 0 && /* @__PURE__ */ u4("span", { class: "err", children: [
-            " \xB7 ",
-            errorCount,
-            " errors"
-          ] }),
-          outcomeLabel && /* @__PURE__ */ u4(S, { children: [
-            " \xB7 ",
-            outcomeLabel
-          ] })
-        ] })
-      ] }),
-      promptExpanded && /* @__PURE__ */ u4("div", { style: "padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word", children: sess.userRequest }),
-      !collapsed && /* @__PURE__ */ u4("div", { class: "wf-trace-body", children: isLoading ? /* @__PURE__ */ u4("div", { style: "padding:12px 16px;font-size:11px;color:var(--muted)", children: "Loading timeline\u2026" }) : /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("div", { class: "wf-time-ruler", children: Array.from({ length: 6 }, (_4, t4) => /* @__PURE__ */ u4("span", { children: formatMs(sessionDur * t4 / 5) }, t4)) }),
-        steps.map((step, si) => /* @__PURE__ */ u4(StepRow, { step, idx: si, sessIdx, sessionDur, sessionModel: sess.model ?? "" }, step.entry.spanId + si))
-      ] }) })
-    ] });
-  }
-  function Traces() {
-    const base = displaySessions.value;
-    const summary = sessionSummary.value;
-    if (!summary?.sessions?.length) {
-      return /* @__PURE__ */ u4("div", { id: "summary-traces-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    const sessionsToShow = [...base].reverse();
-    const totalLlmCalls = sessionsToShow.reduce((s4, sess) => s4 + sess.totalLlmCalls, 0);
-    const totalToolCalls = sessionsToShow.reduce((s4, sess) => s4 + sess.totalToolCalls, 0);
-    const totalTokens = sessionsToShow.reduce((s4, sess) => s4 + sess.inputTokens + sess.outputTokens, 0);
-    return /* @__PURE__ */ u4("div", { id: "summary-traces-content", children: [
-      /* @__PURE__ */ u4("div", { class: "tab-stats", children: [
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: sessionsToShow.length }),
-          " sessions"
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: totalLlmCalls }),
-          " LLM calls"
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: totalToolCalls }),
-          " tool calls"
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: formatCompact(totalTokens) }),
-          " tokens"
-        ] })
-      ] }),
-      /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)", children: "Each agent exposes different OTEL data \u2014 some fields may be missing or estimated. See the Traces tab for raw span-level detail." }),
-      /* @__PURE__ */ u4("div", { class: "waterfall", children: [
-        sessionsToShow.map((sess, idx) => /* @__PURE__ */ u4(
-          SessionBlock,
-          {
-            sess,
-            sessIdx: idx,
-            totalCount: sessionsToShow.length,
-            isFirst: idx === 0
-          },
-          sess.traceId + idx
-        )),
-        sessionsToShow.length === 0 && /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions to display" })
-      ] }),
-      summary.backgroundSpans?.length > 0 && /* @__PURE__ */ u4(BgSummaryBlock, { bgSpans: summary.backgroundSpans })
-    ] });
-  }
-
-  // media/src/tabs/SessionSearch.tsx
-  var DATE_PRESETS = [
-    { label: "All time", sinceMs: null },
-    { label: "Today", sinceMs: -1 },
-    // -1 = resolve at search time to start-of-today
-    { label: "Last 7 days", sinceMs: 7 * 864e5 },
-    { label: "Last 30 days", sinceMs: 30 * 864e5 }
-  ];
-  function resolveSince(sinceMs) {
-    if (sinceMs === null) return void 0;
-    if (sinceMs === -1) {
-      const d5 = /* @__PURE__ */ new Date();
-      d5.setHours(0, 0, 0, 0);
-      return d5.getTime();
-    }
-    return Date.now() - sinceMs;
-  }
-  var SORT_OPTIONS = [
-    { label: "Recent", orderBy: "start_time", dir: "DESC" },
-    { label: "Most expensive", orderBy: "cost_usd", dir: "DESC" },
-    { label: "Longest", orderBy: "duration_ms", dir: "DESC" },
-    { label: "Most tokens", orderBy: "total_tokens", dir: "DESC" },
-    { label: "Most errors", orderBy: "errors", dir: "DESC" }
-  ];
-  function SessionSearch() {
-    const [text, setText] = d2("");
-    const [dateIdx, setDateIdx] = d2(0);
-    const [sortIdx, setSortIdx] = d2(0);
-    const debounceRef = A2(null);
-    y2(() => {
-      sendSearch();
-    }, []);
-    function sendSearch(overrides = {}) {
-      const t4 = overrides.text !== void 0 ? overrides.text : text;
-      const dIdx = overrides.dateIdx !== void 0 ? overrides.dateIdx : dateIdx;
-      const sIdx = overrides.sortIdx !== void 0 ? overrides.sortIdx : sortIdx;
-      const sinceVal = resolveSince(DATE_PRESETS[dIdx].sinceMs);
-      const sort = SORT_OPTIONS[sIdx];
-      const query = {
-        text: t4 || void 0,
-        since: sinceVal,
-        orderBy: sort.orderBy,
-        orderDir: sort.dir,
-        limit: 50,
-        offset: 0
-      };
-      vscode?.postMessage({ type: "searchSessions", query });
-    }
-    function handleTextChange(newText) {
-      setText(newText);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => sendSearch({ text: newText }), 300);
-    }
-    function handleDateChange(idx) {
-      setDateIdx(idx);
-      sendSearch({ dateIdx: idx });
-    }
-    function handleSortChange(idx) {
-      setSortIdx(idx);
-      sendSearch({ sortIdx: idx });
-    }
-    const results = searchResults.value;
-    return /* @__PURE__ */ u4("div", { id: "search-content", children: [
-      /* @__PURE__ */ u4("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px", children: /* @__PURE__ */ u4(
-        "input",
-        {
-          type: "text",
-          placeholder: "Search by session request\u2026",
-          value: text,
-          onInput: (e4) => handleTextChange(e4.target.value),
-          style: "flex:1;min-width:180px;padding:5px 8px;font-size:12px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-        }
-      ) }),
-      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px", children: [
-        /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;flex-wrap:wrap;align-items:center", children: [
-          /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-right:2px", children: "Date" }),
-          DATE_PRESETS.map((p5, i4) => /* @__PURE__ */ u4(
-            "button",
-            {
-              class: "tab-mini" + (dateIdx === i4 ? " active" : ""),
-              onClick: () => handleDateChange(i4),
-              children: p5.label
-            },
-            i4
-          ))
-        ] }),
-        /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;flex-wrap:wrap;align-items:center", children: [
-          /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-right:2px", children: "Sort" }),
-          SORT_OPTIONS.map((s4, i4) => /* @__PURE__ */ u4(
-            "button",
-            {
-              class: "tab-mini" + (sortIdx === i4 ? " active" : ""),
-              onClick: () => handleSortChange(i4),
-              children: s4.label
-            },
-            i4
-          ))
-        ] })
-      ] }),
-      !results && /* @__PURE__ */ u4("div", { class: "empty-state", children: "Enter a search term or change filters to search historical sessions." }),
-      results && results.sessions.length === 0 && /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions matched." }),
-      results && results.sessions.length > 0 && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-bottom:8px", children: [
-          "Showing ",
-          results.sessions.length,
-          " of ",
-          results.totalCount,
-          " result",
-          results.totalCount !== 1 ? "s" : ""
-        ] }),
-        /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: [
-          /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
-            /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border);color:var(--muted);text-align:left", children: [
-              /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Agent" }),
-              /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Request" }),
-              /* @__PURE__ */ u4("th", { style: "padding:4px 8px", children: "Date" }),
-              /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Tokens" }),
-              /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Duration" }),
-              /* @__PURE__ */ u4("th", { style: "padding:4px 8px;text-align:right", children: "Errors" })
-            ] }) }),
-            /* @__PURE__ */ u4("tbody", { children: results.sessions.map((s4) => /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--vscode-panel-border)", children: [
-              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;white-space:nowrap", children: [
-                /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor(s4.source) + ";margin-right:4px;vertical-align:middle" }),
-                getAgentSourceLabel(s4.source)
-              ] }),
-              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: s4.userRequest, children: s4.userRequest || /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-style:italic", children: "\u2014" }) }),
-              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;color:var(--muted);font-size:10px;white-space:nowrap", children: s4.startTime ? new Date(s4.startTime).toLocaleString() : "\u2014" }),
-              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: formatCompact(s4.inputTokens + s4.outputTokens) }),
-              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: formatMs(s4.durationMs) }),
-              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right", children: s4.errors > 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--vscode-charts-red,#e57373)", children: s4.errors }) : /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2014" }) })
-            ] }, s4.sessionId)) })
-          ] }),
-          results.totalCount > results.sessions.length && /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);padding:8px", children: [
-            results.totalCount - results.sessions.length,
-            " more \u2014 refine your search to narrow down."
-          ] })
-        ] })
-      ] })
-    ] });
-  }
-
-  // media/src/tabs/Files.tsx
-  function countLines(s4) {
-    return s4 ? s4.split("\n").length : 0;
-  }
-  function editLineCounts(edits) {
-    let added = 0, removed = 0;
-    for (const e4 of edits) {
-      if (e4.content) {
-        added += countLines(e4.content);
-      } else {
-        added += countLines(e4.newString);
-        removed += countLines(e4.oldString);
-      }
-    }
-    return { added, removed };
-  }
-  function DiffLines({ lines, type }) {
-    const bg = type === "added" ? "rgba(76,175,80,0.12)" : "rgba(244,67,54,0.12)";
-    const border = type === "added" ? "rgba(76,175,80,0.3)" : "rgba(244,67,54,0.3)";
-    const prefix = type === "added" ? "+ " : "- ";
-    return /* @__PURE__ */ u4("div", { style: "font-family:var(--vscode-editor-font-family,monospace);font-size:11px;line-height:1.5;overflow-x:auto;white-space:pre", children: lines.map((line, i4) => /* @__PURE__ */ u4("div", { style: `padding:0 10px;background:${bg};border-left:3px solid ${border}`, children: [
-      prefix,
-      line
-    ] }, i4)) });
-  }
-  function EditBlock({ edit, ei }) {
-    return /* @__PURE__ */ u4("div", { children: [
-      /* @__PURE__ */ u4("div", { style: "padding:4px 10px;font-size:10px;color:var(--muted);background:var(--vscode-editorWidget-background,var(--bg));border-top:" + (ei > 0 ? "1px solid var(--border)" : "none") + ";font-weight:600;display:flex;align-items:center;gap:8px", children: [
-        /* @__PURE__ */ u4("span", { children: [
-          "Change ",
-          ei + 1
-        ] }),
-        /* @__PURE__ */ u4("span", { style: "text-transform:uppercase;opacity:0.7", children: edit.tool })
-      ] }),
-      edit.content && /* @__PURE__ */ u4(DiffLines, { lines: edit.content.split("\n"), type: "added" }),
-      !edit.content && /* @__PURE__ */ u4(S, { children: [
-        edit.oldString && /* @__PURE__ */ u4(S, { children: [
-          /* @__PURE__ */ u4("div", { style: "padding:4px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;border-bottom:1px solid var(--border)", children: "Removed" }),
-          /* @__PURE__ */ u4(DiffLines, { lines: edit.oldString.split("\n"), type: "removed" })
-        ] }),
-        edit.oldString && edit.newString && /* @__PURE__ */ u4("div", { style: "padding:2px 10px;color:var(--muted);font-size:10px;background:var(--border);text-align:center;user-select:none", children: "\u2192" }),
-        edit.newString && /* @__PURE__ */ u4(S, { children: [
-          /* @__PURE__ */ u4("div", { style: "padding:4px 10px;font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:600;border-bottom:1px solid var(--border)", children: "Added" }),
-          /* @__PURE__ */ u4(DiffLines, { lines: edit.newString.split("\n"), type: "added" })
-        ] })
-      ] })
-    ] });
-  }
-  function FileItem({ fp, edits, ridx: _ridx }) {
-    const [editsOpen, setEditsOpen] = d2(false);
-    const parts = fp.split("/");
-    const fileName = parts.pop() ?? fp;
-    const dirPath = parts.join("/");
-    const isCreated = edits.some((e4) => e4.tool === "create_file");
-    const editCount = edits.length;
-    const hasDiffs = edits.some((e4) => e4.oldString || e4.newString || e4.content);
-    const { added, removed } = hasDiffs ? editLineCounts(edits) : { added: 0, removed: 0 };
-    function handleClick() {
-      vscode?.postMessage({ type: "openFile", filePath: fp });
-    }
-    return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4(
-        "div",
-        {
-          class: "files-file-item",
-          onClick: handleClick,
-          style: "display:flex;align-items:center;gap:10px;padding:8px 16px 8px 42px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer",
-          children: [
-            !window.__STANDALONE__ && /* @__PURE__ */ u4("span", { style: "font-size:14px;width:18px;text-align:center;color:" + (isCreated ? "var(--vscode-testing-iconPassed,#4c4)" : "var(--accent)"), children: isCreated ? "\uFF0B" : "\u270E" }),
-            /* @__PURE__ */ u4("span", { style: "flex:1;min-width:0;font-family:var(--vscode-editor-font-family,monospace);font-size:12px", children: [
-              /* @__PURE__ */ u4("span", { style: "color:var(--fg);font-weight:500", children: fileName }),
-              dirPath && /* @__PURE__ */ u4("span", { class: "muted", children: [
-                " ",
-                dirPath
-              ] })
-            ] }),
-            /* @__PURE__ */ u4("span", { style: "font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;text-transform:uppercase;" + (isCreated ? "background:rgba(76,175,80,0.15);color:var(--vscode-testing-iconPassed,#4c4)" : "background:rgba(79,195,247,0.15);color:var(--accent)"), children: isCreated ? "Created" : "Edited" }),
-            editCount > 1 && /* @__PURE__ */ u4("span", { style: "font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;background:rgba(79,195,247,0.15);color:var(--accent)", children: [
-              editCount,
-              " edits"
-            ] }),
-            added > 0 && /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:600;color:#4caf50", children: [
-              "+",
-              added
-            ] }),
-            removed > 0 && /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:600;color:#f44336", children: [
-              "-",
-              removed
-            ] })
-          ]
-        }
-      ),
-      hasDiffs && /* @__PURE__ */ u4("div", { style: "border:1px solid var(--border);border-radius:4px;margin:0 16px 12px 42px;background:var(--bg);overflow:hidden", children: [
-        /* @__PURE__ */ u4(
-          "div",
-          {
-            class: "files-edit-header",
-            onClick: (e4) => {
-              e4.stopPropagation();
-              setEditsOpen((o4) => !o4);
-            },
-            style: "display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;user-select:none;font-size:11px",
-            children: [
-              /* @__PURE__ */ u4("span", { class: "files-edit-chevron", style: "font-size:9px;color:var(--muted);width:12px", children: editsOpen ? "\u25BC" : "\u25B6" }),
-              /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: [
-                editCount,
-                " change",
-                editCount !== 1 ? "s" : "",
-                " \u2014 click to ",
-                editsOpen ? "collapse" : "expand"
-              ] })
-            ]
-          }
-        ),
-        editsOpen && /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border)", children: edits.map((edit, ei) => /* @__PURE__ */ u4(EditBlock, { edit, ei }, edit.editKey)) })
-      ] })
-    ] });
-  }
-  function SessionBlock2({ sess, ridx, allCount, isOpen: defaultOpen }) {
-    const [open, setOpen] = d2(defaultOpen);
-    const sessionNum = getSessionGlobalNumber(sess) || allCount - ridx;
-    const changedFiles = sess.filesChanged ?? [];
-    const filesChangedNote = sess.filesChangedNote ?? "";
-    const fileEdits = {};
-    let editIdx = 0;
-    (sess.timeline ?? []).forEach((e4) => {
-      if (!e4.editDetails?.length) return;
-      const entryLabel = (e4.label ?? "").split(" ")[0];
-      e4.editDetails.forEach((ed) => {
-        const fp = ed.filePath;
-        if (!fp) return;
-        if (!fileEdits[fp]) fileEdits[fp] = [];
-        fileEdits[fp].push({ tool: ed.toolName || entryLabel, oldString: ed.oldString, newString: ed.newString, content: ed.content, editKey: ridx + "-" + editIdx });
-        editIdx++;
-      });
-    });
-    const fileCountSess = changedFiles.length;
-    const fileCountLabel = fileCountSess === 0 && filesChangedNote ? "paths unavailable" : fileCountSess + " file" + (fileCountSess !== 1 ? "s" : "");
-    return /* @__PURE__ */ u4("div", { style: "background:var(--vscode-editorWidget-background,var(--bg));border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden", children: [
-      /* @__PURE__ */ u4(
-        "div",
-        {
-          class: "files-session-header",
-          onClick: () => setOpen((o4) => !o4),
-          style: "display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none",
-          children: [
-            /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);width:14px;text-align:center", children: open ? "\u25BC" : "\u25B6" }),
-            /* @__PURE__ */ u4("span", { style: "font-weight:700;font-size:12px;color:var(--fg)", children: sessionNum }),
-            /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getAgentDotHtml(sess.source) } }),
-            /* @__PURE__ */ u4("span", { style: "flex:1;min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis", title: sess.userRequest ?? "", children: sess.userRequest }),
-            /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:4px", children: fileCountLabel })
-          ]
-        }
-      ),
-      open && /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border)", children: changedFiles.length === 0 ? /* @__PURE__ */ u4("div", { style: "padding:16px 42px;color:var(--muted);font-style:italic;font-size:12px", children: [
-        filesChangedNote ? "Changed files could not be recovered for this session" : "No files were modified in this session",
-        filesChangedNote && /* @__PURE__ */ u4("div", { style: "margin-top:8px;padding:10px 12px;border-radius:6px;border:1px solid rgba(217,119,87,0.35);background:rgba(217,119,87,0.08);color:var(--fg);font-style:normal;line-height:1.45", children: filesChangedNote })
-      ] }) : changedFiles.map((fp) => /* @__PURE__ */ u4(FileItem, { fp, edits: fileEdits[fp] ?? [], ridx }, fp)) })
-    ] });
-  }
-  function Files() {
-    const sessions = displaySessions.value;
-    if (!sessions.length) {
-      return /* @__PURE__ */ u4("div", { id: "files-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    const reversed = sessions.slice().reverse();
-    const totalFilesSet = /* @__PURE__ */ new Set();
-    let totalEdits = 0, totalAdded = 0, totalRemoved = 0;
-    reversed.forEach((sess) => {
-      ;
-      (sess.filesChanged ?? []).forEach((f5) => totalFilesSet.add(f5));
-      (sess.timeline ?? []).forEach((e4) => {
-        totalEdits += e4.editDetails?.length ?? 0;
-        for (const ed of e4.editDetails ?? []) {
-          if (ed.content) {
-            totalAdded += countLines(ed.content);
-          } else {
-            totalAdded += countLines(ed.newString);
-            totalRemoved += countLines(ed.oldString);
-          }
-        }
-      });
-    });
-    return /* @__PURE__ */ u4("div", { id: "files-content", children: [
-      /* @__PURE__ */ u4("div", { class: "tab-stats", children: [
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: totalFilesSet.size }),
-          " files changed"
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: totalEdits }),
-          " edit operations"
-        ] }),
-        totalAdded > 0 && /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", style: "color:#4caf50", children: [
-            "+",
-            totalAdded
-          ] }),
-          " lines added"
-        ] }),
-        totalRemoved > 0 && /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", style: "color:#f44336", children: [
-            "-",
-            totalRemoved
-          ] }),
-          " lines removed"
-        ] }),
-        /* @__PURE__ */ u4("div", { children: [
-          /* @__PURE__ */ u4("strong", { class: "tab-stat-val", children: reversed.length }),
-          " sessions"
-        ] })
-      ] }),
-      reversed.map((sess, ridx) => /* @__PURE__ */ u4(
-        SessionBlock2,
-        {
-          sess,
-          ridx,
-          allCount: sessions.length,
-          isOpen: ridx === 0
-        },
-        sess.traceId + ridx
-      ))
-    ] });
-  }
-
-  // media/src/tabs/Flow.tsx
-  var LLM_COLOR = "#3794FF";
-  var TOOL_COLOR = "#B8E986";
-  var ERR_COLOR = "#f44747";
-  var TURN_X = 130;
-  var TOOL_X = 380;
-  var LLM_R = 26;
-  var TOOL_R = 22;
-  function createInferredTurnEntry(sess, tools, index) {
-    const sourceLabel = getAgentSourceLabel(sess.source);
-    return {
-      type: "llm",
-      spanId: "flow-inferred-turn-" + index,
-      label: sourceLabel + " tool phase",
-      model: sess.model || sourceLabel,
-      durationMs: 0,
-      action: "Inferred turn for tool events emitted before a response",
-      isError: tools.some((t4) => t4.isError),
-      timestamp: tools[0]?.timestamp || sess.startTime
-    };
-  }
-  function buildTurnGroups(sess, timeline) {
-    const turns = [];
-    let pendingTools = [];
-    const pushInferredTurn = () => {
-      if (pendingTools.length === 0) {
-        return;
-      }
-      turns.push({
-        entry: createInferredTurnEntry(sess, pendingTools, turns.length),
-        tools: pendingTools
-      });
-      pendingTools = [];
-    };
-    for (const entry of timeline) {
-      if (entry.type === "llm") {
-        if (turns.length === 0) {
-          pushInferredTurn();
-        } else {
-          turns[turns.length - 1].tools = pendingTools;
-          pendingTools = [];
-        }
-        turns.push({ entry, tools: [] });
-      } else if (entry.type === "tool") {
-        pendingTools.push(entry);
-      }
-    }
-    if (pendingTools.length > 0) {
-      if (turns.length > 0) {
-        turns[turns.length - 1].tools = pendingTools;
-      } else {
-        pushInferredTurn();
-      }
-    }
-    return turns;
-  }
-  function isInferredTurn(entry) {
-    return entry.spanId.startsWith("flow-inferred-turn-");
-  }
-  function Flow() {
-    const sessions = displaySessions.value;
-    const [selectedIdx, setSelectedIdx] = d2(-1);
-    const [isPlaying, setIsPlaying] = d2(false);
-    const setIsPlayingRef = A2(setIsPlaying);
-    setIsPlayingRef.current = setIsPlaying;
-    const canvasRef = A2(null);
-    const stateRef = A2({
-      zoom: 1,
-      panX: 0,
-      panY: 0,
-      dragging: false,
-      didDrag: false,
-      lastMX: 0,
-      lastMY: 0,
-      hoverNodeId: null,
-      clickedNodeId: null,
-      nodes: [],
-      edges: [],
-      playbackTurns: [],
-      // node indices for LLM turns in order
-      playbackIdx: 0,
-      playbackPlaying: false,
-      playbackTimer: null
-    });
-    if (sessions.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "flow-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    const allSessions = sessions.map((sess, idx) => {
-      const num = getSessionGlobalNumber(sess) || idx + 1;
-      const src = getAgentSourceLabel(sess.source);
-      const turns = sess.totalLlmCalls ?? 0;
-      const tools = sess.totalToolCalls ?? 0;
-      return {
-        label: `${num} \xB7 ${src} \xB7 ${turns} turns \xB7 ${tools} tool calls`,
-        sess
-      };
-    });
-    const clampedIdx = Math.max(0, Math.min(
-      selectedIdx < 0 ? allSessions.length - 1 : selectedIdx,
-      allSessions.length - 1
-    ));
-    y2(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const st = stateRef.current;
-      if (st.playbackTimer) {
-        clearInterval(st.playbackTimer);
-        st.playbackTimer = null;
-      }
-      st.playbackPlaying = false;
-      st.playbackIdx = 0;
-      st.clickedNodeId = null;
-      setIsPlayingRef.current(false);
-      const sess = allSessions[clampedIdx]?.sess;
-      const loadedTimeline = sess ? sessionTimelines.value[sess.sessionId] ?? sess.timeline : [];
-      if (sess && !sessionTimelines.value[sess.sessionId]) {
-        vscode?.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
-      }
-      const timeline = (loadedTimeline ?? []).filter((e4) => e4.type !== "background");
-      const turns = sess ? buildTurnGroups(sess, timeline) : [];
-      const toolData = /* @__PURE__ */ new Map();
-      turns.forEach((turn, ti) => {
-        const seenThisTurn = /* @__PURE__ */ new Set();
-        turn.tools.forEach((t4) => {
-          const name = t4.label || "tool";
-          if (!toolData.has(name)) toolData.set(name, { count: 0, totalMs: 0, errors: 0, turns: [] });
-          const d5 = toolData.get(name);
-          d5.count++;
-          d5.totalMs += t4.durationMs || 0;
-          if (t4.isError) d5.errors++;
-          if (!seenThisTurn.has(name)) {
-            d5.turns.push(ti);
-            seenThisTurn.add(name);
-          }
-        });
-      });
-      const N2 = turns.length;
-      const TURN_SPACING = N2 <= 1 ? 100 : Math.max(65, Math.min(100, Math.floor(480 / Math.max(N2 - 1, 1))));
-      const TOOL_MIN_GAP = 68;
-      const START_Y = 70;
-      const nodes = [];
-      const edges = [];
-      const nodeIdxMap = {};
-      turns.forEach((turn, i4) => {
-        const inferred = isInferredTurn(turn.entry);
-        const node = {
-          id: "llm-" + i4,
-          x: TURN_X,
-          y: START_Y + i4 * TURN_SPACING,
-          color: turn.entry.isError ? ERR_COLOR : LLM_COLOR,
-          type: "llm",
-          label: "T" + (i4 + 1),
-          subLabel: inferred ? turn.tools.length + "\xD7" : (turn.entry.inputTokens ?? 0) > 0 ? Math.round((turn.entry.inputTokens ?? 0) / 1e3) + "K" : "",
-          turnNum: i4 + 1,
-          totalTurns: turns.length,
-          inputTokens: turn.entry.inputTokens ?? 0,
-          outputTokens: turn.entry.outputTokens ?? 0,
-          costUsd: inferred ? void 0 : calcEntryCost(turn.entry, sess?.model ?? "") || void 0,
-          model: turn.entry.model ?? turn.entry.label ?? "",
-          durationMs: turn.entry.durationMs ?? 0,
-          action: turn.entry.action ?? "",
-          note: inferred ? "Tool events arrived before a response event, so Flow anchors them to this inferred turn." : void 0,
-          toolsUsed: [...new Set(turn.tools.map((t4) => t4.label || "tool"))],
-          isError: turn.entry.isError
-        };
-        nodeIdxMap[node.id] = nodes.length;
-        nodes.push(node);
-      });
-      for (let i4 = 0; i4 < turns.length - 1; i4++) {
-        edges.push({ from: nodeIdxMap["llm-" + i4], to: nodeIdxMap["llm-" + (i4 + 1)], count: 1, kind: "seq" });
-      }
-      const toolNames = Array.from(toolData.keys());
-      const toolTargetY = (name) => {
-        const d5 = toolData.get(name);
-        const avg = d5.turns.reduce((a4, b4) => a4 + b4, 0) / d5.turns.length;
-        return START_Y + avg * TURN_SPACING;
-      };
-      const sortedTools = [...toolNames].sort((a4, b4) => toolTargetY(a4) - toolTargetY(b4));
-      let prevY = -Infinity;
-      const toolY = {};
-      for (const name of sortedTools) {
-        const ty = Math.max(toolTargetY(name), prevY + TOOL_MIN_GAP);
-        toolY[name] = ty;
-        prevY = ty;
-      }
-      if (sortedTools.length > 0) {
-        const turnsCenter = START_Y + (N2 - 1) * TURN_SPACING / 2;
-        const toolsFirst = toolY[sortedTools[0]];
-        const toolsLast = toolY[sortedTools[sortedTools.length - 1]];
-        const toolsCenter = (toolsFirst + toolsLast) / 2;
-        const shift = turnsCenter - toolsCenter;
-        sortedTools.forEach((name) => {
-          toolY[name] += shift;
-        });
-      }
-      sortedTools.forEach((name) => {
-        const d5 = toolData.get(name);
-        const node = {
-          id: "tool-" + name,
-          x: TOOL_X,
-          y: toolY[name],
-          color: d5.errors > 0 ? ERR_COLOR : TOOL_COLOR,
-          type: "tool",
-          label: name.length > 14 ? name.slice(0, 13) + "\u2026" : name,
-          fullLabel: name,
-          subLabel: d5.count + "\xD7",
-          callCount: d5.count,
-          totalDurationMs: d5.totalMs,
-          avgDurationMs: d5.count > 0 ? Math.round(d5.totalMs / d5.count) : 0,
-          errorCount: d5.errors,
-          usedInTurns: d5.turns
-        };
-        nodeIdxMap[node.id] = nodes.length;
-        nodes.push(node);
-      });
-      turns.forEach((turn, ti) => {
-        const perTool = {};
-        turn.tools.forEach((t4) => {
-          const n3 = t4.label || "tool";
-          perTool[n3] = (perTool[n3] || 0) + 1;
-        });
-        Object.entries(perTool).forEach(([name, count]) => {
-          const from = nodeIdxMap["llm-" + ti];
-          const to = nodeIdxMap["tool-" + name];
-          if (from !== void 0 && to !== void 0) {
-            edges.push({ from, to, count, kind: "use" });
-          }
-        });
-      });
-      st.nodes = nodes;
-      st.edges = edges;
-      st.playbackTurns = turns.map((_4, i4) => nodeIdxMap["llm-" + i4]).filter((i4) => i4 !== void 0);
-      function nR(n3) {
-        return n3.type === "llm" ? LLM_R : TOOL_R;
-      }
-      function centerGraph() {
-        if (!canvas || nodes.length === 0) return;
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        nodes.forEach((n3) => {
-          const pad = nR(n3) + 34;
-          if (n3.x - pad < minX) minX = n3.x - pad;
-          if (n3.y - pad < minY) minY = n3.y - pad;
-          if (n3.x + pad > maxX) maxX = n3.x + pad;
-          if (n3.y + pad > maxY) maxY = n3.y + pad;
-        });
-        const gW = maxX - minX + 40, gH = maxY - minY + 40;
-        const rect = canvas.getBoundingClientRect();
-        if (!rect.width || !rect.height) return;
-        st.zoom = Math.max(0.15, Math.min(rect.width / gW, rect.height / gH, 1.4));
-        st.panX = rect.width / 2 - (minX + maxX) / 2 * st.zoom;
-        st.panY = rect.height / 2 - (minY + maxY) / 2 * st.zoom;
-      }
-      function draw() {
-        if (!canvas) return;
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        if (!rect.width || !rect.height) return;
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        const ctx = canvas.getContext("2d");
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, rect.width, rect.height);
-        ctx.save();
-        ctx.translate(st.panX, st.panY);
-        ctx.scale(st.zoom, st.zoom);
-        const cs = getComputedStyle(document.body);
-        const fg = cs.getPropertyValue("--fg").trim() || "#ccc";
-        const muted = cs.getPropertyValue("--muted").trim() || "#666";
-        if (turns.length === 0) {
-          ctx.restore();
-          ctx.font = "13px sans-serif";
-          ctx.fillStyle = muted;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText("No timeline data for this session", rect.width / 2, rect.height / 2);
-          return;
-        }
-        const activeId = st.clickedNodeId || st.hoverNodeId;
-        const hlNodes = /* @__PURE__ */ new Set();
-        const hlEdges = /* @__PURE__ */ new Set();
-        if (activeId) {
-          hlNodes.add(activeId);
-          edges.forEach((e4, ei) => {
-            const fn = nodes[e4.from], tn = nodes[e4.to];
-            if (fn.id === activeId || tn.id === activeId) {
-              hlEdges.add(ei);
-              hlNodes.add(fn.id);
-              hlNodes.add(tn.id);
-            }
-          });
-        }
-        const llmNodes = nodes.filter((n3) => n3.type === "llm");
-        if (llmNodes.length >= 2) {
-          const spineX = TURN_X - 44;
-          ctx.save();
-          ctx.setLineDash([4, 5]);
-          ctx.strokeStyle = LLM_COLOR + "40";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(spineX, llmNodes[0].y);
-          ctx.lineTo(spineX, llmNodes[llmNodes.length - 1].y);
-          ctx.stroke();
-          ctx.setLineDash([]);
-          llmNodes.forEach((n3) => {
-            ctx.strokeStyle = LLM_COLOR + "38";
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(spineX, n3.y);
-            ctx.lineTo(n3.x - LLM_R, n3.y);
-            ctx.stroke();
-          });
-          ctx.restore();
-        }
-        edges.forEach((e4, ei) => {
-          const a4 = nodes[e4.from], b4 = nodes[e4.to];
-          const isHl = activeId ? hlEdges.has(ei) : false;
-          const dimmed = activeId && !isHl;
-          if (e4.kind === "seq") {
-            const ax = a4.x + 8, ay = a4.y + LLM_R;
-            const bx = b4.x + 8, by = b4.y - LLM_R;
-            ctx.beginPath();
-            ctx.moveTo(ax, ay);
-            ctx.lineTo(bx, by);
-            ctx.strokeStyle = dimmed ? LLM_COLOR + "18" : isHl ? LLM_COLOR : LLM_COLOR + "50";
-            ctx.lineWidth = isHl ? 2.5 : 1.5;
-            ctx.stroke();
-            const ang = Math.atan2(by - ay, bx - ax), aLen = 7;
-            ctx.beginPath();
-            ctx.moveTo(bx, by);
-            ctx.lineTo(bx - aLen * Math.cos(ang - 0.4), by - aLen * Math.sin(ang - 0.4));
-            ctx.lineTo(bx - aLen * Math.cos(ang + 0.4), by - aLen * Math.sin(ang + 0.4));
-            ctx.closePath();
-            ctx.fillStyle = dimmed ? LLM_COLOR + "18" : isHl ? LLM_COLOR : LLM_COLOR + "60";
-            ctx.fill();
-          } else {
-            const sx = a4.x + LLM_R, sy = a4.y;
-            const ex = b4.x - TOOL_R, ey = b4.y;
-            const span = TOOL_X - TURN_X;
-            const cp1x = sx + span * 0.45, cp1y = sy;
-            const cp2x = ex - span * 0.45, cp2y = ey;
-            const alpha = dimmed ? 0.08 : isHl ? 1 : Math.min(0.75, 0.28 + e4.count * 0.1);
-            const lw = isHl ? 2.5 : Math.min(4, 1 + e4.count * 0.5);
-            const hexA = Math.round(alpha * 255).toString(16).padStart(2, "0");
-            ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, ex, ey);
-            ctx.strokeStyle = a4.color + hexA;
-            ctx.lineWidth = lw;
-            ctx.stroke();
-            const ang = Math.atan2(ey - cp2y, ex - cp2x), aLen = 7;
-            ctx.beginPath();
-            ctx.moveTo(ex, ey);
-            ctx.lineTo(ex - aLen * Math.cos(ang - 0.4), ey - aLen * Math.sin(ang - 0.4));
-            ctx.lineTo(ex - aLen * Math.cos(ang + 0.4), ey - aLen * Math.sin(ang + 0.4));
-            ctx.closePath();
-            ctx.fillStyle = a4.color + hexA;
-            ctx.fill();
-            if (e4.count > 1 && !dimmed) {
-              const mx = (sx + ex) / 2, my = (sy + ey) / 2 - 9;
-              ctx.font = "bold 9px sans-serif";
-              ctx.fillStyle = a4.color + "cc";
-              ctx.textAlign = "center";
-              ctx.textBaseline = "middle";
-              ctx.fillText(e4.count + "\xD7", mx, my);
-            }
-          }
-        });
-        nodes.forEach((n3) => {
-          const r5 = nR(n3);
-          const isActive = n3.id === activeId;
-          const inHL = activeId ? hlNodes.has(n3.id) : false;
-          const dimmed = activeId && !inHL;
-          if (isActive) {
-            ctx.save();
-            ctx.shadowColor = n3.color;
-            ctx.shadowBlur = 20;
-            ctx.beginPath();
-            ctx.arc(n3.x, n3.y, r5 + 4, 0, Math.PI * 2);
-            ctx.strokeStyle = n3.color;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.restore();
-          }
-          ctx.beginPath();
-          ctx.arc(n3.x, n3.y, r5, 0, Math.PI * 2);
-          ctx.fillStyle = isActive ? n3.color + "aa" : dimmed ? n3.color + "10" : n3.color + "28";
-          ctx.fill();
-          ctx.strokeStyle = dimmed ? n3.color + "30" : n3.color;
-          ctx.lineWidth = isActive ? 3 : inHL ? 2.5 : 2;
-          ctx.stroke();
-          ctx.font = (isActive ? "bold " : "") + "10px sans-serif";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = dimmed ? muted + "40" : fg;
-          ctx.fillText(n3.label, n3.x, n3.y - (n3.subLabel ? 4 : 0));
-          if (n3.subLabel) {
-            ctx.font = "8px sans-serif";
-            ctx.fillStyle = dimmed ? muted + "30" : n3.type === "llm" ? "#7bb3ff" : n3.color === ERR_COLOR ? "#f99" : "#8ec96b";
-            ctx.fillText(n3.subLabel, n3.x, n3.y + 7);
-          }
-          ctx.font = "9px sans-serif";
-          ctx.fillStyle = dimmed ? muted + "30" : muted;
-          ctx.fillText(n3.type === "llm" ? "Turn " + n3.turnNum : "", n3.x, n3.y + r5 + 11);
-        });
-        const tipId = st.clickedNodeId || st.hoverNodeId;
-        if (tipId) {
-          const hn = nodes.find((n3) => n3.id === tipId);
-          if (hn) {
-            const trunc = (s4, max) => s4 && s4.length > max ? s4.slice(0, max) + "\u2026" : s4 || "";
-            const lines = [];
-            if (hn.type === "llm") {
-              lines.push({ value: "Turn " + hn.turnNum + " of " + hn.totalTurns, bold: true, color: hn.color });
-              if (hn.model) lines.push({ label: "Model", value: trunc(hn.model, 42) });
-              if (hn.note) lines.push({ label: "Note", value: hn.note });
-              if ((hn.inputTokens ?? 0) > 0 || (hn.outputTokens ?? 0) > 0)
-                lines.push({ label: "Tokens", value: (hn.inputTokens ?? 0).toLocaleString() + " in \u2192 " + (hn.outputTokens ?? 0).toLocaleString() + " out" });
-              if ((hn.costUsd ?? 0) > 0)
-                lines.push({ label: "Cost", value: fmtUsd(hn.costUsd) });
-              if (hn.durationMs) lines.push({ label: "Duration", value: formatMs(hn.durationMs) });
-              if (hn.action) lines.push({ label: "Outcome", value: hn.action });
-              if (hn.toolsUsed?.length) lines.push({ label: "Tools used", value: hn.toolsUsed.slice(0, 5).join(", ") + (hn.toolsUsed.length > 5 ? " +" + (hn.toolsUsed.length - 5) + " more" : "") });
-              if (hn.isError) lines.push({ label: "Error", value: "This LLM call failed", color: ERR_COLOR });
-            } else {
-              lines.push({ value: hn.fullLabel || hn.label, bold: true, color: hn.color });
-              lines.push({ label: "Total calls", value: String(hn.callCount) });
-              if ((hn.usedInTurns?.length ?? 0) > 0)
-                lines.push({ label: "Used in turns", value: "T" + (hn.usedInTurns ?? []).map((t4) => t4 + 1).join(", T") });
-              if (hn.avgDurationMs) lines.push({ label: "Avg duration", value: formatMs(hn.avgDurationMs) });
-              if (hn.totalDurationMs) lines.push({ label: "Total time", value: formatMs(hn.totalDurationMs) });
-              if (hn.errorCount) lines.push({ label: "Errors", value: hn.errorCount + " failed call(s)", color: ERR_COLOR });
-            }
-            ctx.font = "11px sans-serif";
-            const lineH = 19, padX = 12, padY = 10;
-            let labelW = 0, valueW = 0;
-            lines.forEach((line) => {
-              if (line.label) {
-                ctx.font = "bold 10px sans-serif";
-                const lw = ctx.measureText(line.label + ":").width;
-                if (lw > labelW) labelW = lw;
-              }
-              ctx.font = line.bold ? "bold 12px sans-serif" : "11px sans-serif";
-              const vw = ctx.measureText(line.value).width;
-              if (vw > valueW) valueW = vw;
-            });
-            const gapW = 10, contentW = Math.max(labelW + gapW + valueW, valueW);
-            const boxW = Math.min(contentW + padX * 2, 390);
-            const boxH = lines.length * lineH + padY * 2 + 4;
-            let boxX = hn.x + nR(hn) + 14;
-            const boxY = hn.y - boxH / 2;
-            if (hn.x + nR(hn) + 14 + boxW > rect.width / st.zoom - st.panX / st.zoom - 20) {
-              boxX = hn.x - nR(hn) - 14 - boxW;
-            }
-            const br = 7;
-            ctx.fillStyle = "rgba(22,22,26,0.97)";
-            ctx.strokeStyle = hn.color;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(boxX + br, boxY);
-            ctx.lineTo(boxX + boxW - br, boxY);
-            ctx.quadraticCurveTo(boxX + boxW, boxY, boxX + boxW, boxY + br);
-            ctx.lineTo(boxX + boxW, boxY + boxH - br);
-            ctx.quadraticCurveTo(boxX + boxW, boxY + boxH, boxX + boxW - br, boxY + boxH);
-            ctx.lineTo(boxX + br, boxY + boxH);
-            ctx.quadraticCurveTo(boxX, boxY + boxH, boxX, boxY + boxH - br);
-            ctx.lineTo(boxX, boxY + br);
-            ctx.quadraticCurveTo(boxX, boxY, boxX + br, boxY);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = hn.color + "cc";
-            ctx.fillRect(boxX, boxY + br, 3, boxH - br * 2);
-            ctx.textAlign = "left";
-            ctx.textBaseline = "top";
-            let dividerDrawn = false;
-            lines.forEach((line, li) => {
-              const ly = boxY + padY + li * lineH + 2;
-              if (line.label) {
-                if (!dividerDrawn) {
-                  dividerDrawn = true;
-                  ctx.strokeStyle = "rgba(255,255,255,0.08)";
-                  ctx.lineWidth = 0.5;
-                  ctx.beginPath();
-                  ctx.moveTo(boxX + 10, ly - 4);
-                  ctx.lineTo(boxX + boxW - 10, ly - 4);
-                  ctx.stroke();
-                }
-                ctx.font = "bold 10px sans-serif";
-                ctx.fillStyle = "#777";
-                ctx.fillText(line.label + ":", boxX + padX + 4, ly + 1);
-                ctx.font = "11px sans-serif";
-                ctx.fillStyle = line.color || "#ddd";
-                ctx.fillText(line.value, boxX + padX + 4 + labelW + gapW, ly);
-              } else {
-                ctx.font = line.bold ? "bold 12px sans-serif" : "11px sans-serif";
-                ctx.fillStyle = line.color || "#fff";
-                ctx.fillText(line.value, boxX + padX + 4, ly);
-              }
-            });
-          }
-        }
-        ctx.restore();
-      }
-      requestAnimationFrame(() => {
-        centerGraph();
-        draw();
-      });
-      const onWheel = (e4) => {
-        e4.preventDefault();
-        const f5 = e4.deltaY < 0 ? 1.1 : 0.9;
-        const wx = (e4.offsetX - st.panX) / st.zoom, wy = (e4.offsetY - st.panY) / st.zoom;
-        st.zoom = Math.max(0.1, Math.min(5, st.zoom * f5));
-        st.panX = e4.offsetX - wx * st.zoom;
-        st.panY = e4.offsetY - wy * st.zoom;
-        draw();
-      };
-      const onMouseDown = (e4) => {
-        st.dragging = true;
-        st.didDrag = false;
-        st.lastMX = e4.offsetX;
-        st.lastMY = e4.offsetY;
-        canvas.style.cursor = "grabbing";
-      };
-      const onMouseMove = (e4) => {
-        if (st.dragging) {
-          st.didDrag = true;
-          st.panX += e4.offsetX - st.lastMX;
-          st.panY += e4.offsetY - st.lastMY;
-          st.lastMX = e4.offsetX;
-          st.lastMY = e4.offsetY;
-          draw();
-          return;
-        }
-        if (!st.playbackPlaying) {
-          const rect = canvas.getBoundingClientRect();
-          const mx = (e4.clientX - rect.left - st.panX) / st.zoom;
-          const my = (e4.clientY - rect.top - st.panY) / st.zoom;
-          let found = null;
-          for (const n3 of nodes) {
-            const r5 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
-            if (dx * dx + dy * dy <= r5 * r5) {
-              found = n3.id;
-              break;
-            }
-          }
-          if (found !== st.hoverNodeId) {
-            st.hoverNodeId = found;
-            canvas.style.cursor = found ? "pointer" : "grab";
-            draw();
-          }
-        }
-      };
-      const onMouseUp = () => {
-        st.dragging = false;
-        canvas.style.cursor = "grab";
-      };
-      const onMouseLeave = () => {
-        st.dragging = false;
-        st.hoverNodeId = null;
-        canvas.style.cursor = "grab";
-        draw();
-      };
-      const onClick = (e4) => {
-        if (st.didDrag) return;
-        const rect = canvas.getBoundingClientRect();
-        const mx = (e4.clientX - rect.left - st.panX) / st.zoom;
-        const my = (e4.clientY - rect.top - st.panY) / st.zoom;
-        for (const n3 of nodes) {
-          const r5 = nR(n3), dx = mx - n3.x, dy = my - n3.y;
-          if (dx * dx + dy * dy <= r5 * r5) {
-            st.clickedNodeId = st.clickedNodeId === n3.id ? null : n3.id;
-            draw();
-            return;
-          }
-        }
-        st.clickedNodeId = null;
-        draw();
-      };
-      canvas.addEventListener("wheel", onWheel, { passive: false });
-      canvas.addEventListener("mousedown", onMouseDown);
-      canvas.addEventListener("mousemove", onMouseMove);
-      canvas.addEventListener("mouseup", onMouseUp);
-      canvas.addEventListener("mouseleave", onMouseLeave);
-      canvas.addEventListener("click", onClick);
-      canvas.__flowDraw = draw;
-      canvas.__flowCenter = centerGraph;
-      return () => {
-        if (st.playbackTimer) clearInterval(st.playbackTimer);
-        canvas.removeEventListener("wheel", onWheel);
-        canvas.removeEventListener("mousedown", onMouseDown);
-        canvas.removeEventListener("mousemove", onMouseMove);
-        canvas.removeEventListener("mouseup", onMouseUp);
-        canvas.removeEventListener("mouseleave", onMouseLeave);
-        canvas.removeEventListener("click", onClick);
-      };
-    }, [sessions, clampedIdx, sessionTimelines.value[allSessions[clampedIdx < 0 ? allSessions.length - 1 : clampedIdx]?.sess?.sessionId ?? ""]]);
-    function handleZoomIn() {
-      const c4 = canvasRef.current;
-      if (!c4) return;
-      stateRef.current.zoom = Math.min(5, stateRef.current.zoom * 1.3);
-      c4.__flowDraw?.();
-    }
-    function handleZoomOut() {
-      const c4 = canvasRef.current;
-      if (!c4) return;
-      stateRef.current.zoom = Math.max(0.1, stateRef.current.zoom / 1.3);
-      c4.__flowDraw?.();
-    }
-    function handleReset() {
-      const c4 = canvasRef.current;
-      if (!c4) return;
-      c4.__flowCenter?.();
-      c4.__flowDraw?.();
-    }
-    function handlePlayPause() {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const st = stateRef.current;
-      const draw = canvas.__flowDraw;
-      if (!draw) return;
-      const speedSel = canvas.closest("#flow-content")?.querySelector("#flow-speed");
-      const prog = canvas.closest("#flow-content")?.querySelector("#flow-progress");
-      if (st.playbackPlaying) {
-        if (st.playbackTimer) clearInterval(st.playbackTimer);
-        st.playbackTimer = null;
-        st.playbackPlaying = false;
-        st.clickedNodeId = null;
-        setIsPlaying(false);
-        if (prog) prog.textContent = "";
-        draw();
-        return;
-      }
-      if (st.playbackTurns.length === 0) return;
-      st.playbackPlaying = true;
-      setIsPlaying(true);
-      const speed = parseInt(speedSel?.value ?? "800") || 800;
-      st.playbackIdx = 0;
-      st.clickedNodeId = st.nodes[st.playbackTurns[0]]?.id ?? null;
-      if (prog) prog.textContent = "1 / " + st.playbackTurns.length;
-      draw();
-      st.playbackTimer = setInterval(() => {
-        if (st.playbackIdx >= st.playbackTurns.length - 1) {
-          clearInterval(st.playbackTimer);
-          st.playbackTimer = null;
-          st.playbackPlaying = false;
-          st.clickedNodeId = null;
-          setIsPlayingRef.current(false);
-          if (prog) prog.textContent = "";
-          draw();
-          return;
-        }
-        st.playbackIdx++;
-        st.clickedNodeId = st.nodes[st.playbackTurns[st.playbackIdx]]?.id ?? null;
-        if (prog) prog.textContent = st.playbackIdx + 1 + " / " + st.playbackTurns.length;
-        draw();
-      }, speed);
-    }
-    return /* @__PURE__ */ u4("div", { id: "flow-content", children: [
-      /* @__PURE__ */ u4("div", { class: "flow-controls", style: "margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap", children: [
-        /* @__PURE__ */ u4(
-          "select",
-          {
-            id: "flow-session-select",
-            class: "toolbar-select",
-            value: clampedIdx,
-            onChange: (e4) => setSelectedIdx(parseInt(e4.target.value) || 0),
-            children: allSessions.map((s4, idx) => /* @__PURE__ */ u4("option", { value: idx, children: s4.label }, idx))
-          }
-        ),
-        /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleZoomIn, children: "+" }),
-        /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleZoomOut, children: "\u2212" }),
-        /* @__PURE__ */ u4("button", { class: "flow-btn", onClick: handleReset, children: "Reset" }),
-        /* @__PURE__ */ u4("span", { style: "width:1px;height:16px;background:var(--border);margin:0 4px" }),
-        /* @__PURE__ */ u4("button", { class: "flow-btn", title: "Animate turn sequence", onClick: handlePlayPause, children: isPlaying ? "\u23F8" : "\u25B6" }),
-        /* @__PURE__ */ u4("span", { class: "toolbar-control-label", children: "Speed" }),
-        /* @__PURE__ */ u4("select", { id: "flow-speed", class: "toolbar-select", children: [
-          /* @__PURE__ */ u4("option", { value: "2000", children: "Slow" }),
-          /* @__PURE__ */ u4("option", { value: "800", selected: true, children: "Normal" }),
-          /* @__PURE__ */ u4("option", { value: "300", children: "Fast" })
-        ] })
-      ] }),
-      /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:8px;font-size:10px;color:var(--muted);flex-wrap:wrap;align-items:center", children: [
-        [
-          { color: LLM_COLOR, label: "LLM turn" },
-          { color: TOOL_COLOR, label: "Tool" },
-          { color: ERR_COLOR, label: "Error" }
-        ].map(({ color, label }) => /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px", children: [
-          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:9px;height:9px;border-radius:50%;background:" + color + "30;border:1.5px solid " + color }),
-          label
-        ] }, label)),
-        /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "Edge thickness = call freq" })
-      ] }),
-      /* @__PURE__ */ u4(
-        "canvas",
-        {
-          ref: canvasRef,
-          id: "flow-canvas",
-          style: "width:100%;height:520px;display:block;border:1px solid var(--border);border-radius:4px;cursor:grab"
-        }
-      )
-    ] });
-  }
-
-  // media/src/tabs/Agents.tsx
-  function computeStats(sessions) {
-    let totalInput = 0, totalOutput = 0, totalCache = 0;
-    let totalLlm = 0, totalTools = 0, ttftSum = 0, ttftCount = 0, durSum = 0;
-    const toolCounts = {};
-    sessions.forEach((s4) => {
-      totalInput += s4.inputTokens ?? 0;
-      totalOutput += s4.outputTokens ?? 0;
-      totalCache += (s4.cacheReadTokens ?? 0) + (s4.cacheCreateTokens ?? 0);
-      totalLlm += s4.totalLlmCalls ?? 0;
-      totalTools += s4.totalToolCalls ?? 0;
-      durSum += s4.durationMs ?? 0;
-      Object.keys(s4.toolCounts ?? {}).forEach((t4) => {
-        toolCounts[t4] = (toolCounts[t4] ?? 0) + s4.toolCounts[t4];
-      });
-      (s4.timeline ?? []).forEach((e4) => {
-        if (e4.type === "llm" && e4.ttft) {
-          ttftSum += e4.ttft;
-          ttftCount++;
-        }
-      });
-    });
-    return {
-      sessions: sessions.length,
-      totalInput,
-      totalOutput,
-      totalCache,
-      totalLlm,
-      totalTools,
-      avgTtft: ttftCount > 0 ? Math.round(ttftSum / ttftCount) : 0,
-      avgDuration: sessions.length > 0 ? Math.round(durSum / sessions.length) : 0,
-      cacheHitRate: totalInput > 0 ? totalCache / totalInput : 0,
-      toolCounts
-    };
-  }
-  function KV({ k: k3, v: v4, accent }) {
-    return /* @__PURE__ */ u4("div", { style: "padding:5px 8px;background:var(--panel-bg);border-radius:4px", children: [
-      /* @__PURE__ */ u4("div", { style: "font-size:18px;font-weight:bold;color:" + accent, children: v4 }),
-      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted)", children: k3 })
-    ] });
-  }
-  function AgentCol({ label, accent, stats }) {
-    const topTools = Object.keys(stats.toolCounts).sort((a4, b4) => stats.toolCounts[b4] - stats.toolCounts[a4]).slice(0, 8);
-    return /* @__PURE__ */ u4("div", { style: "border:1px solid var(--border);border-radius:6px;padding:12px", children: [
-      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;margin-bottom:10px", children: [
-        /* @__PURE__ */ u4("span", { style: "width:10px;height:10px;border-radius:50%;background:" + accent + ";display:inline-block" }),
-        /* @__PURE__ */ u4("strong", { style: "font-size:13px", children: label })
-      ] }),
-      stats.sessions === 0 ? /* @__PURE__ */ u4("div", { class: "empty-state", style: "font-size:12px;padding:12px 0", children: [
-        "No agent sessions recorded \u2014 start a ",
-        label,
-        " session"
-      ] }) : /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px", children: [
-          /* @__PURE__ */ u4(KV, { k: "Sessions", v: stats.sessions, accent }),
-          /* @__PURE__ */ u4(KV, { k: "LLM Calls", v: stats.totalLlm, accent }),
-          /* @__PURE__ */ u4(KV, { k: "Input Tokens", v: formatCompact(stats.totalInput), accent }),
-          /* @__PURE__ */ u4(KV, { k: "Output Tokens", v: formatCompact(stats.totalOutput), accent }),
-          stats.totalCache > 0 && /* @__PURE__ */ u4(KV, { k: "Cache Tokens", v: formatCompact(stats.totalCache), accent }),
-          stats.totalCache > 0 && /* @__PURE__ */ u4(KV, { k: "Cache Hit Rate", v: (stats.cacheHitRate * 100).toFixed(0) + "%", accent }),
-          stats.avgTtft > 0 && /* @__PURE__ */ u4(KV, { k: "Avg TTFT", v: formatMs(stats.avgTtft), accent }),
-          /* @__PURE__ */ u4(KV, { k: "Avg Duration", v: formatMs(stats.avgDuration), accent }),
-          /* @__PURE__ */ u4(KV, { k: "Total Tools", v: stats.totalTools, accent })
-        ] }),
-        topTools.length > 0 && /* @__PURE__ */ u4(S, { children: [
-          /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);font-weight:600;margin-bottom:5px;text-transform:uppercase", children: "Top Tools" }),
-          /* @__PURE__ */ u4("div", { style: "display:flex;flex-wrap:wrap;gap:4px", children: topTools.map((t4) => /* @__PURE__ */ u4("span", { style: "padding:2px 7px;background:var(--panel-bg);border-radius:3px;font-size:11px", children: [
-            t4,
-            " ",
-            /* @__PURE__ */ u4("span", { style: "color:" + accent, children: stats.toolCounts[t4] })
-          ] }, t4)) })
-        ] })
-      ] })
-    ] });
-  }
-  function Agents() {
-    const allSessions = displaySessions.value;
-    if (!allSessions.length) {
-      return /* @__PURE__ */ u4("div", { id: "agents-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    const copStats = computeStats(allSessions.filter((s4) => s4.source === "copilot"));
-    const cldStats = computeStats(allSessions.filter((s4) => s4.source === "claude_code"));
-    const cdxStats = computeStats(allSessions.filter((s4) => s4.source === "codex"));
-    return /* @__PURE__ */ u4("div", { id: "agents-content", children: /* @__PURE__ */ u4("div", { style: "display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px", children: [
-      /* @__PURE__ */ u4(AgentCol, { label: "GitHub Copilot", accent: "#00EAFF", stats: copStats }),
-      /* @__PURE__ */ u4(AgentCol, { label: "Claude", accent: "#FFB085", stats: cldStats }),
-      /* @__PURE__ */ u4(AgentCol, { label: "Codex", accent: "#F0FF42", stats: cdxStats })
-    ] }) });
-  }
-
-  // media/src/tabs/Tools.tsx
-  function Tools() {
-    const sessions = displaySessions.value;
-    if (sessions.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "tools-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No agent sessions recorded \u2014 start a Copilot, Claude, or Codex session" }) });
-    }
-    const counts = {};
-    const toolErrors = {};
-    const toolAgents = {};
-    sessions.forEach((sess) => {
-      Object.entries(sess.toolCounts ?? {}).forEach(([tool, count]) => {
-        counts[tool] = (counts[tool] ?? 0) + count;
-        if (!toolAgents[tool]) toolAgents[tool] = {};
-        toolAgents[tool][sess.source] = true;
-      });
-      if (sess.errors > 0) {
-        Object.keys(sess.toolCounts ?? {}).forEach((tool) => {
-          toolErrors[tool] = toolErrors[tool] ?? 0;
-        });
-      }
-    });
-    const entries = Object.entries(counts).sort((a4, b4) => b4[1] - a4[1]);
-    if (entries.length === 0) {
-      return /* @__PURE__ */ u4("div", { id: "tools-content", children: /* @__PURE__ */ u4("div", { class: "empty-state", children: "No tool calls recorded yet" }) });
-    }
-    const total = entries.reduce((sum, e4) => sum + e4[1], 0);
-    const r5 = 80, cx = 100, cy = 100, sw = 30;
-    const angleOffset = -Math.PI / 2;
-    let currentAngle = angleOffset;
-    function arcPath(startAngle, endAngle) {
-      const x1 = cx + r5 * Math.cos(startAngle), y1 = cy + r5 * Math.sin(startAngle);
-      const x22 = cx + r5 * Math.cos(endAngle), y22 = cy + r5 * Math.sin(endAngle);
-      const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
-      return `M ${x1} ${y1} A ${r5} ${r5} 0 ${largeArc} 1 ${x22} ${y22}`;
-    }
-    const slices = entries.map((e4, i4) => {
-      const pct = e4[1] / total;
-      const sliceAngle = pct * 2 * Math.PI;
-      const color = COLORS[i4 % COLORS.length];
-      const startA = currentAngle;
-      currentAngle += sliceAngle;
-      return { name: e4[0], count: e4[1], pct, color, startA, endA: currentAngle };
-    });
-    return /* @__PURE__ */ u4("div", { id: "tools-content", children: [
-      /* @__PURE__ */ u4("h3", { style: "margin:0 0 16px;font-size:13px;color:var(--muted)", children: "TOOL CALL DISTRIBUTION" }),
-      /* @__PURE__ */ u4("div", { class: "donut-container", children: [
-        /* @__PURE__ */ u4("svg", { width: "200", height: "200", viewBox: "0 0 200 200", children: [
-          slices.map(
-            (sl) => sl.pct >= 1 ? /* @__PURE__ */ u4("circle", { cx, cy, r: r5, fill: "none", stroke: sl.color, "stroke-width": sw }, sl.name) : /* @__PURE__ */ u4("path", { d: arcPath(sl.startA, sl.endA), fill: "none", stroke: sl.color, "stroke-width": sw, "stroke-linecap": "butt" }, sl.name)
-          ),
-          /* @__PURE__ */ u4("text", { x: cx, y: cy, "text-anchor": "middle", dy: "4", "font-size": "18", "font-weight": "bold", fill: "var(--fg)", children: total }),
-          /* @__PURE__ */ u4("text", { x: cx, y: cy + 16, "text-anchor": "middle", "font-size": "10", fill: "var(--muted)", opacity: "0.7", children: "total" })
-        ] }),
-        /* @__PURE__ */ u4("div", { class: "donut-legend", children: slices.map((sl) => /* @__PURE__ */ u4("div", { class: "donut-legend-item", children: [
-          /* @__PURE__ */ u4("div", { class: "donut-legend-color", style: "background:" + sl.color }),
-          /* @__PURE__ */ u4("span", { children: [
-            sl.name,
-            " (",
-            sl.count,
-            ", ",
-            (sl.pct * 100).toFixed(1),
-            "%)"
-          ] })
-        ] }, sl.name)) })
-      ] }),
-      /* @__PURE__ */ u4("h3", { style: "margin:24px 0 12px;font-size:13px;color:var(--muted)", children: "TOOL CALL BREAKDOWN" }),
-      /* @__PURE__ */ u4("table", { class: "tool-insights-table", children: [
-        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { children: [
-          /* @__PURE__ */ u4("th", { children: "Tool" }),
-          /* @__PURE__ */ u4("th", { children: "Calls" }),
-          /* @__PURE__ */ u4("th", { children: "% of Total" }),
-          /* @__PURE__ */ u4("th", { children: "Agents" })
-        ] }) }),
-        /* @__PURE__ */ u4("tbody", { children: entries.map(([name, callCount]) => {
-          const agents = toolAgents[name] ? Object.keys(toolAgents[name]) : [];
-          return /* @__PURE__ */ u4("tr", { children: [
-            /* @__PURE__ */ u4("td", { children: name }),
-            /* @__PURE__ */ u4("td", { class: "right", children: callCount }),
-            /* @__PURE__ */ u4("td", { class: "right", children: [
-              (callCount / total * 100).toFixed(1),
-              "%"
-            ] }),
-            /* @__PURE__ */ u4("td", { children: agents.map((a4) => /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:" + getAgentColor(a4) + ";vertical-align:middle;margin-right:4px", title: getAgentSourceLabel(a4) }, a4)) })
-          ] }, name);
-        }) }),
-        /* @__PURE__ */ u4("tfoot", { children: /* @__PURE__ */ u4("tr", { children: [
-          /* @__PURE__ */ u4("td", { children: /* @__PURE__ */ u4("strong", { children: "Total" }) }),
-          /* @__PURE__ */ u4("td", { class: "right", children: /* @__PURE__ */ u4("strong", { children: total }) }),
-          /* @__PURE__ */ u4("td", {}),
-          /* @__PURE__ */ u4("td", {})
-        ] }) })
-      ] })
-    ] });
-  }
-
   // media/src/tabs/Export.tsx
   function send(type) {
     if (vscode) {
@@ -5130,7 +4294,7 @@
     const [rawDone, setRawDone] = d2(false);
     const [redactedDone, setRedactedDone] = d2(false);
     const standalone = !!window.__STANDALONE__;
-    const sessionCount = displaySessions.value.length;
+    const sessionCount = sessionSummary.value?.sessions?.length ?? 0;
     const doExport = () => {
       send("exportSessionData");
       setRawDone(true);
@@ -5153,77 +4317,62 @@
       /* @__PURE__ */ u4("div", { class: "export-cards", children: [
         /* @__PURE__ */ u4("div", { class: "export-card", children: [
           /* @__PURE__ */ u4("div", { class: "export-card-header", children: [
-            /* @__PURE__ */ u4("span", { class: "export-card-title", children: "Export OTEL Data" }),
-            /* @__PURE__ */ u4("span", { class: "export-card-badge export-badge-raw", children: "Raw" })
+            /* @__PURE__ */ u4("span", { class: "export-card-title", children: "Export Session Data" }),
+            /* @__PURE__ */ u4("span", { class: "export-card-badge export-badge-raw", children: "Full" })
           ] }),
-          /* @__PURE__ */ u4("p", { class: "export-card-desc", children: "All span attributes exported as-is \u2014 includes prompt text, tool inputs, tool outputs, and any other captured telemetry." }),
+          /* @__PURE__ */ u4("p", { class: "export-card-desc", children: "All recorded sessions exported as JSON \u2014 includes prompt text, token counts, tool usage, file changes, cost estimates, and efficiency signals." }),
           /* @__PURE__ */ u4("ul", { class: "export-card-includes", children: [
-            /* @__PURE__ */ u4("li", { children: "Prompt text and LLM responses" }),
-            /* @__PURE__ */ u4("li", { children: "Tool call inputs and outputs" }),
-            /* @__PURE__ */ u4("li", { children: "Token counts, timing, model names" }),
-            /* @__PURE__ */ u4("li", { children: "File paths and diffs" })
+            /* @__PURE__ */ u4("li", { children: "Prompt text (userRequest)" }),
+            /* @__PURE__ */ u4("li", { children: "Token counts, cache stats, model names" }),
+            /* @__PURE__ */ u4("li", { children: "Tool call counts and file paths changed" }),
+            /* @__PURE__ */ u4("li", { children: "Duration, errors, outcome, loop signals" })
           ] }),
-          /* @__PURE__ */ u4("div", { class: "export-card-warning", children: "Keep private \u2014 may contain sensitive content." }),
+          /* @__PURE__ */ u4("div", { class: "export-card-warning", children: "Keep private \u2014 includes prompt text." }),
           /* @__PURE__ */ u4(
             "button",
             {
               class: "export-btn" + (rawDone ? " export-btn-done" : ""),
               onClick: doExport,
               disabled: empty,
-              children: rawDone ? "\u2713 Exported" : "Export OTEL Data"
+              children: rawDone ? "\u2713 Exported" : "Export Session Data"
             }
           )
         ] }),
         /* @__PURE__ */ u4("div", { class: "export-card export-card-redacted", children: [
           /* @__PURE__ */ u4("div", { class: "export-card-header", children: [
-            /* @__PURE__ */ u4("span", { class: "export-card-title", children: "Export Redacted" }),
+            /* @__PURE__ */ u4("span", { class: "export-card-title", children: "Export Session Data (Redacted)" }),
             /* @__PURE__ */ u4("span", { class: "export-card-badge export-badge-redacted", children: "Safer to share" })
           ] }),
-          /* @__PURE__ */ u4("p", { class: "export-card-desc", children: [
-            "Same export with all sensitive values replaced by ",
-            /* @__PURE__ */ u4("code", { children: "[redacted]" }),
-            "before the file is written. Safe to attach to bug reports or share with teammates."
-          ] }),
+          /* @__PURE__ */ u4("p", { class: "export-card-desc", children: "Same export with prompt text removed. Safe to attach to bug reports or share with teammates for cost and efficiency analysis." }),
           /* @__PURE__ */ u4("ul", { class: "export-card-includes", children: [
             /* @__PURE__ */ u4("li", { children: [
-              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[redacted]" }),
-              " Prompt text and LLM responses"
+              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[removed]" }),
+              " Prompt text"
             ] }),
-            /* @__PURE__ */ u4("li", { children: [
-              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[redacted]" }),
-              " Tool call inputs and outputs"
-            ] }),
-            /* @__PURE__ */ u4("li", { children: "\u2713 Token counts, timing, model names" }),
-            /* @__PURE__ */ u4("li", { children: "\u2713 Span structure and trace IDs" }),
-            /* @__PURE__ */ u4("li", { children: [
-              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[redacted]" }),
-              " user.id, user.email, org.*"
-            ] })
+            /* @__PURE__ */ u4("li", { children: "\u2713 Token counts, cache stats, model names" }),
+            /* @__PURE__ */ u4("li", { children: "\u2713 Tool call counts and file paths changed" }),
+            /* @__PURE__ */ u4("li", { children: "\u2713 Duration, errors, outcome, loop signals" })
           ] }),
-          /* @__PURE__ */ u4("div", { class: "export-card-safe", children: "Safer to share \u2014 review before sending, as file paths and custom attributes are not redacted." }),
+          /* @__PURE__ */ u4("div", { class: "export-card-safe", children: "Safer to share \u2014 no prompt content." }),
           /* @__PURE__ */ u4(
             "button",
             {
               class: "export-btn export-btn-secondary" + (redactedDone ? " export-btn-done" : ""),
               onClick: doRedacted,
               disabled: empty,
-              children: redactedDone ? "\u2713 Exported" : "Export Redacted"
+              children: redactedDone ? "\u2713 Exported" : "Export Session Data (Redacted)"
             }
           )
         ] })
       ] }),
       /* @__PURE__ */ u4("div", { class: "export-replay-box", children: [
-        /* @__PURE__ */ u4("div", { class: "export-replay-title", children: "Replay an export in the dashboard" }),
-        /* @__PURE__ */ u4("p", { class: "export-replay-desc", children: [
-          "Replay any exported file to re-examine a past session without running an agent. Works with both the VS Code extension and the standalone server \u2014 whichever is on port ",
-          /* @__PURE__ */ u4("code", { children: "4318" }),
-          "."
-        ] }),
-        /* @__PURE__ */ u4("pre", { class: "export-replay-cmd", children: "pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json" }),
+        /* @__PURE__ */ u4("div", { class: "export-replay-title", children: "About session data exports" }),
+        /* @__PURE__ */ u4("p", { class: "export-replay-desc", children: "These exports contain aggregated session summaries \u2014 token counts, tool usage, cost estimates, file changes, and efficiency signals. They are useful for cost analysis, sharing with teammates, and offline review." }),
         /* @__PURE__ */ u4("p", { class: "export-replay-note", children: [
-          "Each replay assigns fresh trace IDs so the session appears as a new entry. Pass ",
-          /* @__PURE__ */ u4("code", { children: "--speed 4" }),
-          " to pace the replay instead of sending all spans at once."
+          /* @__PURE__ */ u4("strong", { children: "Note:" }),
+          " Session summary exports cannot be replayed with",
+          /* @__PURE__ */ u4("code", { children: "pnpm run demo --file" }),
+          ". Replay requires raw OTEL span data, which is not yet persisted to disk. See the open issue for raw span export support."
         ] })
       ] })
     ] });
@@ -5231,19 +4380,12 @@
 
   // media/src/tabs/Help.tsx
   var VIEWS = [
-    ["Efficiency", "The default tab. Per-session metrics (turns, cache hit rate, error rate), a heat-scored session breakdown table, and a context growth chart showing input token accumulation across LLM calls within each session."],
-    ["Cost", "Estimated session cost for Copilot and Codex sessions. Copilot supports three billing models: token-based AI Credits (Jun 2026+), request-based with multipliers (pre-Jun 2026), and annual-plan request-based (post-Jun 2026 for annual plan holders). Codex always uses token-based pricing. Shows a per-session bar chart and a cross-session cost table. Estimates only \u2014 not your actual bill."],
-    ["Recommendations", "Actionable insights for improving prompt efficiency, plus loop and malfunction detection. Two signal categories: efficiency insights (token waste, cache, tool failures) and loop signals (tool deadlock, state spirals, error recurrence, runaway steps, context accumulation)."],
+    ["Sessions", "Session list as a sortable table: timestamp, prompt, model, tokens, duration, and estimated cost per row. Click any row to expand in-place and drill into five sub-tabs \u2014 Overview (stat tiles, burn rate, insights), Trace (full waterfall of LLM calls and tool calls with arguments and results), Flow (turn-to-tool semantic graph), Tools (donut chart of tool distribution), and Files (modified files, clickable to open in the editor)."],
+    ["Analytics", "Aggregate charts and metrics across all sessions in the active time range. Agent Breakdown cards show per-agent token totals, cache rates, and top tools. Estimated Cost shows a bar chart with a daily total overlay line, a day-grouped cost table (date \u2192 agent \u2192 model), and a cost table broken down by model. Token Usage Per Session shows slim bars oldest\u2192newest with agent color dots. Context Growth shows input token accumulation per LLM turn across sessions."],
     ["Alerts", "Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts."],
     ["Automation", "Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay."],
-    ["Traces", "A human-readable timeline of each session \u2014 LLM calls with decisions, tool calls with arguments and results, token usage per step, and background overhead breakdown."],
-    ["Search", "Search and filter historical sessions stored in the database. Filter by request text, date range, and sort by recency, cost, duration, token count, or error count."],
-    ["Files", "Files created or modified by the agent, organized by session with inline before/after diffs showing exactly what changed."],
-    ["Flow", "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency. Supports zoom, pan, and playback animation."],
-    ["Agents", "Side-by-side comparison of Copilot, Claude, and Codex with per-agent token totals, cache rates, time-to-first-token, and top tools, plus a full session history table."],
-    ["Tools", "Donut chart of tool call distribution broken down by tool name, with call counts and error rates per tool."],
-    ["Export", "Export OTEL spans as JSON files \u2014 full or redacted (prompt text, tool inputs, and tool results replaced with [redacted]). Replay either format with pnpm run demo to re-examine a past session without the original agent running."],
-    ["Help", "This tab \u2014 an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Recommendations and malfunction detection."]
+    ["Export", "Export all recorded sessions as a JSON file \u2014 full (includes prompt text) or redacted (prompt text removed, all other fields retained). Exports draw from the full session history in the database, not just the active window. Raw OTEL span export for session replay is planned but not yet available."],
+    ["Help", "This tab \u2014 an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Insights and malfunction detection."]
   ];
   var TERMS = [
     ["Agent Loop / Malfunction", "A behavioral pattern in which an AI agent is stuck, oscillating, or spiraling into unproductive work. AgentLens detects five patterns: Tool Call Deadlock, State Corruption Spiral, Hallucination Amplification Loop, Ambiguous Success / Escalating Scope, and Infinite Loop \u2014 Context Accumulation."],
@@ -5257,7 +4399,7 @@
     ["Context Bloat", "An efficiency insight triggered when input tokens grow significantly across turns within a session."],
     ["Files Changed", "Unique files that were created or modified by the agent during the current data collection period."],
     ["Input Tokens", "The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt."],
-    ["Loop Signal", "A behavioral signal in the Recommendations tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a \u21BA icon."],
+    ["Loop Signal", "A behavioral signal in the Insights tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a \u21BA icon."],
     ["LLM", "Large Language Model. The underlying AI model (e.g. GPT-4o, Claude Sonnet) that generates text, answers questions, or produces code. The agent sends requests to the LLM as needed; the model itself does not manage tools or workflow. It is the engine that generates language and code for the agent to act on."],
     ["LLM Call", "A single request-response cycle to the language model. One session typically includes multiple LLM calls as the agent iterates."],
     ["OTLP", "OpenTelemetry Protocol \u2014 the standard format used to collect and transmit telemetry from AI agents to this extension. AgentLens accepts trace spans and log-derived events."],
@@ -5396,7 +4538,7 @@
         /* @__PURE__ */ u4("a", { href: "#gl-otlp", children: "OpenTelemetry" }),
         " ",
         /* @__PURE__ */ u4("a", { href: "#gl-trace", children: "traces" }),
-        " from GitHub Copilot, Claude Code, and Codex, and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable recommendations in real time \u2014 then helps you prompt your agents on inefficiencies to improve interactions."
+        " from GitHub Copilot, Claude Code, and Codex, and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time \u2014 then helps you prompt your agents on inefficiencies to improve interactions."
       ] }) })
     ] });
   }
@@ -5668,7 +4810,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             ] })
           ] })
         ] })) }),
-        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: "The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Recommendations, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side." })
+        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: "The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Insights, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side." })
       ] })
     ] });
   }
@@ -5678,7 +4820,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
         /* @__PURE__ */ u4("p", { children: [
           "The ",
-          /* @__PURE__ */ u4("strong", { children: "Recommendations" }),
+          /* @__PURE__ */ u4("strong", { children: "Insights" }),
           " tab surfaces efficiency insights for ",
           /* @__PURE__ */ u4("a", { href: "#gl-tokens", children: "token" }),
           " waste, ",
@@ -5790,7 +4932,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
           /* @__PURE__ */ u4("a", { href: "#gl-loop-signal", children: "Loop signals" }),
           " are behavioral patterns indicating the ",
           /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agent" }),
-          " is stuck, oscillating, or spiraling into unproductive work. They appear in Recommendations with warning or critical severity."
+          " is stuck, oscillating, or spiraling into unproductive work. They appear in Insights with warning or critical severity."
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
           /* @__PURE__ */ u4(
@@ -5850,7 +4992,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
           )
         ] }),
         /* @__PURE__ */ u4("p", { style: "margin-top:16px;font-size:12px;color:var(--muted)", children: [
-          "Loop signals appear first in the Recommendations list, sorted by severity. Use the ",
+          "Loop signals appear first in the Insights list, sorted by severity. Use the ",
           /* @__PURE__ */ u4("strong", { children: "Loops" }),
           " filter pill to view only malfunction signals. Use ",
           /* @__PURE__ */ u4("strong", { children: "Ignore" }),
@@ -6415,47 +5557,26 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   // media/src/App.tsx
   var sidebarOpen = y3(true);
   var TABS = [
-    { id: "efficiency", label: "Efficiency", primary: true, title: "Per-session metrics and token usage breakdown." },
-    { id: "cost", label: "Cost", primary: true, title: "Estimated session cost based on token usage and Copilot AI Credits pricing. Supports both token-based (Jun 2026+) and legacy request-based billing." },
-    { id: "traces", label: "Traces", primary: true, title: "A human-readable timeline of each session \u2014 LLM calls with their decisions, tool calls with arguments, and token usage." },
-    { id: "search", label: "Search", primary: true, title: "Search and filter historical sessions from the database by request text, date range, cost, and sort order." },
-    { id: "recommendations", label: "Recommendations", primary: true, title: "Actionable insights and recommendations for improving prompt efficiency and reducing token waste." },
-    { id: "agents", label: "Agents", primary: false, title: "Copilot, Claude, and Codex \u2014 session counts, token usage, tools, and latency broken down by agent source." },
-    { id: "alerts", label: "Alerts", primary: false, title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
-    { id: "automation", label: "Automation", primary: false, title: "Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed." },
-    { id: "files", label: "Files", primary: false, title: "Files created or modified by the agent, organized by session with inline diffs." },
-    { id: "flow", label: "Flow", primary: false, title: "LLM turns and tool calls visualized as a semantic graph \u2014 one node per turn, one per unique tool, edges weighted by call frequency." },
-    { id: "tools", label: "Tools", primary: false, title: "Tool call distribution broken down by tool name, with token usage and performance stats per tool." },
+    { id: "sessions", label: "Sessions", primary: true, title: "Session list with expand-in-place detail \u2014 trace, files, cost, and flagged issues for each session." },
+    { id: "analytics", label: "Analytics", primary: true, title: "Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights." },
+    { id: "alerts", label: "Alerts", primary: true, title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
+    { id: "automation", label: "Automation", primary: true, title: "Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed." },
     { id: "export", label: "Export", primary: true, title: "Export raw or redacted OTEL span data as JSON files." },
     { id: "help", label: "Help", primary: true, title: "Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard." }
   ];
   function ActivePanel() {
     const tab = normalizeTabId(activeTab.value);
     switch (tab) {
-      case "efficiency":
-        return /* @__PURE__ */ u4(Efficiency, {});
-      case "recommendations":
-        return /* @__PURE__ */ u4(Recommendations, {});
+      case "sessions":
+        return /* @__PURE__ */ u4(Sessions, {});
+      case "analytics":
+        return /* @__PURE__ */ u4(Analytics, {});
       case "alerts":
         return /* @__PURE__ */ u4(Alerts, {});
-      case "cost":
-        return /* @__PURE__ */ u4(Cost, {});
-      case "traces":
-        return /* @__PURE__ */ u4(Traces, {});
-      case "search":
-        return /* @__PURE__ */ u4(SessionSearch, {});
-      case "files":
-        return /* @__PURE__ */ u4(Files, {});
-      case "flow":
-        return /* @__PURE__ */ u4(Flow, {});
-      case "agents":
-        return /* @__PURE__ */ u4(Agents, {});
-      case "tools":
-        return /* @__PURE__ */ u4(Tools, {});
-      case "export":
-        return /* @__PURE__ */ u4(Export, {});
       case "automation":
         return /* @__PURE__ */ u4(Automation, {});
+      case "export":
+        return /* @__PURE__ */ u4(Export, {});
       case "help":
         return /* @__PURE__ */ u4(Help, {});
       default:
@@ -6558,11 +5679,16 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             if (sel) sel.value = String(limit);
           }
         } else if (msg.type === "searchResults" && msg.sessions != null) {
-          searchResults.value = {
+          const data = {
             sessions: msg.sessions,
             totalCount: msg.totalCount ?? 0,
             offset: msg.offset ?? 0
           };
+          if (msg.context === "timeRange") {
+            rangedSearchResults.value = data;
+          } else {
+            searchResults.value = data;
+          }
         } else if (msg.type === "clearAll") {
           toolCalls.value = {};
           sessionSummary.value = null;
@@ -6575,6 +5701,9 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           lifetimeStats.value = null;
           burnRateData.value = null;
           searchResults.value = null;
+          focusedSessionId.value = null;
+          rangedSearchResults.value = null;
+          timeRange.value = { preset: "all" };
         }
       };
       window.addEventListener("message", handler);
@@ -6599,13 +5728,139 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             children: sidebarOpen.value ? "\u25C4" : "\u25BA"
           }
         ),
-        TABS.filter((t4) => t4.primary).map(
-          (t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id)
-        ),
-        /* @__PURE__ */ u4(MoreDropdown, {})
+        TABS.map((t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id))
       ] }),
+      !["alerts", "help", "export", "automation"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(TimeRangePicker, {}),
+      !["alerts", "help", "export", "automation", "analytics"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(SearchFilterBar, {}),
       /* @__PURE__ */ u4("div", { class: "panel active", children: /* @__PURE__ */ u4(ActivePanel, {}) }),
       /* @__PURE__ */ u4("img", { id: "mascot-img", src: "", alt: "AgentLens mascot", style: "display:none" })
+    ] });
+  }
+  var AGENT_FILTER_OPTIONS = [
+    { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)", activeColor: "#ffffff" },
+    { value: "copilot", label: "Copilot", color: "#00EAFF" },
+    { value: "claude_code", label: "Claude", color: "#FFB085" },
+    { value: "codex", label: "Codex", color: "#F0FF42" }
+  ];
+  function TimeRangePicker({ hideAgentFilter = false }) {
+    const range = timeRange.value;
+    const agent = selectedAgentFilter.value;
+    const debounce = A2(null);
+    const [loading, setLoading] = d2(false);
+    function fireSearch(r4) {
+      if (r4.preset === "all") {
+        rangedSearchResults.value = null;
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      if (debounce.current) clearTimeout(debounce.current);
+      debounce.current = setTimeout(() => {
+        vscode?.postMessage({
+          type: "searchSessions",
+          query: { since: r4.since, until: r4.until, limit: CHART_MAX, orderBy: "start_time", orderDir: "DESC" },
+          context: "timeRange"
+        });
+      }, 120);
+    }
+    function selectPreset(id) {
+      const r4 = makeTimeRange(id);
+      timeRange.value = r4;
+      fireSearch(r4);
+    }
+    y2(() => {
+      if (rangedSearchResults.value !== null) setLoading(false);
+    }, [rangedSearchResults.value]);
+    const count = rangedSessions.value.length;
+    const total = rangedSearchResults.value?.totalCount;
+    const isActive = range.preset !== "all";
+    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:0;padding:0 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0", children: [
+      /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-right:6px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "Time" }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:1px", children: TIME_PRESETS.map((p5) => /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => selectPreset(p5.id),
+          style: [
+            "padding:2px 7px;font-size:11px;cursor:pointer;border:none;border-radius:3px;transition:background 0.1s",
+            range.preset === p5.id ? "background:var(--vscode-button-background);color:var(--vscode-button-foreground);font-weight:600" : "background:transparent;color:var(--muted)"
+          ].join(";"),
+          title: p5.ms ? `Last ${p5.label}` : "All recorded sessions",
+          children: p5.label
+        },
+        p5.id
+      )) }),
+      !hideAgentFilter && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("span", { style: "width:1px;height:14px;background:var(--border);margin:0 8px;flex-shrink:0" }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:4px;align-items:center", children: [
+          /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);margin-right:2px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "Agent" }),
+          AGENT_FILTER_OPTIONS.map((o4) => {
+            const active = agent === o4.value;
+            const displayColor = active && o4.activeColor ? o4.activeColor : o4.color;
+            return /* @__PURE__ */ u4(
+              "button",
+              {
+                onClick: () => {
+                  selectedAgentFilter.value = o4.value;
+                },
+                style: [
+                  "padding:2px 9px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;",
+                  `border:1.5px solid ${displayColor};`,
+                  active ? `background:${displayColor}33;color:${displayColor};font-weight:600` : "background:transparent;color:var(--muted)"
+                ].join(""),
+                children: o4.label
+              },
+              o4.value
+            );
+          })
+        ] })
+      ] }),
+      loading && /* @__PURE__ */ u4("span", { style: "margin-left:8px;font-size:10px;color:var(--muted);opacity:0.6", children: "loading\u2026" }),
+      isActive && !loading && /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => fireSearch(makeTimeRange(range.preset)),
+          style: "margin-left:6px;padding:2px 5px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-radius:3px",
+          title: "Refresh this time range",
+          children: "\u21BB"
+        }
+      )
+    ] });
+  }
+  var SORT_OPTIONS = [
+    { key: "start_time", label: "Recent" },
+    { key: "total_tokens", label: "Tokens" },
+    { key: "duration_ms", label: "Longest" }
+  ];
+  function SearchFilterBar() {
+    const text = sessionTextFilter.value;
+    const sort = sessionSortKey.value;
+    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap", children: [
+      /* @__PURE__ */ u4(
+        "input",
+        {
+          type: "text",
+          placeholder: "Filter sessions\u2026",
+          value: text,
+          onInput: (e4) => {
+            sessionTextFilter.value = e4.target.value;
+          },
+          style: "flex:1;min-width:120px;max-width:240px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+        }
+      ),
+      /* @__PURE__ */ u4("div", { style: "display:flex;gap:3px;align-items:center;flex-wrap:wrap", children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-right:2px", children: "Sort" }),
+        SORT_OPTIONS.map((o4) => /* @__PURE__ */ u4(
+          "button",
+          {
+            class: "tab-mini" + (sort === o4.key ? " active" : ""),
+            onClick: () => {
+              sessionSortKey.value = o4.key;
+            },
+            children: o4.label
+          },
+          o4.key
+        ))
+      ] })
     ] });
   }
   function Tab({ id, label }) {
@@ -6621,73 +5876,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         children: label
       }
     );
-  }
-  function AlertsBadge() {
-    const _s = displaySessions.value;
-    const count = computeAlertCount();
-    return count > 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--error);font-weight:700", children: [
-      "Alerts \u26A0 ",
-      count
-    ] }) : /* @__PURE__ */ u4(S, { children: "Alerts" });
-  }
-  function MoreDropdown() {
-    const [open, setOpen] = d2(false);
-    const activeId = normalizeTabId(activeTab.value);
-    const secondaryTabs = TABS.filter((t4) => !t4.primary);
-    const activeSecondary = secondaryTabs.find((t4) => t4.id === activeId);
-    y2(() => {
-      if (!open) return;
-      const close = () => setOpen(false);
-      const closeOnEsc = (e4) => {
-        if (e4.key === "Escape") setOpen(false);
-      };
-      document.addEventListener("click", close);
-      document.addEventListener("keydown", closeOnEsc);
-      return () => {
-        document.removeEventListener("click", close);
-        document.removeEventListener("keydown", closeOnEsc);
-      };
-    }, [open]);
-    return /* @__PURE__ */ u4("div", { style: "position:relative", children: [
-      /* @__PURE__ */ u4(
-        "button",
-        {
-          class: "tab" + (activeSecondary ? " active" : ""),
-          "aria-haspopup": "listbox",
-          "aria-expanded": open,
-          onClick: (e4) => {
-            e4.stopPropagation();
-            setOpen((o4) => !o4);
-          },
-          children: [
-            activeSecondary ? activeSecondary.label : "More",
-            " \u25BE"
-          ]
-        }
-      ),
-      open && /* @__PURE__ */ u4(
-        "div",
-        {
-          role: "listbox",
-          style: "position:absolute;top:100%;right:0;z-index:100;background:var(--bg);border:1px solid var(--border);border-radius:4px;min-width:160px;box-shadow:0 4px 12px rgba(0,0,0,0.2)",
-          onClick: (e4) => e4.stopPropagation(),
-          children: secondaryTabs.map((t4) => /* @__PURE__ */ u4(
-            "button",
-            {
-              class: "tab-dropdown-item" + (activeId === t4.id ? " active" : ""),
-              role: "option",
-              "aria-selected": activeId === t4.id,
-              onClick: () => {
-                activeTab.value = t4.id;
-                setOpen(false);
-              },
-              children: t4.id === "alerts" ? /* @__PURE__ */ u4(AlertsBadge, {}) : t4.label
-            },
-            t4.id
-          ))
-        }
-      )
-    ] });
   }
 
   // media/src/dashboard.tsx

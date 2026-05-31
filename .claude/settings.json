@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk -F: '{print $1}')",
+      "Bash(gh issue create --title 'refactor: remove waterfall Traces tab, rename Summaries to Traces' --label refactor --body ' *)",
+      "Bash(gh label *)",
+      "Bash(gh issue create --title 'refactor: remove waterfall Traces tab, rename Summaries to Traces' --body ' *)",
+      "Bash(git pull *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('mocha',{}\\), indent=2\\)\\)\")",
+      "Bash(gh issue create --title 'feat: SQLite write path \\(phase 2 — persist sessions after summarization\\)' --body ' *)"
+    ]
+  }
+}

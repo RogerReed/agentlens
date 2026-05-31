@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks'
 import clsx from 'clsx'
-import { displaySessions, insightFilter, ignoredInsightKeys, agentPresence, vscode } from '../state'
-import { buildDisplaySummary, getAgentColor, getAgentSourceLabel, getSessionGlobalNumber } from '../utils'
+import { filteredSessions, sessionSummary, insightFilter, ignoredInsightKeys, agentPresence, vscode } from '../state'
+import { buildDisplaySummary, getAgentColor, getAgentSourceLabel, getSessionGlobalNumber, formatSessionTime } from '../utils'
 import type { Insight, InsightFilter, SessionSummaryCard } from '../types'
 
 type EffSummary = ReturnType<typeof buildDisplaySummary>['efficiency']
@@ -14,10 +14,10 @@ type InsightTakeaways = {
   hasRepeatedOperations: boolean
 }
 
-function recommendationScopeLabel(filter: InsightFilter): string {
-  if (filter === 'loop') return 'loop recommendations'
-  if (filter === 'efficiency') return 'efficiency recommendations'
-  return 'recommendations'
+function insightScopeLabel(filter: InsightFilter): string {
+  if (filter === 'loop') return 'loop insights'
+  if (filter === 'efficiency') return 'efficiency insights'
+  return 'insights'
 }
 
 function noActiveTakeawayText(filter: InsightFilter): string {
@@ -350,14 +350,14 @@ export function generateInsights(
 
 // ── InsightCard ───────────────────────────────────────────────────────────────
 
-function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgnored: boolean; sessions: SessionSummaryCard[] }) {
+export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgnored: boolean; sessions: SessionSummaryCard[] }) {
   const icon = ins.severity.startsWith('loop') ? '↺' : ins.severity === 'warning' ? '⚠' : 'ℹ'
   const session = ins.sessionIdx !== undefined ? sessions[ins.sessionIdx] : undefined
-  const sessionNum = session ? getSessionGlobalNumber(session) : 0
-    const titleSessionMatch = session && sessionNum > 0 ? ins.title.match(/^\[Session\s+\d+\]\s*(.*)$/) : null
-    const sessionModel = session?.model || ''
-  const sessionAgentLabel = session ? getAgentSourceLabel(session.source) : ''
+  const titleSessionMatch = ins.title.match(/^\[Session\s+\d+\]\s*(.*)$/)
+  const insightTitle = titleSessionMatch ? titleSessionMatch[1] : ins.title
   const sessionAgentColor = session ? getAgentColor(session.source) : ''
+  const sessionTimestamp = session ? formatSessionTime(session) : ''
+  const sessionPrompt = session?.userRequest || ''
 
   function buildAiPrompt(): string {
     const lines: string[] = [ins.title, '']
@@ -379,43 +379,47 @@ function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgnored: bo
         + session.totalToolCalls + ' tool calls, '
         + (session.cacheHitRate * 100).toFixed(0) + '% cache hit rate', '')
     }
-    lines.push('Recommendation: ' + ins.action)
+    lines.push('Action: ' + ins.action)
     return lines.join('\n')
   }
 
   return (
     <div class={clsx('insight-card', 'insight-' + ins.severity)} style={isIgnored ? 'opacity:0.55' : ''}>
-      <div class="insight-header">
-        <span class="insight-icon">{icon}</span>
-        <span class="insight-title" style="flex:1">
-          {titleSessionMatch ? (
-            <>
-              <span>[Session {sessionNum}{sessionModel ? ` – ${sessionModel}` : ''}]</span>{' '}
-              <span
-                title={sessionAgentLabel}
-                aria-label={sessionAgentLabel}
-                style={'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + sessionAgentColor + ';vertical-align:middle'}
-              />{' '}
-              <span>{titleSessionMatch[1]}</span>
-            </>
-          ) : ins.title}
-        </span>
+      {/* Header: icon + title + ignore button */}
+      <div class="insight-header" style="align-items:flex-start;margin-bottom:4px">
+        <span class="insight-icon" style="margin-top:1px">{icon}</span>
+        <span class="insight-title" style="flex:1">{insightTitle}</span>
         {isIgnored ? (
           <button class="insight-restore-btn" title="Restore" onClick={() => ignoredInsightKeys.delete(ins.title)}>Restore</button>
         ) : (
           <button class="insight-ignore-btn" title="Ignore" onClick={() => ignoredInsightKeys.add(ins.title)}>Ignore</button>
         )}
       </div>
-      {ins.detail && <div class="insight-detail" style="white-space:pre-wrap">{ins.detail}</div>}
-      <div class="insight-action">
+      {/* Session attribution — directly under title */}
+      {session && (
+        <div style="margin-bottom:8px;margin-left:24px;display:flex;align-items:flex-start;gap:5px">
+          <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px;background:' + sessionAgentColor} />
+          <div style="min-width:0">
+            <div style="font-size:10px;color:var(--fg);white-space:nowrap">{sessionTimestamp}</div>
+            {sessionPrompt && (
+              <div style="font-size:9px;color:var(--muted);font-style:italic;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px" title={sessionPrompt}>
+                {sessionPrompt.length > 80 ? sessionPrompt.slice(0, 80) + '…' : sessionPrompt}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Action */}
+      <div class="insight-action" style="margin-bottom:8px">
         <span class="insight-action-label">
-          Recommendation
+          Action
           {ins.helpId && HELP_WHY[ins.helpId] && (
             <span data-tip={HELP_WHY[ins.helpId]} style="margin-left:4px;cursor:help;opacity:0.55;font-size:11px">ⓘ</span>
           )}:
         </span>{' '}
         <span style="white-space:pre-wrap">{ins.action}</span>
       </div>
+      {ins.detail && <div class="insight-detail" style="white-space:pre-wrap">{ins.detail}</div>}
       {!isIgnored && (() => {
         type ActionButton = { agent: string; label: string; color: string }
         const buttonForAgent = (agent: SessionSummaryCard['source']): ActionButton => {
@@ -471,18 +475,19 @@ function IgnoredSection({ insights, sessions }: { insights: Insight[]; sessions:
   )
 }
 
-// ── Recommendations panel ─────────────────────────────────────────────────────
+// ── Insights panel ───────────────────────────────────────────────────────────
 
-export function Recommendations() {
+export function Insights() {
   const filter = insightFilter.value
   const ignored = ignoredInsightKeys.value
-  const allSessions = displaySessions.value
+  const allSessions = filteredSessions.value
+  const hasAny = (sessionSummary.value?.sessions?.length ?? 0) > 0
 
   if (!allSessions.length) {
-    return <div id="recommendations-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+    return <div id="insights-content"><div class="empty-state">{hasAny ? 'No sessions match the active filters.' : 'No sessions recorded yet.'}</div></div>
   }
 
-  const displaySummary = buildDisplaySummary()
+  const displaySummary = buildDisplaySummary(allSessions)
   const allInsights = generateInsights(displaySummary, allSessions)
 
   let loopCount = 0
@@ -504,12 +509,12 @@ export function Recommendations() {
 
   const sessions = displaySummary.sessions
   const takeaways = summarizeTakeaways(active)
-  const scopeLabel = recommendationScopeLabel(filter)
+  const scopeLabel = insightScopeLabel(filter)
 
   return (
-    <div id="recommendations-content">
+    <div id="insights-content">
       <div style="font-size:11px;color:var(--muted);padding:6px 10px;margin-bottom:12px;border-left:2px solid var(--border)">
-        <strong>Recommendations are based on general heuristics and may include false positives. Review suggestions carefully and consider your specific context before making changes.</strong>
+        <strong>Insights are based on general heuristics and may include false positives. Review suggestions carefully and consider your specific context before making changes.</strong>
       </div>
       <div style="padding:12px 16px;margin:0 0 16px;border-radius:6px;border:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));font-size:12px">
         <div class="section-label">Key Takeaways</div>
@@ -557,7 +562,7 @@ export function Recommendations() {
       {active.length > 0 ? (
         <>
           <div style="font-size:11px;color:var(--muted);margin-bottom:12px">
-            {active.length} recommendation{active.length !== 1 ? 's' : ''}, newest sessions first
+            {active.length} insight{active.length !== 1 ? 's' : ''}, newest sessions first
           </div>
           {active.map(ins => <InsightCard key={ins.title} ins={ins} isIgnored={false} sessions={sessions} />)}
         </>

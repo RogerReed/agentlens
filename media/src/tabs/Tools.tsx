@@ -1,16 +1,11 @@
-import { displaySessions, COLORS } from '../state'
+import { rangedSessions, COLORS } from '../state'
 import { getAgentColor, getAgentSourceLabel } from '../utils'
+import type { SessionSummaryCard } from '../types'
 
-export function Tools() {
-  const sessions = displaySessions.value
+// ── Shared donut chart (used by Tools tab and Sessions detail) ─────────────────
 
-  if (sessions.length === 0) {
-    return <div id="tools-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
-  }
-
-  // Aggregate tool counts from session summaries.
+export function ToolsChart({ sessions }: { sessions: SessionSummaryCard[] }) {
   const counts: Record<string, number> = {}
-  const toolErrors: Record<string, number> = {}
   const toolAgents: Record<string, Record<string, boolean>> = {}
 
   sessions.forEach(sess => {
@@ -19,25 +14,17 @@ export function Tools() {
       if (!toolAgents[tool]) toolAgents[tool] = {}
       toolAgents[tool][sess.source] = true
     })
-    // Error counts are at session level; distribute proportionally isn't possible,
-    // so we just mark tools from errored sessions.
-    if (sess.errors > 0) {
-      Object.keys(sess.toolCounts ?? {}).forEach(tool => {
-        toolErrors[tool] = (toolErrors[tool] ?? 0)  // keep as 0; we don't have per-tool error breakdown
-      })
-    }
   })
 
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1])
 
   if (entries.length === 0) {
-    return <div id="tools-content"><div class="empty-state">No tool calls recorded yet</div></div>
+    return <div class="empty-state">No tool calls recorded for this session</div>
   }
 
   const total = entries.reduce((sum, e) => sum + e[1], 0)
 
-  // SVG donut
-  const r = 80, cx = 100, cy = 100, sw = 30
+  const r = 70, cx = 85, cy = 85, sw = 26
   const angleOffset = -Math.PI / 2
   let currentAngle = angleOffset
 
@@ -58,18 +45,16 @@ export function Tools() {
   })
 
   return (
-    <div id="tools-content">
-      <h3 style="margin:0 0 16px;font-size:13px;color:var(--muted)">TOOL CALL DISTRIBUTION</h3>
-
+    <div>
       <div class="donut-container">
-        <svg width="200" height="200" viewBox="0 0 200 200">
+        <svg width="170" height="170" viewBox="0 0 170 170">
           {slices.map(sl =>
             sl.pct >= 1
               ? <circle key={sl.name} cx={cx} cy={cy} r={r} fill="none" stroke={sl.color} stroke-width={sw} />
               : <path key={sl.name} d={arcPath(sl.startA, sl.endA)} fill="none" stroke={sl.color} stroke-width={sw} stroke-linecap="butt" />
           )}
-          <text x={cx} y={cy} text-anchor="middle" dy="4" font-size="18" font-weight="bold" fill="var(--fg)">{total}</text>
-          <text x={cx} y={cy + 16} text-anchor="middle" font-size="10" fill="var(--muted)" opacity="0.7">total</text>
+          <text x={cx} y={cy} text-anchor="middle" dy="4" font-size="16" font-weight="bold" fill="var(--fg)">{total}</text>
+          <text x={cx} y={cy + 14} text-anchor="middle" font-size="9" fill="var(--muted)" opacity="0.7">total</text>
         </svg>
         <div class="donut-legend">
           {slices.map(sl => (
@@ -81,10 +66,9 @@ export function Tools() {
         </div>
       </div>
 
-      <h3 style="margin:24px 0 12px;font-size:13px;color:var(--muted)">TOOL CALL BREAKDOWN</h3>
-      <table class="tool-insights-table">
+      <table class="tool-insights-table" style="margin-top:16px">
         <thead>
-          <tr><th>Tool</th><th>Calls</th><th>% of Total</th><th>Agents</th></tr>
+          <tr><th>Tool</th><th>Calls</th><th>%</th><th>Agents</th></tr>
         </thead>
         <tbody>
           {entries.map(([name, callCount]) => {
@@ -111,6 +95,23 @@ export function Tools() {
           </tr>
         </tfoot>
       </table>
+    </div>
+  )
+}
+
+// ── Full Tools tab (aggregates all ranged sessions) ───────────────────────────
+
+export function Tools() {
+  const sessions = rangedSessions.value
+
+  if (sessions.length === 0) {
+    return <div id="tools-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+  }
+
+  return (
+    <div id="tools-content">
+      <h3 style="margin:0 0 16px;font-size:13px;color:var(--muted)">TOOL CALL DISTRIBUTION</h3>
+      <ToolsChart sessions={sessions} />
     </div>
   )
 }
