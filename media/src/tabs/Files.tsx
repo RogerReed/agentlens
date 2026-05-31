@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { displaySessions } from '../state'
-import { getSessionGlobalNumber, getAgentDotHtml } from '../utils'
+import { getAgentDotHtml, formatSessionTime } from '../utils'
 import type { SessionSummaryCard } from '../types'
 import { vscode as vsApi } from '../state'
 
@@ -134,7 +134,9 @@ function SessionBlock({ sess, ridx, allCount, isOpen: defaultOpen }: {
   sess: SessionSummaryCard; ridx: number; allCount: number; isOpen: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen)
-  const sessionNum = getSessionGlobalNumber(sess) || (allCount - ridx)
+  const [promptExpanded, setPromptExpanded] = useState(false)
+  const sessionTime = formatSessionTime(sess)
+  const isLongPrompt = (sess.userRequest?.length ?? 0) > 100
   const changedFiles = sess.filesChanged ?? []
   const filesChangedNote = sess.filesChangedNote ?? ''
 
@@ -161,14 +163,26 @@ function SessionBlock({ sess, ridx, allCount, isOpen: defaultOpen }: {
       <div
         class="files-session-header"
         onClick={() => setOpen(o => !o)}
-        style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none"
+        style="display:flex;align-items:center;gap:8px;padding:12px 16px;cursor:pointer;user-select:none;flex-wrap:wrap"
       >
-        <span style="font-size:10px;color:var(--muted);width:14px;text-align:center">{open ? '▼' : '▶'}</span>
-        <span style="font-weight:700;font-size:12px;color:var(--fg)">{sessionNum}</span>
+        <span style="font-size:10px;color:var(--muted);width:14px;text-align:center;flex-shrink:0">{open ? '▼' : '▶'}</span>
         <span dangerouslySetInnerHTML={{ __html: getAgentDotHtml(sess.source) }} />
-        <span style="flex:1;min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title={sess.userRequest ?? ''}>{sess.userRequest}</span>
-        <span style="font-size:11px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:4px">{fileCountLabel}</span>
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0">{sessionTime}</span>
+        <span style="font-size:12px;min-width:0">
+          "{(sess.userRequest ?? '').slice(0, 100)}{isLongPrompt ? '…' : ''}"
+          {isLongPrompt && (
+            <button class="sw-show-full-btn" style="margin-left:8px" onClick={e => { e.stopPropagation(); setPromptExpanded(v => !v) }}>
+              {promptExpanded ? 'Collapse' : 'Show full prompt'}
+            </button>
+          )}
+        </span>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted);background:var(--bg);padding:2px 8px;border-radius:4px;flex-shrink:0">{fileCountLabel}</span>
       </div>
+      {promptExpanded && (
+        <div style="padding:8px 44px;font-size:11px;color:var(--fg);border-bottom:1px solid var(--border);background:var(--hover);white-space:pre-wrap;word-break:break-word">
+          {sess.userRequest}
+        </div>
+      )}
       {open && (
         <div style="border-top:1px solid var(--border)">
           {changedFiles.length === 0 ? (

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { rangedSessions, sessionTimelines, focusedSessionId, vscode } from '../state'
-import { getSessionGlobalNumber, getAgentSourceLabel, formatMs, formatSessionTime } from '../utils'
+import { rangedSessions, sessionSummary, sessionTimelines, focusedSessionId, vscode } from '../state'
+import { getAgentSourceLabel, getAgentColor, formatMs, formatSessionTime } from '../utils'
 import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry } from '../types'
 
-type FlowCanvas = HTMLCanvasElement & { __flowDraw?: () => void; __flowCenter?: () => void }
+type FlowCanvasEl = HTMLCanvasElement & { __flowDraw?: () => void; __flowCenter?: () => void }
 
 // ── Semantic graph types ───────────────────────────────────────────────────────
 
@@ -14,10 +14,9 @@ interface SemNode {
   y: number
   color: string
   type: 'llm' | 'tool'
-  label: string     // text inside circle
+  label: string
   fullLabel?: string
-  subLabel: string  // text below circle
-  // llm-specific
+  subLabel: string
   turnNum?: number
   totalTurns?: number
   inputTokens?: number
@@ -29,7 +28,6 @@ interface SemNode {
   note?: string
   toolsUsed?: string[]
   isError?: boolean
-  // tool-specific
   callCount?: number
   totalDurationMs?: number
   avgDurationMs?: number
@@ -114,19 +112,14 @@ function isInferredTurn(entry: TimelineEntry): boolean {
   return entry.spanId.startsWith('flow-inferred-turn-')
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Shared canvas component ────────────────────────────────────────────────────
 
-export function Flow() {
-  const sessions = rangedSessions.value
+export function FlowCanvas({ sess, height = 520 }: { sess: SessionSummaryCard; height?: number }) {
   const [isPlaying, setIsPlaying] = useState(false)
-
-  // Resolve which session to show: focused > last selected > most recent
-  const focusedId = focusedSessionId.value
-  const focusedIdx = focusedId ? sessions.findIndex(s => s.sessionId === focusedId) : -1
-  const [manualIdx, setManualIdx] = useState(-1)
-  const selectedIdx = focusedIdx >= 0 ? focusedIdx : manualIdx
+  const speedRef = useRef(800)
   const setIsPlayingRef = useRef(setIsPlaying)
   setIsPlayingRef.current = setIsPlaying
+  const progressId = 'flow-prog-' + sess.sessionId
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const stateRef = useRef({
@@ -136,31 +129,16 @@ export function Flow() {
     clickedNodeId: null as string | null,
     nodes: [] as SemNode[],
     edges: [] as SemEdge[],
-    playbackTurns: [] as number[], // node indices for LLM turns in order
+    playbackTurns: [] as number[],
     playbackIdx: 0,
     playbackPlaying: false,
     playbackTimer: null as ReturnType<typeof setInterval> | null,
   })
 
-  if (sessions.length === 0) {
-    return <div id="flow-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+  // Request timeline load if needed
+  if (!sessionTimelines.value[sess.sessionId] && vscode) {
+    vscode.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
   }
-
-  const allSessions = sessions.map(sess => {
-    const time = formatSessionTime(sess)
-    const src = getAgentSourceLabel(sess.source)
-    const turns = sess.totalLlmCalls ?? 0
-    const snippet = sess.userRequest ? (sess.userRequest.length > 35 ? sess.userRequest.slice(0, 35) + '…' : sess.userRequest) : ''
-    return {
-      label: snippet ? `${time} · ${src} · "${snippet}"` : `${time} · ${src} · ${turns} turns`,
-      sess,
-    }
-  })
-
-  const clampedIdx = Math.max(0, Math.min(
-    selectedIdx < 0 ? allSessions.length - 1 : selectedIdx,
-    allSessions.length - 1
-  ))
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -170,18 +148,11 @@ export function Flow() {
     st.playbackPlaying = false; st.playbackIdx = 0; st.clickedNodeId = null
     setIsPlayingRef.current(false)
 
-    const sess = allSessions[clampedIdx]?.sess
-    const loadedTimeline = sess ? (sessionTimelines.value[sess.sessionId] ?? sess.timeline) : []
-    if (sess && !sessionTimelines.value[sess.sessionId]) {
-      vscode?.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
-    }
+    const loadedTimeline = sessionTimelines.value[sess.sessionId] ?? sess.timeline
     const timeline = (loadedTimeline ?? []).filter(e => e.type !== 'background')
+    const turns = buildTurnGroups(sess, timeline)
 
-    // ── Group timeline into turns (LLM call + following tool calls) ───────────
-
-    const turns = sess ? buildTurnGroups(sess, timeline) : []
-
-    // ── Build unique tool map ─────────────────────────────────────────────────
+    // ── Unique tool map ────────────────────────────────────────────────────────
 
     const toolData = new Map<string, { count: number; totalMs: number; errors: number; turns: number[] }>()
     turns.forEach((turn, ti) => {
@@ -197,7 +168,7 @@ export function Flow() {
       })
     })
 
-    // ── Layout ────────────────────────────────────────────────────────────────
+    // ── Layout ─────────────────────────────────────────────────────────────────
 
     const N = turns.length
     const TURN_SPACING = N <= 1 ? 100 : Math.max(65, Math.min(100, Math.floor(480 / Math.max(N - 1, 1))))
@@ -208,7 +179,6 @@ export function Flow() {
     const edges: SemEdge[] = []
     const nodeIdxMap: Record<string, number> = {}
 
-    // LLM turn nodes
     turns.forEach((turn, i) => {
       const inferred = isInferredTurn(turn.entry)
       const node: SemNode = {
@@ -220,14 +190,12 @@ export function Flow() {
         label: 'T' + (i + 1),
         subLabel: inferred
           ? turn.tools.length + '×'
-          : ((turn.entry.inputTokens ?? 0) > 0
-            ? Math.round((turn.entry.inputTokens ?? 0) / 1000) + 'K'
-            : ''),
+          : ((turn.entry.inputTokens ?? 0) > 0 ? Math.round((turn.entry.inputTokens ?? 0) / 1000) + 'K' : ''),
         turnNum: i + 1,
         totalTurns: turns.length,
         inputTokens: turn.entry.inputTokens ?? 0,
         outputTokens: turn.entry.outputTokens ?? 0,
-        costUsd: inferred ? undefined : calcEntryCost(turn.entry, sess?.model ?? '') || undefined,
+        costUsd: inferred ? undefined : calcEntryCost(turn.entry, sess.model ?? '') || undefined,
         model: turn.entry.model ?? turn.entry.label ?? '',
         durationMs: turn.entry.durationMs ?? 0,
         action: turn.entry.action ?? '',
@@ -239,12 +207,10 @@ export function Flow() {
       nodes.push(node)
     })
 
-    // Sequential turn-to-turn edges
     for (let i = 0; i < turns.length - 1; i++) {
       edges.push({ from: nodeIdxMap['llm-' + i], to: nodeIdxMap['llm-' + (i + 1)], count: 1, kind: 'seq' })
     }
 
-    // Tool nodes — Y anchored to the average turn that uses them
     const toolNames = Array.from(toolData.keys())
     const toolTargetY = (name: string) => {
       const d = toolData.get(name)!
@@ -253,7 +219,6 @@ export function Flow() {
     }
     const sortedTools = [...toolNames].sort((a, b) => toolTargetY(a) - toolTargetY(b))
 
-    // Spread tools vertically to avoid overlap
     let prevY = -Infinity
     const toolY: Record<string, number> = {}
     for (const name of sortedTools) {
@@ -262,7 +227,6 @@ export function Flow() {
       prevY = ty
     }
 
-    // Vertically center the tool column relative to the turn column
     if (sortedTools.length > 0) {
       const turnsCenter = START_Y + ((N - 1) * TURN_SPACING) / 2
       const toolsFirst = toolY[sortedTools[0]]
@@ -293,7 +257,6 @@ export function Flow() {
       nodes.push(node)
     })
 
-    // Turn-to-tool edges
     turns.forEach((turn, ti) => {
       const perTool: Record<string, number> = {}
       turn.tools.forEach(t => { const n = t.label || 'tool'; perTool[n] = (perTool[n] || 0) + 1 })
@@ -310,7 +273,7 @@ export function Flow() {
     st.edges = edges
     st.playbackTurns = turns.map((_, i) => nodeIdxMap['llm-' + i]).filter(i => i !== undefined)
 
-    // ── Drawing helpers ───────────────────────────────────────────────────────
+    // ── Drawing ────────────────────────────────────────────────────────────────
 
     function nR(n: SemNode) { return n.type === 'llm' ? LLM_R : TOOL_R }
 
@@ -349,7 +312,6 @@ export function Flow() {
       const fg    = cs.getPropertyValue('--fg').trim()    || '#ccc'
       const muted = cs.getPropertyValue('--muted').trim() || '#666'
 
-      // Empty timeline message
       if (turns.length === 0) {
         ctx.restore()
         ctx.font = '13px sans-serif'
@@ -361,8 +323,6 @@ export function Flow() {
       }
 
       const activeId = st.clickedNodeId || st.hoverNodeId
-
-      // Determine highlight set
       const hlNodes = new Set<string>()
       const hlEdges = new Set<number>()
       if (activeId) {
@@ -375,7 +335,6 @@ export function Flow() {
         })
       }
 
-      // ── Sequential spine (dotted vertical line left of turns) ────────────
       const llmNodes = nodes.filter(n => n.type === 'llm')
       if (llmNodes.length >= 2) {
         const spineX = TURN_X - 44
@@ -396,14 +355,12 @@ export function Flow() {
         ctx.restore()
       }
 
-      // ── Edges ─────────────────────────────────────────────────────────────
       edges.forEach((e, ei) => {
         const a = nodes[e.from], b = nodes[e.to]
         const isHl  = activeId ? hlEdges.has(ei) : false
         const dimmed = activeId && !isHl
 
         if (e.kind === 'seq') {
-          // Straight vertical arrow between consecutive turns
           const ax = a.x + 8, ay = a.y + LLM_R
           const bx = b.x + 8, by = b.y - LLM_R
           ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by)
@@ -417,7 +374,6 @@ export function Flow() {
           ctx.fillStyle = dimmed ? LLM_COLOR + '18' : (isHl ? LLM_COLOR : LLM_COLOR + '60')
           ctx.fill()
         } else {
-          // Bezier curve from right of turn → left of tool
           const sx = a.x + LLM_R, sy = a.y
           const ex = b.x - TOOL_R, ey = b.y
           const span = TOOL_X - TURN_X
@@ -429,13 +385,11 @@ export function Flow() {
           ctx.beginPath()
           ctx.moveTo(sx, sy); ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, ex, ey)
           ctx.strokeStyle = a.color + hexA; ctx.lineWidth = lw; ctx.stroke()
-          // Arrowhead
           const ang = Math.atan2(ey - cp2y, ex - cp2x), aLen = 7
           ctx.beginPath(); ctx.moveTo(ex, ey)
           ctx.lineTo(ex - aLen * Math.cos(ang - 0.4), ey - aLen * Math.sin(ang - 0.4))
           ctx.lineTo(ex - aLen * Math.cos(ang + 0.4), ey - aLen * Math.sin(ang + 0.4))
           ctx.closePath(); ctx.fillStyle = a.color + hexA; ctx.fill()
-          // Call-count label on edge if >1
           if (e.count > 1 && !dimmed) {
             const mx = (sx + ex) / 2, my = (sy + ey) / 2 - 9
             ctx.font = 'bold 9px sans-serif'; ctx.fillStyle = a.color + 'cc'
@@ -445,7 +399,6 @@ export function Flow() {
         }
       })
 
-      // ── Nodes ─────────────────────────────────────────────────────────────
       nodes.forEach(n => {
         const r = nR(n)
         const isActive = n.id === activeId
@@ -463,13 +416,11 @@ export function Flow() {
         ctx.strokeStyle = dimmed ? n.color + '30' : n.color
         ctx.lineWidth = isActive ? 3 : (inHL ? 2.5 : 2); ctx.stroke()
 
-        // Label inside circle
         ctx.font = (isActive ? 'bold ' : '') + '10px sans-serif'
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
         ctx.fillStyle = dimmed ? muted + '40' : fg
         ctx.fillText(n.label, n.x, n.y - (n.subLabel ? 4 : 0))
 
-        // Sub-label inside circle
         if (n.subLabel) {
           ctx.font = '8px sans-serif'
           ctx.fillStyle = dimmed ? muted + '30'
@@ -477,12 +428,11 @@ export function Flow() {
           ctx.fillText(n.subLabel, n.x, n.y + 7)
         }
 
-        // Node label below circle (type label)
         ctx.font = '9px sans-serif'; ctx.fillStyle = dimmed ? muted + '30' : muted
         ctx.fillText(n.type === 'llm' ? 'Turn ' + n.turnNum : '', n.x, n.y + r + 11)
       })
 
-      // ── Tooltip ───────────────────────────────────────────────────────────
+      // Tooltip
       const tipId = st.clickedNodeId || st.hoverNodeId
       if (tipId) {
         const hn = nodes.find(n => n.id === tipId)
@@ -525,7 +475,6 @@ export function Flow() {
           const boxH = lines.length * lineH + padY * 2 + 4
           let boxX = hn.x + nR(hn) + 14
           const boxY = hn.y - boxH / 2
-          // Flip left if close to right edge (rough heuristic in graph coords)
           if ((hn.x + nR(hn) + 14 + boxW) > (rect.width / st.zoom - st.panX / st.zoom - 20)) {
             boxX = hn.x - nR(hn) - 14 - boxW
           }
@@ -572,7 +521,7 @@ export function Flow() {
 
     requestAnimationFrame(() => { centerGraph(); draw() })
 
-    // ── Event handlers ────────────────────────────────────────────────────────
+    // ── Event handlers ─────────────────────────────────────────────────────────
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
@@ -628,8 +577,8 @@ export function Flow() {
     canvas.addEventListener('mouseleave', onMouseLeave)
     canvas.addEventListener('click', onClick)
 
-    ;(canvas as FlowCanvas).__flowDraw   = draw
-    ;(canvas as FlowCanvas).__flowCenter = centerGraph
+    ;(canvas as FlowCanvasEl).__flowDraw   = draw
+    ;(canvas as FlowCanvasEl).__flowCenter = centerGraph
 
     return () => {
       if (st.playbackTimer) clearInterval(st.playbackTimer)
@@ -640,20 +589,19 @@ export function Flow() {
       canvas.removeEventListener('mouseleave', onMouseLeave)
       canvas.removeEventListener('click', onClick)
     }
-  }, [sessions, clampedIdx, focusedId, sessionTimelines.value[allSessions[clampedIdx]?.sess?.sessionId ?? '']])
+  }, [sess.sessionId, sessionTimelines.value[sess.sessionId]])
 
-  // ── Controls ─────────────────────────────────────────────────────────────────
+  // ── Controls ──────────────────────────────────────────────────────────────────
 
-  function handleZoomIn()  { const c = canvasRef.current; if (!c) return; stateRef.current.zoom = Math.min(5, stateRef.current.zoom * 1.3); (c as FlowCanvas).__flowDraw?.() }
-  function handleZoomOut() { const c = canvasRef.current; if (!c) return; stateRef.current.zoom = Math.max(0.1, stateRef.current.zoom / 1.3); (c as FlowCanvas).__flowDraw?.() }
-  function handleReset()   { const c = canvasRef.current; if (!c) return; (c as FlowCanvas).__flowCenter?.(); (c as FlowCanvas).__flowDraw?.() }
+  function handleZoomIn()  { const c = canvasRef.current; if (!c) return; stateRef.current.zoom = Math.min(5, stateRef.current.zoom * 1.3); (c as FlowCanvasEl).__flowDraw?.() }
+  function handleZoomOut() { const c = canvasRef.current; if (!c) return; stateRef.current.zoom = Math.max(0.1, stateRef.current.zoom / 1.3); (c as FlowCanvasEl).__flowDraw?.() }
+  function handleReset()   { const c = canvasRef.current; if (!c) return; (c as FlowCanvasEl).__flowCenter?.(); (c as FlowCanvasEl).__flowDraw?.() }
 
   function handlePlayPause() {
     const canvas = canvasRef.current; if (!canvas) return
     const st = stateRef.current
-    const draw = (canvas as FlowCanvas).__flowDraw; if (!draw) return
-    const speedSel = canvas.closest('#flow-content')?.querySelector('#flow-speed') as HTMLSelectElement | null
-    const prog = canvas.closest('#flow-content')?.querySelector('#flow-progress')
+    const draw = (canvas as FlowCanvasEl).__flowDraw; if (!draw) return
+    const prog = document.getElementById(progressId)
 
     if (st.playbackPlaying) {
       if (st.playbackTimer) clearInterval(st.playbackTimer); st.playbackTimer = null
@@ -664,7 +612,6 @@ export function Flow() {
 
     if (st.playbackTurns.length === 0) return
     st.playbackPlaying = true; setIsPlaying(true)
-    const speed = parseInt(speedSel?.value ?? '800') || 800
     st.playbackIdx = 0
     st.clickedNodeId = st.nodes[st.playbackTurns[0]]?.id ?? null
     if (prog) prog.textContent = '1 / ' + st.playbackTurns.length
@@ -680,47 +627,33 @@ export function Flow() {
       st.clickedNodeId = st.nodes[st.playbackTurns[st.playbackIdx]]?.id ?? null
       if (prog) prog.textContent = (st.playbackIdx + 1) + ' / ' + st.playbackTurns.length
       draw()
-    }, speed)
+    }, speedRef.current)
   }
 
   return (
-    <div id="flow-content">
-      <div class="flow-controls" style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button
-          class="flow-btn"
-          disabled={clampedIdx <= 0}
-          onClick={() => setManualIdx(Math.max(0, clampedIdx - 1))}
-          title="Previous session"
-        >‹ Prev</button>
-        <span style="font-size:11px;color:var(--muted);max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:120px" title={allSessions[clampedIdx]?.label}>
-          {allSessions[clampedIdx]?.label ?? '—'}
-        </span>
-        <span style="font-size:10px;color:var(--muted);white-space:nowrap">{clampedIdx + 1} / {allSessions.length}</span>
-        <button
-          class="flow-btn"
-          disabled={clampedIdx >= allSessions.length - 1}
-          onClick={() => setManualIdx(Math.min(allSessions.length - 1, clampedIdx + 1))}
-          title="Next session"
-        >Next ›</button>
+    <div>
+      <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
         <button class="flow-btn" onClick={handleZoomIn}>+</button>
         <button class="flow-btn" onClick={handleZoomOut}>−</button>
         <button class="flow-btn" onClick={handleReset}>Reset</button>
-        <span style="width:1px;height:16px;background:var(--border);margin:0 4px" />
+        <span style="width:1px;height:16px;background:var(--border);margin:0 2px" />
         <button class="flow-btn" title="Animate turn sequence" onClick={handlePlayPause}>{isPlaying ? '⏸' : '▶'}</button>
-        <span class="toolbar-control-label">Speed</span>
-        <select id="flow-speed" class="toolbar-select">
+        <select
+          class="toolbar-select"
+          onChange={e => { speedRef.current = parseInt((e.target as HTMLSelectElement).value) || 800 }}
+        >
           <option value="2000">Slow</option>
           <option value="800" selected>Normal</option>
           <option value="300">Fast</option>
         </select>
+        <span id={progressId} style="font-size:10px;color:var(--muted)" />
       </div>
-
-      <div style="display:flex;gap:12px;margin-bottom:8px;font-size:10px;color:var(--muted);flex-wrap:wrap;align-items:center">
-        {[
+      <div style="display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted);flex-wrap:wrap;align-items:center">
+        {([
           { color: LLM_COLOR, label: 'LLM turn' },
           { color: TOOL_COLOR, label: 'Tool' },
           { color: ERR_COLOR,  label: 'Error' },
-        ].map(({ color, label }) => (
+        ] as const).map(({ color, label }) => (
           <span key={label} style="display:flex;align-items:center;gap:4px">
             <span style={'display:inline-block;width:9px;height:9px;border-radius:50%;background:' + color + '30;border:1.5px solid ' + color} />
             {label}
@@ -728,12 +661,138 @@ export function Flow() {
         ))}
         <span style="color:var(--muted)">Edge thickness = call freq</span>
       </div>
-
       <canvas
         ref={canvasRef}
-        id="flow-canvas"
-        style="width:100%;height:520px;display:block;border:1px solid var(--border);border-radius:4px;cursor:grab"
+        style={`width:100%;height:${height}px;display:block;border:1px solid var(--border);border-radius:4px;cursor:grab`}
       />
+    </div>
+  )
+}
+
+// ── Full Flow tab (with session picker) ───────────────────────────────────────
+
+export function Flow() {
+  const sessions = sessionSummary.value?.sessions ?? rangedSessions.value
+  const [searchText, setSearchText] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!searchOpen) return
+    const close = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [searchOpen])
+
+  const focusedId = focusedSessionId.value
+  const focusedIdx = focusedId ? sessions.findIndex(s => s.sessionId === focusedId) : -1
+  const [manualIdx, setManualIdx] = useState(-1)
+  const selectedIdx = focusedIdx >= 0 ? focusedIdx : manualIdx
+
+  if (sessions.length === 0) {
+    return <div id="flow-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+  }
+
+  const allSessions = sessions.map(sess => {
+    const time = formatSessionTime(sess)
+    const src = getAgentSourceLabel(sess.source)
+    const turns = sess.totalLlmCalls ?? 0
+    const snippet = sess.userRequest ? (sess.userRequest.length > 40 ? sess.userRequest.slice(0, 40) + '…' : sess.userRequest) : ''
+    return {
+      label: snippet ? `${time} · ${src} · "${snippet}"` : `${time} · ${src} · ${turns} turns`,
+      time, snippet,
+      color: getAgentColor(sess.source),
+      sess,
+    }
+  })
+
+  const searchLower = searchText.toLowerCase()
+  const filteredForSearch = searchText
+    ? allSessions.filter(s => s.label.toLowerCase().includes(searchLower))
+    : allSessions
+
+  const clampedIdx = Math.max(0, Math.min(
+    selectedIdx < 0 ? allSessions.length - 1 : selectedIdx,
+    allSessions.length - 1
+  ))
+
+  const currentSession = allSessions[clampedIdx]
+
+  return (
+    <div id="flow-content">
+      <div style="margin-bottom:5px">
+        <div ref={searchRef} style="position:relative">
+          <input
+            type="text"
+            placeholder={`Search ${allSessions.length} sessions…`}
+            value={searchText}
+            onInput={e => { setSearchText((e.target as HTMLInputElement).value); setSearchOpen(true) }}
+            onFocus={() => setSearchOpen(true)}
+            style="width:100%;padding:4px 8px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none;box-sizing:border-box"
+          />
+          {searchOpen && filteredForSearch.length > 0 && (
+            <div style="position:absolute;top:100%;left:0;right:0;z-index:200;margin-top:2px;background:var(--vscode-editorWidget-background,#252526);border:1px solid var(--vscode-panel-border,#3e3e42);border-radius:4px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.35)">
+              {filteredForSearch.slice(0, 30).map(s => {
+                const origIdx = allSessions.indexOf(s)
+                const isSelected = origIdx === clampedIdx
+                return (
+                  <div
+                    key={s.sess.sessionId}
+                    style={`display:flex;align-items:flex-start;gap:6px;padding:5px 8px;cursor:pointer;font-size:11px;${isSelected ? 'background:var(--vscode-list-activeSelectionBackground,#094771)' : ''}`}
+                    onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'var(--vscode-list-hoverBackground,#2a2d2e)' }}
+                    onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '' }}
+                    onMouseDown={e => {
+                      e.preventDefault()
+                      setManualIdx(origIdx)
+                      setSearchText('')
+                      setSearchOpen(false)
+                    }}
+                  >
+                    <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px;background:' + s.color} />
+                    <div style="min-width:0">
+                      <div style="white-space:nowrap;color:var(--vscode-foreground,#ccc)">{s.time}</div>
+                      {s.snippet && <div style="font-size:9px;color:var(--vscode-descriptionForeground,#888);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{s.snippet}</div>}
+                    </div>
+                  </div>
+                )
+              })}
+              {filteredForSearch.length > 30 && (
+                <div style="padding:4px 8px;font-size:10px;color:var(--vscode-descriptionForeground,#888)">
+                  {filteredForSearch.length - 30} more — refine search
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        {currentSession && (
+          <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);white-space:nowrap">
+            <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;background:' + currentSession.color} />
+            <span>{currentSession.time}</span>
+            {currentSession.snippet && <span style="color:var(--muted);font-style:italic;overflow:hidden;text-overflow:ellipsis;max-width:200px">"{currentSession.snippet}"</span>}
+          </div>
+        )}
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <button
+            class="flow-btn"
+            disabled={clampedIdx <= 0}
+            onClick={() => { setManualIdx(Math.max(0, clampedIdx - 1)); setSearchText(''); setSearchOpen(false) }}
+            title="Previous session"
+          >‹</button>
+          <button
+            class="flow-btn"
+            disabled={clampedIdx >= allSessions.length - 1}
+            onClick={() => { setManualIdx(Math.min(allSessions.length - 1, clampedIdx + 1)); setSearchText(''); setSearchOpen(false) }}
+            title="Next session"
+          >›</button>
+        </div>
+      </div>
+
+      {currentSession && <FlowCanvas sess={currentSession.sess} height={520} />}
     </div>
   )
 }

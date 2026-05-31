@@ -10,7 +10,7 @@ export const CHART_MAX = 25
 
 // ── Time range navigation ─────────────────────────────────────────────────────
 
-export type TimePreset = 'live' | '1h' | '6h' | '24h' | '7d' | '30d' | 'all'
+export type TimePreset = '1h' | '6h' | '24h' | '7d' | '30d' | 'all'
 
 export interface TimeRange {
   preset: TimePreset
@@ -19,7 +19,6 @@ export interface TimeRange {
 }
 
 export const TIME_PRESETS: Array<{ id: TimePreset; label: string; ms: number | null }> = [
-  { id: 'live', label: 'Live',  ms: null },
   { id: '1h',   label: '1h',   ms: 60 * 60_000 },
   { id: '6h',   label: '6h',   ms: 6 * 60 * 60_000 },
   { id: '24h',  label: '24h',  ms: 24 * 60 * 60_000 },
@@ -34,8 +33,8 @@ export function makeTimeRange(preset: TimePreset): TimeRange {
   return { preset, since: Date.now() - p.ms }
 }
 
-// Active time range — defaults to 'live' (no filtering, uses in-memory sessions)
-export const timeRange = signal<TimeRange>({ preset: 'live' })
+// Active time range — defaults to 'all' (no time bound, always live)
+export const timeRange = signal<TimeRange>({ preset: 'all' })
 
 // DB-queried sessions for the active time range (separate from the Search tab results)
 export const rangedSearchResults = signal<SearchResultData | null>(null)
@@ -58,6 +57,12 @@ export interface SearchResultData {
   offset: number
 }
 export const searchResults = signal<SearchResultData | null>(null)
+
+// ── Global session text filter + sort ─────────────────────────────────────────
+
+export type SortKey = 'start_time' | 'total_tokens' | 'duration_ms' | 'errors'
+export const sessionTextFilter = signal('')
+export const sessionSortKey = signal<SortKey>('start_time')
 
 // ── Set signal helper ─────────────────────────────────────────────────────────
 
@@ -96,7 +101,7 @@ export const focusedSessionId = signal<string | null>(null)
 export const sessionLimit = signal(25)
 export const selectedAgentFilter = signal<AgentFilter>('all')
 export const insightFilter = signal<InsightFilter>('all')
-export const activeTab = signal('efficiency')
+export const activeTab = signal('sessions')
 
 // ── Session retention signals ─────────────────────────────────────────────────
 
@@ -148,18 +153,60 @@ export const displaySessions = computed<SessionSummaryCard[]>(() => {
 })
 
 // Sessions scoped to the active time range + agent filter.
-// Live/All → displaySessions (in-memory, newest-first).
-// Any other preset → DB search results, agent-filtered client-side.
+// Live/All → in-memory displaySessions.
+// Bounded preset → merge DB results with in-memory sessions that fall in the window
+// so that sessions not yet persisted to the DB are never missed.
 export const rangedSessions = computed<SessionSummaryCard[]>(() => {
   const range = timeRange.value
-  if (range.preset === 'live' || range.preset === 'all') {
-    return displaySessions.value
-  }
-  const results = rangedSearchResults.value
-  if (!results) return displaySessions.value  // still loading — show live as fallback
   const agent = selectedAgentFilter.value
-  if (agent === 'all') return results.sessions
-  return results.sessions.filter(s => s.source === agent)
+
+  if (range.preset === 'all') {
+    return agentFilteredSessions.value
+  }
+
+  const since = range.since ?? 0
+  const until = range.until ?? Date.now()
+
+  // Always include in-memory sessions that fall in the window (covers sessions not yet in DB)
+  const allInMemory = agentFilteredSessions.value
+  const inMemory = allInMemory.filter(s => {
+    if (!s.startTime) return false
+    const ms = new Date(s.startTime).getTime()
+    return ms >= since && ms <= until
+  })
+
+  const dbResults = rangedSearchResults.value
+  if (!dbResults) return inMemory  // still loading — show in-memory matches as fallback
+
+  // Merge DB results (historical) with in-memory sessions, deduplicate by sessionId
+  const dbIds = new Set(dbResults.sessions.map(s => s.sessionId))
+  const merged = [
+    ...dbResults.sessions,
+    ...inMemory.filter(s => !dbIds.has(s.sessionId)),
+  ]
+  merged.sort((a, b) => Date.parse(b.startTime || '0') - Date.parse(a.startTime || '0'))
+
+  if (agent === 'all') return merged
+  return merged.filter(s => s.source === agent)
+})
+
+// Text-filtered + sorted view of rangedSessions — used by Efficiency, Cost, Traces, Search, Insights
+export const filteredSessions = computed<SessionSummaryCard[]>(() => {
+  let sessions = rangedSessions.value
+  const text = sessionTextFilter.value.toLowerCase().trim()
+  if (text) {
+    sessions = sessions.filter(s => (s.userRequest ?? '').toLowerCase().includes(text))
+  }
+  const key = sessionSortKey.value
+  if (key === 'start_time') return sessions  // already newest-first from rangedSessions
+  return [...sessions].sort((a, b) => {
+    switch (key) {
+      case 'total_tokens': return (b.inputTokens + b.outputTokens) - (a.inputTokens + a.outputTokens)
+      case 'duration_ms':  return b.durationMs - a.durationMs
+      case 'errors':       return b.errors - a.errors
+      default:             return 0
+    }
+  })
 })
 
 export const agentPresence = computed(() => {

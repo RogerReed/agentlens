@@ -1,8 +1,8 @@
-import { displaySessions } from '../state'
+import { sessionSummary, timeRange } from '../state'
 import { formatMs, formatCompact } from '../utils'
 import type { SessionSummaryCard } from '../types'
 
-function computeStats(sessions: SessionSummaryCard[]) {
+export function computeStats(sessions: SessionSummaryCard[]) {
   let totalInput = 0, totalOutput = 0, totalCache = 0
   let totalLlm = 0, totalTools = 0, ttftSum = 0, ttftCount = 0, durSum = 0
   const toolCounts: Record<string, number> = {}
@@ -86,7 +86,17 @@ function AgentCol({ label, accent, stats }: { label: string; accent: string; sta
 }
 
 export function Agents() {
-  const allSessions = displaySessions.value
+  // Show all agent types side-by-side — ignore the agent filter (it's hidden on this tab)
+  // and apply only the time range filter so the comparison is meaningful.
+  const range = timeRange.value
+  const raw = sessionSummary.value?.sessions ?? []
+  const allSessions = (range.preset === 'all')
+    ? raw
+    : raw.filter(s => {
+        if (!s.startTime) return false
+        const ms = new Date(s.startTime).getTime()
+        return ms >= (range.since ?? 0) && ms <= (range.until ?? Date.now())
+      })
   if (!allSessions.length) {
     return <div id="agents-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
   }

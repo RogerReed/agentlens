@@ -151,9 +151,6 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       output: recent.reduce((a, s) => a + s.outputTokens, 0),
     }
     const latestSession = all.length > 0 ? all[0] : null  // newest-first
-    const recentCutoff = Date.now() - 2 * 60_000
-    const activeSession = all.find(s => Date.parse(s.startTime) > recentCutoff)
-    const burnRateResult = activeSession ? this.repo.queryBurnRate(activeSession.sessionId) : null
     function formatCompact(n: number): string {
       return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
     }
@@ -220,14 +217,6 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       <!-- Agent key -->
       <div id="agentKey" style="margin-bottom:6px"></div>
 
-      <!-- Burn rate (shows only when active) -->
-      ${burnRateResult ? `
-      <div class="card" style="margin-bottom:6px;padding:7px 10px;border-left:3px solid #56D364">
-        <h3 style="margin:0 0 4px">Active Session</h3>
-        <div style="font-size:14px;font-weight:bold;color:#56D364">${formatCompact(Math.round(burnRateResult.burnRate.tokensPerMinute))} tok/min</div>
-        ${burnRateResult.burnRate.costPerHour > 0.001 ? `<div style="font-size:11px;color:var(--vscode-descriptionForeground)">~$${burnRateResult.burnRate.costPerHour.toFixed(2)}/hr</div>` : ''}
-        ${burnRateResult.projection ? `<div style="font-size:10px;color:var(--vscode-descriptionForeground);margin-top:2px">${burnRateResult.projection.contextFillPct.toFixed(0)}% context used</div>` : ''}
-      </div>` : ''}
 
       <!-- Status + Sessions -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">

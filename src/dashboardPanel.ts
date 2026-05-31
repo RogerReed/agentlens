@@ -97,10 +97,9 @@ export class DashboardPanel {
           offset: (msg.query as { offset?: number }).offset ?? 0,
           context: (msg as { context?: string }).context ?? 'search',
         })
-      } else if (msg.type === 'exportSessionData') {
-        vscode.commands.executeCommand('agentLens.exportData')
-      } else if (msg.type === 'exportSessionDataRedacted') {
-        vscode.commands.executeCommand('agentLens.exportDataRedacted')
+      } else if (msg.type === 'exportSessionData' || msg.type === 'exportSessionDataRedacted') {
+        const redact = msg.type === 'exportSessionDataRedacted'
+        void this.exportSessions(redact)
       } else if (msg.type === 'openSidebar') {
         vscode.commands.executeCommand('workbench.view.extension.agent-lens')
       } else if (msg.type === 'closeSidebar') {
@@ -129,9 +128,9 @@ export class DashboardPanel {
       ? { sessions, backgroundSpans: [], efficiency: buildEfficiency(sessions) }
       : null
 
-    // Analytics data: 30-day daily stats + lifetime totals.
-    const since30d = Date.now() - 30 * 86_400_000
-    const dailyStats = this.repo.queryDailyStats({ since: since30d })
+    // Analytics data: 7-day hourly stats + lifetime totals.
+    const since7d = Date.now() - 7 * 86_400_000
+    const dailyStats = this.repo.queryHourlyStats({ since: since7d })
     const lifetimeStats = this.repo.queryLifetimeStats()
 
     // Burn rate for the most recently updated live session (< 2 min old).
@@ -150,6 +149,55 @@ export class DashboardPanel {
         ? { sessionId: activeSession!.sessionId, ...burnRateResult }
         : null,
     })
+  }
+
+  private async exportSessions(redact: boolean): Promise<void> {
+    const sessions = this.repo.listSessions()
+    if (sessions.length === 0) {
+      vscode.window.showInformationMessage('AgentLens: No session data to export')
+      return
+    }
+
+    const exportable = sessions.map(s => {
+      const base = {
+        sessionId:        s.sessionId,
+        traceId:          s.traceId,
+        source:           s.source,
+        model:            s.model,
+        startTime:        s.startTime,
+        durationMs:       s.durationMs,
+        turns:            s.totalLlmCalls,
+        totalToolCalls:   s.totalToolCalls,
+        inputTokens:      s.inputTokens,
+        outputTokens:     s.outputTokens,
+        cacheReadTokens:  s.cacheReadTokens,
+        cacheCreateTokens: s.cacheCreateTokens,
+        cacheHitRate:     s.cacheHitRate,
+        errors:           s.errors,
+        outcome:          s.outcome,
+        toolCounts:       s.toolCounts,
+        filesRead:        s.filesRead,
+        filesChanged:     s.filesChanged,
+        loopSignals:      s.loopSignals,
+      }
+      if (redact) return base
+      return { ...base, userRequest: s.userRequest }
+    })
+
+    const now = new Date()
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+    const prefix = redact ? 'export_redacted' : 'export'
+    const filename = `${prefix}_sessions_${ts}.json`
+
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+    const baseUri = workspaceFolder ? workspaceFolder.uri : this.context.globalStorageUri
+    const fileUri = vscode.Uri.joinPath(baseUri, filename)
+
+    await vscode.workspace.fs.writeFile(fileUri, Buffer.from(JSON.stringify(exportable, null, 2)))
+    vscode.window.showInformationMessage(`AgentLens: Exported ${sessions.length} sessions to ${filename}`)
+    const doc = await vscode.workspace.openTextDocument(fileUri)
+    vscode.window.showTextDocument(doc, { preview: false })
   }
 
   private dispose() {

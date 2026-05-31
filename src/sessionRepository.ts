@@ -70,6 +70,11 @@ export class SessionRepository {
     return this.reader.queryDailyStats(options)
   }
 
+  /** Returns hourly token + cost stats. `day` key is 'YYYY-MM-DD HH' (UTC). */
+  queryHourlyStats(options: { since: number; source?: string }): DailyStatRow[] {
+    return this.reader.queryHourlyStats(options)
+  }
+
   /** Returns lifetime aggregate stats across all non-sidechain sessions. */
   queryLifetimeStats(): LifetimeStats {
     return this.reader.queryLifetimeStats()

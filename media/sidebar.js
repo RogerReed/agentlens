@@ -95,6 +95,7 @@
   renderLatestSession(__SIDEBAR_INIT__.latestSession);
   var vscode = acquireVsCodeApi();
   document.getElementById("clearBtn")?.addEventListener("click", () => {
+    if (!confirm("Clear all AgentLens session data (all time)? This cannot be undone.")) return;
     vscode.postMessage({ type: "clearAll" });
   });
   window.addEventListener("message", (e) => {

@@ -477,8 +477,8 @@ export function getSessionOffset(): number {
   return all.length - limit
 }
 
-export function buildDisplaySummary() {
-  const sessions = displaySessions.value
+export function buildDisplaySummary(sessionsOverride?: SessionSummaryCard[]) {
+  const sessions = sessionsOverride ?? displaySessions.value
   let totalInputTokens = 0, totalOutputTokens = 0, totalLlmCalls = 0, cacheRead = 0
   sessions.forEach(s => {
     totalInputTokens += s.inputTokens ?? 0
@@ -546,12 +546,45 @@ export function formatLlmLabel(entry: { action?: string }): string {
   return action || 'LLM call'
 }
 
-export function formatToolLabel(entry: { label?: string }): string {
+export function formatToolLabel(entry: { label?: string; toolInput?: string }): string {
   const label = entry.label ?? ''
   const parts = label.match(/^(\S+)\s*([\s\S]*)$/)
   if (!parts) return label
   const toolName = parts[1]
   const args = parts[2] ?? ''
+
+  // For Claude Code tools the label is just the tool name with no args.
+  // Parse toolInput (JSON or raw string) to build a meaningful label.
+  if (!args.trim() && entry.toolInput) {
+    const raw = entry.toolInput.trimStart()
+    if (raw.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        const fp = String(parsed.file_path || parsed.filePath || '')
+        if (fp) {
+          const base = fp.split('/').pop() || fp
+          // MultiEdit may touch multiple files
+          if (toolName === 'MultiEdit' && Array.isArray(parsed.edits)) {
+            const count = (parsed.edits as unknown[]).length
+            return toolName + ' ' + base + (count > 1 ? ' +' + (count - 1) : '')
+          }
+          return toolName + ' ' + base
+        }
+        if (parsed.command) {
+          const cmd = String(parsed.command)
+          return 'Bash ' + (cmd.length > 60 ? cmd.slice(0, 57) + '…' : cmd)
+        }
+        if (parsed.pattern) return toolName + ' ' + String(parsed.pattern)
+        if (parsed.query)   return toolName + ' ' + String(parsed.query)
+      } catch { /* fall through */ }
+    } else {
+      // Raw string — bash command or file path
+      const isFilePath = raw.startsWith('/') || raw.startsWith('~') || /^[A-Za-z]:[/\\]/.test(raw)
+      if (isFilePath) return toolName + ' ' + (raw.split('/').pop() || raw)
+      return 'Bash ' + (raw.length > 60 ? raw.slice(0, 57) + '…' : raw)
+    }
+  }
+
   switch (toolName) {
     case 'read_file': {
       const m = args.match(/^(\S+)\s*L(\d+)-(\d+)$/)
@@ -586,7 +619,7 @@ export function formatToolLabel(entry: { label?: string }): string {
     case 'run_in_terminal': return 'Run: ' + (args.length > 60 ? args.slice(0, 57) + '…' : args)
     case 'explore_subagent':
     case 'runSubagent': return 'Sub-agent: ' + args
-    default: return toolName + ' ' + args
+    default: return toolName + (args ? ' ' + args : '')
   }
 }
 

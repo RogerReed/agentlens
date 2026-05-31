@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'preact/hooks'
 import {
-  rangedSessions, sessionSummary, sessionTimelines, focusedSessionId, vscode,
+  filteredSessions, sessionSummary, sessionTimelines, focusedSessionId, vscode,
 } from '../state'
 import {
-  formatMs, formatCompact, syntaxHighlightJson, getSessionGlobalNumber,
+  formatMs, formatCompact, syntaxHighlightJson,
   getAgentDotHtml, formatLlmLabel, formatToolLabel, formatToolResult,
-  sessionDateKey, formatDayLabel,
+  sessionDateKey, formatDayLabel, formatSessionTime,
 } from '../utils'
 import { calcEntryCost, fmtUsd } from '../sessionMetrics'
 import type { SessionSummaryCard, TimelineEntry, BackgroundSpanSummary } from '../types'
 
-interface Step {
+export interface Step {
   entry: TimelineEntry
   offsetMs: number
   durationMs: number
@@ -202,7 +202,7 @@ function LongTextSection({ heading, text, id: _id, isJson }: { heading: string; 
   )
 }
 
-function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step: Step; idx: number; sessIdx: number; sessionDur: number; sessionModel: string }) {
+export function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step: Step; idx: number; sessIdx: number; sessionDur: number; sessionModel: string }) {
   const [open, setOpen] = useState(false)
   const entry = step.entry
   const entryCost = entry.type === 'llm' ? calcEntryCost(entry, sessionModel) : 0
@@ -219,14 +219,25 @@ function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step: Step;
     : entry.type === 'user_input' ? (entry.decision && entry.decision !== 'unknown' ? `${entry.label} (${entry.decision})` : entry.label)
     : entry.label || ''
 
-  // Show a subtitle for tool entries when toolInput is a raw string (not JSON args).
-  // For file paths show just the basename; for shell commands show the full command truncated.
+  // Show a subtitle with the full bash command (when the label had to truncate it).
   const toolSubtitle = (() => {
-    if (entry.type !== 'tool' || !entry.toolInput || entry.toolInput.trimStart().startsWith('{')) return null
-    const input = entry.toolInput
-    const isFilePath = input.startsWith('/') || input.startsWith('~') || /^[A-Za-z]:[/\\]/.test(input)
-    if (isFilePath) return input.split('/').pop() || input
-    return input.length > 90 ? input.slice(0, 90) + '…' : input
+    if (entry.type !== 'tool' || !entry.toolInput) return null
+    const raw = entry.toolInput.trimStart()
+    if (raw.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(raw) as Record<string, unknown>
+        if (parsed.command) {
+          // Show full command as subtitle when it was truncated in the label
+          const cmd = String(parsed.command)
+          return cmd.length > 60 ? cmd : null
+        }
+      } catch { /* ignore */ }
+      return null
+    }
+    // Raw string (Bash full_command or file path)
+    const isFilePath = raw.startsWith('/') || raw.startsWith('~') || /^[A-Za-z]:[/\\]/.test(raw)
+    if (isFilePath) return null  // file path already shown in label
+    return raw.length > 60 ? raw : null  // only show subtitle if it was truncated
   })()
 
   const subtitle = toolSubtitle
@@ -280,7 +291,7 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
   const isFocused = focusedSessionId.value === sess.sessionId
   const isLongPrompt = (sess.userRequest?.length ?? 0) > 100
 
-  const sessionNum = getSessionGlobalNumber(sess) || (totalCount - sessIdx)
+  const sessionTime = formatSessionTime(sess)
   const sessionStartMs = sess.startTime ? new Date(sess.startTime).getTime() : 0
   let sessionDur = sess.durationMs || 1
 
@@ -317,8 +328,8 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
       <div class="wf-trace-header" onClick={toggle}>
         <span>
           <span class="wf-header-chevron">{collapsed ? '▶' : '▼'}</span>
-          <strong>{sessionNum}</strong>{' '}
           <span dangerouslySetInnerHTML={{ __html: getAgentDotHtml(sess.source) }} />{' '}
+          <span style="font-size:10px;color:var(--muted)">{sessionTime}</span>{' '}
           "{sess.userRequest.slice(0, 100)}{isLongPrompt ? '…' : ''}"
           {isLongPrompt && (
             <button class="sw-show-full-btn" style="margin-left:8px" onClick={e => { e.stopPropagation(); setPromptExpanded(v => !v) }}>
@@ -386,8 +397,9 @@ function DayGroup({ label, sessions, focusedId }: {
 }
 
 export function Traces() {
-  const base = rangedSessions.value
+  const base = filteredSessions.value
   const summary = sessionSummary.value
+  const hasAny = (summary?.sessions?.length ?? 0) > 0
   const focusedId = focusedSessionId.value
 
   // Scroll to focused session when it changes
@@ -398,7 +410,7 @@ export function Traces() {
   }, [focusedId])
 
   if (!summary?.sessions?.length) {
-    return <div id="summary-traces-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+    return <div id="summary-traces-content"><div class="empty-state">{hasAny ? 'No sessions match the active filters.' : 'No sessions recorded yet.'}</div></div>
   }
 
   const sessionsToShow = [...base].reverse()

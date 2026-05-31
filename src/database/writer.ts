@@ -29,6 +29,16 @@ export class DatabaseWriter {
     }
   }
 
+  /** Removes any synthetic placeholder session (session_id LIKE 'synth-%') for the given traceId. */
+  deleteSynthSession(traceId: string): void {
+    try {
+      this.db.run(
+        `DELETE FROM sessions WHERE trace_id = ? AND session_id LIKE 'synth-%'`,
+        [traceId],
+      )
+    } catch { /* ignore — non-fatal */ }
+  }
+
   async drain(): Promise<void> {
     return this.drainPromise
   }

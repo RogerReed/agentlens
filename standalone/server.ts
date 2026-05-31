@@ -305,11 +305,40 @@ function computeSidebarData(summary: ReturnType<typeof summarizeSpans>, allSpans
   }
 }
 
+function computeAnalyticsData(sessions: ReturnType<typeof summarizeSpans>['sessions']) {
+  const dayMap: Record<string, { totalTokens: number; outputTokens: number; cacheReadTokens: number; cacheCreateTokens: number; costUsd: number; sessionCount: number }> = {}
+  for (const sess of sessions) {
+    if (!sess.startTime) continue
+    const d = new Date(sess.startTime)
+    if (isNaN(d.getTime())) continue
+    const day = d.toISOString().slice(0, 10)
+    if (!dayMap[day]) dayMap[day] = { totalTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheCreateTokens: 0, costUsd: 0, sessionCount: 0 }
+    const r = dayMap[day]
+    r.totalTokens += sess.inputTokens
+    r.outputTokens += sess.outputTokens
+    r.cacheReadTokens += sess.cacheReadTokens
+    r.cacheCreateTokens += sess.cacheCreateTokens
+    r.sessionCount++
+  }
+  const dailyStats = Object.entries(dayMap).map(([day, r]) => ({ day, ...r })).sort((a, b) => a.day.localeCompare(b.day))
+  const totalTokens = sessions.reduce((s, sess) => s + sess.inputTokens + sess.outputTokens, 0)
+  const times = sessions.map(s => s.startTime ? new Date(s.startTime).getTime() : 0).filter(t => t > 0)
+  const lifetimeStats = {
+    totalSessions: sessions.length,
+    totalTokens,
+    totalCostUsd: 0,
+    oldestSessionMs: times.length > 0 ? Math.min(...times) : 0,
+    newestSessionMs: times.length > 0 ? Math.max(...times) : 0,
+  }
+  return { dailyStats, lifetimeStats }
+}
+
 function buildUpdatePayload(): string {
   let sessionSummary: ReturnType<typeof summarizeSpans> | null = null
   try { sessionSummary = summarizeSpans(spans) } catch { /* ignore */ }
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : null
-  return JSON.stringify({ type: 'update', spans, summary: { toolCalls: {} }, sessionSummary, sidebar })
+  const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null
+  return JSON.stringify({ type: 'update', spans, summary: { toolCalls: {} }, sessionSummary, sidebar, analyticsData })
 }
 
 function pushUpdate() {
@@ -329,6 +358,7 @@ function getHtml(): string {
     filesChangedCount: 0, errors: 0, totalToolCalls: 0, cacheHitPct: 0, avgTurns: 0,
     agentSources: [], latestSession: null,
   }
+  const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null
   const sessionSummaryJson = safeJson(sessionSummary)
   const sidebarJson = safeJson(sidebar)
 
@@ -418,6 +448,14 @@ function getHtml(): string {
     window.__INITIAL_SESSION_SUMMARY__ = ${sessionSummaryJson};
     window.__MASCOT_URI__ = '/help-mascot.png';
     window.__STANDALONE__ = true;
+
+    // ── Client-side search support ────────────────────────────────────────────
+    var __latestSessions__ = (window.__INITIAL_SESSION_SUMMARY__ && window.__INITIAL_SESSION_SUMMARY__.sessions) || [];
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'update' && e.data.sessionSummary && e.data.sessionSummary.sessions) {
+        __latestSessions__ = e.data.sessionSummary.sessions;
+      }
+    });
 
     var _toastTimer;
     function showToast(msg) {
@@ -528,6 +566,34 @@ function getHtml(): string {
             window.dispatchEvent(new MessageEvent('message', { data: { type: msg.type } }));
           } else if (msg.type === 'openSidebar' || msg.type === 'closeSidebar') {
             window.dispatchEvent(new CustomEvent('agentlens:sidebar', { detail: { open: msg.type === 'openSidebar' } }));
+          } else if (msg.type === 'searchSessions' && msg.query) {
+            var q = msg.query;
+            var filtered = __latestSessions__.filter(function(s) {
+              if (q.text) {
+                var t = q.text.toLowerCase();
+                if (!(s.userRequest || '').toLowerCase().includes(t) && !(s.model || '').toLowerCase().includes(t)) return false;
+              }
+              if (q.source && s.source !== q.source) return false;
+              if (q.since) { var ms = s.startTime ? new Date(s.startTime).getTime() : 0; if (ms < q.since) return false; }
+              if (q.until) { var ms2 = s.startTime ? new Date(s.startTime).getTime() : 0; if (ms2 > q.until) return false; }
+              return true;
+            });
+            var dir = q.orderDir === 'ASC' ? 1 : -1;
+            filtered.sort(function(a, b) {
+              if (q.orderBy === 'start_time') return dir * (new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+              if (q.orderBy === 'total_tokens') return dir * ((a.inputTokens + a.outputTokens) - (b.inputTokens + b.outputTokens));
+              if (q.orderBy === 'duration_ms') return dir * (a.durationMs - b.durationMs);
+              if (q.orderBy === 'errors') return dir * (a.errors - b.errors);
+              if (q.orderBy === 'cost_usd') return 0;
+              return 0;
+            });
+            var offset = q.offset || 0; var limit = q.limit || 50;
+            var page = filtered.slice(offset, offset + limit);
+            setTimeout(function() {
+              window.dispatchEvent(new MessageEvent('message', {
+                data: { type: 'searchResults', sessions: page, totalCount: filtered.length, offset: offset, context: msg.context || 'search' }
+              }));
+            }, 0);
           } else if (msg.type === 'alert' && msg.label) {
             var color = msg.severity === 'error' ? '#f44747' : msg.severity === 'info' ? '#4fc3f7' : '#f6a623';
             var container = getNotifContainer();
@@ -563,30 +629,8 @@ function getHtml(): string {
     <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
     <div id="sa-sidebar" style="display:flex;flex-direction:column;height:100%">
       <div class="sa-body" style="flex:1 1 auto;overflow-y:auto">
-        <!-- Filters -->
-        <div class="sb-card" style="margin-bottom:6px;padding:7px 10px">
-          <div style="display:flex;gap:5px;align-items:flex-end">
-            <div style="flex:1;min-width:0">
-              <div class="sb-filter-label">Sessions</div>
-              <select id="sb-session-limit" class="sb-select">
-                <option value="1">Last 1</option>
-                <option value="5">Last 5</option>
-                <option value="10" selected>Last 10</option>
-                <option value="25">Last 25</option>
-              </select>
-            </div>
-            <div style="flex:1;min-width:0">
-              <div class="sb-filter-label">Agent</div>
-              <select id="sb-agent-filter" class="sb-select">
-                <option value="all">All</option>
-                <option value="copilot">Copilot</option>
-                <option value="claude_code">Claude</option>
-                <option value="codex">Codex</option>
-              </select>
-            </div>
-          </div>
-          <div id="sa-agent-key" style="margin-top:6px"></div>
-        </div>
+        <!-- Agent key -->
+        <div id="sa-agent-key" style="margin-bottom:6px"></div>
         <!-- Status + Sessions -->
         <div class="sb-stat-grid">
           <div class="sb-card" style="margin-bottom:0">
@@ -693,14 +737,9 @@ function getHtml(): string {
       sidebarEl.classList.toggle('sa-collapsed', !e.detail.open);
     });
 
-    // ── Filter controls ───────────────────────────────────────────────────
-    document.getElementById('sb-session-limit').addEventListener('change', function() {
-      window.dispatchEvent(new MessageEvent('message', { data: { type: 'setFilter', sessionLimit: Number(this.value) } }));
-    });
-    document.getElementById('sb-agent-filter').addEventListener('change', function() {
-      window.dispatchEvent(new MessageEvent('message', { data: { type: 'setFilter', agentFilter: this.value } }));
-    });
+    // ── Clear button ──────────────────────────────────────────────────────
     document.getElementById('sb-clear-btn').addEventListener('click', function() {
+      if (!confirm('Clear all AgentLens session data (all time)? This cannot be undone.')) return;
       fetch('/api/clear', { method: 'POST' });
       window.dispatchEvent(new MessageEvent('message', { data: { type: 'clearAll' } }));
     });
@@ -721,7 +760,7 @@ function getHtml(): string {
       var el = document.getElementById('sa-agent-key');
       if (!el) return;
       if (!sources || !sources.length) { el.innerHTML = ''; return; }
-      var html = '<div style="display:flex;gap:10px;font-size:10px;color:var(--vscode-descriptionForeground);align-items:center;flex-wrap:wrap">';
+      var html = '<div style="display:flex;gap:10px;font-size:10px;color:var(--vscode-descriptionForeground);align-items:center;flex-wrap:wrap;padding:4px 0">';
       sources.forEach(function(src) {
         html += '<span style="display:flex;align-items:center;gap:4px">';
         html += '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + getAgentColor(src) + '"></span>';

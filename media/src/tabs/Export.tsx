@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks'
-import { displaySessions, vscode } from '../state'
+import { sessionSummary, vscode } from '../state'
 
 function send(type: string) {
   if (vscode) {
@@ -14,7 +14,7 @@ export function Export() {
   const [redactedDone, setRedactedDone] = useState(false)
   const standalone = !!(window as { __STANDALONE__?: boolean }).__STANDALONE__
 
-  const sessionCount = displaySessions.value.length
+  const sessionCount = sessionSummary.value?.sessions?.length ?? 0
 
   const doExport = () => {
     send('exportSessionData')
@@ -42,68 +42,67 @@ export function Export() {
 
         <div class="export-card">
           <div class="export-card-header">
-            <span class="export-card-title">Export OTEL Data</span>
-            <span class="export-card-badge export-badge-raw">Raw</span>
+            <span class="export-card-title">Export Session Data</span>
+            <span class="export-card-badge export-badge-raw">Full</span>
           </div>
           <p class="export-card-desc">
-            All span attributes exported as-is — includes prompt text, tool inputs,
-            tool outputs, and any other captured telemetry.
+            All recorded sessions exported as JSON — includes prompt text, token counts,
+            tool usage, file changes, cost estimates, and efficiency signals.
           </p>
           <ul class="export-card-includes">
-            <li>Prompt text and LLM responses</li>
-            <li>Tool call inputs and outputs</li>
-            <li>Token counts, timing, model names</li>
-            <li>File paths and diffs</li>
+            <li>Prompt text (userRequest)</li>
+            <li>Token counts, cache stats, model names</li>
+            <li>Tool call counts and file paths changed</li>
+            <li>Duration, errors, outcome, loop signals</li>
           </ul>
-          <div class="export-card-warning">Keep private — may contain sensitive content.</div>
+          <div class="export-card-warning">Keep private — includes prompt text.</div>
           <button
             class={'export-btn' + (rawDone ? ' export-btn-done' : '')}
             onClick={doExport}
             disabled={empty}
           >
-            {rawDone ? '✓ Exported' : 'Export OTEL Data'}
+            {rawDone ? '✓ Exported' : 'Export Session Data'}
           </button>
         </div>
 
         <div class="export-card export-card-redacted">
           <div class="export-card-header">
-            <span class="export-card-title">Export Redacted</span>
+            <span class="export-card-title">Export Session Data (Redacted)</span>
             <span class="export-card-badge export-badge-redacted">Safer to share</span>
           </div>
           <p class="export-card-desc">
-            Same export with all sensitive values replaced by <code>[redacted]</code>
-            before the file is written. Safe to attach to bug reports or share with teammates.
+            Same export with prompt text removed. Safe to attach to bug reports
+            or share with teammates for cost and efficiency analysis.
           </p>
           <ul class="export-card-includes">
-            <li><span class="export-redacted-label">[redacted]</span> Prompt text and LLM responses</li>
-            <li><span class="export-redacted-label">[redacted]</span> Tool call inputs and outputs</li>
-            <li>✓ Token counts, timing, model names</li>
-            <li>✓ Span structure and trace IDs</li>
-            <li><span class="export-redacted-label">[redacted]</span> user.id, user.email, org.*</li>
+            <li><span class="export-redacted-label">[removed]</span> Prompt text</li>
+            <li>✓ Token counts, cache stats, model names</li>
+            <li>✓ Tool call counts and file paths changed</li>
+            <li>✓ Duration, errors, outcome, loop signals</li>
           </ul>
-          <div class="export-card-safe">Safer to share — review before sending, as file paths and custom attributes are not redacted.</div>
+          <div class="export-card-safe">Safer to share — no prompt content.</div>
           <button
             class={'export-btn export-btn-secondary' + (redactedDone ? ' export-btn-done' : '')}
             onClick={doRedacted}
             disabled={empty}
           >
-            {redactedDone ? '✓ Exported' : 'Export Redacted'}
+            {redactedDone ? '✓ Exported' : 'Export Session Data (Redacted)'}
           </button>
         </div>
 
       </div>
 
       <div class="export-replay-box">
-        <div class="export-replay-title">Replay an export in the dashboard</div>
+        <div class="export-replay-title">About session data exports</div>
         <p class="export-replay-desc">
-          Replay any exported file to re-examine a past session without running an agent.
-          Works with both the VS Code extension and the standalone server — whichever is
-          on port <code>4318</code>.
+          These exports contain aggregated session summaries — token counts, tool usage,
+          cost estimates, file changes, and efficiency signals. They are useful for
+          cost analysis, sharing with teammates, and offline review.
         </p>
-        <pre class="export-replay-cmd">pnpm run demo -- --file ./export_redacted_claude_main_20260522_152343.json</pre>
         <p class="export-replay-note">
-          Each replay assigns fresh trace IDs so the session appears as a new entry.
-          Pass <code>--speed 4</code> to pace the replay instead of sending all spans at once.
+          <strong>Note:</strong> Session summary exports cannot be replayed with
+          <code>pnpm run demo --file</code>. Replay requires raw OTEL span data,
+          which is not yet persisted to disk. See the open issue for raw span export support.
         </p>
       </div>
     </div>
