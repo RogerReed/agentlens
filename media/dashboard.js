@@ -3388,7 +3388,7 @@
     const thSort = thBase + ";cursor:pointer;color:var(--fg)";
     const thMuted = thBase + ";color:var(--muted);font-weight:500";
     return /* @__PURE__ */ u4("div", { id: "sessions-content", children: [
-      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);padding:0 8px 5px;font-style:italic", children: "Click any column header to sort \u2014 find most expensive, longest, or most error-prone sessions" }),
+      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);padding:6px 8px 5px;font-style:italic", children: "Click any column header to sort \u2014 find most expensive, longest, or most error-prone sessions" }),
       /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
         /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:2px solid var(--vscode-panel-border)", children: [
           /* @__PURE__ */ u4("th", { style: "width:16px;padding:3px 4px 3px 8px" }),

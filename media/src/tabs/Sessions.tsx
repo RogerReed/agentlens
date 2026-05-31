@@ -301,7 +301,7 @@ export function Sessions() {
 
   return (
     <div id="sessions-content">
-      <div style="font-size:10px;color:var(--muted);padding:0 8px 5px;font-style:italic">
+      <div style="font-size:10px;color:var(--muted);padding:6px 8px 5px;font-style:italic">
         Click any column header to sort — find most expensive, longest, or most error-prone sessions
       </div>
       <div style="overflow-x:auto">
