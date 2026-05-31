@@ -2241,43 +2241,7 @@
         " ",
         /* @__PURE__ */ u4("span", { style: "white-space:pre-wrap", children: ins.action })
       ] }),
-      ins.detail && /* @__PURE__ */ u4("div", { class: "insight-detail", style: "white-space:pre-wrap", children: ins.detail }),
-      !isIgnored && (() => {
-        const buttonForAgent = (agent) => {
-          const label = getAgentSourceLabel(agent);
-          return {
-            agent,
-            label: "Copy for " + label,
-            color: getAgentColor(agent)
-          };
-        };
-        let buttons;
-        if (session) {
-          buttons = [buttonForAgent(session.source)];
-        } else {
-          const presence = agentPresence.value;
-          buttons = [
-            presence.copilot && buttonForAgent("copilot"),
-            presence.claude && buttonForAgent("claude_code"),
-            presence.codex && buttonForAgent("codex")
-          ].filter(Boolean);
-        }
-        if (buttons.length === 0) buttons.push({ agent: "generic", label: "Copy to Clipboard", color: "var(--accent)" });
-        const prompt = buildAiPrompt();
-        return /* @__PURE__ */ u4("div", { class: "insight-ask-ai-group", children: buttons.map((b4) => /* @__PURE__ */ u4(
-          "button",
-          {
-            class: "insight-ask-ai",
-            onClick: () => vscode?.postMessage({ type: "askAI", prompt, agent: b4.agent, label: ins.title }),
-            children: [
-              /* @__PURE__ */ u4("span", { style: "color:" + b4.color + ";font-size:8px", children: "\u25CF" }),
-              " ",
-              b4.label
-            ]
-          },
-          b4.agent
-        )) });
-      })()
+      ins.detail && /* @__PURE__ */ u4("div", { class: "insight-detail", style: "white-space:pre-wrap", children: ins.detail })
     ] });
   }
 

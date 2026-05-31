@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import clsx from 'clsx'
-import { filteredSessions, sessionSummary, insightFilter, ignoredInsightKeys, agentPresence, vscode } from '../state'
+import { filteredSessions, sessionSummary, insightFilter, ignoredInsightKeys } from '../state'
 import { buildDisplaySummary, getAgentColor, getAgentSourceLabel, getSessionGlobalNumber, formatSessionTime } from '../utils'
 import type { Insight, InsightFilter, SessionSummaryCard } from '../types'
 
@@ -468,41 +468,6 @@ export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgno
         <span style="white-space:pre-wrap">{ins.action}</span>
       </div>
       {ins.detail && <div class="insight-detail" style="white-space:pre-wrap">{ins.detail}</div>}
-      {!isIgnored && (() => {
-        type ActionButton = { agent: string; label: string; color: string }
-        const buttonForAgent = (agent: SessionSummaryCard['source']): ActionButton => {
-          const label = getAgentSourceLabel(agent)
-          return {
-            agent,
-            label: 'Copy for ' + label,
-            color: getAgentColor(agent),
-          }
-        }
-        let buttons: ActionButton[]
-        if (session) {
-          buttons = [buttonForAgent(session.source)]
-        } else {
-          const presence = agentPresence.value
-          buttons = [
-            presence.copilot && buttonForAgent('copilot'),
-            presence.claude && buttonForAgent('claude_code'),
-            presence.codex && buttonForAgent('codex'),
-          ].filter(Boolean) as ActionButton[]
-        }
-        if (buttons.length === 0) buttons.push({ agent: 'generic', label: 'Copy to Clipboard', color: 'var(--accent)' })
-        const prompt = buildAiPrompt()
-        return (
-          <div class="insight-ask-ai-group">
-            {buttons.map(b => (
-              <button key={b.agent} class="insight-ask-ai"
-                onClick={() => vscode?.postMessage({ type: 'askAI', prompt, agent: b.agent, label: ins.title })}
-              >
-                <span style={'color:' + b.color + ';font-size:8px'}>●</span> {b.label}
-              </button>
-            ))}
-          </div>
-        )
-      })()}
     </div>
   )
 }

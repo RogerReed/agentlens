@@ -58,7 +58,7 @@
       {
         "command": "agentLens.openDashboard",
         "title": "AgentLens: Open Dashboard",
-        "icon": "$(arrow-right)"
+        "icon": "$(graph)"
       },
       {
         "command": "agentLens.clearSessions",
