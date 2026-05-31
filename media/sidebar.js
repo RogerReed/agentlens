@@ -215,10 +215,10 @@
     if (vscode) vscode.postMessage({ type: "openDashboardTab", tab: "sessions" });
   });
   document.getElementById("sb-clear-btn")?.addEventListener("click", () => {
-    if (!confirm("Clear all AgentLens session data? This cannot be undone.")) return;
     if (vscode) {
-      vscode.postMessage({ type: "clearAll" });
+      vscode.postMessage({ type: "confirmClear" });
     } else {
+      if (!confirm("Clear all AgentLens session data? This cannot be undone.")) return;
       fetch("/action", {
         method: "POST",
         body: JSON.stringify({ type: "clearAll" }),

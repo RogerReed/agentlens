@@ -44,13 +44,20 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
           const { DashboardPanel } = require('./dashboardPanel')
           DashboardPanel.switchToTab(msg.tab ?? 'sessions')
         }, 300)
-      } else if (msg.type === 'clearAll') {
-        vscode.commands.executeCommand('agentLens.clearSessions')
-        this.cachedTimelineSessionId = null
-        this.cachedTurnInputTokens = []
-        this.refresh()
-        const { DashboardPanel } = require('./dashboardPanel')
-        DashboardPanel.sendClearAll()
+      } else if (msg.type === 'confirmClear') {
+        const answer = await vscode.window.showWarningMessage(
+          'Clear all AgentLens session data? This cannot be undone.',
+          { modal: true },
+          'Clear All'
+        )
+        if (answer === 'Clear All') {
+          vscode.commands.executeCommand('agentLens.clearSessions')
+          this.cachedTimelineSessionId = null
+          this.cachedTurnInputTokens = []
+          this.refresh()
+          const { DashboardPanel } = require('./dashboardPanel')
+          DashboardPanel.sendClearAll()
+        }
       }
     })
 
