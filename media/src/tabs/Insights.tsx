@@ -386,12 +386,13 @@ export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgno
 
   function buildClipboardPrompt(): string {
     const lines: string[] = [
-      "I'm using an AI coding agent and AgentLens detected the following issue in my session.",
+      "I'm using an AI coding agent and the following issue was detected in my session.",
       'Please explain what\'s happening and suggest specific improvements to my workflow or prompt.',
       '',
       '--- Session context ---',
     ]
     if (session) {
+      lines.push('Session ID: ' + session.sessionId)
       lines.push(sessionTimestamp + ' · ' + getAgentSourceLabel(session.source))
       if (session.userRequest && session.userRequest !== '[session in progress]')
         lines.push('Task: "' + session.userRequest + '"')

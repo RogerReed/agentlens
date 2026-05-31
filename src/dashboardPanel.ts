@@ -86,7 +86,7 @@ export class DashboardPanel {
         )
         this.panel.webview.postMessage({ type: 'blobContent', spanId: msg.spanId, field: msg.field, content })
       } else if (msg.type === 'askAI' && msg.prompt) {
-        const prompt = `AgentLens detected the following efficiency issue in my workspace. Help me fix it:\n\n${msg.prompt}`
+        const prompt = `The following efficiency issue was detected in my AI coding session. Help me fix it:\n\n${msg.prompt}`
         openAIChat(prompt, msg.agent)
       } else if (msg.type === 'alert' && msg.label) {
         handleAlertNotification(msg as { label: string; detail?: string; severity: string }, context, repo, sidebarProvider)
@@ -291,7 +291,7 @@ async function handleAlertNotification(
 ): Promise<void> {
   const text = `AgentLens: ${msg.label}${msg.detail ? ' — ' + msg.detail : ''}`
   const clipboardPrompt = [
-    "AgentLens alert triggered in my AI coding session. Please explain what's happening and how I should respond.",
+    "An alert was triggered in my AI coding session. Please explain what's happening and how I should respond.",
     '',
     `Alert: ${msg.label}`,
     ...(msg.detail ? [`Detail: ${msg.detail}`] : []),
@@ -345,14 +345,15 @@ async function writeAutomationPrompt(agent: string, label: string, fullPrompt: s
     const data = await vscode.workspace.fs.readFile(fileUri)
     existing = Buffer.from(data).toString('utf8')
   } catch { /* file doesn't exist yet */ }
-  const content = existing ? existing + entry : `# AgentLens Prompts — ${agentName}\n\n${entry}`
+  const content = existing ? existing + entry : `# Automation Prompts — ${agentName}\n\n${entry}`
   await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'))
   return filename
 }
 
-async function handleAutomation(msg: { label: string; writePromptsFile: boolean; agent: string; sessionTitle: string; prompt: string }): Promise<void> {
+async function handleAutomation(msg: { label: string; writePromptsFile: boolean; agent: string; sessionTitle: string; sessionId?: string; prompt: string }): Promise<void> {
   const agentLabel = msg.agent === 'claude_code' ? 'Claude' : msg.agent === 'copilot' ? 'Copilot' : msg.agent === 'codex' ? 'Codex' : 'AI'
-  const fullPrompt = `[AgentLens Automation: ${msg.label}]\n\n${msg.prompt}`
+  const sessionLine = msg.sessionId ? `Session ID: ${msg.sessionId}\n` : ''
+  const fullPrompt = `[${msg.label}]\n\n${sessionLine}${msg.prompt}`
   const snippet = msg.sessionTitle.length > 50 ? msg.sessionTitle.slice(0, 50) + '…' : msg.sessionTitle
 
   if (msg.writePromptsFile) {

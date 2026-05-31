@@ -2175,12 +2175,13 @@
     }
     function buildClipboardPrompt() {
       const lines = [
-        "I'm using an AI coding agent and AgentLens detected the following issue in my session.",
+        "I'm using an AI coding agent and the following issue was detected in my session.",
         "Please explain what's happening and suggest specific improvements to my workflow or prompt.",
         "",
         "--- Session context ---"
       ];
       if (session) {
+        lines.push("Session ID: " + session.sessionId);
         lines.push(sessionTimestamp + " \xB7 " + getAgentSourceLabel(session.source));
         if (session.userRequest && session.userRequest !== "[session in progress]")
           lines.push('Task: "' + session.userRequest + '"');
@@ -5644,6 +5645,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             writePromptsFile: cfg.writePromptsFile,
             agent: session.source ?? "generic",
             sessionTitle: (session.userRequest ?? "").slice(0, 70) || "(session in progress)",
+            sessionId: session.sessionId,
             prompt: body
           });
         }
