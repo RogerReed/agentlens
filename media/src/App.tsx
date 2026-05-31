@@ -11,8 +11,6 @@ import {
   sessionTextFilter, sessionSortKey, type SortKey,
 } from './state'
 import type { TimelineEntry, AgentFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
-import { getAgentColor, getAgentSourceLabel, getSessionGlobalNumber, formatMs } from './utils'
-import { calcSessionCost, fmtUsd } from './sessionMetrics'
 
 // Tab components
 import { Sessions } from './tabs/Sessions'
@@ -50,7 +48,7 @@ function ActivePanel() {
 }
 
 function normalizeTabId(tab: string): string {
-  return tab === 'dependencies' ? 'flow' : tab
+  return tab
 }
 
 export function App() {
@@ -367,40 +365,6 @@ function SearchFilterBar() {
   )
 }
 
-function FocusedSessionBar() {
-  const id = focusedSessionId.value
-  if (!id) return null
-  const sessions = sessionSummary.value?.sessions ?? []
-  const sess = sessions.find(s => s.sessionId === id)
-  if (!sess) return null
-
-  const num = getSessionGlobalNumber(sess)
-  const color = getAgentColor(sess.source)
-  const agent = getAgentSourceLabel(sess.source)
-  const cost = calcSessionCost(sess, sess.source === 'copilot' ? 'token' : 'token')
-  const snippet = sess.userRequest ? (sess.userRequest.length > 55 ? sess.userRequest.slice(0, 55) + '…' : sess.userRequest) : null
-  const dateStr = sess.startTime ? new Date(sess.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''
-
-  return (
-    <div style="display:flex;align-items:center;gap:6px;padding:4px 12px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);font-size:11px;flex-wrap:wrap;min-height:26px">
-      <span style={`display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0`} />
-      <span style="color:var(--muted);white-space:nowrap">{agent}</span>
-      <span style="color:var(--muted);white-space:nowrap">{dateStr}</span>
-      {snippet && <span style="color:var(--foreground);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title={sess.userRequest}>"{snippet}"</span>}
-      <span style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-        {!cost.modelUnknown && cost.totalUsd > 0 && <span style="color:var(--vscode-charts-green,#81c784)">{fmtUsd(cost.totalUsd)}</span>}
-        {sess.errors > 0 && <span style="color:var(--error)">{sess.errors} err</span>}
-        <span style="color:var(--muted)">{formatMs(sess.durationMs)}</span>
-      </span>
-      <span style="display:flex;gap:4px;flex-shrink:0">
-        <button class="tab-mini" onClick={() => { activeTab.value = 'sessions' }} title="View this session in Sessions">Sessions</button>
-        <button class="tab-mini" onClick={() => { activeTab.value = 'analytics' }} title="View analytics">Analytics</button>
-        <button style="padding:1px 6px;font-size:11px;cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);line-height:1.4" onClick={() => { focusedSessionId.value = null }} title="Deselect">×</button>
-      </span>
-    </div>
-  )
-}
-
 // Each Tab reads activeTab.value independently so the active class stays correct
 // regardless of what caused (or didn't cause) the parent component to re-render.
 function Tab({ id, label }: { id: string; label: string; title?: string }) {
@@ -416,11 +380,4 @@ function Tab({ id, label }: { id: string; label: string; title?: string }) {
   )
 }
 
-function AlertsBadge() {
-  const _s = displaySessions.value
-  const count = computeAlertCount()
-  return count > 0
-    ? <span style="color:var(--error);font-weight:700">Alerts ⚠ {count}</span>
-    : <>Alerts</>
-}
 

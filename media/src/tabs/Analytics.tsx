@@ -131,60 +131,36 @@ export function Analytics() {
   return (
     <div id="analytics-content">
 
-      {/* Agent breakdown */}
-      {(copilotSess.length > 0 || claudeSess.length > 0 || codexSess.length > 0) && (
-        <>
-          <SectionHead title="AGENT BREAKDOWN" />
-          <div style="display:flex;gap:12px;flex-wrap:wrap">
-            {copilotSess.length > 0 && <AgentCard source="copilot"    sessions={copilotSess} />}
-            {claudeSess.length  > 0 && <AgentCard source="claude_code" sessions={claudeSess} />}
-            {codexSess.length   > 0 && <AgentCard source="codex"      sessions={codexSess} />}
-          </div>
-        </>
-      )}
-
       {/* Estimated cost */}
       {pricedSess.length > 0 && (
         <>
           <SectionHead title="ESTIMATED COST" />
           {disclaimer}
 
-          {/* Pricing row — all token-based agents grouped; Copilot alternate plans as toggles */}
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px">
-            {/* Token-based group: all three agents share this label */}
-            <span style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-              {copilotSess.length > 0 && <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor('copilot')} title="Copilot" />}
-              {codexSess.length > 0 && <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor('codex')} title="Codex" />}
-              {claudeSess.length > 0 && <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor('claude_code')} title="Claude" />}
-              <span style={mode !== 'token' ? 'opacity:0.45' : ''}>token-based</span>
-            </span>
-            {/* Copilot-only alternate plans */}
-            {copilotSess.length > 0 && (
-              <>
-                <span style="color:var(--border)">·</span>
-                <span style="font-size:10px;flex-shrink:0">Copilot alt:</span>
-                <button
-                  class={'tab-mini' + (mode === 'request-annual' ? ' active' : '')}
-                  onClick={() => setMode(mode === 'request-annual' ? 'token' : 'request-annual')}
-                >Annual (Jun 2026+)</button>
-                <button
-                  class={'tab-mini' + (mode === 'request' ? ' active' : '')}
-                  onClick={() => setMode(mode === 'request' ? 'token' : 'request')}
-                >Request</button>
-              </>
-            )}
-          </div>
+          {copilotSess.length > 0 && (
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px">
+              <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor('copilot')} />
+              <span style="text-transform:uppercase;letter-spacing:.3px;font-size:10px">Copilot</span>
+              <button
+                class={'tab-mini' + (mode === 'token' ? ' active' : '')}
+                onClick={() => setMode('token')}
+              >Token-based</button>
+              <button
+                class={'tab-mini' + (mode === 'request-annual' ? ' active' : '')}
+                onClick={() => setMode('request-annual')}
+              >Annual request-based</button>
+            </div>
+          )}
 
-          {/* Bar chart first */}
-          <CostBarChart sessions={pricedSess.slice().reverse()} mode={mode} />
-
-          {/* Legend for the daily total line */}
-          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);margin-top:3px;margin-bottom:12px">
+          {/* Daily total legend above chart */}
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);margin-bottom:6px">
             <svg width="16" height="8" viewBox="0 0 16 8">
               <line x1="0" y1="4" x2="16" y2="4" stroke="rgba(186,104,200,0.9)" stroke-width="1.5" stroke-dasharray="4 2" />
             </svg>
             Daily total (right axis)
           </div>
+
+          <CostBarChart sessions={pricedSess} mode={mode} />
 
           {/* Multi-dimensional cost table: date → agent, scrollable */}
           {dayRows.length > 0 && (
@@ -259,6 +235,18 @@ export function Analytics() {
         </>
       )}
 
+      {/* Agent breakdown */}
+      {(copilotSess.length > 0 || claudeSess.length > 0 || codexSess.length > 0) && (
+        <>
+          <SectionHead title="AGENT BREAKDOWN" />
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            {copilotSess.length > 0 && <AgentCard source="copilot"    sessions={copilotSess} />}
+            {claudeSess.length  > 0 && <AgentCard source="claude_code" sessions={claudeSess} />}
+            {codexSess.length   > 0 && <AgentCard source="codex"      sessions={codexSess} />}
+          </div>
+        </>
+      )}
+
       {/* Token usage per session */}
       <SectionHead title="TOKEN USAGE PER SESSION" />
       <div style="display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)">
@@ -269,10 +257,7 @@ export function Analytics() {
       <SessionTokenChart sessions={sessions} />
 
       {/* Context growth — at the bottom */}
-      <SectionHead
-        title="CONTEXT GROWTH"
-        tip="Input tokens per LLM call by turn number — how fast the context window fills each session. Each line is one session; steeper = faster growth."
-      />
+      <SectionHead title="CONTEXT GROWTH" />
       <ContextGrowthChart sessions={chartSessions.slice(0, CHART_MAX)} timelines={timelines} />
 
     </div>

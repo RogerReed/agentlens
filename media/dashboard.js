@@ -1863,9 +1863,9 @@
         });
       }
     });
-    return /* @__PURE__ */ u4(S, { children: [
+    return /* @__PURE__ */ u4("div", { style: "margin-bottom:16px", children: [
       /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:230px;display:block" }),
-      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 older \xB7 sessions \xB7 newer \u2192" })
+      /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", style: "margin-top:2px", children: "\u2190 older \xB7 sessions \xB7 newer \u2192" })
     ] });
   }
 
@@ -3271,9 +3271,41 @@
     );
   }
   var growthStateRef = { current: null };
+  var BASE_MS = 900;
   function ContextGrowthChart({ sessions, timelines }) {
     const canvasRef = A2(null);
     const focusedId = focusedSessionId.value;
+    const focusedIdRef = A2(null);
+    focusedIdRef.current = focusedId;
+    const [paused, setPaused] = d2(false);
+    const [hasData, setHasData] = d2(false);
+    const [speed, setSpeed] = d2(1);
+    const pausedRef = A2(false);
+    const speedRef = A2(1);
+    const activeIdxRef = A2(0);
+    const seriesCountRef = A2(0);
+    const timerRef = A2(null);
+    const drawFnRef = A2(null);
+    function clearTimer() {
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    function startTimer() {
+      clearTimer();
+      if (pausedRef.current || !drawFnRef.current || seriesCountRef.current === 0) return;
+      timerRef.current = setInterval(() => {
+        const next = (activeIdxRef.current + 1) % seriesCountRef.current;
+        activeIdxRef.current = next;
+        drawFnRef.current(next);
+      }, Math.round(BASE_MS / speedRef.current));
+    }
+    function changeSpeed(s4) {
+      speedRef.current = s4;
+      setSpeed(s4);
+      if (!pausedRef.current) startTimer();
+    }
     y2(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -3285,97 +3317,138 @@
           sessionId: sess.sessionId,
           label: formatSessionTimeShort(sess),
           color: getAgentColor(sess.source) || COLORS[seriesData.length % COLORS.length],
-          focused: focusedId === sess.sessionId,
           points: llmEntries.map((e4, i4) => ({ turn: i4 + 1, tokens: e4.inputTokens ?? 0 }))
         });
       });
       if (seriesData.length === 0) {
         canvas.style.display = "none";
         growthStateRef.current = null;
+        drawFnRef.current = null;
+        clearTimer();
+        setHasData(false);
         return;
       }
       canvas.style.display = "block";
+      setHasData(true);
+      seriesCountRef.current = seriesData.length;
       const maxTurns = Math.max(...seriesData.map((s4) => s4.points.length), 2);
       const allTokens = seriesData.flatMap((s4) => s4.points.map((p5) => p5.tokens));
       const rawMin = Math.min(...allTokens), rawMax = Math.max(...allTokens);
       const spread = rawMax - rawMin || rawMax * 0.1 || 1;
       const yMin = Math.max(0, rawMin - spread * 0.1);
       const yMax = rawMax + spread * 0.1;
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext("2d");
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const w5 = rect.width, h5 = rect.height;
-      ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 80, bottom: 22, left: 56 };
-      const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
-      const xPos = (turn) => pad.left + (turn - 1) / Math.max(maxTurns - 1, 1) * chartW;
-      const yPos = (tok) => pad.top + chartH - (tok - yMin) / (yMax - yMin) * chartH;
-      growthStateRef.current = { series: seriesData, xPos, yPos, chartH, pad };
       const cs = getComputedStyle(document.body);
       const gridColor = cs.getPropertyValue("--vscode-panel-border").trim() || "#333";
       const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
       const fontStr = "9px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
-      ctx.strokeStyle = gridColor;
-      ctx.lineWidth = 0.5;
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const y5 = pad.top + chartH * i4 / 4;
-        ctx.beginPath();
-        ctx.moveTo(pad.left, y5);
-        ctx.lineTo(pad.left + chartW, y5);
-        ctx.stroke();
-      }
-      ctx.fillStyle = textColor;
-      ctx.font = fontStr;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      for (let i4 = 0; i4 <= 4; i4++) {
-        const val = yMax - (yMax - yMin) * i4 / 4;
-        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
-      }
-      const xStep = maxTurns <= 10 ? 1 : maxTurns <= 30 ? 5 : maxTurns <= 100 ? 10 : 20;
-      ctx.fillStyle = textColor;
-      ctx.font = fontStr;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      for (let t4 = 1; t4 <= maxTurns; t4 += xStep) {
-        const x4 = xPos(t4);
+      const smallFont = "8px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+      function draw(activeIdx) {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const w5 = rect.width, h5 = rect.height;
+        ctx.clearRect(0, 0, w5, h5);
+        const pad = { top: 8, right: 80, bottom: 22, left: 56 };
+        const chartW = w5 - pad.left - pad.right, chartH = h5 - pad.top - pad.bottom;
+        const xPos = (turn) => pad.left + (turn - 1) / Math.max(maxTurns - 1, 1) * chartW;
+        const yPos = (tok) => pad.top + chartH - (tok - yMin) / (yMax - yMin) * chartH;
+        const fId = focusedIdRef.current;
+        growthStateRef.current = { series: seriesData, xPos, yPos, chartH, pad };
         ctx.strokeStyle = gridColor;
         ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(x4, pad.top);
-        ctx.lineTo(x4, pad.top + chartH);
-        ctx.stroke();
-        ctx.fillText("T" + t4, x4, pad.top + chartH + 4);
-      }
-      if (maxTurns > 1 && (maxTurns - 1) % xStep !== 0) {
-        ctx.fillText("T" + maxTurns, xPos(maxTurns), pad.top + chartH + 4);
-      }
-      const sorted = [...seriesData].sort((a4, b4) => (a4.focused ? 1 : 0) - (b4.focused ? 1 : 0));
-      sorted.forEach((series) => {
-        const alpha = focusedId && !series.focused ? "30" : "";
-        ctx.strokeStyle = series.color + alpha;
-        ctx.lineWidth = series.focused ? 2.5 : 1.5;
-        ctx.beginPath();
-        series.points.forEach(({ turn, tokens }, j4) => {
-          const x4 = xPos(turn), y5 = yPos(tokens);
-          j4 === 0 ? ctx.moveTo(x4, y5) : ctx.lineTo(x4, y5);
-        });
-        ctx.stroke();
-        const last = series.points[series.points.length - 1];
-        if (last) {
-          const lx = xPos(last.turn) + 4, ly = yPos(last.tokens);
-          ctx.fillStyle = series.color + (alpha || "cc");
-          ctx.font = "8px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
-          ctx.textAlign = "left";
-          ctx.textBaseline = "middle";
-          ctx.fillText(series.label, lx, ly);
+        for (let i4 = 0; i4 <= 4; i4++) {
+          const y5 = pad.top + chartH * i4 / 4;
+          ctx.beginPath();
+          ctx.moveTo(pad.left, y5);
+          ctx.lineTo(pad.left + chartW, y5);
+          ctx.stroke();
         }
-      });
-    });
+        ctx.fillStyle = textColor;
+        ctx.font = fontStr;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        for (let i4 = 0; i4 <= 4; i4++) {
+          const val = yMax - (yMax - yMin) * i4 / 4;
+          if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
+        }
+        const xStep = maxTurns <= 10 ? 1 : maxTurns <= 30 ? 5 : maxTurns <= 100 ? 10 : 20;
+        ctx.fillStyle = textColor;
+        ctx.font = fontStr;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        for (let t4 = 1; t4 <= maxTurns; t4 += xStep) {
+          const x4 = xPos(t4);
+          ctx.strokeStyle = gridColor;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(x4, pad.top);
+          ctx.lineTo(x4, pad.top + chartH);
+          ctx.stroke();
+          ctx.fillText("T" + t4, x4, pad.top + chartH + 4);
+        }
+        if (maxTurns > 1 && (maxTurns - 1) % xStep !== 0) {
+          ctx.fillText("T" + maxTurns, xPos(maxTurns), pad.top + chartH + 4);
+        }
+        const highlighted = fId ? seriesData.findIndex((s4) => s4.sessionId === fId) : activeIdx;
+        const order = [...seriesData.keys()].sort((a4, b4) => (a4 === highlighted ? 1 : 0) - (b4 === highlighted ? 1 : 0));
+        order.forEach((i4) => {
+          const series = seriesData[i4];
+          const isHighlighted = i4 === highlighted;
+          ctx.strokeStyle = isHighlighted ? series.color : series.color + "28";
+          ctx.lineWidth = isHighlighted ? 2.5 : 1;
+          ctx.beginPath();
+          series.points.forEach(({ turn, tokens }, j4) => {
+            const x4 = xPos(turn), y5 = yPos(tokens);
+            j4 === 0 ? ctx.moveTo(x4, y5) : ctx.lineTo(x4, y5);
+          });
+          ctx.stroke();
+          const last = series.points[series.points.length - 1];
+          if (last && isHighlighted) {
+            ctx.fillStyle = series.color;
+            ctx.font = smallFont;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(series.label, xPos(last.turn) + 4, yPos(last.tokens));
+          }
+        });
+      }
+      drawFnRef.current = draw;
+      clearTimer();
+      activeIdxRef.current = 0;
+      pausedRef.current = false;
+      setPaused(false);
+      draw(0);
+      startTimer();
+      return () => clearTimer();
+    }, [sessions, timelines]);
+    y2(() => {
+      drawFnRef.current?.(activeIdxRef.current);
+    }, [focusedId]);
+    function togglePause() {
+      const next = !pausedRef.current;
+      pausedRef.current = next;
+      setPaused(next);
+      if (!next) startTimer();
+      else clearTimer();
+    }
+    function stepPrev() {
+      clearTimer();
+      pausedRef.current = true;
+      setPaused(true);
+      activeIdxRef.current = Math.max(0, activeIdxRef.current - 1);
+      drawFnRef.current?.(activeIdxRef.current);
+    }
+    function stepNext() {
+      clearTimer();
+      pausedRef.current = true;
+      setPaused(true);
+      activeIdxRef.current = Math.min(seriesCountRef.current - 1, activeIdxRef.current + 1);
+      drawFnRef.current?.(activeIdxRef.current);
+    }
     function handleCanvasClick(e4) {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -3396,6 +3469,7 @@
       });
       if (bestId) focusedSessionId.value = focusedSessionId.peek() === bestId ? null : bestId;
     }
+    const btnStyle = "padding:2px 8px;font-size:11px;cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);line-height:1.4";
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4(
         "canvas",
@@ -3407,7 +3481,26 @@
           title: "Click a line to select that session"
         }
       ),
-      /* @__PURE__ */ u4("div", { style: "text-align:center;font-size:9px;color:var(--muted);margin-top:2px", children: /* @__PURE__ */ u4(TurnsLink, {}) })
+      hasData && /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;margin-top:5px", children: [
+        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px", children: [
+          /* @__PURE__ */ u4("button", { style: btnStyle, onClick: togglePause, title: paused ? "Play" : "Pause", children: paused ? "\u25B6" : "\u23F8" }),
+          [0.5, 1, 2].map((s4) => /* @__PURE__ */ u4(
+            "button",
+            {
+              style: btnStyle + (speed === s4 ? ";border-color:var(--accent);color:var(--accent)" : ""),
+              onClick: () => changeSpeed(s4),
+              title: `${s4}\xD7 speed`,
+              children: s4 === 0.5 ? "\xBD\xD7" : `${s4}\xD7`
+            },
+            s4
+          ))
+        ] }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px", children: [
+          /* @__PURE__ */ u4("button", { style: btnStyle, onClick: stepPrev, title: "Previous session", children: "\u25C0" }),
+          /* @__PURE__ */ u4("button", { style: btnStyle, onClick: stepNext, title: "Next session", children: "\u25B6" })
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "text-align:center;font-size:9px;color:var(--muted);margin-top:4px", children: /* @__PURE__ */ u4(TurnsLink, {}) })
     ] });
   }
   function SessionTokenChart({ sessions }) {
@@ -3482,8 +3575,14 @@
         ctx.fill();
       });
     });
+    const presentSources = new Set(sessions.map((s4) => s4.source).filter(Boolean));
+    const agentSources = ["copilot", "claude_code", "codex"].filter((src) => presentSources.has(src));
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:160px;display:block" }),
+      agentSources.length > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;gap:10px;justify-content:center;margin-top:4px;flex-wrap:wrap", children: agentSources.map((src) => /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)", children: [
+        /* @__PURE__ */ u4("span", { style: `display:inline-block;width:7px;height:7px;border-radius:50%;background:${getAgentColor(src)}` }),
+        getAgentSourceLabel(src)
+      ] }, src)) }),
       /* @__PURE__ */ u4("div", { class: "heatmap-axis-label", children: "\u2190 older \xB7 sessions \xB7 newer \u2192" })
     ] });
   }
@@ -3658,50 +3757,34 @@
     }), { input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0 });
     const fmtN = (n3) => n3.toLocaleString();
     return /* @__PURE__ */ u4("div", { id: "analytics-content", children: [
-      (copilotSess.length > 0 || claudeSess.length > 0 || codexSess.length > 0) && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4(SectionHead, { title: "AGENT BREAKDOWN" }),
-        /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;flex-wrap:wrap", children: [
-          copilotSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "copilot", sessions: copilotSess }),
-          claudeSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "claude_code", sessions: claudeSess }),
-          codexSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "codex", sessions: codexSess })
-        ] })
-      ] }),
       pricedSess.length > 0 && /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4(SectionHead, { title: "ESTIMATED COST" }),
         disclaimer,
-        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px", children: [
-          /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px;flex-shrink:0", children: [
-            copilotSess.length > 0 && /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("copilot"), title: "Copilot" }),
-            codexSess.length > 0 && /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("codex"), title: "Codex" }),
-            claudeSess.length > 0 && /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("claude_code"), title: "Claude" }),
-            /* @__PURE__ */ u4("span", { style: mode !== "token" ? "opacity:0.45" : "", children: "token-based" })
-          ] }),
-          copilotSess.length > 0 && /* @__PURE__ */ u4(S, { children: [
-            /* @__PURE__ */ u4("span", { style: "color:var(--border)", children: "\xB7" }),
-            /* @__PURE__ */ u4("span", { style: "font-size:10px;flex-shrink:0", children: "Copilot alt:" }),
-            /* @__PURE__ */ u4(
-              "button",
-              {
-                class: "tab-mini" + (mode === "request-annual" ? " active" : ""),
-                onClick: () => setMode(mode === "request-annual" ? "token" : "request-annual"),
-                children: "Annual (Jun 2026+)"
-              }
-            ),
-            /* @__PURE__ */ u4(
-              "button",
-              {
-                class: "tab-mini" + (mode === "request" ? " active" : ""),
-                onClick: () => setMode(mode === "request" ? "token" : "request"),
-                children: "Request"
-              }
-            )
-          ] })
+        copilotSess.length > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px", children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("copilot") }),
+          /* @__PURE__ */ u4("span", { style: "text-transform:uppercase;letter-spacing:.3px;font-size:10px", children: "Copilot" }),
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "tab-mini" + (mode === "token" ? " active" : ""),
+              onClick: () => setMode("token"),
+              children: "Token-based"
+            }
+          ),
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              class: "tab-mini" + (mode === "request-annual" ? " active" : ""),
+              onClick: () => setMode("request-annual"),
+              children: "Annual request-based"
+            }
+          )
         ] }),
-        /* @__PURE__ */ u4(CostBarChart, { sessions: pricedSess.slice().reverse(), mode }),
-        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);margin-top:3px;margin-bottom:12px", children: [
+        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);margin-bottom:6px", children: [
           /* @__PURE__ */ u4("svg", { width: "16", height: "8", viewBox: "0 0 16 8", children: /* @__PURE__ */ u4("line", { x1: "0", y1: "4", x2: "16", y2: "4", stroke: "rgba(186,104,200,0.9)", "stroke-width": "1.5", "stroke-dasharray": "4 2" }) }),
           "Daily total (right axis)"
         ] }),
+        /* @__PURE__ */ u4(CostBarChart, { sessions: pricedSess, mode }),
         dayRows.length > 0 && /* @__PURE__ */ u4("div", { style: "overflow-x:auto;margin-bottom:8px", children: /* @__PURE__ */ u4("table", { style: "border-collapse:collapse;font-size:10px;min-width:100%;white-space:nowrap", children: [
           /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: ["Date", "Agent", "Model", "Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].map((h5) => /* @__PURE__ */ u4("th", { style: `padding:3px 8px 3px ${h5 === "Date" ? "0" : "6px"};color:var(--muted);font-weight:500;text-align:${["Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].includes(h5) ? "right" : "left"}`, children: h5 }, h5)) }) }),
           /* @__PURE__ */ u4("tbody", { children: dayRows.map(([day, d5]) => {
@@ -3752,6 +3835,14 @@
           ] }) })
         ] }) })
       ] }),
+      (copilotSess.length > 0 || claudeSess.length > 0 || codexSess.length > 0) && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4(SectionHead, { title: "AGENT BREAKDOWN" }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;flex-wrap:wrap", children: [
+          copilotSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "copilot", sessions: copilotSess }),
+          claudeSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "claude_code", sessions: claudeSess }),
+          codexSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "codex", sessions: codexSess })
+        ] })
+      ] }),
       /* @__PURE__ */ u4(SectionHead, { title: "TOKEN USAGE PER SESSION" }),
       /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
         /* @__PURE__ */ u4("span", { children: [
@@ -3764,13 +3855,7 @@
         ] })
       ] }),
       /* @__PURE__ */ u4(SessionTokenChart, { sessions }),
-      /* @__PURE__ */ u4(
-        SectionHead,
-        {
-          title: "CONTEXT GROWTH",
-          tip: "Input tokens per LLM call by turn number \u2014 how fast the context window fills each session. Each line is one session; steeper = faster growth."
-        }
-      ),
+      /* @__PURE__ */ u4(SectionHead, { title: "CONTEXT GROWTH" }),
       /* @__PURE__ */ u4(ContextGrowthChart, { sessions: chartSessions.slice(0, CHART_MAX), timelines })
     ] });
   }
@@ -5584,7 +5669,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     }
   }
   function normalizeTabId(tab) {
-    return tab === "dependencies" ? "flow" : tab;
+    return tab;
   }
   function App() {
     y2(() => {

@@ -4,6 +4,10 @@
   border-bottom: 1px solid var(--border);
   margin-bottom: 16px;
   flex-wrap: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--vscode-editor-background, #1e1e1e);
 }
 
 .tab {

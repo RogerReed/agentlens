@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { sessionSummary, displaySessions, rangedSessions, agentFilteredSessions, filteredSessions, sessionTimelines, burnRateData, focusedSessionId, CHART_MAX, COLORS, vscode, goToHelp, timeRange } from '../state'
 import {
   getSessionGlobalNumber,
-  formatMs, formatCompact, getAgentColor, formatSessionTime, formatSessionTimeShort,
+  formatMs, formatCompact, getAgentColor, getAgentSourceLabel, formatSessionTime, formatSessionTimeShort,
 } from '../utils'
 import type { SessionSummaryCard } from '../types'
 
@@ -24,7 +24,7 @@ export function TurnsLink() {
 // Easier to compare growth profiles across sessions than a wall-clock view.
 
 type GrowthSeries = {
-  sessionId: string; label: string; color: string; focused: boolean
+  sessionId: string; label: string; color: string
   points: Array<{ turn: number; tokens: number }>
 }
 
@@ -32,10 +32,45 @@ type GrowthSeries = {
 interface GrowthState { series: GrowthSeries[]; xPos: (t: number) => number; yPos: (tok: number) => number; chartH: number; pad: { top: number; left: number } }
 const growthStateRef: { current: GrowthState | null } = { current: null }
 
+const BASE_MS = 900 // ms per session at 1× speed
+
 export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionSummaryCard[]; timelines: Record<string, import('../types').TimelineEntry[]> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const focusedId = focusedSessionId.value
+  const focusedIdRef = useRef<string | null>(null)
+  focusedIdRef.current = focusedId
 
+  const [paused, setPaused] = useState(false)
+  const [hasData, setHasData] = useState(false)
+  const [speed, setSpeed] = useState(1)
+  const pausedRef = useRef(false)
+  const speedRef = useRef(1)
+  const activeIdxRef = useRef(0)
+  const seriesCountRef = useRef(0)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const drawFnRef = useRef<((idx: number) => void) | null>(null)
+
+  function clearTimer() {
+    if (timerRef.current !== null) { clearInterval(timerRef.current); timerRef.current = null }
+  }
+
+  function startTimer() {
+    clearTimer()
+    if (pausedRef.current || !drawFnRef.current || seriesCountRef.current === 0) return
+    timerRef.current = setInterval(() => {
+      const next = (activeIdxRef.current + 1) % seriesCountRef.current
+      activeIdxRef.current = next
+      drawFnRef.current!(next)
+    }, Math.round(BASE_MS / speedRef.current))
+  }
+
+  function changeSpeed(s: number) {
+    speedRef.current = s
+    setSpeed(s)
+    if (!pausedRef.current) startTimer()
+  }
+
+  // Rebuild series + draw function when data changes; reset + restart animation
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -49,96 +84,141 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
         sessionId: sess.sessionId,
         label: formatSessionTimeShort(sess),
         color: getAgentColor(sess.source) || COLORS[seriesData.length % COLORS.length],
-        focused: focusedId === sess.sessionId,
         points: llmEntries.map((e, i) => ({ turn: i + 1, tokens: e.inputTokens ?? 0 })),
       })
     })
 
-    if (seriesData.length === 0) { canvas.style.display = 'none'; growthStateRef.current = null; return }
+    if (seriesData.length === 0) {
+      canvas.style.display = 'none'
+      growthStateRef.current = null
+      drawFnRef.current = null
+      clearTimer()
+      setHasData(false)
+      return
+    }
     canvas.style.display = 'block'
+    setHasData(true)
+    seriesCountRef.current = seriesData.length
 
     const maxTurns = Math.max(...seriesData.map(s => s.points.length), 2)
     const allTokens = seriesData.flatMap(s => s.points.map(p => p.tokens))
     const rawMin = Math.min(...allTokens), rawMax = Math.max(...allTokens)
     const spread = rawMax - rawMin || rawMax * 0.1 || 1
-    // Fit y-axis tightly to data — 10% padding on each side so lines spread out
     const yMin = Math.max(0, rawMin - spread * 0.1)
     const yMax = rawMax + spread * 0.1
-
-    const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    if (rect.width === 0 || rect.height === 0) return
-    canvas.width = rect.width * dpr; canvas.height = rect.height * dpr
-    const ctx = canvas.getContext('2d')!
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    const w = rect.width, h = rect.height
-    ctx.clearRect(0, 0, w, h)
-
-    // Extra right padding for end-of-line labels
-    const pad = { top: 8, right: 80, bottom: 22, left: 56 }
-    const chartW = w - pad.left - pad.right, chartH = h - pad.top - pad.bottom
-
-    const xPos = (turn: number) => pad.left + ((turn - 1) / Math.max(maxTurns - 1, 1)) * chartW
-    const yPos = (tok: number) => pad.top + chartH - ((tok - yMin) / (yMax - yMin)) * chartH
-
-    // Save state for click detection
-    growthStateRef.current = { series: seriesData, xPos, yPos, chartH, pad }
 
     const cs = getComputedStyle(document.body)
     const gridColor = cs.getPropertyValue('--vscode-panel-border').trim() || '#333'
     const textColor = cs.getPropertyValue('--vscode-descriptionForeground').trim() || '#888'
     const fontStr = '9px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
+    const smallFont = '8px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
 
-    // Y gridlines + labels (fitted to data range)
-    ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5
-    for (let i = 0; i <= 4; i++) {
-      const y = pad.top + chartH * i / 4
-      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke()
-    }
-    ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
-    for (let i = 0; i <= 4; i++) {
-      const val = yMax - (yMax - yMin) * i / 4
-      if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i / 4)
-    }
+    // Draw all lines; highlight the one at activeIdx, dim the rest
+    function draw(activeIdx: number) {
+      const dpr = window.devicePixelRatio || 1
+      const rect = canvas!.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return
+      canvas!.width = rect.width * dpr; canvas!.height = rect.height * dpr
+      const ctx = canvas!.getContext('2d')!
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      const w = rect.width, h = rect.height
+      ctx.clearRect(0, 0, w, h)
 
-    // X axis — turn number ticks
-    const xStep = maxTurns <= 10 ? 1 : maxTurns <= 30 ? 5 : maxTurns <= 100 ? 10 : 20
-    ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'top'
-    for (let t = 1; t <= maxTurns; t += xStep) {
-      const x = xPos(t)
+      const pad = { top: 8, right: 80, bottom: 22, left: 56 }
+      const chartW = w - pad.left - pad.right, chartH = h - pad.top - pad.bottom
+
+      const xPos = (turn: number) => pad.left + ((turn - 1) / Math.max(maxTurns - 1, 1)) * chartW
+      const yPos = (tok: number)  => pad.top + chartH - ((tok - yMin) / (yMax - yMin)) * chartH
+
+      const fId = focusedIdRef.current
+      growthStateRef.current = { series: seriesData, xPos, yPos, chartH, pad }
+
+      // Grid + Y labels
       ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5
-      ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + chartH); ctx.stroke()
-      ctx.fillText('T' + t, x, pad.top + chartH + 4)
-    }
-    if (maxTurns > 1 && (maxTurns - 1) % xStep !== 0) {
-      ctx.fillText('T' + maxTurns, xPos(maxTurns), pad.top + chartH + 4)
-    }
-
-    // Draw series — unfocused first so focused renders on top
-    const sorted = [...seriesData].sort((a, b) => (a.focused ? 1 : 0) - (b.focused ? 1 : 0))
-    sorted.forEach(series => {
-      const alpha = (focusedId && !series.focused) ? '30' : ''
-      ctx.strokeStyle = series.color + alpha
-      ctx.lineWidth = series.focused ? 2.5 : 1.5
-
-      ctx.beginPath()
-      series.points.forEach(({ turn, tokens }, j) => {
-        const x = xPos(turn), y = yPos(tokens)
-        j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
-      })
-      ctx.stroke()
-
-      // Time label at the end of each line
-      const last = series.points[series.points.length - 1]
-      if (last) {
-        const lx = xPos(last.turn) + 4, ly = yPos(last.tokens)
-        ctx.fillStyle = series.color + (alpha || 'cc')
-        ctx.font = '8px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
-        ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
-        ctx.fillText(series.label, lx, ly)
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.top + chartH * i / 4
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke()
       }
-    })
-  })
+      ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'
+      for (let i = 0; i <= 4; i++) {
+        const val = yMax - (yMax - yMin) * i / 4
+        if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i / 4)
+      }
+
+      // X axis ticks
+      const xStep = maxTurns <= 10 ? 1 : maxTurns <= 30 ? 5 : maxTurns <= 100 ? 10 : 20
+      ctx.fillStyle = textColor; ctx.font = fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'top'
+      for (let t = 1; t <= maxTurns; t += xStep) {
+        const x = xPos(t)
+        ctx.strokeStyle = gridColor; ctx.lineWidth = 0.5
+        ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + chartH); ctx.stroke()
+        ctx.fillText('T' + t, x, pad.top + chartH + 4)
+      }
+      if (maxTurns > 1 && (maxTurns - 1) % xStep !== 0) {
+        ctx.fillText('T' + maxTurns, xPos(maxTurns), pad.top + chartH + 4)
+      }
+
+      // Draw dim lines first, then the highlighted one on top
+      const highlighted = fId ? seriesData.findIndex(s => s.sessionId === fId) : activeIdx
+      const order = [...seriesData.keys()].sort((a, b) => (a === highlighted ? 1 : 0) - (b === highlighted ? 1 : 0))
+
+      order.forEach(i => {
+        const series = seriesData[i]
+        const isHighlighted = i === highlighted
+        ctx.strokeStyle = isHighlighted ? series.color : series.color + '28'
+        ctx.lineWidth = isHighlighted ? 2.5 : 1
+
+        ctx.beginPath()
+        series.points.forEach(({ turn, tokens }, j) => {
+          const x = xPos(turn), y = yPos(tokens)
+          j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
+        })
+        ctx.stroke()
+
+        const last = series.points[series.points.length - 1]
+        if (last && isHighlighted) {
+          ctx.fillStyle = series.color
+          ctx.font = smallFont; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
+          ctx.fillText(series.label, xPos(last.turn) + 4, yPos(last.tokens))
+        }
+      })
+    }
+
+    drawFnRef.current = draw
+    clearTimer()
+    activeIdxRef.current = 0
+    pausedRef.current = false
+    setPaused(false)
+    draw(0)
+    startTimer()
+
+    return () => clearTimer()
+  }, [sessions, timelines])
+
+  // Redraw when focus changes (no animation reset)
+  useEffect(() => {
+    drawFnRef.current?.(activeIdxRef.current)
+  }, [focusedId])
+
+  function togglePause() {
+    const next = !pausedRef.current
+    pausedRef.current = next
+    setPaused(next)
+    if (!next) startTimer()
+    else clearTimer()
+  }
+
+  function stepPrev() {
+    clearTimer(); pausedRef.current = true; setPaused(true)
+    activeIdxRef.current = Math.max(0, activeIdxRef.current - 1)
+    drawFnRef.current?.(activeIdxRef.current)
+  }
+
+  function stepNext() {
+    clearTimer(); pausedRef.current = true; setPaused(true)
+    activeIdxRef.current = Math.min(seriesCountRef.current - 1, activeIdxRef.current + 1)
+    drawFnRef.current?.(activeIdxRef.current)
+  }
 
   function handleCanvasClick(e: MouseEvent) {
     const canvas = canvasRef.current; if (!canvas) return
@@ -156,6 +236,8 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
     if (bestId) focusedSessionId.value = focusedSessionId.peek() === bestId ? null : bestId
   }
 
+  const btnStyle = 'padding:2px 8px;font-size:11px;cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);line-height:1.4'
+
   return (
     <>
       <canvas
@@ -165,7 +247,28 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
         onClick={handleCanvasClick}
         title="Click a line to select that session"
       />
-      <div style="text-align:center;font-size:9px;color:var(--muted);margin-top:2px">
+      {hasData && (
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <button style={btnStyle} onClick={togglePause} title={paused ? 'Play' : 'Pause'}>
+              {paused ? '▶' : '⏸'}
+            </button>
+            {([0.5, 1, 2] as const).map(s => (
+              <button
+                key={s}
+                style={btnStyle + (speed === s ? ';border-color:var(--accent);color:var(--accent)' : '')}
+                onClick={() => changeSpeed(s)}
+                title={`${s}× speed`}
+              >{s === 0.5 ? '½×' : `${s}×`}</button>
+            ))}
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button style={btnStyle} onClick={stepPrev} title="Previous session">◀</button>
+            <button style={btnStyle} onClick={stepNext} title="Next session">▶</button>
+          </div>
+        </div>
+      )}
+      <div style="text-align:center;font-size:9px;color:var(--muted);margin-top:4px">
         <TurnsLink />
       </div>
     </>
@@ -352,9 +455,22 @@ export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[]
     })
   })
 
+  const presentSources = new Set(sessions.map(s => s.source).filter(Boolean))
+  const agentSources = (['copilot', 'claude_code', 'codex'] as const).filter(src => presentSources.has(src))
+
   return (
     <>
       <canvas ref={canvasRef} style="width:100%;height:160px;display:block" />
+      {agentSources.length > 0 && (
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:4px;flex-wrap:wrap">
+          {agentSources.map(src => (
+            <span key={src} style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)">
+              <span style={`display:inline-block;width:7px;height:7px;border-radius:50%;background:${getAgentColor(src)}`} />
+              {getAgentSourceLabel(src)}
+            </span>
+          ))}
+        </div>
+      )}
       <div class="heatmap-axis-label">← older · sessions · newer →</div>
     </>
   )
@@ -432,7 +548,7 @@ export function Efficiency() {
   return (
     <div id="efficiency-content">
       {/* Context Growth — turn-based x-axis */}
-      <h3 class="has-metric-tip" style="margin:0 0 4px;font-size:13px;color:var(--muted)" data-tip="Input tokens per LLM call by turn number. Each line is one session — steeper = faster context growth. Click a line to select that session.">CONTEXT GROWTH</h3>
+      <h3 style="margin:0 0 4px;font-size:13px;color:var(--muted)">CONTEXT GROWTH</h3>
       <ContextGrowthChart sessions={chartSessions} timelines={timelines} />
 
       {/* Token Usage — right below Context Growth */}
