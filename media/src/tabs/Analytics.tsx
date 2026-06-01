@@ -160,7 +160,7 @@ export function Analytics() {
           {/* Daily total legend above chart */}
           <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);margin-bottom:6px">
             <svg width="16" height="8" viewBox="0 0 16 8">
-              <line x1="0" y1="4" x2="16" y2="4" stroke="rgba(186,104,200,0.9)" stroke-width="1.5" stroke-dasharray="4 2" />
+              <line x1="0" y1="4" x2="16" y2="4" stroke="var(--vscode-charts-green,#81c784)" stroke-width="1.5" stroke-dasharray="4 2" />
             </svg>
             Daily total (right axis)
           </div>

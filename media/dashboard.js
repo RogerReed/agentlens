@@ -1777,7 +1777,7 @@
         const val = maxCost * (4 - i4) / 4;
         ctx.fillText("$" + val.toFixed(val < 0.01 ? 3 : 2), pad.left - 4, pad.top + chartH * i4 / 4);
       }
-      ctx.fillStyle = "rgba(186,104,200,0.85)";
+      ctx.fillStyle = "rgba(129,199,132,0.85)";
       ctx.textAlign = "left";
       for (let i4 = 0; i4 <= 4; i4++) {
         const val = maxDailyTotal * (4 - i4) / 4;
@@ -1855,7 +1855,7 @@
           const lineY = pad.top + chartH * (1 - daily / maxDailyTotal);
           pts.push({ x: midX, y: lineY });
         }
-        ctx.strokeStyle = "rgba(186,104,200,0.9)";
+        ctx.strokeStyle = "rgba(129,199,132,0.9)";
         ctx.lineWidth = 1.5;
         ctx.setLineDash([]);
         ctx.beginPath();
@@ -1863,7 +1863,7 @@
           i4 === 0 ? ctx.moveTo(p5.x, p5.y) : ctx.lineTo(p5.x, p5.y);
         });
         ctx.stroke();
-        ctx.fillStyle = "rgba(186,104,200,0.95)";
+        ctx.fillStyle = "rgba(129,199,132,0.95)";
         pts.forEach((p5) => {
           ctx.beginPath();
           ctx.arc(p5.x, p5.y, 2.5, 0, Math.PI * 2);
@@ -3571,7 +3571,7 @@
         if (maxTurns > 1 && (maxTurns - 1) % xStep !== 0) {
           ctx.fillText("T" + maxTurns, xPos(maxTurns), pad.top + chartH + 4);
         }
-        const highlighted = fId ? seriesData.findIndex((s4) => s4.sessionId === fId) : activeIdx;
+        const highlighted = fId && pausedRef.current ? seriesData.findIndex((s4) => s4.sessionId === fId) : activeIdx;
         const order = [...seriesData.keys()].sort((a4, b4) => (a4 === highlighted ? 1 : 0) - (b4 === highlighted ? 1 : 0));
         order.forEach((i4) => {
           const series = seriesData[i4];
@@ -3596,10 +3596,14 @@
       }
       drawFnRef.current = draw;
       clearTimer();
-      activeIdxRef.current = 0;
-      pausedRef.current = false;
-      setPaused(false);
-      draw(0);
+      const prevIds = growthStateRef.current?.series.map((s4) => s4.sessionId).join(",") ?? "";
+      const newIds = seriesData.map((s4) => s4.sessionId).join(",");
+      if (prevIds !== newIds) {
+        activeIdxRef.current = 0;
+        pausedRef.current = false;
+        setPaused(false);
+      }
+      draw(activeIdxRef.current);
       startTimer();
       return () => clearTimer();
     }, [sessions, timelines]);
@@ -3978,7 +3982,7 @@
           )
         ] }),
         /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);margin-bottom:6px", children: [
-          /* @__PURE__ */ u4("svg", { width: "16", height: "8", viewBox: "0 0 16 8", children: /* @__PURE__ */ u4("line", { x1: "0", y1: "4", x2: "16", y2: "4", stroke: "rgba(186,104,200,0.9)", "stroke-width": "1.5", "stroke-dasharray": "4 2" }) }),
+          /* @__PURE__ */ u4("svg", { width: "16", height: "8", viewBox: "0 0 16 8", children: /* @__PURE__ */ u4("line", { x1: "0", y1: "4", x2: "16", y2: "4", stroke: "var(--vscode-charts-green,#81c784)", "stroke-width": "1.5", "stroke-dasharray": "4 2" }) }),
           "Daily total (right axis)"
         ] }),
         /* @__PURE__ */ u4(CostBarChart, { sessions: pricedChartSess, mode }),
