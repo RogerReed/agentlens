@@ -3388,25 +3388,6 @@
     const thSort = thBase + ";cursor:pointer;color:var(--fg)";
     const thMuted = thBase + ";color:var(--muted);font-weight:500";
     return /* @__PURE__ */ u4("div", { id: "sessions-content", children: [
-      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:5px;padding:6px 8px 5px;font-size:10px;color:var(--muted)", children: [
-        /* @__PURE__ */ u4("span", { style: "font-weight:600;text-transform:uppercase;letter-spacing:.4px;font-size:9px", children: "Sort" }),
-        ["cost", "duration_ms", "total_tokens", "errors"].map((key) => {
-          const labels = { cost: "Cost", duration_ms: "Duration", total_tokens: "Tokens", errors: "Errors" };
-          const active = sortKey === key;
-          return /* @__PURE__ */ u4(
-            "button",
-            {
-              onClick: () => onSortClick(key),
-              style: `padding:1px 7px;font-size:10px;border-radius:3px;cursor:pointer;border:1px solid ${active ? "var(--accent)" : "var(--vscode-panel-border)"};background:${active ? "var(--accent)" : "transparent"};color:${active ? "var(--vscode-button-foreground,#fff)" : "var(--muted)"}`,
-              children: [
-                labels[key],
-                active ? sortDir === "desc" ? " \u25BC" : " \u25B2" : ""
-              ]
-            },
-            key
-          );
-        })
-      ] }),
       /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
         /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:2px solid var(--vscode-panel-border)", children: [
           /* @__PURE__ */ u4("th", { style: "width:16px;padding:3px 4px 3px 8px" }),
@@ -6140,18 +6121,50 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   }
   function SearchFilterBar() {
     const text = sessionTextFilter.value;
-    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0", children: /* @__PURE__ */ u4(
-      "input",
-      {
-        type: "text",
-        placeholder: "Filter sessions\u2026",
-        value: text,
-        onInput: (e4) => {
-          sessionTextFilter.value = e4.target.value;
-        },
-        style: "flex:1;min-width:120px;max-width:260px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+    const isSessionsTab = normalizeTabId(activeTab.value) === "sessions";
+    const sortKey = sessionSortKey.value;
+    const sortDir = sessionSortDir.value;
+    function onSortClick(key) {
+      if (sessionSortKey.value === key) {
+        sessionSortDir.value = sessionSortDir.value === "desc" ? "asc" : "desc";
+      } else {
+        sessionSortKey.value = key;
+        sessionSortDir.value = "desc";
       }
-    ) });
+    }
+    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap", children: [
+      /* @__PURE__ */ u4(
+        "input",
+        {
+          type: "text",
+          placeholder: "Filter sessions\u2026",
+          value: text,
+          onInput: (e4) => {
+            sessionTextFilter.value = e4.target.value;
+          },
+          style: "flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+        }
+      ),
+      isSessionsTab && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);white-space:nowrap", children: "Sort" }),
+        ["cost", "duration_ms", "total_tokens"].map((key) => {
+          const labels = { cost: "Cost", duration_ms: "Duration", total_tokens: "Tokens" };
+          const active = sortKey === key;
+          return /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => onSortClick(key),
+              style: `padding:1px 7px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid ${active ? "var(--accent)" : "var(--vscode-panel-border)"};background:${active ? "var(--accent)" : "transparent"};color:${active ? "var(--vscode-button-foreground,#fff)" : "var(--muted)"}`,
+              children: [
+                labels[key],
+                active ? sortDir === "desc" ? " \u25BC" : " \u25B2" : ""
+              ]
+            },
+            key
+          );
+        })
+      ] })
+    ] });
   }
   function Tab({ id, label }) {
     const isActive = normalizeTabId(activeTab.value) === id;
