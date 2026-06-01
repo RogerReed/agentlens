@@ -40,17 +40,22 @@ Open <http://localhost:3000> after the server starts. The OTLP receiver listens 
 
 #### Publishing to npm (maintainers)
 
-The package must be published to npm for `bunx` / `npx` to work. The `prepublishOnly` script runs the full production build automatically:
+The package is published to npm automatically when a release tag is pushed. The GitHub Actions release workflow (`release.yml`) handles this alongside the VS Code Marketplace and Open VSX publishes.
+
+To enable npm publishing, add an **npm automation token** as a repository secret named `NPM_TOKEN`:
+
+1. Go to [npmjs.com](https://www.npmjs.com) → Account → Access Tokens → Generate New Token → **Automation**
+2. Copy the token
+3. In the GitHub repository: Settings → Secrets and variables → Actions → New repository secret → name `NPM_TOKEN`, paste the token
+
+Then push a version tag to trigger the full release:
 
 ```bash
-# First time: log in to npm with the agentlens org account
-npm login
-
-# Publish (builds automatically before uploading)
-npm publish --access public
+git tag v1.2.3
+git push origin v1.2.3
 ```
 
-The published package includes `standalone/cli.js`, `standalone/server.js`, and `media/` — everything needed to serve the dashboard. The VS Code extension is published separately via `vsce publish`.
+The workflow builds, runs tests, packages the VSIX, publishes to VS Code Marketplace and Open VSX, and publishes to npm — all from the same tag. The npm publish step is skipped if `NPM_TOKEN` is not set.
 
 ### Option 3: Docker (otel only)
 
