@@ -71,9 +71,9 @@ The **Analytics** tab (Estimated Cost section) shows the dollar cost of Copilot,
 
 | Mode | Who it applies to |
 | ---- | ----------------- |
-| **Token-based AI Credits** (default) | All Copilot plans from Jun 1, 2026 — charges per input/output/cache token at per-model rates |
-| **Request-based** | All plans before Jun 1, 2026 — multiplier × $0.04 per user-initiated prompt |
-| **Annual plan request-based** | Annual-plan holders staying on request billing after Jun 1, 2026 — same formula, significantly higher multipliers |
+| **Token-based AI Credits** (default) | Default Copilot plans from June 1, 2026 — charges per input/output/cache token at per-model rates |
+| **Annual plan request-based** | Annual-plan holders staying on request billing from June 1, 2026 — multiplier × $0.04 per user-initiated prompt |
+| **Request-based** *(deprecated)* | Plans on request billing before June 1, 2026 — multiplier × $0.04 per user-initiated prompt |
 
 **Claude Code** and **Codex** always use token-based pricing — no toggle required. Claude Code is billed against the Anthropic API at standard per-token rates (input, cache write, cache read, output) depending on model (Opus, Sonnet, or Haiku). Codex is billed against the OpenAI API.
 
@@ -316,7 +316,7 @@ Each AI coding agent emits a different OTEL shape. AgentLens normalizes all thre
 ## Additional Features
 
 - **Files Changed** — The Files tab tracks every file created or modified by the agent, organized by session with inline before/after diffs
-- **Multi-session Comparison** — The Agents tab shows side-by-side token totals, cache rates, TTFT, and top tools for Copilot, Claude, and Codex, plus a full cross-session history table
+- **Multi-session Comparison** — The Analytics tab shows per-agent breakdown cards with side-by-side token totals, cache rates, TTFT, and top tools for Copilot, Claude, and Codex
 - **Automated Prompts** — The Automation tab lets you configure threshold-based automations (Loop Breaker, Turn Limit Wrap-up, Context Dump) that trigger a correction prompt when a session crosses a limit — delivered as a VS Code notification or written to a file for agent consumption
 
 ## AI Usage Disclosure

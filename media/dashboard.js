@@ -4745,8 +4745,8 @@
     {
       agent: "Copilot",
       format: 'OpenTelemetry <a href="#gl-trace">trace</a> <a href="#gl-span">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
-      coverage: 'Prompt text, token counts (<a href="#gl-input-tokens">input</a>, <a href="#gl-output-tokens">output</a>), model name, <a href="#gl-ttft">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
-      gaps: `<a href="#gl-cache-read-tokens">Cache</a> token data (read/create) is not part of Copilot's telemetry. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available.`
+      coverage: 'Prompt text, token counts (<a href="#gl-input-tokens">input</a>, <a href="#gl-output-tokens">output</a>, <a href="#gl-cache-read-tokens">cache read</a>), model name, <a href="#gl-ttft">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
+      gaps: "Cache <em>write</em> token counts are not available \u2014 Copilot manages cache creation server-side and does not expose it in telemetry. Cache <em>read</em> tokens are available. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available."
     },
     {
       agent: "Claude Code",
@@ -5000,8 +5000,6 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
     "OTEL_TRACES_EXPORTER": "otlp",
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
-    "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental",
-    "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "SPAN_AND_EVENT",
     "OTEL_LOG_TOOL_DETAILS": "1",
     "OTEL_LOG_TOOL_CONTENT": "1",
     "OTEL_LOG_USER_PROMPTS": "1"
@@ -5014,11 +5012,6 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
         " and ",
         /* @__PURE__ */ u4("a", { href: "#gl-llm-call", children: "LLM calls" }),
         " are indistinguishable and cache token breakdowns are unavailable.",
-        " ",
-        /* @__PURE__ */ u4("strong", { children: "OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental" }),
-        " and ",
-        /* @__PURE__ */ u4("strong", { children: "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=SPAN_AND_EVENT" }),
-        " together opt into the latest GenAI semantic conventions and enable LLM response content to be captured in spans.",
         " ",
         "The three ",
         /* @__PURE__ */ u4("strong", { children: "OTEL_LOG_*" }),

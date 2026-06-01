@@ -92,8 +92,8 @@ const AGENT_OTEL_SHAPES: Array<{
   {
     agent: 'Copilot',
     format: 'OpenTelemetry <a href="#gl-trace">trace</a> <a href="#gl-span">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
-    coverage: 'Prompt text, token counts (<a href="#gl-input-tokens">input</a>, <a href="#gl-output-tokens">output</a>), model name, <a href="#gl-ttft">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
-    gaps: '<a href="#gl-cache-read-tokens">Cache</a> token data (read/create) is not part of Copilot\'s telemetry. No additional configuration unlocks further data — what Copilot exposes is already fully available.',
+    coverage: 'Prompt text, token counts (<a href="#gl-input-tokens">input</a>, <a href="#gl-output-tokens">output</a>, <a href="#gl-cache-read-tokens">cache read</a>), model name, <a href="#gl-ttft">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
+    gaps: 'Cache <em>write</em> token counts are not available — Copilot manages cache creation server-side and does not expose it in telemetry. Cache <em>read</em> tokens are available. No additional configuration unlocks further data — what Copilot exposes is already fully available.',
   },
   {
     agent: 'Claude Code',
@@ -306,8 +306,6 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
     "OTEL_TRACES_EXPORTER": "otlp",
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/json",
     "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
-    "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_latest_experimental",
-    "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "SPAN_AND_EVENT",
     "OTEL_LOG_TOOL_DETAILS": "1",
     "OTEL_LOG_TOOL_CONTENT": "1",
     "OTEL_LOG_USER_PROMPTS": "1"
@@ -315,7 +313,6 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
 }`}</pre>
       <p style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6">
         <strong>CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1</strong> enables span-level tracing — without it <a href="#gl-turn">turns</a> and <a href="#gl-llm-call">LLM calls</a> are indistinguishable and cache token breakdowns are unavailable.{' '}
-        <strong>OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental</strong> and <strong>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=SPAN_AND_EVENT</strong> together opt into the latest GenAI semantic conventions and enable LLM response content to be captured in spans.{' '}
         The three <strong>OTEL_LOG_*</strong> vars unlock tool details, file diff content (needed for the Files tab), and your typed prompt.
       </p>
     </div>
