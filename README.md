@@ -71,7 +71,7 @@ The **Analytics** tab (Estimated Cost section) shows the dollar cost of Copilot,
 
 | Mode | Who it applies to |
 | ---- | ----------------- |
-| **Token-based AI Credits** (default) | All Copilot plans from June 1, 2026 — charges per input/output/cache token at per-model rates |
+| **Token-based AI Credits** (default) | Default Copilot plans from June 1, 2026 — charges per input/output/cache token at per-model rates |
 | **Annual plan request-based** | Annual-plan holders staying on request billing from June 1, 2026 — multiplier × $0.04 per user-initiated prompt |
 | **Request-based** *(deprecated)* | Plans on request billing before June 1, 2026 — multiplier × $0.04 per user-initiated prompt |
 
