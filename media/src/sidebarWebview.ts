@@ -16,6 +16,11 @@ interface CurrentSession {
   durationMs: number
   startTime: string
   turnInputTokens: number[]
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  cacheCreateTokens: number
+  costUsd: number
 }
 
 interface BurnRate {
@@ -239,6 +244,43 @@ function render() {
     const last = currentSession.turnInputTokens[n - 1] ?? 0
     turnLabel.textContent = n > 0 ? `Turn ${n} · ${fmt(last)} tokens` : ''
   }
+
+  // Token bars (input / output)
+  const tokenBars = document.getElementById('sb-token-bars')
+  const tokenWaiting = document.getElementById('sb-token-waiting')
+  const totalTokens = (currentSession.inputTokens ?? 0) + (currentSession.outputTokens ?? 0)
+  if (totalTokens > 0) {
+    if (tokenWaiting) tokenWaiting.style.display = 'none'
+    if (tokenBars) {
+      const inp = currentSession.inputTokens ?? 0
+      const out = currentSession.outputTokens ?? 0
+      const total = inp + out
+      const inPct = Math.round(inp / total * 100)
+      const outPct = 100 - inPct
+      tokenBars.innerHTML =
+        `<div style="display:flex;flex-direction:column;gap:3px">` +
+        `<div style="display:flex;align-items:center;gap:5px;font-size:10px">` +
+        `<span style="width:36px;color:#FFB74D;text-align:right;font-variant-numeric:tabular-nums">${fmt(inp)}</span>` +
+        `<div style="flex:1;height:5px;background:var(--vscode-panel-border);border-radius:2px">` +
+        `<div style="width:${inPct}%;height:100%;background:#FFB74D;border-radius:2px"></div></div>` +
+        `<span style="color:var(--muted);font-size:9px;width:24px">in</span></div>` +
+        `<div style="display:flex;align-items:center;gap:5px;font-size:10px">` +
+        `<span style="width:36px;color:#81C784;text-align:right;font-variant-numeric:tabular-nums">${fmt(out)}</span>` +
+        `<div style="flex:1;height:5px;background:var(--vscode-panel-border);border-radius:2px">` +
+        `<div style="width:${outPct}%;height:100%;background:#81C784;border-radius:2px"></div></div>` +
+        `<span style="color:var(--muted);font-size:9px;width:24px">out</span></div></div>`
+    }
+  } else {
+    if (tokenBars) tokenBars.innerHTML = ''
+    if (tokenWaiting) tokenWaiting.style.display = ''
+  }
+
+  // Estimated cost
+  const costVal = document.getElementById('sb-cost-val')
+  const costModel = document.getElementById('sb-cost-model')
+  const cost = currentSession.costUsd ?? 0
+  if (costVal) costVal.textContent = cost > 0 ? (cost < 0.01 ? '<$0.01' : '$' + cost.toFixed(2)) : '—'
+  if (costModel) costModel.textContent = currentSession.model || ''
 
   // Burn rate row
   const burnRow = document.getElementById('sb-burn-row')

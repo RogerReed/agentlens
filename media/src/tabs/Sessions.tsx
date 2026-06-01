@@ -301,8 +301,19 @@ export function Sessions() {
 
   return (
     <div id="sessions-content">
-      <div style="font-size:10px;color:var(--muted);padding:6px 8px 5px;font-style:italic">
-        Click any column header to sort — find most expensive, longest, or most error-prone sessions
+      <div style="display:flex;align-items:center;gap:5px;padding:6px 8px 5px;font-size:10px;color:var(--muted)">
+        <span style="font-weight:600;text-transform:uppercase;letter-spacing:.4px;font-size:9px">Sort</span>
+        {(['cost','duration_ms','total_tokens','errors'] as SortKey[]).map(key => {
+          const labels: Record<string, string> = { cost: 'Cost', duration_ms: 'Duration', total_tokens: 'Tokens', errors: 'Errors' }
+          const active = sortKey === key
+          return (
+            <button
+              key={key}
+              onClick={() => onSortClick(key)}
+              style={`padding:1px 7px;font-size:10px;border-radius:3px;cursor:pointer;border:1px solid ${active ? 'var(--accent)' : 'var(--vscode-panel-border)'};background:${active ? 'var(--accent)' : 'transparent'};color:${active ? 'var(--vscode-button-foreground,#fff)' : 'var(--muted)'}`}
+            >{labels[key]}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}</button>
+          )
+        })}
       </div>
       <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:11px">

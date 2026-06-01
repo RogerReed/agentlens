@@ -3388,7 +3388,25 @@
     const thSort = thBase + ";cursor:pointer;color:var(--fg)";
     const thMuted = thBase + ";color:var(--muted);font-weight:500";
     return /* @__PURE__ */ u4("div", { id: "sessions-content", children: [
-      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);padding:6px 8px 5px;font-style:italic", children: "Click any column header to sort \u2014 find most expensive, longest, or most error-prone sessions" }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:5px;padding:6px 8px 5px;font-size:10px;color:var(--muted)", children: [
+        /* @__PURE__ */ u4("span", { style: "font-weight:600;text-transform:uppercase;letter-spacing:.4px;font-size:9px", children: "Sort" }),
+        ["cost", "duration_ms", "total_tokens", "errors"].map((key) => {
+          const labels = { cost: "Cost", duration_ms: "Duration", total_tokens: "Tokens", errors: "Errors" };
+          const active = sortKey === key;
+          return /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => onSortClick(key),
+              style: `padding:1px 7px;font-size:10px;border-radius:3px;cursor:pointer;border:1px solid ${active ? "var(--accent)" : "var(--vscode-panel-border)"};background:${active ? "var(--accent)" : "transparent"};color:${active ? "var(--vscode-button-foreground,#fff)" : "var(--muted)"}`,
+              children: [
+                labels[key],
+                active ? sortDir === "desc" ? " \u25BC" : " \u25B2" : ""
+              ]
+            },
+            key
+          );
+        })
+      ] }),
       /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
         /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:2px solid var(--vscode-panel-border)", children: [
           /* @__PURE__ */ u4("th", { style: "width:16px;padding:3px 4px 3px 8px" }),

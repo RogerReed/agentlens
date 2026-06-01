@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { SessionRepository } from './sessionRepository'
 import { nanoToMs } from './summarizers/helpers'
 import { Span } from './types'
+import { calcTokenCostUsd } from './pricing'
 
 export class SidebarPanel implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView
@@ -126,6 +127,11 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       durationMs: latest.durationMs,
       startTime: latest.startTime,
       turnInputTokens,
+      inputTokens: latest.inputTokens,
+      outputTokens: latest.outputTokens,
+      cacheReadTokens: latest.cacheReadTokens,
+      cacheCreateTokens: latest.cacheCreateTokens,
+      costUsd: calcTokenCostUsd(latest.inputTokens, latest.cacheReadTokens, latest.cacheCreateTokens, latest.outputTokens, latest.model),
     } : null
 
     this.view.webview.postMessage({
@@ -190,6 +196,11 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       durationMs: latest.durationMs,
       startTime: latest.startTime,
       turnInputTokens,
+      inputTokens: latest.inputTokens,
+      outputTokens: latest.outputTokens,
+      cacheReadTokens: latest.cacheReadTokens,
+      cacheCreateTokens: latest.cacheCreateTokens,
+      costUsd: calcTokenCostUsd(latest.inputTokens, latest.cacheReadTokens, latest.cacheCreateTokens, latest.outputTokens, latest.model),
     } : null
 
     const burnRate = burnRateResult ? {
@@ -337,6 +348,20 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
         <canvas id="sb-sparkline"></canvas>
         <div id="sb-turn-label" class="sb-turn-label"></div>
         <div id="sb-sparkline-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic;padding:2px 0">Waiting for data…</div>
+      </div>
+
+      <!-- Token breakdown (input / output) -->
+      <div class="sb-card" id="sb-tokens-card">
+        <div class="sb-section-label">Tokens</div>
+        <div id="sb-token-bars" style="margin-top:4px"></div>
+        <div id="sb-token-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic;padding:2px 0">Waiting for data…</div>
+      </div>
+
+      <!-- Estimated cost -->
+      <div class="sb-card" id="sb-cost-card">
+        <div class="sb-section-label">Estimated Cost</div>
+        <div id="sb-cost-val" style="font-size:16px;font-weight:700;color:var(--vscode-charts-green,#81c784)">—</div>
+        <div id="sb-cost-model" class="sb-muted" style="font-size:9px;margin-top:1px"></div>
       </div>
 
       <!-- Burn rate (active only) -->
