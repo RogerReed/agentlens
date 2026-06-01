@@ -11,6 +11,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import { summarizeSpans } from '../src/spanSummarizer'
+import { calcTokenCostUsd } from '../src/pricing'
 import { autoConfigureClaudeCode, autoConfigureCodex, autoConfigureCopilotStandalone } from '../src/autoConfigNode'
 import { classifyOtlpPayload } from '../src/otlpParser'
 import type { Span } from '../src/types'
@@ -253,6 +254,11 @@ function computeSidebarPayload(summary: ReturnType<typeof summarizeSpans>, allSp
     burnRate = { tokensPerMinute: Math.round(tpm), costPerHour: 0 }
   }
 
+  const avgInputTokens = sorted.length > 0
+    ? sorted.reduce((s, x) => s + x.inputTokens, 0) / sorted.length : 1
+  const avgOutputTokens = sorted.length > 0
+    ? sorted.reduce((s, x) => s + x.outputTokens, 0) / sorted.length : 1
+
   const currentSession = latest ? {
     source: latest.source,
     model: latest.model || '',
@@ -264,9 +270,20 @@ function computeSidebarPayload(summary: ReturnType<typeof summarizeSpans>, allSp
     durationMs: latest.durationMs,
     startTime: latest.startTime,
     turnInputTokens,
+    inputTokens: latest.inputTokens,
+    outputTokens: latest.outputTokens,
+    cacheReadTokens: latest.cacheReadTokens,
+    cacheCreateTokens: latest.cacheCreateTokens,
+    costUsd: calcTokenCostUsd(
+      Math.max(0, latest.inputTokens - latest.cacheReadTokens - latest.cacheCreateTokens),
+      latest.cacheReadTokens,
+      latest.cacheCreateTokens,
+      latest.outputTokens,
+      latest.model,
+    ),
   } : null
 
-  return { isActive, lastActivityMs: lastMs, sessionCount: sessions.length, agentSources, currentSession, burnRate }
+  return { isActive, lastActivityMs: lastMs, sessionCount: sessions.length, agentSources, currentSession, burnRate, avgInputTokens, avgOutputTokens }
 }
 
 // Legacy shape kept for data the Preact dashboard still reads
