@@ -31,7 +31,7 @@ function writeLastWriteSignal(storageUri: vscode.Uri): void {
   try {
     const filePath = path.join(storageUri.fsPath, LAST_WRITE_FILENAME)
     fs.writeFileSync(filePath, JSON.stringify({ lastWriteMs: Date.now() }))
-  } catch { /* non-fatal */ }
+  } catch { /* non-fatal — cross-window signal only */ }
 }
 
 function readLastWriteMs(storageUri: vscode.Uri): number {
@@ -137,7 +137,7 @@ export async function activate(context: vscode.ExtensionContext) {
           void writer.drain().then(() => {
             agentLensDb?.save()
             writeLastWriteSignal(context.globalStorageUri)
-          })
+          }).catch(err => console.error('[AgentLens] writer.drain error:', err))
         }
       })
     )

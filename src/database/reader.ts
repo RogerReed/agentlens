@@ -446,12 +446,14 @@ export function openReadonlySnapshot(
 ): DatabaseReader | null {
   const dbPath = path.join(storagePath, 'agentlens.db')
   try {
+    // sql.js has no bundled types; require is intentional (no ESM build available)
     // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
-    const SQL = (require('sql.js') as any)
+    const SQL = require('sql.js') as any
     const fileBuffer = fs.readFileSync(dbPath)
     const db = new SQL.Database(fileBuffer)
     return new DatabaseReader(db, storageUri)
-  } catch {
+  } catch (e) {
+    console.warn('[AgentLens] Could not open database:', e)
     return null
   }
 }

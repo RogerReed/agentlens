@@ -364,7 +364,7 @@ function computeAnalyticsData(sessions: ReturnType<typeof summarizeSpans>['sessi
 
 function buildUpdatePayload(): string {
   let sessionSummary: ReturnType<typeof summarizeSpans> | null = null
-  try { sessionSummary = summarizeSpans(spans) } catch { /* ignore */ }
+  try { sessionSummary = summarizeSpans(spans) } catch (e) { console.warn('[AgentLens] summarizeSpans error:', e) }
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : null
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : null
   const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null
@@ -812,7 +812,7 @@ const uiServer = http.createServer((req, res) => {
 
   if (req.method === 'POST' && url === '/api/clear') {
     spans = []
-    try { fs.writeFileSync(DATA_FILE, '[]') } catch { /* ignore */ }
+    try { fs.writeFileSync(DATA_FILE, '[]') } catch (e) { console.warn('[AgentLens] Could not clear data file:', e) }
     pushUpdate()
     res.writeHead(200); res.end()
     return
@@ -851,10 +851,10 @@ const uiServer = http.createServer((req, res) => {
         const body = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as { type?: string }
         if (body.type === 'clearAll') {
           spans = []
-          try { fs.writeFileSync(DATA_FILE, '[]') } catch { /* ignore */ }
+          try { fs.writeFileSync(DATA_FILE, '[]') } catch (e) { console.warn('[AgentLens] Could not clear data file:', e) }
           pushUpdate()
         }
-      } catch { /* ignore malformed */ }
+      } catch (e) { console.warn('[AgentLens] Malformed /action body:', e) }
       res.writeHead(200); res.end()
     })
     return
