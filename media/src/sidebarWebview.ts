@@ -191,7 +191,7 @@ function render() {
   }
   const sessionLabel = document.getElementById('sb-session-label')
   if (sessionLabel) sessionLabel.textContent = isActive ? 'current session' : 'most recent session'
-  if (agoEl) agoEl.textContent = isActive ? '' : (lastActivityMs ? fmtAgo(lastActivityMs) : 'No activity yet')
+  if (agoEl) agoEl.textContent = isActive ? '' : (lastActivityMs ? fmtAgo(lastActivityMs) : '')
 
   // Current session block
   const block = document.getElementById('sb-session-block') as HTMLElement | null
