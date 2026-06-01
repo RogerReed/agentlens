@@ -222,19 +222,47 @@ export async function activate(context: vscode.ExtensionContext) {
       }).catch(err => outputChannel!.appendLine(`[AgentLens] log ingestion drain error: ${err}`))
     }
 
-    // Initial background scan: batched with setImmediate so heavy history loads don't
-    // block the event loop or stall UI rendering on first open.
-    const runInitialScanAsync = () => {
-      setImmediate(() => {
-        try {
-          runLogScan()
-        } catch (err) {
-          outputChannel!.appendLine(`[AgentLens] log ingestion initial scan error: ${err}`)
+    // Initial load: collect file metadata sorted newest-first, then process in
+    // small batches with setImmediate between each batch. This keeps the event
+    // loop free and shows the most recent sessions first.
+    const BATCH_SIZE = 10
+    const startBatchedLoad = () => {
+      let files: ReturnType<typeof logReader.collectFileMeta>
+      try {
+        files = logReader.collectFileMeta()
+      } catch (err) {
+        outputChannel!.appendLine(`[AgentLens] log ingestion collect error: ${err}`)
+        return
+      }
+      if (files.length === 0) return
+
+      const processBatch = (startIdx: number) => {
+        const ws = fallbackWorkspace()
+        let written = 0
+        for (let i = startIdx; i < Math.min(startIdx + BATCH_SIZE, files.length); i++) {
+          try {
+            const result = logReader.parseFile(files[i].filePath, files[i].agentKey)
+            if (result) { writer!.enqueue(result.card, result.workspace || ws); written++ }
+          } catch { /* skip bad file */ }
         }
-      })
+        if (written > 0) {
+          void writer!.drain().then(() => {
+            agentLensDb?.save()
+            provider.refresh()
+          }).catch(err => outputChannel!.appendLine(`[AgentLens] log ingestion drain error: ${err}`))
+        }
+        const nextIdx = startIdx + BATCH_SIZE
+        if (nextIdx < files.length) {
+          setImmediate(() => processBatch(nextIdx))
+        } else {
+          writeLastWriteSignal(context.globalStorageUri)
+        }
+      }
+
+      setImmediate(() => processBatch(0))
     }
 
-    runInitialScanAsync()
+    startBatchedLoad()
     logReaderTimer = setInterval(runLogScan, 30_000)
     context.subscriptions.push({ dispose: () => clearInterval(logReaderTimer) })
     outputChannel.appendLine('AgentLens: log ingestion enabled — scanning local session logs')

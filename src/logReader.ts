@@ -100,11 +100,62 @@ export class LogReader {
   }
 
   /**
+   * Collects all session files across all agents, sorted newest-first by mtime.
+   * Does NOT read file contents. Used by the startup batch-loader to process
+   * files in priority order without one big synchronous block.
+   */
+  collectFileMeta(): Array<{ filePath: string; mtimeMs: number; agentKey: string }> {
+    const entries: Array<{ filePath: string; mtimeMs: number; agentKey: string }> = []
+
+    // Claude
+    for (const projectsDir of claudeProjectsDirs()) {
+      for (const filePath of this._collectJsonlFiles(projectsDir)) {
+        try { entries.push({ filePath, mtimeMs: fs.statSync(filePath).mtimeMs, agentKey: 'claude' }) } catch { /* skip */ }
+      }
+    }
+    // Codex
+    for (const sessionsDir of codexSessionsDirs()) {
+      for (const filePath of this._collectJsonlFiles(sessionsDir)) {
+        try { entries.push({ filePath, mtimeMs: fs.statSync(filePath).mtimeMs, agentKey: 'codex' }) } catch { /* skip */ }
+      }
+    }
+    // Copilot session-state
+    const stateDir = copilotSessionStateDir()
+    if (stateDir) {
+      try {
+        for (const d of fs.readdirSync(stateDir)) {
+          const f = path.join(stateDir, d, 'events.jsonl')
+          try { entries.push({ filePath: f, mtimeMs: fs.statSync(f).mtimeMs, agentKey: 'copilot' }) } catch { /* skip */ }
+        }
+      } catch { /* ignore */ }
+    }
+
+    // Newest first — caller processes in this order so recent sessions appear first.
+    entries.sort((a, b) => b.mtimeMs - a.mtimeMs)
+    return entries
+  }
+
+  /**
+   * Parses a single file identified by collectFileMeta() and returns a result if
+   * the file is new or has grown since the last scan. Returns null if unchanged.
+   */
+  parseFile(filePath: string, agentKey: string): LogSessionResult | null {
+    const sessionId = agentKey === 'copilot'
+      ? path.basename(path.dirname(filePath))  // directory name is session UUID
+      : path.basename(filePath, '.jsonl')
+
+    switch (agentKey) {
+      case 'claude':  return this._processFile(filePath, () => this._parseClaudeFile(filePath))
+      case 'codex':   return this._processFile(filePath, () => this._parseCodexFile(filePath, ''))
+      case 'copilot': return this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId))
+      default:        return null
+    }
+  }
+
+  /**
    * Scans all log directories and returns new/updated session results.
    * Only files that are new or have grown are re-parsed (incremental).
-   *
-   * The OTEL-wins guard lives in DatabaseWriter.enqueue(), so log cards
-   * for sessions already owned by OTEL are silently dropped at write time.
+   * Used for the periodic 30-second poll after the initial load completes.
    */
   scan(): LogSessionResult[] {
     return [
@@ -325,7 +376,7 @@ export class LogReader {
       }
 
       if (type === 'user.message' && !userRequest) {
-        userRequest = String(data['transformedContent'] ?? '').split('\n')[0].trim()
+        userRequest = _extractCopilotUserText(String(data['transformedContent'] ?? ''))
       }
 
       if (type === 'assistant.message') {
@@ -500,6 +551,35 @@ function _buildCard(
 }
 
 // ── Text content helpers ──────────────────────────────────────────────────────
+
+/**
+ * Extracts the real user text from Copilot's `transformedContent` field, which
+ * can be prefixed with injected XML-like blocks:
+ *   <current_datetime>...</current_datetime>
+ *   <system_reminder>...</system_reminder>
+ * Returns the first non-empty line that isn't inside such a block.
+ */
+function _extractCopilotUserText(raw: string): string {
+  // Split into lines, skip lines that are entirely part of injected XML blocks.
+  const lines = raw.split('\n')
+  let inTag = false
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    // Opening XML-like injection tag — enter skip mode
+    if (/^<[a-z_]+[^>]*>/.test(trimmed) && !trimmed.startsWith('</')) {
+      // If the tag closes on the same line, skip just this line
+      if (/<\/[a-z_]+>$/.test(trimmed)) continue
+      inTag = true
+      continue
+    }
+    // Closing tag — exit skip mode
+    if (/^<\/[a-z_]+>/.test(trimmed)) { inTag = false; continue }
+    if (inTag) continue
+    return trimmed
+  }
+  return ''
+}
 
 function _extractTextContent(content: unknown): string {
   if (!content) return ''
