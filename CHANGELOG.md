@@ -2,6 +2,53 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.2.0] — 2026-06-01
+
+### Added
+
+- **SQLite persistence** — four-phase database layer: schema (phase 1), write path persisting sessions after summarization (phase 2), read path replacing in-memory summarization with DB queries (phase 3), and analytics layer with historical queries, session search, time-range filtering, and storage management (phase 4)
+- **Sidebar reworked as real-time live session monitor** — replaces the previous static summary with a live-updating panel: status card (Active/Idle, agent, model, prompt), counters (Turns / Tools / Errors / Cache hit rate), context growth sparkline with play/pause controls, token bars scaling independently against historical average with avg values inline, estimated cost card, and burn rate card; "X sessions stored" footer; Clear All Data fully resets all top-card fields
+- **Sessions tab overhaul** — sortable by Cost, Duration, or Tokens via pills in the filter bar; filtered session count shown; Tools and Flow sub-tab labels show counts; expand-in-place row with five sub-tabs: Overview (stat tiles, burn rate, Insights), Trace (LLM and tool call waterfall), Flow (turn-to-tool graph), Tools (donut chart), Files (modified files with diffs)
+- **Analytics tab overhaul** — per-agent breakdown cards, Estimated Cost chart with daily total green overlay line and date labels drawn inline at day boundaries, Token Usage Per Session, Context Growth chart with session-cycling animation
+- **Standalone server sidebar parity** — token bars, estimated cost, burn rate, counters, sparkline, and all CSS classes now match the VS Code sidebar exactly; fixed crash from undefined `inProgressTraceIds` variables
+- **Demo replay: export-format support** — `pnpm run demo -- --file ./export_sessions_<timestamp>.json` now works; converts session summaries into synthetic OTEL spans (root + LLM call + tool call spans per session) with correct attribute keys for the summarizer
+- **Estimated cost per LLM span** — shown in Traces and Flow tabs alongside each LLM call
+- **Tool call detail in Traces tab** — arguments and results visible in expanded span rows
+- **Session ID in clipboard prompts** — Insights copy button includes `Session ID:` so AI can identify the session
+- **user_input timeline entry type** — Claude Code permission prompt interactions captured in the session timeline
+- **"X sessions stored" footer** — unfiltered session count shown in sidebar footer and Sessions tab footer
+- **Date labels inside Estimated Cost chart** — day boundary labels rendered inline matching Token Usage Per Session style
+
+### Fixed
+
+- Standalone sidebar tokens and estimated cost not rendering — `computeSidebarPayload` was missing `inputTokens`, `outputTokens`, `cacheReadTokens`, `cacheCreateTokens`, `costUsd`, `avgInputTokens`, `avgOutputTokens`
+- Context Growth animation frozen in play mode — `focusedSessionId` was overriding `activeIdx` unconditionally; animation index was resetting to 0 on every SSE update due to new array reference on each render
+- Sidebar Clear All Data not resetting top card — agent name, duration, prompt, and model now clear when `currentSession` is null
+- Sidebar active indicator firing on background Copilot calls — whitelisted to real agent span names only (`claude_code.*`, `invoke_agent*`, `codex.turn/session`); 45-second window
+- Burn rate tied to `isActive` instead of 2-minute `startTime` cutoff
+- Sidebar estimated cost: cache tokens subtracted from `inputTokens` before rate calculation (matches Sessions table)
+- Help pill nav clipping on wrap — `flex-wrap:nowrap` + horizontal scroll
+- Demo replay crash on export files — `BigInt()` cannot parse ISO timestamp strings
+- Status bar item now opens both sidebar and dashboard on click
+
+### Changed
+
+- Daily total line on Estimated Cost chart changed from purple to green, matching cost value color used throughout the UI
+- Summaries tab renamed to Traces; old waterfall Traces tab removed
+- Tab structure simplified to 6 primary tabs: Sessions, Analytics, Alerts, Automation, Export, Help
+- Automation popups labelled "AgentLens Automation: \<label\>"; alert popups labelled "AgentLens Alert"
+- "Current session" label removed from sidebar status card
+- Insight card text size reduced to 11px to match rest of UI
+- Product name removed from all clipboard prompts
+- Sessions sort moved into filter bar; Errors sort removed
+
+### Docs
+
+- README: updated tagline, corrected Claude Code config (removed stale `OTEL_SEMCONV_STABILITY_OPT_IN` and `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` env vars now cleaned up by auto-configure), dashboard tab names corrected, Copilot billing table updated
+- Walkthrough files: dashboard tab table rewritten for current 6-tab structure; loops walkthrough updated to reflect Insights location and clipboard copy button
+- Help tab Setup section: stale env vars removed; Copilot OTEL coverage corrected (cache read tokens are available; only cache write is absent)
+- ARCHITECTURE.md: fully rewritten covering the 4-phase SQLite persistence architecture with Mermaid diagrams
+
 ## [0.1.5] — 2026-05-28
 
 ### Added
