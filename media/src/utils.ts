@@ -317,11 +317,13 @@ export function extractSpanSummary(span: Span): string | null {
     return parts.length > 0 ? parts.join(' · ') : null
   }
 
-  // Claude Code: claude_code.tool carries tool_name + full_command
+  // Claude Code: claude_code.tool carries tool_name + full_command (Bash) or file_path (Edit/Read/Write)
   if (name === 'claude_code.tool') {
     const tool = String(getAttr(span, 'tool_name') ?? '')
     const cmd  = String(getAttr(span, 'full_command') ?? '')
     if (tool && cmd) return tool + ': ' + (cmd.length > 120 ? cmd.slice(0, 120) + '…' : cmd)
+    const fp = String(getAttr(span, 'file_path') ?? '')
+    if (tool && fp) return tool + ': ' + fp
     return tool || null
   }
 
