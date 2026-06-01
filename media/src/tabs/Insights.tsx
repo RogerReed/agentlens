@@ -444,20 +444,6 @@ export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgno
           <button class="insight-ignore-btn" title="Ignore" onClick={() => ignoredInsightKeys.add(ins.title)}>Ignore</button>
         )}
       </div>
-      {/* Session attribution — directly under title */}
-      {session && (
-        <div style="margin-bottom:8px;margin-left:24px;display:flex;align-items:flex-start;gap:5px">
-          <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px;background:' + sessionAgentColor} />
-          <div style="min-width:0">
-            <div style="font-size:10px;color:var(--fg);white-space:nowrap">{sessionTimestamp}</div>
-            {sessionPrompt && (
-              <div style="font-size:9px;color:var(--muted);font-style:italic;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px" title={sessionPrompt}>
-                {sessionPrompt.length > 80 ? sessionPrompt.slice(0, 80) + '…' : sessionPrompt}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       {/* Action */}
       <div class="insight-action" style="margin-bottom:8px">
         <span class="insight-action-label">

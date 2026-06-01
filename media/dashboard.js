@@ -2222,13 +2222,6 @@
         ),
         isIgnored ? /* @__PURE__ */ u4("button", { class: "insight-restore-btn", title: "Restore", onClick: () => ignoredInsightKeys.delete(ins.title), children: "Restore" }) : /* @__PURE__ */ u4("button", { class: "insight-ignore-btn", title: "Ignore", onClick: () => ignoredInsightKeys.add(ins.title), children: "Ignore" })
       ] }),
-      session && /* @__PURE__ */ u4("div", { style: "margin-bottom:8px;margin-left:24px;display:flex;align-items:flex-start;gap:5px", children: [
-        /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px;background:" + sessionAgentColor }),
-        /* @__PURE__ */ u4("div", { style: "min-width:0", children: [
-          /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--fg);white-space:nowrap", children: sessionTimestamp }),
-          sessionPrompt && /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);font-style:italic;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px", title: sessionPrompt, children: sessionPrompt.length > 80 ? sessionPrompt.slice(0, 80) + "\u2026" : sessionPrompt })
-        ] })
-      ] }),
       /* @__PURE__ */ u4("div", { class: "insight-action", style: "margin-bottom:8px", children: [
         /* @__PURE__ */ u4("span", { class: "insight-action-label", children: [
           "Action",
