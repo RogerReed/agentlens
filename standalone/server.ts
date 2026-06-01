@@ -518,7 +518,7 @@ function getHtml(): string {
 
       var labelEl = document.createElement('span');
       labelEl.style.cssText = 'font-weight:600;color:' + color + ';line-height:1.3;';
-      labelEl.textContent = 'AgentLens: ' + label;
+      labelEl.textContent = 'AgentLens Automation [' + label + ']';
 
       var closeBtn = document.createElement('button');
       closeBtn.textContent = '×';
