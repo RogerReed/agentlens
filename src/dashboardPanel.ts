@@ -289,7 +289,7 @@ async function handleAlertNotification(
   repo: SessionRepository,
   sidebarProvider?: SidebarPanel
 ): Promise<void> {
-  const text = `AgentLens: ${msg.label}${msg.detail ? ' — ' + msg.detail : ''}`
+  const text = `AgentLens Alert: ${msg.label}${msg.detail ? ' — ' + msg.detail : ''}`
   const clipboardPrompt = [
     "An alert was triggered in my AI coding session. Please explain what's happening and how I should respond.",
     '',
@@ -365,7 +365,7 @@ async function handleAutomation(msg: { label: string; writePromptsFile: boolean;
   }
 
   const action = await vscode.window.showWarningMessage(
-    `AgentLens [${msg.label}]: "${snippet}"`,
+    `AgentLens Automation — ${msg.label}: "${snippet}"`,
     { modal: false },
     'Copy Prompt',
     'Dismiss',
