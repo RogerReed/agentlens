@@ -139,9 +139,37 @@ export function Analytics() {
       {/* Estimated cost */}
       {pricedSess.length > 0 && (
         <>
-          <div style="display:flex;align-items:baseline;justify-content:space-between">
-            <SectionHead title="ESTIMATED COST" />
-            {dayRows.length > 0 && (
+          <SectionHead title="ESTIMATED COST" />
+          {disclaimer}
+
+          {copilotSess.length > 0 && (
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px">
+              <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor('copilot')} />
+              <span style="text-transform:uppercase;letter-spacing:.3px;font-size:10px">Copilot</span>
+              <button
+                class={'tab-mini' + (mode === 'token' ? ' active' : '')}
+                onClick={() => setMode('token')}
+              >Token-based</button>
+              <button
+                class={'tab-mini' + (mode === 'request-annual' ? ' active' : '')}
+                onClick={() => setMode('request-annual')}
+              >Annual request-based</button>
+            </div>
+          )}
+
+          {/* Daily total legend above chart */}
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);margin-bottom:6px">
+            <svg width="16" height="8" viewBox="0 0 16 8">
+              <line x1="0" y1="4" x2="16" y2="4" stroke="var(--vscode-charts-green,#81c784)" stroke-width="1.5" stroke-dasharray="4 2" />
+            </svg>
+            Daily total (right axis)
+          </div>
+
+          <CostBarChart sessions={pricedChartSess} mode={mode} />
+
+          {/* Multi-dimensional cost table: date → agent, scrollable */}
+          {dayRows.length > 0 && (
+            <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
               <button
                 onClick={() => {
                   const headers = ['Date','Agent','Model','Input Tokens','Output Tokens','Cache Create Tokens','Cache Read Tokens','Total Tokens','Cost (USD)']
@@ -174,36 +202,8 @@ export function Analytics() {
                 }}
                 style="font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap"
               >↓ CSV</button>
-            )}
-          </div>
-          {disclaimer}
-
-          {copilotSess.length > 0 && (
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px">
-              <span style={'display:inline-block;width:6px;height:6px;border-radius:50%;background:' + getAgentColor('copilot')} />
-              <span style="text-transform:uppercase;letter-spacing:.3px;font-size:10px">Copilot</span>
-              <button
-                class={'tab-mini' + (mode === 'token' ? ' active' : '')}
-                onClick={() => setMode('token')}
-              >Token-based</button>
-              <button
-                class={'tab-mini' + (mode === 'request-annual' ? ' active' : '')}
-                onClick={() => setMode('request-annual')}
-              >Annual request-based</button>
             </div>
           )}
-
-          {/* Daily total legend above chart */}
-          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);margin-bottom:6px">
-            <svg width="16" height="8" viewBox="0 0 16 8">
-              <line x1="0" y1="4" x2="16" y2="4" stroke="var(--vscode-charts-green,#81c784)" stroke-width="1.5" stroke-dasharray="4 2" />
-            </svg>
-            Daily total (right axis)
-          </div>
-
-          <CostBarChart sessions={pricedChartSess} mode={mode} />
-
-          {/* Multi-dimensional cost table: date → agent, scrollable */}
           {dayRows.length > 0 && (
             <div style="overflow-x:auto;margin-bottom:8px">
               <table style="border-collapse:collapse;font-size:10px;min-width:100%;white-space:nowrap">
