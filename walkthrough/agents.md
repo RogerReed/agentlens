@@ -1,11 +1,25 @@
-When AgentLens activated, it automatically wrote the telemetry configuration for each agent it detected:
+AgentLens already has your session history. Local log files written by each agent were loaded automatically on activation — no configuration needed.
 
-| Agent | Config location |
+## Log file sources (always on)
+
+| Agent | What was loaded |
+| --- | --- |
+| **Claude Code** | `~/.claude/projects/` — full conversation history, token counts, tool calls |
+| **Copilot CLI** | `~/.copilot/session-state/` — sessions, token counts, prompts |
+| **Codex CLI** | `~/.codex/sessions/` — sessions and token counts |
+
+Sessions from log files show a **Log** badge in the Sessions tab.
+
+## OpenTelemetry (richer real-time data)
+
+AgentLens also runs a built-in OTEL receiver and wrote telemetry config for each agent it detected:
+
+| Agent | Config written |
 | --- | --- |
 | **Claude Code** | `~/.claude/settings.json` |
 | **GitHub Copilot** | VS Code user settings |
 | **Codex CLI** | `~/.codex/config.toml` |
 
-All three are pointed at the local OTLP receiver on `http://localhost:4318` (configurable via `agentLens.otlpPort`).
+OTEL adds timing, loop detection, file diffs, and streaming speed on top of what log files provide. Sessions from OTEL show an **OTEL** badge and automatically replace any Log-sourced entry for the same session.
 
-> **Restart any running agent sessions** to pick up the new config. No external infrastructure is required — AgentLens collects traces entirely on-device.
+> **Restart any running agent sessions** to pick up the OTEL config. No external infrastructure is required — everything stays on-device.

@@ -5,7 +5,7 @@
 
 ![AgentLens demo](media/demo.gif)
 
-Local observability that makes AI agent sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. AgentLens captures OpenTelemetry traces from your agents and surfaces efficiency metrics, session cost estimates, human-readable session traces, and actionable recommendations in real time — then helps you prompt your agents on inefficiencies to improve interactions.
+Local observability that makes AI agent sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone server, with no data leaving your machine. AgentLens collects data two ways: it reads **local session log files** written automatically by Claude Code, Codex, and Copilot CLI (on by default, no setup), and can also receive richer **OpenTelemetry traces** over HTTP for deeper timing, loop detection, and per-tool metrics.
 
 ## Getting Started
 
@@ -13,8 +13,8 @@ Local observability that makes AI agent sessions more transparent — see what's
 
 1. **[Install from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)**
 2. Open the **AgentLens** view from the Activity Bar
-3. AgentLens automatically configures Copilot, Claude Code, and Codex on first activation — restart any running agent sessions to pick up the new settings
-4. Start an agent session and watch the dashboard populate in real time
+3. Session history from Claude Code, Codex, and Copilot CLI loads automatically — no configuration needed
+4. For richer real-time data (timing, loop detection, file diffs), AgentLens also auto-configures OTEL telemetry for each agent — restart any running agent sessions to pick it up
 
 ### Standalone (Docker)
 
@@ -55,13 +55,41 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## Features
 
-- **Telemetry Collection** — Built-in OpenTelemetry receiver captures traces and logs from Copilot, Claude Code, and Codex — no external infrastructure needed
+- **Dual data sources** — Reads local session log files automatically (no setup); optionally receives OpenTelemetry traces for richer data
 - **Sessions Table** — Drill into any session: expand a row to see a full waterfall trace, turn-to-tool flow graph, tool distribution chart, and modified files — all without leaving the session list
 - **Analytics** — Aggregate charts across the active time range: per-agent breakdown, estimated cost with a daily total overlay, token usage per session, and context growth
 - **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, broken down by model in a day-grouped table
 - **Efficiency & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns with suggested prompts to correct course
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat tool calls — per-agent or shared
-- **Export** — Export all sessions as JSON (full or redacted) directly from the SQLite history; raw OTEL span export for replay support is planned
+- **Export** — Export all sessions as JSON (full or redacted) directly from the SQLite history
+
+## Data Sources
+
+AgentLens collects data from two independent sources per agent. Each session row shows a badge — **OTEL** or **Log** — indicating where its data came from. If both sources capture the same session, OTEL always wins and the badge upgrades automatically.
+
+### Log file ingestion (default: on)
+
+AgentLens reads the local session files that Claude Code, Codex, and Copilot CLI write automatically to your home directory. No configuration is required — session history is available immediately after installing the extension.
+
+| Agent | Log file location (Mac/Linux) | Windows |
+| --- | --- | --- |
+| **Claude Code** | `~/.claude/projects/<project>/<session>.jsonl` | `%APPDATA%\Claude\projects\...` |
+| **Codex CLI** | `~/.codex/sessions/<project>/<session>.jsonl` | `%USERPROFILE%\.codex\sessions\...` |
+| **Copilot CLI** | `~/.copilot/session-state/<session>/events.jsonl` | `%USERPROFILE%\.copilot\session-state\...` |
+
+Log ingestion is incremental and runs in the background — large backlogs of historical sessions are loaded without blocking the UI. A 30-second poll picks up new sessions as they complete. Log-sourced sessions show a **Log** badge.
+
+**What log data includes:** session ID, workspace path, model, timestamps, token counts (input, output, cache read/write), tool calls and file operations (Claude Code), user prompt (Claude Code and Copilot CLI).
+
+**What log data does not include:** time-to-first-token, per-tool execution timing, streaming speed, loop detection signals, or structured error telemetry. These require OTEL.
+
+To disable log ingestion: set `agentLens.enableLogIngestion` to `false` in VS Code settings.
+
+### OpenTelemetry traces (default: auto-configured)
+
+The extension also runs a built-in OTEL HTTP receiver on port `4318` and auto-configures each agent to send traces to it on first activation. OTEL data is higher-fidelity: it includes real-time span timing, TTFT, per-tool latency, loop detection signals, and file diff content. Sessions from OTEL show an **OTEL** badge.
+
+See [Manual Configuration](#manual-configuration) for the specific env vars and settings each agent needs.
 
 ## Cost Estimation
 
@@ -213,6 +241,29 @@ docker run -p 127.0.0.1:3001:3000 -p 127.0.0.1:4319:4318 \
 
 Then point your agents at `http://localhost:4319` and open <http://localhost:3001>.
 
+### Native (npx / bunx)
+
+Run the standalone server as a native Node.js process — no Docker required. This also gives the server direct access to your local log files for ingestion.
+
+```bash
+# one-off, no install
+bunx agentlens
+npx agentlens
+
+# or install globally
+npm install -g agentlens
+agentlens
+```
+
+Starts the OTLP receiver on port `4318` and the dashboard at <http://localhost:3000>. Environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `OTLP_PORT` | `4318` | OTLP HTTP receiver port |
+| `UI_PORT` | `3000` | Dashboard port |
+| `DATA_DIR` | `~/.agentlens` | Directory for persistent span data |
+| `BIND_HOST` | `127.0.0.1` | Set to `0.0.0.0` for LAN access |
+
 ### Node.js (from source)
 
 Requires Node.js 18+ and this repository cloned.
@@ -222,13 +273,11 @@ pnpm install
 pnpm run standalone
 ```
 
-Starts the OTLP receiver on port `4318` and the dashboard at <http://localhost:3000>. The standalone server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously:
+The standalone server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously, use different ports:
 
 ```bash
 OTLP_PORT=4319 UI_PORT=3001 pnpm run standalone
 ```
-
-Spans are saved to `~/.agentlens/spans.json` and reloaded on restart. Set `DATA_DIR` to override the location.
 
 ## Automation Prompts File
 
@@ -266,52 +315,64 @@ Open the VS Code Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for
 
 | Command | Description |
 | ------- | ----------- |
-| `AgentLens: Open Dashboard` | Open the full 15-tab dashboard in an editor panel |
-| `AgentLens: Clear Session Data` | Wipe all collected spans from memory |
-| `AgentLens: Export OTEL Data` | Write raw OTEL spans to JSON files in your workspace root (also available in the **Export** dashboard tab) |
-| `AgentLens: Export OTEL Data (Redacted)` | Same, with prompt text, tool inputs, tool results, and PII replaced with `[redacted]` (also available in the **Export** tab) |
+| `AgentLens: Open Dashboard` | Open the full dashboard in an editor panel |
+| `AgentLens: Export OTEL Data` | Write session data to JSON files in your workspace root (also available in the **Export** dashboard tab) |
+| `AgentLens: Export OTEL Data (Redacted)` | Same, with prompt text, tool inputs, tool results, and PII replaced with `[redacted]` |
 
 ## Extension Settings
 
-This extension contributes the following settings:
+| Setting | Default | Description |
+| ------- | ------- | ----------- |
+| `agentLens.otlpPort` | `4318` | Local port for the OTLP trace receiver |
+| `agentLens.enableLogIngestion` | `true` | Read local session log files from Claude Code, Codex, and Copilot CLI. Disable if you only want OTEL data. |
+| `agentLens.sessionRetentionDays` | `90` | How many days to keep session history in the local database |
 
-- `agentLens.otlpPort`: Local port for the OTLP trace receiver (default: `4318`)
+## Agent Data Formats
 
-## Agent Telemetry Formats
+AgentLens collects data from two sources per agent and normalizes both into a shared session model. The **Log** badge indicates log-file data; **OTEL** indicates telemetry data. When both are present for the same session, OTEL wins.
 
-Each AI coding agent emits a different OTEL shape. AgentLens normalizes all three into a shared session model for the dashboard.
+### Claude Code
 
-### Copilot OTEL Format
+**Log files** (automatic, no setup) — `~/.claude/projects/<project>/<session-uuid>.jsonl`
 
-**Format:** OpenTelemetry trace spans with a clean single-trace hierarchy. Each conversation is one trace; LLM calls and tool calls are child spans nested under a session root. No extra configuration needed.
+Each file is one session. `assistant` entries carry per-turn token counts (input, output, cache read/write). `user` entries carry the prompt text. Tool calls are embedded in message content blocks.
 
-**What's included:** Prompt text, token counts (input, output, cache read), model name, time-to-first-token, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.
+Available from logs: prompt, model, workspace, timestamps, all token counts, tool names, files read/written.
+Not in logs: TTFT, per-tool latency, streaming speed, loop signals.
 
-**Gaps:** Cache write token counts are not exposed — Copilot manages cache creation server-side and does not include it in telemetry. Cache read tokens (`gen_ai.usage.cache_read.input_tokens`) are available. No additional configuration unlocks further data — what Copilot exposes is already fully available.
+**OTEL** (richer, requires env config) — trace spans via `/v1/traces` and supplemental log records via `/v1/logs`.
 
----
-
-### Claude Code OTEL Format
-
-**Format:** OpenTelemetry trace spans. The session root span closes when the interaction ends, with LLM calls and tool calls as children. Optional supplemental log records are emitted when enhanced telemetry env vars are set.
-
-**What's included:** With the recommended configuration (all three `OTEL_LOG_*` vars set): prompt text, token counts, model, tool names, tool arguments, file paths, and full file diff content are all available.
-
-**Gaps:** The three `OTEL_LOG_*` env vars are not enabled by default — without them, tool arguments are absent, prompt text is omitted, and file diff content is unavailable. Cache token data is only present when using a model that supports prompt caching.
+With the recommended configuration (all three `OTEL_LOG_*` vars): prompt text, token counts, model, tool names, tool arguments, file paths, and full file diff content are all available. The three `OTEL_LOG_*` vars are not enabled by default — without them, tool arguments are absent and prompt text is omitted.
 
 ---
 
-### Codex OTEL Format
+### Codex CLI
 
-**Format:** Primarily flat OTLP log records (structured JSON events sent to `/v1/logs`), not trace spans. Each session is a stream of log events grouped by conversation and turn identifiers. Adding `trace_exporter` to config also emits timing spans to `/v1/traces`.
+**Log files** (automatic, no setup) — `~/.codex/sessions/<project>/<session-uuid>.jsonl`
 
-**What's included:** With the recommended configuration (`log_user_prompt = true` and both exporters set): prompt text, token counts, model name, time-to-first-token, tool names, tool arguments, tool results, and span timing are all present.
+`turn_context` entries carry the model name. `event_msg` entries with `type: token_count` carry per-turn cumulative token usage. The user's prompt text is not present in this format.
 
-**Gaps:** Codex has less span granularity than Copilot or Claude Code since it is primarily log-based. Without `trace_exporter`, timing data in the Latency tab is limited.
+Available from logs: model, timestamps, token counts (input, output, cache read).
+Not in logs: prompt text, tool names, TTFT, latency.
+
+**OTEL** (richer, requires config) — primarily flat OTLP log records (`/v1/logs`); adding `trace_exporter` also emits timing spans. With `log_user_prompt = true` and both exporters: prompt text, token counts, model, TTFT, tool names and results, and span timing are all present.
 
 ---
 
-> **Note:** Agent observability is evolving rapidly. All three platforms are actively expanding what they expose via OpenTelemetry, and the GenAI semantic conventions are still being standardized. AgentLens will be updated as richer telemetry becomes available.
+### Copilot CLI
+
+**Log files** (automatic, no setup) — `~/.copilot/session-state/<session-uuid>/events.jsonl`
+
+`session.start` carries the model and workspace. `user.message` carries the user prompt. `assistant.message` carries per-turn output token counts. `session.shutdown` carries total context size.
+
+Available from logs: prompt, model, workspace, timestamps, output tokens, total context size, tool names.
+Not in logs: input tokens per turn (estimated from shutdown totals), TTFT, cache token breakdown.
+
+**OTEL** (richer, requires VS Code settings) — trace spans via Copilot's built-in OTEL exporter. Prompt text, token counts (input, output, cache read), model, TTFT, tool names, arguments, and results are all present natively. Cache write counts are not exposed — Copilot manages cache creation server-side.
+
+---
+
+> **Note:** Agent observability is evolving rapidly. All three platforms are actively expanding what they expose, and the GenAI semantic conventions are still being standardized. AgentLens will be updated as richer data becomes available.
 
 ## Additional Features
 

@@ -1,4 +1,4 @@
-Start a session with any supported agent and traces will begin flowing in automatically:
+Past sessions are already loaded from local log files. For live data, start a new agent session:
 
 **Claude Code** — open a terminal and run:
 
@@ -14,4 +14,13 @@ claude
 codex
 ```
 
-The sidebar will update every few seconds as spans arrive. Each session is one prompt-to-response cycle: a single user prompt plus every LLM call and tool invocation needed to produce the final response.
+The sidebar updates as sessions complete. Each session is one prompt-to-response cycle: a user prompt plus every LLM call and tool invocation the agent made.
+
+## Understanding the badges
+
+Every session row shows a source badge:
+
+- **OTEL** — full telemetry data: timing, TTFT, loop detection, file diffs
+- **Log** — local log file data: token counts, tool calls, prompts (where available); no timing
+
+If OTEL data arrives for a session already shown as **Log**, the badge upgrades automatically and the richer data replaces it.
