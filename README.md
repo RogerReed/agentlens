@@ -5,31 +5,53 @@
 
 ![AgentLens demo](media/demo.gif)
 
-Local observability that makes AI agent sessions more transparent — see what's happening inside each run. Available as a VS Code extension or standalone server, with no data leaving your machine. AgentLens collects data two ways: it reads **local session log files** written automatically by Claude Code, Codex, and Copilot CLI (on by default, no setup), and can also receive richer **OpenTelemetry traces** over HTTP for deeper timing, loop detection, and per-tool metrics.
+Local observability that makes AI agent sessions more transparent — see what's happening inside each run. No data leaves your machine.
+
+AgentLens receives **OpenTelemetry traces** from Copilot, Claude Code, and Codex in real time — giving you span timing, time-to-first-token, loop detection, file diffs, and actionable recommendations. It also reads **local session log files** written automatically by each agent as a zero-config fallback, backfilling history and filling gaps when OTEL isn't configured. Both sources are shown in one unified dashboard; OTEL always takes precedence when available.
 
 ## Getting Started
 
-### VS Code Extension
+### Option 1 — VS Code Extension (recommended)
+
+The extension is the richest option: it receives OTEL traces in real time **and** reads local session log files, so you get both live telemetry and full session history automatically.
 
 1. **[Install from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)**
 2. Open the **AgentLens** view from the Activity Bar
-3. Session history from Claude Code, Codex, and Copilot CLI loads automatically — no configuration needed
-4. For richer real-time data (timing, loop detection, file diffs), AgentLens also auto-configures OTEL telemetry for each agent — restart any running agent sessions to pick it up
+3. AgentLens auto-configures OTEL telemetry for Copilot, Claude Code, and Codex — restart any running agent sessions to start streaming traces
+4. Past session history loads automatically from local log files — no extra setup needed
 
-### Standalone (Docker)
+### Option 2 — Native process (bunx / npx)
 
-#### Running AgentLens
+Run the standalone server as a native Node.js process on your local machine — no Docker, no install required. Because it runs directly on your machine it has access to your filesystem, which is required for log file ingestion.
+
+```bash
+# One-off — always uses the latest published version
+bunx agentlens-dashboard
+npx agentlens-dashboard
+
+# Or install globally and run by command name
+npm install -g agentlens-dashboard
+agentlens
+```
+
+Open <http://localhost:3000> after the server starts. The OTLP receiver listens on port `4318`. Configure agents to point at `http://localhost:4318` (see [Manual Configuration](#manual-configuration)).
+
+> **Log file ingestion** is available in the native process run — the server can read local session files from `~/.claude/`, `~/.codex/`, and `~/.copilot/` directly. See [Standalone Mode Options](#standalone-mode-options) for environment variables.
+
+### Option 3 — Docker (OTEL only)
+
+> **Note:** Docker cannot read local session log files from your host machine without explicit volume mounts for each agent directory. Docker mode receives OTEL traces only — log file ingestion is not available. Use the native process option above if you need log file history.
 
 ```bash
 # Ephemeral — data cleared on container stop
 docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 agentlens/agentlens
 
-# Persistent — spans survive restarts (macOS/Linux)
+# Persistent — data survives restarts (macOS/Linux)
 docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 \
   -v ~/.agentlens:/data \
   agentlens/agentlens
 
-# Persistent — spans survive restarts (Windows)
+# Persistent — data survives restarts (Windows)
 docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
   -v "$env:USERPROFILE\.agentlens:/data" `
   agentlens/agentlens
@@ -37,25 +59,26 @@ docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
 
 Open <http://localhost:3000> after the container starts.
 
-#### Configuring Agents
+#### Configuring Agents for Docker / Native
 
 Use the included setup scripts to configure agents automatically, or see [Manual Configuration](#manual-configuration) for the manual steps.
 
 ```bash
-# macOS / Linux — make executable (once), then run
+# macOS / Linux
 chmod +x scripts/configure-agents.sh
 ./scripts/configure-agents.sh
 ```
 
 ```powershell
-# Windows (PowerShell) — if scripts are blocked, allow them first (once):
+# Windows (PowerShell)
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\scripts\configure-agents.ps1
 ```
 
 ## Features
 
-- **Dual data sources** — Reads local session log files automatically (no setup); optionally receives OpenTelemetry traces for richer data
+- **OpenTelemetry collection** — Built-in OTEL receiver captures real-time traces and logs from Copilot, Claude Code, and Codex with no external infrastructure; auto-configured on first activation
+- **Log file ingestion** — Reads local session files written automatically by each agent as a zero-config fallback, backfilling history when OTEL isn't configured (VS Code and native process only)
 - **Sessions Table** — Drill into any session: expand a row to see a full waterfall trace, turn-to-tool flow graph, tool distribution chart, and modified files — all without leaving the session list
 - **Analytics** — Aggregate charts across the active time range: per-agent breakdown, estimated cost with a daily total overlay, token usage per session, and context growth
 - **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, broken down by model in a day-grouped table
@@ -65,11 +88,17 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ## Data Sources
 
-AgentLens collects data from two independent sources per agent. Each session row shows a badge — **OTEL** or **Log** — indicating where its data came from. If both sources capture the same session, OTEL always wins and the badge upgrades automatically.
+AgentLens collects data from two independent sources per agent. Each session row shows a badge — **OTEL** or **Log** — indicating where its data came from. If both capture the same session, OTEL always wins and the badge upgrades automatically.
 
-### Log file ingestion (default: on)
+### OpenTelemetry traces (primary source)
 
-AgentLens reads the local session files that Claude Code, Codex, and Copilot CLI write automatically to your home directory. No configuration is required — session history is available immediately after installing the extension.
+The VS Code extension runs a built-in OTEL HTTP receiver on port `4318` and auto-configures each agent on first activation. The native process and Docker modes also expose the same receiver. OTEL data is the richest source: real-time span timing, time-to-first-token, per-tool latency, loop detection signals, file diff content, and streaming speed. Sessions from OTEL show an **OTEL** badge.
+
+See [Manual Configuration](#manual-configuration) for the specific settings each agent needs. OTEL is the only data source available in Docker mode.
+
+### Log file ingestion (fallback source, VS Code and native process only)
+
+AgentLens also reads the local session files that Claude Code, Codex, and Copilot CLI write automatically to your home directory. This requires no configuration and backfills session history that predates OTEL setup. Log-sourced sessions show a **Log** badge. **Not available in Docker mode** — the container cannot access host log directories without explicit volume mounts for every agent path.
 
 | Agent | Log file location (Mac/Linux) | Windows |
 | --- | --- | --- |
@@ -77,19 +106,13 @@ AgentLens reads the local session files that Claude Code, Codex, and Copilot CLI
 | **Codex CLI** | `~/.codex/sessions/<project>/<session>.jsonl` | `%USERPROFILE%\.codex\sessions\...` |
 | **Copilot CLI** | `~/.copilot/session-state/<session>/events.jsonl` | `%USERPROFILE%\.copilot\session-state\...` |
 
-Log ingestion is incremental and runs in the background — large backlogs of historical sessions are loaded without blocking the UI. A 30-second poll picks up new sessions as they complete. Log-sourced sessions show a **Log** badge.
+Loading is incremental and runs in the background, sorted newest-first so recent sessions appear immediately. A 30-second poll picks up new sessions as they complete.
 
-**What log data includes:** session ID, workspace path, model, timestamps, token counts (input, output, cache read/write), tool calls and file operations (Claude Code), user prompt (Claude Code and Copilot CLI).
+**What log data includes:** session ID, workspace, model, timestamps, token counts (input, output, cache read/write), tool calls and file operations (Claude Code only), user prompt (Claude Code and Copilot CLI).
 
-**What log data does not include:** time-to-first-token, per-tool execution timing, streaming speed, loop detection signals, or structured error telemetry. These require OTEL.
+**What log data does not include:** time-to-first-token, per-tool execution timing, streaming speed, loop detection signals, or structured error telemetry. Enable OTEL for those.
 
 To disable log ingestion: set `agentLens.enableLogIngestion` to `false` in VS Code settings.
-
-### OpenTelemetry traces (default: auto-configured)
-
-The extension also runs a built-in OTEL HTTP receiver on port `4318` and auto-configures each agent to send traces to it on first activation. OTEL data is higher-fidelity: it includes real-time span timing, TTFT, per-tool latency, loop detection signals, and file diff content. Sessions from OTEL show an **OTEL** badge.
-
-See [Manual Configuration](#manual-configuration) for the specific env vars and settings each agent needs.
 
 ## Cost Estimation
 
@@ -145,7 +168,7 @@ Each signal includes a specific recommended action and a **Copy for {Agent}** bu
 
 ## Manual Configuration
 
-The VS Code extension configures agents automatically on first activation. For standalone mode, run the included setup scripts (see [Configuring Agents](#configuring-agents) above). Replace `4318` with your custom port if you changed `agentLens.otlpPort`.
+The VS Code extension configures agents automatically on first activation. For standalone or Docker mode, run the included setup scripts (see [Configuring Agents for Docker / Native](#configuring-agents-for-docker--native) above). Replace `4318` with your custom port if you changed `agentLens.otlpPort`.
 
 ### GitHub Copilot
 
@@ -219,11 +242,32 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
 
 ## Standalone Mode Options
 
-AgentLens runs as a standalone web server outside VS Code — useful for CI, remote machines, or when you prefer a browser tab.
+AgentLens runs as a standalone web server outside VS Code — useful for CI, remote machines, or when you prefer a browser tab over the VS Code sidebar.
 
-### Docker
+### Native process (recommended for local use)
 
-Quick-start commands are in [Getting Started](#standalone-docker). Additional options:
+Runs directly on your machine — no Docker required. Gives the server full access to the local filesystem, which is required for log file ingestion. Quick-start commands are in [Getting Started](#option-2--native-process-bunx--npx) above.
+
+Environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `OTLP_PORT` | `4318` | OTLP HTTP receiver port |
+| `UI_PORT` | `3000` | Dashboard port |
+| `DATA_DIR` | `~/.agentlens` | Directory for persistent span data |
+| `BIND_HOST` | `127.0.0.1` | Set to `0.0.0.0` for LAN access |
+
+The standalone server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously, use different ports:
+
+```bash
+OTLP_PORT=4319 UI_PORT=3001 bunx agentlens-dashboard
+```
+
+### Docker (OTEL only)
+
+> **Log file ingestion is not available in Docker mode.** The container is isolated from the host filesystem. Use the native process option above if you need local session log history.
+
+Quick-start commands are in [Getting Started](#option-3--docker-otel-only). Additional options:
 
 **LAN-accessible** — exposes the dashboard to other devices on your network:
 
@@ -241,42 +285,13 @@ docker run -p 127.0.0.1:3001:3000 -p 127.0.0.1:4319:4318 \
 
 Then point your agents at `http://localhost:4319` and open <http://localhost:3001>.
 
-### Native (npx / bunx)
-
-Run the standalone server as a native Node.js process — no Docker required. This also gives the server direct access to your local log files for ingestion.
-
-```bash
-# one-off, no install
-bunx agentlens
-npx agentlens
-
-# or install globally
-npm install -g agentlens
-agentlens
-```
-
-Starts the OTLP receiver on port `4318` and the dashboard at <http://localhost:3000>. Environment variables:
-
-| Variable | Default | Description |
-| --- | --- | --- |
-| `OTLP_PORT` | `4318` | OTLP HTTP receiver port |
-| `UI_PORT` | `3000` | Dashboard port |
-| `DATA_DIR` | `~/.agentlens` | Directory for persistent span data |
-| `BIND_HOST` | `127.0.0.1` | Set to `0.0.0.0` for LAN access |
-
 ### Node.js (from source)
 
-Requires Node.js 18+ and this repository cloned.
+Requires Node.js 18+ and this repository cloned locally.
 
 ```bash
 pnpm install
 pnpm run standalone
-```
-
-The standalone server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously, use different ports:
-
-```bash
-OTLP_PORT=4319 UI_PORT=3001 pnpm run standalone
 ```
 
 ## Automation Prompts File

@@ -1,18 +1,6 @@
-AgentLens already has your session history. Local log files written by each agent were loaded automatically on activation — no configuration needed.
+AgentLens ran a built-in OTEL receiver and wrote telemetry config for each agent it detected:
 
-## Log file sources (always on)
-
-| Agent | What was loaded |
-| --- | --- |
-| **Claude Code** | `~/.claude/projects/` — full conversation history, token counts, tool calls |
-| **Copilot CLI** | `~/.copilot/session-state/` — sessions, token counts, prompts |
-| **Codex CLI** | `~/.codex/sessions/` — sessions and token counts |
-
-Sessions from log files show a **Log** badge in the Sessions tab.
-
-## OpenTelemetry (richer real-time data)
-
-AgentLens also runs a built-in OTEL receiver and wrote telemetry config for each agent it detected:
+## OpenTelemetry (primary — real-time, richest data)
 
 | Agent | Config written |
 | --- | --- |
@@ -20,6 +8,18 @@ AgentLens also runs a built-in OTEL receiver and wrote telemetry config for each
 | **GitHub Copilot** | VS Code user settings |
 | **Codex CLI** | `~/.codex/config.toml` |
 
-OTEL adds timing, loop detection, file diffs, and streaming speed on top of what log files provide. Sessions from OTEL show an **OTEL** badge and automatically replace any Log-sourced entry for the same session.
+OTEL gives you real-time span timing, time-to-first-token, loop detection, file diffs, and streaming speed. Sessions from OTEL show an **OTEL** badge.
 
 > **Restart any running agent sessions** to pick up the OTEL config. No external infrastructure is required — everything stays on-device.
+
+## Log files (fallback — history, no extra setup)
+
+AgentLens also loaded session history from local log files each agent writes automatically:
+
+| Agent | What was loaded |
+| --- | --- |
+| **Claude Code** | `~/.claude/projects/` — conversation history, token counts, tool calls |
+| **Copilot CLI** | `~/.copilot/session-state/` — sessions, token counts, prompts |
+| **Codex CLI** | `~/.codex/sessions/` — sessions and token counts |
+
+Sessions from log files show a **Log** badge. When OTEL data arrives for the same session, the badge automatically upgrades to **OTEL** and the richer data replaces the log entry.

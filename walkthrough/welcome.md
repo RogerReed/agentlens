@@ -2,18 +2,16 @@ AgentLens gives you local observability into your AI agent sessions — see what
 
 ## Two data sources, one dashboard
 
-AgentLens collects data two ways:
+**OpenTelemetry traces (primary)** — the extension runs a built-in OTEL receiver and auto-configures each agent to stream live telemetry. OTEL is the richest source: real-time span timing, time-to-first-token, loop detection, file diffs, and streaming speed. Sessions show an **OTEL** badge.
 
-**Local log files (on by default)** — reads the session files that each agent writes automatically to your home directory. Session history appears immediately after installing, with no setup required. Each session row shows a **Log** badge.
-
-**OpenTelemetry traces (auto-configured)** — the extension also runs a built-in OTEL receiver and configures each agent to stream live telemetry to it. OTEL data is richer: it includes real-time timing, loop detection, and file diffs. Sessions from OTEL show an **OTEL** badge and replace Log-sourced sessions for the same session ID.
+**Local log files (fallback)** — the extension also reads session files each agent writes automatically to your home directory. No setup required — session history appears immediately. Sessions show a **Log** badge and are automatically upgraded to OTEL when live telemetry arrives for the same session.
 
 ## What you can see
 
 - **Token usage** per session, turn, and tool call
-- **Latency breakdown** across LLM calls, tool executions, and I/O (OTEL only)
-- **Files changed** with before/after diffs (OTEL only)
-- **Loop and malfunction detection** — tool deadlocks, error spirals, context accumulation (OTEL only)
+- **Latency breakdown** across LLM calls, tool executions, and I/O (OTEL)
+- **Files changed** with before/after diffs (OTEL)
+- **Loop and malfunction detection** — tool deadlocks, error spirals, context accumulation (OTEL)
 - **Efficiency recommendations** with one-click actions
 - **Cost estimates** per session and per day
 
