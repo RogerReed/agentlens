@@ -6111,15 +6111,14 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   function SearchFilterBar() {
     const text = sessionTextFilter.value;
     const isSessionsTab = normalizeTabId(activeTab.value) === "sessions";
-    const sortKey = sessionSortKey.value;
-    const sortDir = sessionSortDir.value;
-    function onSortClick(key) {
-      if (sessionSortKey.value === key) {
-        sessionSortDir.value = sessionSortDir.value === "desc" ? "asc" : "desc";
-      } else {
-        sessionSortKey.value = key;
-        sessionSortDir.value = "desc";
-      }
+    const isFiltered = text !== "" || selectedAgentFilter.value !== "all" || sessionLimit.value !== 25 || timeRange.value.preset !== "all" || sessionSortKey.value !== "start_time" || sessionSortDir.value !== "desc";
+    function resetFilters() {
+      sessionTextFilter.value = "";
+      selectedAgentFilter.value = "all";
+      sessionLimit.value = 25;
+      timeRange.value = { preset: "all" };
+      sessionSortKey.value = "start_time";
+      sessionSortDir.value = "desc";
     }
     return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap", children: [
       /* @__PURE__ */ u4(
@@ -6135,27 +6134,18 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         }
       ),
       isSessionsTab && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("span", { style: "font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);white-space:nowrap", children: "Sort" }),
-        ["cost", "duration_ms", "total_tokens"].map((key) => {
-          const labels = { cost: "Cost", duration_ms: "Duration", total_tokens: "Tokens" };
-          const active = sortKey === key;
-          return /* @__PURE__ */ u4(
-            "button",
-            {
-              onClick: () => onSortClick(key),
-              style: `padding:1px 7px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid ${active ? "var(--accent)" : "var(--vscode-panel-border)"};background:${active ? "var(--accent)" : "transparent"};color:${active ? "var(--vscode-button-foreground,#fff)" : "var(--muted)"}`,
-              children: [
-                labels[key],
-                active ? sortDir === "desc" ? " \u25BC" : " \u25B2" : ""
-              ]
-            },
-            key
-          );
-        }),
         /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
           filteredSessions.value.length,
           " sessions"
-        ] })
+        ] }),
+        isFiltered && /* @__PURE__ */ u4(
+          "button",
+          {
+            onClick: resetFilters,
+            style: "padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)",
+            children: "Reset"
+          }
+        )
       ] })
     ] });
   }
