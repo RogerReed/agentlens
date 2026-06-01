@@ -125,6 +125,14 @@
     if (!currentSession) {
       if (block) block.style.display = "none";
       if (empty) empty.style.display = "block";
+      const agentEl = document.getElementById("sb-agent");
+      if (agentEl) agentEl.innerHTML = "";
+      const durEl = document.getElementById("sb-dur");
+      if (durEl) durEl.textContent = "";
+      const promptEl = document.getElementById("sb-prompt");
+      if (promptEl) promptEl.textContent = "";
+      const modelEl = document.getElementById("sb-model");
+      if (modelEl) modelEl.textContent = "";
       renderFooter();
       return;
     }
