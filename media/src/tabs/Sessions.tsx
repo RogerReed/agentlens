@@ -21,6 +21,29 @@ import type { SessionSummaryCard } from '../types'
 
 type Section = 'overview' | 'trace' | 'files' | 'flow' | 'tools'
 
+function PromptBlock({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const PREVIEW_CHARS = 300
+  const truncated = !expanded && text.length > PREVIEW_CHARS
+  const display = truncated ? text.slice(0, PREVIEW_CHARS).trimEnd() + '…' : text
+  return (
+    <div style="margin-bottom:10px">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:4px">Prompt</div>
+      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:11px;white-space:pre-wrap;word-break:break-word;line-height:1.5;color:var(--foreground);max-height:200px;overflow-y:auto">
+        {display}
+      </div>
+      {text.length > PREVIEW_CHARS && (
+        <button
+          onClick={() => setExpanded(e => !e)}
+          style="margin-top:4px;font-size:10px;color:var(--vscode-textLink-foreground,#4fc3f7);background:none;border:none;cursor:pointer;padding:0"
+        >
+          {expanded ? 'Show less' : 'Show full prompt'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
   const [section, setSection] = useState<Section>('overview')
   const timelines = sessionTimelines.value
@@ -76,6 +99,10 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
 
         {section === 'overview' && (
           <div>
+            {sess.userRequest
+              ? <PromptBlock text={sess.userRequest} />
+              : <div style="margin-bottom:10px;font-size:11px;color:var(--muted)">Prompt not available for this session</div>
+            }
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:10px">
               {[
                 { k: 'LLM calls',  v: String(sess.totalLlmCalls) },
@@ -211,9 +238,7 @@ function SessionRow({ sess }: { sess: SessionSummaryCard }) {
         {/* Agent dot + data source badge */}
         <td style="padding:4px 4px;width:auto;white-space:nowrap">
           <span style={`display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0;vertical-align:middle`} />
-          {sess.dataSource === 'log' && (
-            <span style="margin-left:4px" dangerouslySetInnerHTML={{ __html: getDataSourceBadgeHtml('log') }} />
-          )}
+          <span style="margin-left:4px" dangerouslySetInnerHTML={{ __html: getDataSourceBadgeHtml(sess.dataSource ?? 'otel') }} />
         </td>
 
         {/* Timestamp */}
@@ -224,10 +249,10 @@ function SessionRow({ sess }: { sess: SessionSummaryCard }) {
         {/* Prompt */}
         <td style="padding:4px 6px;max-width:0;width:100%">
           <span
-            style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)"
-            title={prompt}
+            style={`display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;${prompt ? 'font-style:italic;color:var(--foreground)' : 'color:var(--muted)'}`}
+            title={prompt || undefined}
           >
-            {prompt || <span style="color:var(--muted)">—</span>}
+            {prompt || '—'}
           </span>
         </td>
 
