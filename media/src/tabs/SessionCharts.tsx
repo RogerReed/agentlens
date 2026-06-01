@@ -166,8 +166,9 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
         ctx.fillText('T' + maxTurns, xPos(maxTurns), pad.top + chartH + 4)
       }
 
-      // Draw dim lines first, then the highlighted one on top
-      const highlighted = fId ? seriesData.findIndex(s => s.sessionId === fId) : activeIdx
+      // Draw dim lines first, then the highlighted one on top.
+      // Only use focusedSessionId when paused — while cycling, activeIdx drives the highlight.
+      const highlighted = (fId && pausedRef.current) ? seriesData.findIndex(s => s.sessionId === fId) : activeIdx
       const order = [...seriesData.keys()].sort((a, b) => (a === highlighted ? 1 : 0) - (b === highlighted ? 1 : 0))
 
       order.forEach(i => {
@@ -194,10 +195,19 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
 
     drawFnRef.current = draw
     clearTimer()
-    activeIdxRef.current = 0
-    pausedRef.current = false
-    setPaused(false)
-    draw(0)
+
+    // Only reset index + unpause when the session list itself changes.
+    // sessions prop is a new array reference on every parent render, so without
+    // this guard the animation resets to session 0 on every SSE update.
+    const prevIds = growthStateRef.current?.series.map(s => s.sessionId).join(',') ?? ''
+    const newIds = seriesData.map(s => s.sessionId).join(',')
+    if (prevIds !== newIds) {
+      activeIdxRef.current = 0
+      pausedRef.current = false
+      setPaused(false)
+    }
+
+    draw(activeIdxRef.current)
     startTimer()
 
     return () => clearTimer()
