@@ -95,7 +95,7 @@ export function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
         <text
           x={W - 8} y={pad.top + chartH / 2}
           transform={`rotate(90,${W - 8},${pad.top + chartH / 2})`}
-          text-anchor="middle" fill="#d4af37" font-size="9"
+          text-anchor="middle" fill="var(--vscode-charts-green,#81c784)" font-size="9"
         >Cost</text>
 
         {/* Grid + left labels */}
@@ -108,7 +108,7 @@ export function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
 
         {/* Cost axis labels (right) */}
         {[0, 1, 2, 3, 4].map(i => (
-          <text key={i} x={W - pad.right + 4} y={pad.top + chartH * (1 - i / 4)} text-anchor="start" dominant-baseline="middle" fill="#d4af37" font-size="9">
+          <text key={i} x={W - pad.right + 4} y={pad.top + chartH * (1 - i / 4)} text-anchor="start" dominant-baseline="middle" fill="var(--vscode-charts-green,#81c784)" font-size="9">
             {'$' + (maxCost * i / 4).toFixed(maxCost < 0.1 ? 3 : 2)}
           </text>
         ))}
@@ -174,12 +174,12 @@ export function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
 
         {/* Cost line overlay */}
         {rows.length > 1 && (
-          <polyline points={costPoints.join(' ')} fill="none" stroke="#d4af37" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.9" />
+          <polyline points={costPoints.join(' ')} fill="none" stroke="var(--vscode-charts-green,#81c784)" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.9" />
         )}
         {rows.map((r, i) => {
           if (r.costUsd === 0) return null
           const cy = pad.top + chartH * (1 - r.costUsd / maxCost)
-          return <circle key={i} cx={cx(i)} cy={cy} r="1.5" fill="#d4af37" />
+          return <circle key={i} cx={cx(i)} cy={cy} r="1.5" fill="var(--vscode-charts-green,#81c784)" />
         })}
       </svg>
 
@@ -190,7 +190,7 @@ export function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
           ['var(--vscode-charts-green,#81c784)',  'Cache read',   false],
           ['var(--vscode-charts-yellow,#ffb74d)', 'Cache write',  false],
           ['var(--vscode-charts-red,#e57373)',    'Output tokens', true],
-          ['#d4af37', 'Cost',          true],
+          ['var(--vscode-charts-green,#81c784)', 'Cost',          true],
         ] as const).map(([color, label, isDashed]) => (
           <span key={label} style="display:flex;align-items:center;gap:4px">
             {isDashed
@@ -211,7 +211,7 @@ export function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
           <div>Cache read: {formatCompact(hovRow.cacheReadTokens)}</div>
           <div>Cache write: {formatCompact(hovRow.cacheCreateTokens)}</div>
           <div>Output tokens: {formatCompact(hovRow.outputTokens)}</div>
-          <div style="margin-top:4px;color:#d4af37">Cost: <strong>{'$' + (hovRow.costUsd).toFixed(3)}</strong></div>
+          <div style="margin-top:4px;color:var(--vscode-charts-green,#81c784)">Cost: <strong>{'$' + (hovRow.costUsd).toFixed(3)}</strong></div>
         </div>
       )}
     </div>
@@ -271,7 +271,7 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
       ctx.fillText('$' + val.toFixed(val < 0.01 ? 3 : 2), pad.left - 4, pad.top + chartH * i / 4)
     }
     // Right Y axis — daily total
-    ctx.fillStyle = 'rgba(212,175,55,0.85)'; ctx.textAlign = 'left'
+    ctx.fillStyle = 'rgba(129,199,132,0.85)'; ctx.textAlign = 'left'
     for (let i = 0; i <= 4; i++) {
       const val = maxDailyTotal * (4 - i) / 4
       ctx.fillText('$' + val.toFixed(val < 0.1 ? 3 : 2), pad.left + chartW + 4, pad.top + chartH * i / 4)
@@ -353,7 +353,7 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
         pts.push({ x: midX, y: lineY })
       }
 
-      ctx.strokeStyle = 'rgba(212,175,55,0.9)'
+      ctx.strokeStyle = 'rgba(129,199,132,0.9)'
       ctx.lineWidth = 1.5
       ctx.setLineDash([])
       ctx.beginPath()
@@ -361,7 +361,7 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
       ctx.stroke()
 
       // Dot at each day midpoint
-      ctx.fillStyle = 'rgba(212,175,55,0.95)'
+      ctx.fillStyle = 'rgba(129,199,132,0.95)'
       pts.forEach(p => {
         ctx.beginPath()
         ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2)
