@@ -1,4 +1,4 @@
-The sidebar gives you a compact live view. For the full experience, open the **editor panel dashboard** — a 6-tab interface that fits on a wide monitor alongside your code.
+The sidebar gives you a compact live view. For the full experience, open the **editor panel dashboard** — a 6-tab interface you can open alongside your code.
 
 ## Dashboard tabs
 
