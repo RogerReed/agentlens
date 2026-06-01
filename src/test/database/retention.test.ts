@@ -33,7 +33,7 @@ function makeStorageUri(dir: string): vscode.Uri {
 
 function makeCard(id: string, startIso: string): SessionSummaryCard {
   return {
-    sessionId: id, traceId: id, source: 'copilot', userRequest: 'test',
+    sessionId: id, traceId: id, source: 'copilot', dataSource: 'otel', userRequest: 'test',
     model: 'gpt-4o', turns: 1, inputTokens: 100, outputTokens: 20,
     cacheReadTokens: 0, cacheCreateTokens: 0, cacheHitRate: 0,
     durationMs: 1000, startTime: startIso,

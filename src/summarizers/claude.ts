@@ -302,6 +302,7 @@ export function buildClaudeSessions(
       sessionId: interaction.spanId,
       traceId: interaction.traceId || '',
       source: 'claude_code' as const,
+      dataSource: 'otel' as const,
       userRequest,
       model,
       turns: totalLlmCalls,

@@ -61,10 +61,6 @@
         "icon": "$(graph)"
       },
       {
-        "command": "agentLens.clearSessions",
-        "title": "AgentLens: Clear Session Data"
-      },
-      {
         "command": "agentLens.exportData",
         "title": "AgentLens: Export OTEL Data"
       },
@@ -148,10 +144,24 @@
           "type": "number",
           "default": 4318,
           "description": "Local port for OTLP trace receiver"
+        },
+        "agentLens.enableLogIngestion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Read local session logs for Claude Code, Codex, and Copilot CLI as a data source. Log data has lower fidelity than OTEL — timing, speed, and loop signals are not available. OTEL data always takes precedence: if a session exists from OTEL, the log file is ignored. Loading is done incrementally in the background and will not block the UI."
         }
       }
     }
   },
+  "bin": {
+    "agentlens": "./standalone/cli.js"
+  },
+  "files": [
+    "dist/",
+    "media/",
+    "standalone/cli.js",
+    "standalone/server.js"
+  ],
   "scripts": {
     "vscode:prepublish": "pnpm run package",
     "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",

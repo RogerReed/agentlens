@@ -6,6 +6,7 @@ import {
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
+  getDataSourceBadgeHtml,
 } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
@@ -207,9 +208,12 @@ function SessionRow({ sess }: { sess: SessionSummaryCard }) {
           {expanded ? '▼' : '▶'}
         </td>
 
-        {/* Agent dot */}
-        <td style="padding:4px 4px;width:10px">
-          <span style={`display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0`} />
+        {/* Agent dot + data source badge */}
+        <td style="padding:4px 4px;width:auto;white-space:nowrap">
+          <span style={`display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0;vertical-align:middle`} />
+          {sess.dataSource === 'log' && (
+            <span style="margin-left:4px" dangerouslySetInnerHTML={{ __html: getDataSourceBadgeHtml('log') }} />
+          )}
         </td>
 
         {/* Timestamp */}
@@ -322,12 +326,8 @@ export function Sessions() {
         </tbody>
       </table>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)">
-        <span>{(sessionSummary.value?.sessions?.length ?? 0)} sessions stored</span>
-        <button
-          style="padding:2px 8px;font-size:10px;cursor:pointer;border:1px solid var(--vscode-testing-iconFailed,#f44);border-radius:3px;background:transparent;color:var(--vscode-testing-iconFailed,#f44)"
-          onClick={() => vscode?.postMessage({ type: 'confirmClear' })}
-        >Clear All Data</button>
+      <div style="padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)">
+        <span>{(sessionSummary.value?.sessions?.length ?? 0)} sessions stored — managed by retention policy</span>
       </div>
     </div>
   )

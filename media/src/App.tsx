@@ -172,21 +172,6 @@ export function App() {
         } else {
           searchResults.value = data
         }
-      } else if (msg.type === 'clearAll') {
-        toolCalls.value = {}
-        sessionSummary.value = null
-        sessionTimelines.value = {}
-        blobCache.value = {}
-        swRetainedSessions.value = []
-        swLastSessionCount.value = 0
-        dismissedSpanIds.clear()
-        dailyStats.value = []
-        lifetimeStats.value = null
-        burnRateData.value = null
-        searchResults.value = null
-        focusedSessionId.value = null
-        rangedSearchResults.value = null
-        timeRange.value = { preset: 'all' }
       }
     }
     window.addEventListener('message', handler)

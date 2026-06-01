@@ -249,6 +249,7 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
       sessionId: promptSpan?.spanId || `codex-${traceId}`,
       traceId,
       source: 'codex' as const,
+      dataSource: 'otel' as const,
       conversationId: conversationId || undefined,
       userRequest,
       model,
