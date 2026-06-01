@@ -103,10 +103,12 @@
     sessionCount: __SIDEBAR_INIT__.sessionCount,
     agentSources: __SIDEBAR_INIT__.agentSources,
     currentSession: __SIDEBAR_INIT__.currentSession,
-    burnRate: __SIDEBAR_INIT__.burnRate
+    burnRate: __SIDEBAR_INIT__.burnRate,
+    avgInputTokens: __SIDEBAR_INIT__.avgInputTokens ?? 1,
+    avgOutputTokens: __SIDEBAR_INIT__.avgOutputTokens ?? 1
   };
   function render() {
-    const { isActive, lastActivityMs, sessionCount, currentSession, burnRate } = state;
+    const { isActive, lastActivityMs, sessionCount, currentSession, burnRate, avgInputTokens, avgOutputTokens } = state;
     const dot = document.getElementById("sb-dot");
     const statusText = document.getElementById("sb-status-text");
     const agoEl = document.getElementById("sb-ago");
@@ -161,15 +163,15 @@
     }
     const tokenBars = document.getElementById("sb-token-bars");
     const tokenWaiting = document.getElementById("sb-token-waiting");
-    const totalTokens = (currentSession.inputTokens ?? 0) + (currentSession.outputTokens ?? 0);
-    if (totalTokens > 0) {
+    const inp = currentSession.inputTokens ?? 0;
+    const out = currentSession.outputTokens ?? 0;
+    if (inp > 0 || out > 0) {
       if (tokenWaiting) tokenWaiting.style.display = "none";
       if (tokenBars) {
-        const inp = currentSession.inputTokens ?? 0;
-        const out = currentSession.outputTokens ?? 0;
-        const total = inp + out;
-        const inPct = Math.round(inp / total * 100);
-        const outPct = 100 - inPct;
+        const inScale = Math.max(avgInputTokens, inp, 1);
+        const outScale = Math.max(avgOutputTokens, out, 1);
+        const inPct = Math.min(100, Math.round(inp / inScale * 100));
+        const outPct = Math.min(100, Math.round(out / outScale * 100));
         tokenBars.innerHTML = `<div style="display:flex;flex-direction:column;gap:3px"><div style="display:flex;align-items:center;gap:5px;font-size:10px"><span style="width:36px;color:#FFB74D;text-align:right;font-variant-numeric:tabular-nums">${fmt(inp)}</span><div style="flex:1;height:5px;background:var(--vscode-panel-border);border-radius:2px"><div style="width:${inPct}%;height:100%;background:#FFB74D;border-radius:2px"></div></div><span style="color:var(--muted);font-size:9px;width:24px">in</span></div><div style="display:flex;align-items:center;gap:5px;font-size:10px"><span style="width:36px;color:#81C784;text-align:right;font-variant-numeric:tabular-nums">${fmt(out)}</span><div style="flex:1;height:5px;background:var(--vscode-panel-border);border-radius:2px"><div style="width:${outPct}%;height:100%;background:#81C784;border-radius:2px"></div></div><span style="color:var(--muted);font-size:9px;width:24px">out</span></div></div>`;
       }
     } else {
@@ -181,25 +183,19 @@
     const cost = currentSession.costUsd ?? 0;
     if (costVal) costVal.textContent = cost > 0 ? cost < 0.01 ? "<$0.01" : "$" + cost.toFixed(2) : "\u2014";
     if (costModel) costModel.textContent = currentSession.model || "";
-    const burnRow = document.getElementById("sb-burn-row");
-    if (burnRow) {
-      if (isActive) {
-        burnRow.style.display = "";
-        const burnEl = document.getElementById("sb-burn");
-        const burnWaiting = document.getElementById("sb-burn-waiting");
-        if (burnRate) {
-          const tpm = fmt(Math.round(burnRate.tokensPerMinute));
-          const cph = burnRate.costPerHour > 1e-3 ? ` \xB7 $${burnRate.costPerHour.toFixed(2)}/hr` : "";
-          if (burnEl) burnEl.textContent = `${tpm} tokens/min${cph}`;
-          if (burnEl) burnEl.style.display = "";
-          if (burnWaiting) burnWaiting.style.display = "none";
-        } else {
-          if (burnEl) burnEl.style.display = "none";
-          if (burnWaiting) burnWaiting.style.display = "";
-        }
-      } else {
-        burnRow.style.display = "none";
+    const burnEl = document.getElementById("sb-burn");
+    const burnWaiting = document.getElementById("sb-burn-waiting");
+    if (isActive && burnRate) {
+      const tpm = fmt(Math.round(burnRate.tokensPerMinute));
+      const cph = burnRate.costPerHour > 1e-3 ? ` \xB7 $${burnRate.costPerHour.toFixed(2)}/hr` : "";
+      if (burnEl) {
+        burnEl.textContent = `${tpm} tokens/min${cph}`;
+        burnEl.style.display = "";
       }
+      if (burnWaiting) burnWaiting.style.display = "none";
+    } else {
+      if (burnEl) burnEl.style.display = "none";
+      if (burnWaiting) burnWaiting.style.display = "";
     }
     const turnsEl = document.getElementById("sb-turns");
     const toolsEl = document.getElementById("sb-tools");
@@ -247,6 +243,8 @@
     }
     if ("currentSession" in msg) state.currentSession = msg.currentSession ?? null;
     if ("burnRate" in msg) state.burnRate = msg.burnRate ?? null;
+    if (msg.avgInputTokens != null) state.avgInputTokens = msg.avgInputTokens;
+    if (msg.avgOutputTokens != null) state.avgOutputTokens = msg.avgOutputTokens;
     render();
   });
   var vscode = typeof acquireVsCodeApi !== "undefined" ? acquireVsCodeApi() : null;

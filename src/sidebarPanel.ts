@@ -92,6 +92,12 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
 
     const latest = all.length > 0 ? all[0] : null
 
+    // Per-type averages for independent bar scaling
+    const avgInputTokens = all.length > 0
+      ? all.reduce((s, x) => s + x.inputTokens, 0) / all.length : 1
+    const avgOutputTokens = all.length > 0
+      ? all.reduce((s, x) => s + x.outputTokens, 0) / all.length : 1
+
     // Burn rate for the current session — use latest if the session is active
     const burnRateResult = activity.isActive && latest
       ? this.repo.queryBurnRate(latest.sessionId)
@@ -141,6 +147,8 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       sessionCount,
       agentSources,
       currentSession,
+      avgInputTokens,
+      avgOutputTokens,
       burnRate: burnRateResult ? {
         tokensPerMinute: Math.round(burnRateResult.burnRate.tokensPerMinute),
         costPerHour: burnRateResult.burnRate.costPerHour,
@@ -208,6 +216,9 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       costPerHour: burnRateResult.burnRate.costPerHour,
     } : null
 
+    const avgInputTokens = all.length > 0 ? all.reduce((s, x) => s + x.inputTokens, 0) / all.length : 1
+    const avgOutputTokens = all.length > 0 ? all.reduce((s, x) => s + x.outputTokens, 0) / all.length : 1
+
     const initData = JSON.stringify({
       lastActivityMs: activity.lastMs,
       agentSources,
@@ -215,6 +226,8 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       isActive: activity.isActive,
       currentSession,
       burnRate,
+      avgInputTokens,
+      avgOutputTokens,
     })
 
     const sidebarJsUri = webview.asWebviewUri(
@@ -342,36 +355,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     <!-- Session block (hidden when no sessions) -->
     <div id="sb-session-block" style="display:none">
 
-      <!-- Context growth sparkline -->
-      <div class="sb-card">
-        <div class="sb-section-label">Context Growth</div>
-        <canvas id="sb-sparkline"></canvas>
-        <div id="sb-turn-label" class="sb-turn-label"></div>
-        <div id="sb-sparkline-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic;padding:2px 0">Waiting for data…</div>
-      </div>
-
-      <!-- Token breakdown (input / output) -->
-      <div class="sb-card" id="sb-tokens-card">
-        <div class="sb-section-label">Tokens</div>
-        <div id="sb-token-bars" style="margin-top:4px"></div>
-        <div id="sb-token-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic;padding:2px 0">Waiting for data…</div>
-      </div>
-
-      <!-- Estimated cost -->
-      <div class="sb-card" id="sb-cost-card">
-        <div class="sb-section-label">Estimated Cost</div>
-        <div id="sb-cost-val" style="font-size:16px;font-weight:700;color:var(--vscode-charts-green,#81c784)">—</div>
-        <div id="sb-cost-model" class="sb-muted" style="font-size:9px;margin-top:1px"></div>
-      </div>
-
-      <!-- Burn rate (active only) -->
-      <div class="sb-card" id="sb-burn-row" style="display:none">
-        <div class="sb-section-label">Burn Rate</div>
-        <div id="sb-burn" class="sb-burn"></div>
-        <div id="sb-burn-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic">Waiting for data…</div>
-      </div>
-
-      <!-- Key counters -->
+      <!-- Key counters (shown first) -->
       <div class="sb-card">
         <div class="sb-counters">
           <div>
@@ -391,6 +375,36 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
             <div class="sb-counter-key">Cache</div>
           </div>
         </div>
+      </div>
+
+      <!-- Context growth sparkline -->
+      <div class="sb-card">
+        <div class="sb-section-label">Context Growth</div>
+        <canvas id="sb-sparkline"></canvas>
+        <div id="sb-turn-label" class="sb-turn-label"></div>
+        <div id="sb-sparkline-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic;padding:2px 0">Waiting for data…</div>
+      </div>
+
+      <!-- Token breakdown (input / output) -->
+      <div class="sb-card" id="sb-tokens-card">
+        <div class="sb-section-label">Tokens</div>
+        <div id="sb-token-bars" style="margin-top:4px"></div>
+        <div id="sb-token-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic;padding:2px 0">Waiting for data…</div>
+      </div>
+
+      <!-- Estimated cost -->
+      <div class="sb-card" id="sb-cost-card">
+        <div class="sb-section-label">Estimated Cost</div>
+        <div id="sb-cost-val" style="font-size:16px;font-weight:700;color:var(--vscode-charts-green,#81c784)">—</div>
+        <div class="sb-muted" style="font-size:9px;margin-top:1px">this session</div>
+        <div id="sb-cost-model" class="sb-muted" style="font-size:9px"></div>
+      </div>
+
+      <!-- Burn rate -->
+      <div class="sb-card" id="sb-burn-row">
+        <div class="sb-section-label">Burn Rate</div>
+        <div id="sb-burn" class="sb-burn"></div>
+        <div id="sb-burn-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic">Waiting for data…</div>
       </div>
 
     </div>

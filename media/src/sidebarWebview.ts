@@ -35,6 +35,8 @@ interface SidebarInit {
   isActive: boolean
   currentSession: CurrentSession | null
   burnRate: BurnRate | null
+  avgInputTokens: number
+  avgOutputTokens: number
 }
 
 declare const __SIDEBAR_INIT__: SidebarInit
@@ -169,12 +171,14 @@ let state = {
   agentSources: __SIDEBAR_INIT__.agentSources,
   currentSession: __SIDEBAR_INIT__.currentSession,
   burnRate: __SIDEBAR_INIT__.burnRate,
+  avgInputTokens: __SIDEBAR_INIT__.avgInputTokens ?? 1,
+  avgOutputTokens: __SIDEBAR_INIT__.avgOutputTokens ?? 1,
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
 
 function render() {
-  const { isActive, lastActivityMs, sessionCount, currentSession, burnRate } = state
+  const { isActive, lastActivityMs, sessionCount, currentSession, burnRate, avgInputTokens, avgOutputTokens } = state
 
   // Status row
   const dot = document.getElementById('sb-dot')
@@ -245,18 +249,18 @@ function render() {
     turnLabel.textContent = n > 0 ? `Turn ${n} · ${fmt(last)} tokens` : ''
   }
 
-  // Token bars (input / output)
+  // Token bars (input / output) — each bar scales independently against its session average
   const tokenBars = document.getElementById('sb-token-bars')
   const tokenWaiting = document.getElementById('sb-token-waiting')
-  const totalTokens = (currentSession.inputTokens ?? 0) + (currentSession.outputTokens ?? 0)
-  if (totalTokens > 0) {
+  const inp = currentSession.inputTokens ?? 0
+  const out = currentSession.outputTokens ?? 0
+  if (inp > 0 || out > 0) {
     if (tokenWaiting) tokenWaiting.style.display = 'none'
     if (tokenBars) {
-      const inp = currentSession.inputTokens ?? 0
-      const out = currentSession.outputTokens ?? 0
-      const total = inp + out
-      const inPct = Math.round(inp / total * 100)
-      const outPct = 100 - inPct
+      const inScale = Math.max(avgInputTokens, inp, 1)
+      const outScale = Math.max(avgOutputTokens, out, 1)
+      const inPct = Math.min(100, Math.round(inp / inScale * 100))
+      const outPct = Math.min(100, Math.round(out / outScale * 100))
       tokenBars.innerHTML =
         `<div style="display:flex;flex-direction:column;gap:3px">` +
         `<div style="display:flex;align-items:center;gap:5px;font-size:10px">` +
@@ -282,26 +286,17 @@ function render() {
   if (costVal) costVal.textContent = cost > 0 ? (cost < 0.01 ? '<$0.01' : '$' + cost.toFixed(2)) : '—'
   if (costModel) costModel.textContent = currentSession.model || ''
 
-  // Burn rate row
-  const burnRow = document.getElementById('sb-burn-row')
-  if (burnRow) {
-    if (isActive) {
-      burnRow.style.display = ''
-      const burnEl = document.getElementById('sb-burn')
-      const burnWaiting = document.getElementById('sb-burn-waiting')
-      if (burnRate) {
-        const tpm = fmt(Math.round(burnRate.tokensPerMinute))
-        const cph = burnRate.costPerHour > 0.001 ? ` · $${burnRate.costPerHour.toFixed(2)}/hr` : ''
-        if (burnEl) burnEl.textContent = `${tpm} tokens/min${cph}`
-        if (burnEl) burnEl.style.display = ''
-        if (burnWaiting) burnWaiting.style.display = 'none'
-      } else {
-        if (burnEl) burnEl.style.display = 'none'
-        if (burnWaiting) burnWaiting.style.display = ''
-      }
-    } else {
-      burnRow.style.display = 'none'
-    }
+  // Burn rate row — always visible when session exists; waiting when not yet active
+  const burnEl = document.getElementById('sb-burn')
+  const burnWaiting = document.getElementById('sb-burn-waiting')
+  if (isActive && burnRate) {
+    const tpm = fmt(Math.round(burnRate.tokensPerMinute))
+    const cph = burnRate.costPerHour > 0.001 ? ` · $${burnRate.costPerHour.toFixed(2)}/hr` : ''
+    if (burnEl) { burnEl.textContent = `${tpm} tokens/min${cph}`; burnEl.style.display = '' }
+    if (burnWaiting) burnWaiting.style.display = 'none'
+  } else {
+    if (burnEl) burnEl.style.display = 'none'
+    if (burnWaiting) burnWaiting.style.display = ''
   }
 
   // Counters
@@ -360,6 +355,8 @@ interface UpdateMsg {
   agentSources?: string[]
   currentSession?: CurrentSession | null
   burnRate?: BurnRate | null
+  avgInputTokens?: number
+  avgOutputTokens?: number
 }
 
 window.addEventListener('message', (e: MessageEvent<UpdateMsg>) => {
@@ -371,6 +368,8 @@ window.addEventListener('message', (e: MessageEvent<UpdateMsg>) => {
   if (msg.agentSources) { state.agentSources = msg.agentSources; renderAgentKey() }
   if ('currentSession' in msg) state.currentSession = msg.currentSession ?? null
   if ('burnRate' in msg) state.burnRate = msg.burnRate ?? null
+  if (msg.avgInputTokens != null) state.avgInputTokens = msg.avgInputTokens
+  if (msg.avgOutputTokens != null) state.avgOutputTokens = msg.avgOutputTokens
   render()
 })
 
