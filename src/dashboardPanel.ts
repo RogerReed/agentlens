@@ -357,13 +357,13 @@ async function handleAutomation(msg: { label: string; writePromptsFile: boolean;
   if (msg.writePromptsFile) {
     const filename = await writeAutomationPrompt(msg.agent, msg.label, fullPrompt)
     if (filename) {
-      vscode.window.showInformationMessage(`AgentLens [${msg.label}]: prompt written to ${filename}`, 'Dismiss')
+      vscode.window.showInformationMessage(`AgentLens Automation [${msg.label}]: prompt written to ${filename}`, 'Dismiss')
     }
     return
   }
 
   const action = await vscode.window.showWarningMessage(
-    `AgentLens Automation: ${msg.label}`,
+    `AgentLens Automation [${msg.label}]`,
     { modal: false },
     'Copy Prompt',
     'Dismiss',

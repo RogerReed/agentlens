@@ -296,10 +296,10 @@ function render() {
   const cost = currentSession.costUsd ?? 0
   if (costVal) costVal.textContent = cost > 0 ? (cost < 0.01 ? '<$0.01' : '$' + cost.toFixed(2)) : '—'
 
-  // Burn rate row — always visible when session exists; waiting when not yet active
+  // Burn rate — show last known value if available, otherwise "Waiting for data…"
   const burnEl = document.getElementById('sb-burn')
   const burnWaiting = document.getElementById('sb-burn-waiting')
-  if (isActive && burnRate) {
+  if (burnRate) {
     const tpm = fmt(Math.round(burnRate.tokensPerMinute))
     const cph = burnRate.costPerHour > 0.001 ? ` · $${burnRate.costPerHour.toFixed(2)}/hr` : ''
     if (burnEl) { burnEl.textContent = `${tpm} tokens/min${cph}`; burnEl.style.display = '' }
@@ -376,8 +376,13 @@ window.addEventListener('message', (e: MessageEvent<UpdateMsg>) => {
   if (msg.lastActivityMs !== undefined) state.lastActivityMs = msg.lastActivityMs
   if (msg.sessionCount !== undefined) state.sessionCount = msg.sessionCount
   if (msg.agentSources) { state.agentSources = msg.agentSources; renderAgentKey() }
-  if ('currentSession' in msg) state.currentSession = msg.currentSession ?? null
-  if ('burnRate' in msg) state.burnRate = msg.burnRate ?? null
+  if ('currentSession' in msg) {
+    const incoming = msg.currentSession ?? null
+    // Reset retained burn rate when switching to a different session
+    if (incoming?.startTime !== state.currentSession?.startTime) state.burnRate = null
+    state.currentSession = incoming
+  }
+  if ('burnRate' in msg && msg.burnRate != null) state.burnRate = msg.burnRate
   if (msg.avgInputTokens != null) state.avgInputTokens = msg.avgInputTokens
   if (msg.avgOutputTokens != null) state.avgOutputTokens = msg.avgOutputTokens
   render()
