@@ -67,12 +67,13 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 The **Analytics** tab (Estimated Cost section) shows the dollar cost of Copilot, Claude Code, and Codex sessions.
 
-**Copilot** supports two billing models via a toggle:
+**Copilot** supports three billing models via a toggle:
 
 | Mode | Who it applies to |
 | ---- | ----------------- |
-| **Token-based AI Credits** (default) | All Copilot plans from Jun 1, 2026 — charges per input/output/cache token at per-model rates |
-| **Annual plan request-based** | Annual-plan holders staying on request billing after Jun 1, 2026 — multiplier × $0.04 per user-initiated prompt |
+| **Token-based AI Credits** (default) | All Copilot plans from June 1, 2026 — charges per input/output/cache token at per-model rates |
+| **Annual plan request-based** | Annual-plan holders staying on request billing from June 1, 2026 — multiplier × $0.04 per user-initiated prompt |
+| **Request-based** *(deprecated)* | Plans on request billing before June 1, 2026 — multiplier × $0.04 per user-initiated prompt |
 
 **Claude Code** and **Codex** always use token-based pricing — no toggle required. Claude Code is billed against the Anthropic API at standard per-token rates (input, cache write, cache read, output) depending on model (Opus, Sonnet, or Haiku). Codex is billed against the OpenAI API.
 
