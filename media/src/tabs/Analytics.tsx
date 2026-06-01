@@ -139,7 +139,43 @@ export function Analytics() {
       {/* Estimated cost */}
       {pricedSess.length > 0 && (
         <>
-          <SectionHead title="ESTIMATED COST" />
+          <div style="display:flex;align-items:baseline;justify-content:space-between">
+            <SectionHead title="ESTIMATED COST" />
+            {dayRows.length > 0 && (
+              <button
+                onClick={() => {
+                  const headers = ['Date','Agent','Model','Input Tokens','Output Tokens','Cache Create Tokens','Cache Read Tokens','Total Tokens','Cost (USD)']
+                  const rows: string[][] = []
+                  for (const [day, d] of dayRows) {
+                    for (const [, ae] of d.agents) {
+                      rows.push([
+                        day,
+                        ae.source,
+                        [...ae.models].join('/'),
+                        String(ae.input), String(ae.output),
+                        String(ae.cacheCreate), String(ae.cacheRead),
+                        String(ae.input + ae.output + ae.cacheCreate + ae.cacheRead),
+                        ae.cost.toFixed(4),
+                      ])
+                    }
+                  }
+                  rows.push([
+                    'TOTAL','','',
+                    String(grand.input), String(grand.output),
+                    String(grand.cacheCreate), String(grand.cacheRead),
+                    String(grand.input + grand.output + grand.cacheCreate + grand.cacheRead),
+                    grand.cost.toFixed(4),
+                  ])
+                  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+                  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+                  const a = document.createElement('a')
+                  a.href = url; a.download = 'agentlens-cost.csv'; a.click()
+                  URL.revokeObjectURL(url)
+                }}
+                style="font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap"
+              >↓ CSV</button>
+            )}
+          </div>
           {disclaimer}
 
           {copilotSess.length > 0 && (

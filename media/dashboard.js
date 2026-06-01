@@ -3959,7 +3959,53 @@
     const fmtN = (n3) => n3.toLocaleString();
     return /* @__PURE__ */ u4("div", { id: "analytics-content", children: [
       pricedSess.length > 0 && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4(SectionHead, { title: "ESTIMATED COST" }),
+        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:baseline;justify-content:space-between", children: [
+          /* @__PURE__ */ u4(SectionHead, { title: "ESTIMATED COST" }),
+          dayRows.length > 0 && /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => {
+                const headers = ["Date", "Agent", "Model", "Input Tokens", "Output Tokens", "Cache Create Tokens", "Cache Read Tokens", "Total Tokens", "Cost (USD)"];
+                const rows = [];
+                for (const [day, d5] of dayRows) {
+                  for (const [, ae] of d5.agents) {
+                    rows.push([
+                      day,
+                      ae.source,
+                      [...ae.models].join("/"),
+                      String(ae.input),
+                      String(ae.output),
+                      String(ae.cacheCreate),
+                      String(ae.cacheRead),
+                      String(ae.input + ae.output + ae.cacheCreate + ae.cacheRead),
+                      ae.cost.toFixed(4)
+                    ]);
+                  }
+                }
+                rows.push([
+                  "TOTAL",
+                  "",
+                  "",
+                  String(grand.input),
+                  String(grand.output),
+                  String(grand.cacheCreate),
+                  String(grand.cacheRead),
+                  String(grand.input + grand.output + grand.cacheCreate + grand.cacheRead),
+                  grand.cost.toFixed(4)
+                ]);
+                const csv = [headers, ...rows].map((r5) => r5.map((v4) => `"${v4}"`).join(",")).join("\n");
+                const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+                const a4 = document.createElement("a");
+                a4.href = url;
+                a4.download = "agentlens-cost.csv";
+                a4.click();
+                URL.revokeObjectURL(url);
+              },
+              style: "font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap",
+              children: "\u2193 CSV"
+            }
+          )
+        ] }),
         disclaimer,
         copilotSess.length > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px", children: [
           /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("copilot") }),
