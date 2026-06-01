@@ -1753,7 +1753,7 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const w5 = rect.width, h5 = rect.height;
       ctx.clearRect(0, 0, w5, h5);
-      const pad = { top: 8, right: 58, bottom: 52, left: 64 };
+      const pad = { top: 8, right: 58, bottom: 14, left: 64 };
       const chartW = w5 - pad.left - pad.right;
       const chartH = h5 - pad.top - pad.bottom;
       const cs = getComputedStyle(document.body);
@@ -1835,18 +1835,14 @@
             ctx.setLineDash([]);
           }
           isFirst = false;
-          const labelX = (x1 + x22) / 2;
-          const d5 = /* @__PURE__ */ new Date(dk + "T12:00:00Z");
-          const label = isNaN(d5.getTime()) ? dk : d5.toLocaleDateString(void 0, { month: "short", day: "numeric" });
-          ctx.save();
-          ctx.translate(labelX, pad.top + chartH + 6);
-          ctx.rotate(-Math.PI / 2);
-          ctx.font = labelFont;
-          ctx.fillStyle = textColor;
-          ctx.textAlign = "right";
-          ctx.textBaseline = "middle";
-          ctx.fillText(label, 0, 0);
-          ctx.restore();
+          if (!isFirst) {
+            const label = dk.length >= 10 ? dk.slice(5, 10) : dk;
+            ctx.font = labelFont;
+            ctx.fillStyle = textColor;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillText(label, x1 + 2, pad.top + 1);
+          }
         }
       }
       if (n3 > 0 && dayGroups.size > 0) {
@@ -2175,12 +2171,13 @@
     }
     function buildClipboardPrompt() {
       const lines = [
-        "I'm using an AI coding agent and AgentLens detected the following issue in my session.",
+        "I'm using an AI coding agent and the following issue was detected in my session.",
         "Please explain what's happening and suggest specific improvements to my workflow or prompt.",
         "",
         "--- Session context ---"
       ];
       if (session) {
+        lines.push("Session ID: " + session.sessionId);
         lines.push(sessionTimestamp + " \xB7 " + getAgentSourceLabel(session.source));
         if (session.userRequest && session.userRequest !== "[session in progress]")
           lines.push('Task: "' + session.userRequest + '"');
@@ -2225,13 +2222,6 @@
         ),
         isIgnored ? /* @__PURE__ */ u4("button", { class: "insight-restore-btn", title: "Restore", onClick: () => ignoredInsightKeys.delete(ins.title), children: "Restore" }) : /* @__PURE__ */ u4("button", { class: "insight-ignore-btn", title: "Ignore", onClick: () => ignoredInsightKeys.add(ins.title), children: "Ignore" })
       ] }),
-      session && /* @__PURE__ */ u4("div", { style: "margin-bottom:8px;margin-left:24px;display:flex;align-items:flex-start;gap:5px", children: [
-        /* @__PURE__ */ u4("span", { style: "display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px;background:" + sessionAgentColor }),
-        /* @__PURE__ */ u4("div", { style: "min-width:0", children: [
-          /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--fg);white-space:nowrap", children: sessionTimestamp }),
-          sessionPrompt && /* @__PURE__ */ u4("div", { style: "font-size:9px;color:var(--muted);font-style:italic;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px", title: sessionPrompt, children: sessionPrompt.length > 80 ? sessionPrompt.slice(0, 80) + "\u2026" : sessionPrompt })
-        ] })
-      ] }),
       /* @__PURE__ */ u4("div", { class: "insight-action", style: "margin-bottom:8px", children: [
         /* @__PURE__ */ u4("span", { class: "insight-action-label", children: [
           "Action",
@@ -2241,43 +2231,7 @@
         " ",
         /* @__PURE__ */ u4("span", { style: "white-space:pre-wrap", children: ins.action })
       ] }),
-      ins.detail && /* @__PURE__ */ u4("div", { class: "insight-detail", style: "white-space:pre-wrap", children: ins.detail }),
-      !isIgnored && (() => {
-        const buttonForAgent = (agent) => {
-          const label = getAgentSourceLabel(agent);
-          return {
-            agent,
-            label: "Copy for " + label,
-            color: getAgentColor(agent)
-          };
-        };
-        let buttons;
-        if (session) {
-          buttons = [buttonForAgent(session.source)];
-        } else {
-          const presence = agentPresence.value;
-          buttons = [
-            presence.copilot && buttonForAgent("copilot"),
-            presence.claude && buttonForAgent("claude_code"),
-            presence.codex && buttonForAgent("codex")
-          ].filter(Boolean);
-        }
-        if (buttons.length === 0) buttons.push({ agent: "generic", label: "Copy to Clipboard", color: "var(--accent)" });
-        const prompt = buildAiPrompt();
-        return /* @__PURE__ */ u4("div", { class: "insight-ask-ai-group", children: buttons.map((b4) => /* @__PURE__ */ u4(
-          "button",
-          {
-            class: "insight-ask-ai",
-            onClick: () => vscode?.postMessage({ type: "askAI", prompt, agent: b4.agent, label: ins.title }),
-            children: [
-              /* @__PURE__ */ u4("span", { style: "color:" + b4.color + ";font-size:8px", children: "\u25CF" }),
-              " ",
-              b4.label
-            ]
-          },
-          b4.agent
-        )) });
-      })()
+      ins.detail && /* @__PURE__ */ u4("div", { class: "insight-detail", style: "white-space:pre-wrap", children: ins.detail })
     ] });
   }
 
@@ -3286,8 +3240,8 @@
       /* @__PURE__ */ u4("div", { style: "display:flex;gap:0;padding:0 8px;border-bottom:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));overflow-x:auto", children: [
         navBtn("overview", "Overview"),
         navBtn("trace", `Trace${visibleEntries.length > 0 ? " (" + visibleEntries.length + ")" : ""}`),
-        navBtn("flow", "Flow"),
-        navBtn("tools", "Tools"),
+        navBtn("flow", `Flow${sess.totalLlmCalls > 0 ? " (" + sess.totalLlmCalls + ")" : ""}`),
+        navBtn("tools", `Tools${sess.totalToolCalls > 0 ? " (" + sess.totalToolCalls + ")" : ""}`),
         navBtn("files", `Files${sess.filesChanged.length > 0 ? " (" + sess.filesChanged.length + ")" : ""}`)
       ] }),
       /* @__PURE__ */ u4("div", { style: "padding:12px 14px", children: [
@@ -3426,8 +3380,8 @@
     const thBase = "padding:3px 6px;font-size:10px;font-weight:600;white-space:nowrap;user-select:none";
     const thSort = thBase + ";cursor:pointer;color:var(--fg)";
     const thMuted = thBase + ";color:var(--muted);font-weight:500";
-    return /* @__PURE__ */ u4("div", { id: "sessions-content", style: "overflow-x:auto", children: [
-      /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
+    return /* @__PURE__ */ u4("div", { id: "sessions-content", children: [
+      /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
         /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:2px solid var(--vscode-panel-border)", children: [
           /* @__PURE__ */ u4("th", { style: "width:16px;padding:3px 4px 3px 8px" }),
           /* @__PURE__ */ u4("th", { style: "width:10px;padding:3px 4px;" + thSort, onClick: () => onSortClick("source"), title: "Sort by agent", children: sortArrow("source") }),
@@ -3457,11 +3411,20 @@
           ] })
         ] }) }),
         /* @__PURE__ */ u4("tbody", { children: sessions.map((sess) => /* @__PURE__ */ u4(SessionRow, { sess }, sess.sessionId)) })
-      ] }),
-      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);padding:6px 8px", children: [
-        sessions.length,
-        " session",
-        sessions.length !== 1 ? "s" : ""
+      ] }) }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)", children: [
+        /* @__PURE__ */ u4("span", { children: [
+          sessionSummary.value?.sessions?.length ?? 0,
+          " sessions stored"
+        ] }),
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            style: "padding:2px 8px;font-size:10px;cursor:pointer;border:1px solid var(--vscode-testing-iconFailed,#f44);border-radius:3px;background:transparent;color:var(--vscode-testing-iconFailed,#f44)",
+            onClick: () => vscode?.postMessage({ type: "confirmClear" }),
+            children: "Clear All Data"
+          }
+        )
       ] })
     ] });
   }
@@ -4838,7 +4801,7 @@
   function Toc() {
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("style", { dangerouslySetInnerHTML: { __html: "html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc a{display:inline-block;padding:3px 11px;border-radius:12px;font-size:11px;font-weight:500;color:var(--muted);text-decoration:none;border:1px solid var(--border);transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover);border-color:var(--fg)}" } }),
-      /* @__PURE__ */ u4("nav", { class: "help-toc", "aria-label": "Help sections", style: "position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 0 8px;margin:0 -16px 20px -12px;padding-left:12px;display:flex;gap:4px;flex-wrap:wrap", children: TOC_SECTIONS.map((s4) => /* @__PURE__ */ u4("a", { href: s4.href, children: s4.heading })) })
+      /* @__PURE__ */ u4("nav", { class: "help-toc", "aria-label": "Help sections", style: "position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 0 8px;margin:0 -16px 20px -12px;padding-left:12px;display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none", children: TOC_SECTIONS.map((s4) => /* @__PURE__ */ u4("a", { href: s4.href, children: s4.heading })) })
     ] });
   }
   function OverviewSection() {
@@ -5669,6 +5632,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             writePromptsFile: cfg.writePromptsFile,
             agent: session.source ?? "generic",
             sessionTitle: (session.userRequest ?? "").slice(0, 70) || "(session in progress)",
+            sessionId: session.sessionId,
             prompt: body
           });
         }
@@ -6149,18 +6113,54 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   }
   function SearchFilterBar() {
     const text = sessionTextFilter.value;
-    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0", children: /* @__PURE__ */ u4(
-      "input",
-      {
-        type: "text",
-        placeholder: "Filter sessions\u2026",
-        value: text,
-        onInput: (e4) => {
-          sessionTextFilter.value = e4.target.value;
-        },
-        style: "flex:1;min-width:120px;max-width:260px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+    const isSessionsTab = normalizeTabId(activeTab.value) === "sessions";
+    const sortKey = sessionSortKey.value;
+    const sortDir = sessionSortDir.value;
+    function onSortClick(key) {
+      if (sessionSortKey.value === key) {
+        sessionSortDir.value = sessionSortDir.value === "desc" ? "asc" : "desc";
+      } else {
+        sessionSortKey.value = key;
+        sessionSortDir.value = "desc";
       }
-    ) });
+    }
+    return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap", children: [
+      /* @__PURE__ */ u4(
+        "input",
+        {
+          type: "text",
+          placeholder: "Filter sessions\u2026",
+          value: text,
+          onInput: (e4) => {
+            sessionTextFilter.value = e4.target.value;
+          },
+          style: "flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+        }
+      ),
+      isSessionsTab && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);white-space:nowrap", children: "Sort" }),
+        ["cost", "duration_ms", "total_tokens"].map((key) => {
+          const labels = { cost: "Cost", duration_ms: "Duration", total_tokens: "Tokens" };
+          const active = sortKey === key;
+          return /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => onSortClick(key),
+              style: `padding:1px 7px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid ${active ? "var(--accent)" : "var(--vscode-panel-border)"};background:${active ? "var(--accent)" : "transparent"};color:${active ? "var(--vscode-button-foreground,#fff)" : "var(--muted)"}`,
+              children: [
+                labels[key],
+                active ? sortDir === "desc" ? " \u25BC" : " \u25B2" : ""
+              ]
+            },
+            key
+          );
+        }),
+        /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
+          filteredSessions.value.length,
+          " sessions"
+        ] })
+      ] })
+    ] });
   }
   function Tab({ id, label }) {
     const isActive = normalizeTabId(activeTab.value) === id;

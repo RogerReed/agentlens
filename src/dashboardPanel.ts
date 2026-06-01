@@ -61,7 +61,18 @@ export class DashboardPanel {
     this.panel.webview.html = this.getHtml()
 
     this.panel.webview.onDidReceiveMessage(async msg => {
-      if (msg.type === 'clearAll') {
+      if (msg.type === 'confirmClear') {
+        const answer = await vscode.window.showWarningMessage(
+          'Clear all AgentLens session data? This cannot be undone.',
+          { modal: true },
+          'Clear All'
+        )
+        if (answer === 'Clear All') {
+          vscode.commands.executeCommand('agentLens.clearSessions')
+          this.panel.webview.postMessage({ type: 'clearAll' })
+          this.update()
+        }
+      } else if (msg.type === 'clearAll') {
         vscode.commands.executeCommand('agentLens.clearSessions')
         this.update()
       } else if (msg.type === 'loadSessionDetail' && msg.sessionId) {
@@ -75,7 +86,7 @@ export class DashboardPanel {
         )
         this.panel.webview.postMessage({ type: 'blobContent', spanId: msg.spanId, field: msg.field, content })
       } else if (msg.type === 'askAI' && msg.prompt) {
-        const prompt = `AgentLens detected the following efficiency issue in my workspace. Help me fix it:\n\n${msg.prompt}`
+        const prompt = `The following efficiency issue was detected in my AI coding session. Help me fix it:\n\n${msg.prompt}`
         openAIChat(prompt, msg.agent)
       } else if (msg.type === 'alert' && msg.label) {
         handleAlertNotification(msg as { label: string; detail?: string; severity: string }, context, repo, sidebarProvider)
@@ -278,9 +289,9 @@ async function handleAlertNotification(
   repo: SessionRepository,
   sidebarProvider?: SidebarPanel
 ): Promise<void> {
-  const text = `AgentLens: ${msg.label}${msg.detail ? ' — ' + msg.detail : ''}`
+  const text = `AgentLens Alert: ${msg.label}${msg.detail ? ' — ' + msg.detail : ''}`
   const clipboardPrompt = [
-    "AgentLens alert triggered in my AI coding session. Please explain what's happening and how I should respond.",
+    "An alert was triggered in my AI coding session. Please explain what's happening and how I should respond.",
     '',
     `Alert: ${msg.label}`,
     ...(msg.detail ? [`Detail: ${msg.detail}`] : []),
@@ -334,16 +345,15 @@ async function writeAutomationPrompt(agent: string, label: string, fullPrompt: s
     const data = await vscode.workspace.fs.readFile(fileUri)
     existing = Buffer.from(data).toString('utf8')
   } catch { /* file doesn't exist yet */ }
-  const content = existing ? existing + entry : `# AgentLens Prompts — ${agentName}\n\n${entry}`
+  const content = existing ? existing + entry : `# Automation Prompts — ${agentName}\n\n${entry}`
   await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'))
   return filename
 }
 
-async function handleAutomation(msg: { label: string; writePromptsFile: boolean; agent: string; sessionTitle: string; prompt: string }): Promise<void> {
+async function handleAutomation(msg: { label: string; writePromptsFile: boolean; agent: string; sessionTitle: string; sessionId?: string; prompt: string }): Promise<void> {
   const agentLabel = msg.agent === 'claude_code' ? 'Claude' : msg.agent === 'copilot' ? 'Copilot' : msg.agent === 'codex' ? 'Codex' : 'AI'
-  const fullPrompt = `[AgentLens Automation: ${msg.label}]\n\n${msg.prompt}`
-  const snippet = msg.sessionTitle.length > 50 ? msg.sessionTitle.slice(0, 50) + '…' : msg.sessionTitle
-
+  const sessionLine = msg.sessionId ? `Session ID: ${msg.sessionId}\n` : ''
+  const fullPrompt = `[${msg.label}]\n\n${sessionLine}${msg.prompt}`
   if (msg.writePromptsFile) {
     const filename = await writeAutomationPrompt(msg.agent, msg.label, fullPrompt)
     if (filename) {
@@ -353,7 +363,7 @@ async function handleAutomation(msg: { label: string; writePromptsFile: boolean;
   }
 
   const action = await vscode.window.showWarningMessage(
-    `AgentLens [${msg.label}]: "${snippet}"`,
+    `AgentLens Automation: ${msg.label}`,
     { modal: false },
     'Copy Prompt',
     'Dismiss',

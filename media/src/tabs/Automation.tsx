@@ -47,6 +47,7 @@ export interface AutomationTrigger {
   writePromptsFile: boolean
   agent: string
   sessionTitle: string
+  sessionId: string
   prompt: string
 }
 
@@ -425,6 +426,7 @@ export function checkAutomations(sessions: SessionSummaryCard[]): AutomationTrig
           writePromptsFile: cfg.writePromptsFile,
           agent: session.source ?? 'generic',
           sessionTitle: (session.userRequest ?? '').slice(0, 70) || '(session in progress)',
+          sessionId: session.sessionId,
           prompt: body,
         })
       }

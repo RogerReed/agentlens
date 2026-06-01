@@ -66,8 +66,8 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
       <div style="display:flex;gap:0;padding:0 8px;border-bottom:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));overflow-x:auto">
         {navBtn('overview', 'Overview')}
         {navBtn('trace', `Trace${visibleEntries.length > 0 ? ' (' + visibleEntries.length + ')' : ''}`)}
-        {navBtn('flow', 'Flow')}
-        {navBtn('tools', 'Tools')}
+        {navBtn('flow', `Flow${sess.totalLlmCalls > 0 ? ' (' + sess.totalLlmCalls + ')' : ''}`)}
+        {navBtn('tools', `Tools${sess.totalToolCalls > 0 ? ' (' + sess.totalToolCalls + ')' : ''}`)}
         {navBtn('files', `Files${sess.filesChanged.length > 0 ? ' (' + sess.filesChanged.length + ')' : ''}`)}
       </div>
 
@@ -300,7 +300,8 @@ export function Sessions() {
   const thMuted = thBase + ';color:var(--muted);font-weight:500'
 
   return (
-    <div id="sessions-content" style="overflow-x:auto">
+    <div id="sessions-content">
+      <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:11px">
         <thead>
           <tr style="border-bottom:2px solid var(--vscode-panel-border)">
@@ -320,8 +321,13 @@ export function Sessions() {
           ))}
         </tbody>
       </table>
-      <div style="font-size:10px;color:var(--muted);padding:6px 8px">
-        {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)">
+        <span>{(sessionSummary.value?.sessions?.length ?? 0)} sessions stored</span>
+        <button
+          style="padding:2px 8px;font-size:10px;cursor:pointer;border:1px solid var(--vscode-testing-iconFailed,#f44);border-radius:3px;background:transparent;color:var(--vscode-testing-iconFailed,#f44)"
+          onClick={() => vscode?.postMessage({ type: 'confirmClear' })}
+        >Clear All Data</button>
       </div>
     </div>
   )

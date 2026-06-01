@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import clsx from 'clsx'
-import { filteredSessions, sessionSummary, insightFilter, ignoredInsightKeys, agentPresence, vscode } from '../state'
+import { filteredSessions, sessionSummary, insightFilter, ignoredInsightKeys } from '../state'
 import { buildDisplaySummary, getAgentColor, getAgentSourceLabel, getSessionGlobalNumber, formatSessionTime } from '../utils'
 import type { Insight, InsightFilter, SessionSummaryCard } from '../types'
 
@@ -386,12 +386,13 @@ export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgno
 
   function buildClipboardPrompt(): string {
     const lines: string[] = [
-      "I'm using an AI coding agent and AgentLens detected the following issue in my session.",
+      "I'm using an AI coding agent and the following issue was detected in my session.",
       'Please explain what\'s happening and suggest specific improvements to my workflow or prompt.',
       '',
       '--- Session context ---',
     ]
     if (session) {
+      lines.push('Session ID: ' + session.sessionId)
       lines.push(sessionTimestamp + ' · ' + getAgentSourceLabel(session.source))
       if (session.userRequest && session.userRequest !== '[session in progress]')
         lines.push('Task: "' + session.userRequest + '"')
@@ -443,20 +444,6 @@ export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgno
           <button class="insight-ignore-btn" title="Ignore" onClick={() => ignoredInsightKeys.add(ins.title)}>Ignore</button>
         )}
       </div>
-      {/* Session attribution — directly under title */}
-      {session && (
-        <div style="margin-bottom:8px;margin-left:24px;display:flex;align-items:flex-start;gap:5px">
-          <span style={'display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px;background:' + sessionAgentColor} />
-          <div style="min-width:0">
-            <div style="font-size:10px;color:var(--fg);white-space:nowrap">{sessionTimestamp}</div>
-            {sessionPrompt && (
-              <div style="font-size:9px;color:var(--muted);font-style:italic;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px" title={sessionPrompt}>
-                {sessionPrompt.length > 80 ? sessionPrompt.slice(0, 80) + '…' : sessionPrompt}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       {/* Action */}
       <div class="insight-action" style="margin-bottom:8px">
         <span class="insight-action-label">
@@ -468,41 +455,6 @@ export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgno
         <span style="white-space:pre-wrap">{ins.action}</span>
       </div>
       {ins.detail && <div class="insight-detail" style="white-space:pre-wrap">{ins.detail}</div>}
-      {!isIgnored && (() => {
-        type ActionButton = { agent: string; label: string; color: string }
-        const buttonForAgent = (agent: SessionSummaryCard['source']): ActionButton => {
-          const label = getAgentSourceLabel(agent)
-          return {
-            agent,
-            label: 'Copy for ' + label,
-            color: getAgentColor(agent),
-          }
-        }
-        let buttons: ActionButton[]
-        if (session) {
-          buttons = [buttonForAgent(session.source)]
-        } else {
-          const presence = agentPresence.value
-          buttons = [
-            presence.copilot && buttonForAgent('copilot'),
-            presence.claude && buttonForAgent('claude_code'),
-            presence.codex && buttonForAgent('codex'),
-          ].filter(Boolean) as ActionButton[]
-        }
-        if (buttons.length === 0) buttons.push({ agent: 'generic', label: 'Copy to Clipboard', color: 'var(--accent)' })
-        const prompt = buildAiPrompt()
-        return (
-          <div class="insight-ask-ai-group">
-            {buttons.map(b => (
-              <button key={b.agent} class="insight-ask-ai"
-                onClick={() => vscode?.postMessage({ type: 'askAI', prompt, agent: b.agent, label: ins.title })}
-              >
-                <span style={'color:' + b.color + ';font-size:8px'}>●</span> {b.label}
-              </button>
-            ))}
-          </div>
-        )
-      })()}
     </div>
   )
 }
