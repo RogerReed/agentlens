@@ -118,7 +118,7 @@
       statusText.style.color = isActive ? "var(--vscode-foreground)" : "var(--vscode-descriptionForeground)";
     }
     const sessionLabel = document.getElementById("sb-session-label");
-    if (sessionLabel) sessionLabel.textContent = isActive ? "current session" : "most recent session";
+    if (sessionLabel) sessionLabel.textContent = isActive ? "current session" : "";
     if (agoEl) agoEl.textContent = isActive ? "" : lastActivityMs ? fmtAgo(lastActivityMs) : "";
     const block = document.getElementById("sb-session-block");
     const empty = document.getElementById("sb-empty");
