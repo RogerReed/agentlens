@@ -196,7 +196,7 @@
     if (costVal) costVal.textContent = cost > 0 ? cost < 0.01 ? "<$0.01" : "$" + cost.toFixed(2) : "\u2014";
     const burnEl = document.getElementById("sb-burn");
     const burnWaiting = document.getElementById("sb-burn-waiting");
-    if (isActive && burnRate) {
+    if (burnRate) {
       const tpm = fmt(Math.round(burnRate.tokensPerMinute));
       const cph = burnRate.costPerHour > 1e-3 ? ` \xB7 $${burnRate.costPerHour.toFixed(2)}/hr` : "";
       if (burnEl) {
@@ -204,12 +204,9 @@
         burnEl.style.display = "";
       }
       if (burnWaiting) burnWaiting.style.display = "none";
-    } else if (isActive) {
-      if (burnEl) burnEl.style.display = "none";
-      if (burnWaiting) burnWaiting.style.display = "";
     } else {
       if (burnEl) burnEl.style.display = "none";
-      if (burnWaiting) burnWaiting.style.display = "none";
+      if (burnWaiting) burnWaiting.style.display = "";
     }
     const turnsEl = document.getElementById("sb-turns");
     const toolsEl = document.getElementById("sb-tools");
@@ -255,8 +252,12 @@
       state.agentSources = msg.agentSources;
       renderAgentKey();
     }
-    if ("currentSession" in msg) state.currentSession = msg.currentSession ?? null;
-    if ("burnRate" in msg) state.burnRate = msg.burnRate ?? null;
+    if ("currentSession" in msg) {
+      const incoming = msg.currentSession ?? null;
+      if (incoming?.startTime !== state.currentSession?.startTime) state.burnRate = null;
+      state.currentSession = incoming;
+    }
+    if ("burnRate" in msg && msg.burnRate != null) state.burnRate = msg.burnRate;
     if (msg.avgInputTokens != null) state.avgInputTokens = msg.avgInputTokens;
     if (msg.avgOutputTokens != null) state.avgOutputTokens = msg.avgOutputTokens;
     render();
