@@ -4809,7 +4809,7 @@
   function Toc() {
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("style", { dangerouslySetInnerHTML: { __html: "html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc a{display:inline-block;padding:3px 11px;border-radius:12px;font-size:11px;font-weight:500;color:var(--muted);text-decoration:none;border:1px solid var(--border);transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover);border-color:var(--fg)}" } }),
-      /* @__PURE__ */ u4("nav", { class: "help-toc", "aria-label": "Help sections", style: "position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 0 8px;margin:0 -16px 20px -12px;padding-left:12px;display:flex;gap:4px;flex-wrap:wrap", children: TOC_SECTIONS.map((s4) => /* @__PURE__ */ u4("a", { href: s4.href, children: s4.heading })) })
+      /* @__PURE__ */ u4("nav", { class: "help-toc", "aria-label": "Help sections", style: "position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 0 8px;margin:0 -16px 20px -12px;padding-left:12px;display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none", children: TOC_SECTIONS.map((s4) => /* @__PURE__ */ u4("a", { href: s4.href, children: s4.heading })) })
     ] });
   }
   function OverviewSection() {
