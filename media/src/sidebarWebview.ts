@@ -189,6 +189,8 @@ function render() {
     statusText.textContent = isActive ? 'Active' : 'Idle'
     statusText.style.color = isActive ? 'var(--vscode-foreground)' : 'var(--vscode-descriptionForeground)'
   }
+  const sessionLabel = document.getElementById('sb-session-label')
+  if (sessionLabel) sessionLabel.textContent = isActive ? 'current session' : 'most recent session'
   if (agoEl) agoEl.textContent = isActive ? '' : (lastActivityMs ? fmtAgo(lastActivityMs) : 'No activity yet')
 
   // Current session block
@@ -283,10 +285,8 @@ function render() {
 
   // Estimated cost
   const costVal = document.getElementById('sb-cost-val')
-  const costModel = document.getElementById('sb-cost-model')
   const cost = currentSession.costUsd ?? 0
   if (costVal) costVal.textContent = cost > 0 ? (cost < 0.01 ? '<$0.01' : '$' + cost.toFixed(2)) : '—'
-  if (costModel) costModel.textContent = currentSession.model || ''
 
   // Burn rate row — always visible when session exists; waiting when not yet active
   const burnEl = document.getElementById('sb-burn')

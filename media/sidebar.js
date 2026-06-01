@@ -117,6 +117,8 @@
       statusText.textContent = isActive ? "Active" : "Idle";
       statusText.style.color = isActive ? "var(--vscode-foreground)" : "var(--vscode-descriptionForeground)";
     }
+    const sessionLabel = document.getElementById("sb-session-label");
+    if (sessionLabel) sessionLabel.textContent = isActive ? "current session" : "most recent session";
     if (agoEl) agoEl.textContent = isActive ? "" : lastActivityMs ? fmtAgo(lastActivityMs) : "No activity yet";
     const block = document.getElementById("sb-session-block");
     const empty = document.getElementById("sb-empty");
@@ -179,10 +181,8 @@
       if (tokenWaiting) tokenWaiting.style.display = "";
     }
     const costVal = document.getElementById("sb-cost-val");
-    const costModel = document.getElementById("sb-cost-model");
     const cost = currentSession.costUsd ?? 0;
     if (costVal) costVal.textContent = cost > 0 ? cost < 0.01 ? "<$0.01" : "$" + cost.toFixed(2) : "\u2014";
-    if (costModel) costModel.textContent = currentSession.model || "";
     const burnEl = document.getElementById("sb-burn");
     const burnWaiting = document.getElementById("sb-burn-waiting");
     if (isActive && burnRate) {

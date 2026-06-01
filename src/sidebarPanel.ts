@@ -343,6 +343,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       <div class="sb-row" style="margin-bottom:2px">
         <span class="sb-dot ${activity.isActive ? 'active' : 'idle'}" id="sb-dot"></span>
         <span class="sb-status" id="sb-status-text">${activity.isActive ? 'Active' : 'Idle'}</span>
+        <span id="sb-session-label" class="sb-muted" style="font-size:9px;margin-left:4px;opacity:0.7">${activity.isActive ? 'current session' : 'most recent session'}</span>
         <span style="flex:1"></span>
         <span id="sb-agent" class="sb-muted" style="display:flex;align-items:center"></span>
         <span id="sb-dur" class="sb-muted"></span>
@@ -396,8 +397,6 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       <div class="sb-card" id="sb-cost-card">
         <div class="sb-section-label">Estimated Cost</div>
         <div id="sb-cost-val" style="font-size:16px;font-weight:700;color:var(--vscode-charts-green,#81c784)">—</div>
-        <div class="sb-muted" style="font-size:9px;margin-top:1px">this session</div>
-        <div id="sb-cost-model" class="sb-muted" style="font-size:9px"></div>
       </div>
 
       <!-- Burn rate -->
