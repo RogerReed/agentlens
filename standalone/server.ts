@@ -459,9 +459,7 @@ function getHtml(): string {
     .sb-counters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; }
     .sb-counter-val { font-size: 16px; font-weight: 700; color: var(--vscode-textLink-foreground); }
     .sb-counter-key { font-size: 9px; color: var(--vscode-descriptionForeground); text-transform: uppercase; letter-spacing: 0.3px; }
-    .sb-open-btn { display: block; width: 100%; padding: 7px 10px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; color: var(--vscode-button-foreground); background: var(--vscode-button-background); border: none; border-radius: 4px; margin-bottom: 6px; }
-    .sb-open-btn:hover { background: var(--vscode-button-hoverBackground); }
-    .sb-footer { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 8px; font-size: 11px; color: var(--vscode-descriptionForeground); border-top: 1px solid var(--vscode-panel-border); }
+.sb-footer { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 8px; font-size: 11px; color: var(--vscode-descriptionForeground); border-top: 1px solid var(--vscode-panel-border); }
     .sb-clear-btn { padding: 2px 8px; font-size: 10px; cursor: pointer; border: 1px solid var(--vscode-testing-iconFailed, #f44); border-radius: 3px; background: transparent; color: var(--vscode-testing-iconFailed, #f44); }
     .sb-clear-btn:hover { background: rgba(255,68,68,0.08); }
     #sa-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:8px 16px; border-radius:4px; font-size:12px; z-index:9999; opacity:0; transition:opacity 0.2s; pointer-events:none; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.4); }
@@ -742,8 +740,6 @@ function getHtml(): string {
           No sessions recorded yet
         </div>
 
-        <!-- Open dashboard -->
-        <button class="sb-open-btn" id="sb-open-btn">Open Dashboard</button>
 
       </div>
 
@@ -779,12 +775,7 @@ function getHtml(): string {
     window.addEventListener('agentlens:sidebar', function(e) {
       _sidebarEl.classList.toggle('sa-collapsed', !e.detail.open);
     });
-    // Open-dashboard button routes to the main panel
-    document.getElementById('sb-open-btn').addEventListener('click', function() {
-      var app = document.getElementById('sa-main');
-      if (app) app.scrollIntoView({ behavior: 'smooth' });
-    });
-  </script>
+</script>
   <script>var __SIDEBAR_INIT__ = ${sidebarInitJson};</script>
   <script src="/sidebar.js"></script>
 </body>

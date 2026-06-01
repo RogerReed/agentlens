@@ -342,16 +342,21 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
 function SearchFilterBar() {
   const text = sessionTextFilter.value
   const isSessionsTab = normalizeTabId(activeTab.value) === 'sessions'
-  const sortKey = sessionSortKey.value
-  const sortDir = sessionSortDir.value
 
-  function onSortClick(key: SortKey) {
-    if (sessionSortKey.value === key) {
-      sessionSortDir.value = sessionSortDir.value === 'desc' ? 'asc' : 'desc'
-    } else {
-      sessionSortKey.value = key
-      sessionSortDir.value = 'desc'
-    }
+  const isFiltered = text !== '' ||
+    selectedAgentFilter.value !== 'all' ||
+    sessionLimit.value !== 25 ||
+    timeRange.value.preset !== 'all' ||
+    sessionSortKey.value !== 'start_time' ||
+    sessionSortDir.value !== 'desc'
+
+  function resetFilters() {
+    sessionTextFilter.value = ''
+    selectedAgentFilter.value = 'all'
+    sessionLimit.value = 25
+    timeRange.value = { preset: 'all' }
+    sessionSortKey.value = 'start_time'
+    sessionSortDir.value = 'desc'
   }
 
   return (
@@ -365,19 +370,13 @@ function SearchFilterBar() {
       />
       {isSessionsTab && (
         <>
-          <span style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);white-space:nowrap">Sort</span>
-          {(['cost', 'duration_ms', 'total_tokens'] as SortKey[]).map(key => {
-            const labels: Record<string, string> = { cost: 'Cost', duration_ms: 'Duration', total_tokens: 'Tokens' }
-            const active = sortKey === key
-            return (
-              <button
-                key={key}
-                onClick={() => onSortClick(key)}
-                style={`padding:1px 7px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid ${active ? 'var(--accent)' : 'var(--vscode-panel-border)'};background:${active ? 'var(--accent)' : 'transparent'};color:${active ? 'var(--vscode-button-foreground,#fff)' : 'var(--muted)'}`}
-              >{labels[key]}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}</button>
-            )
-          })}
           <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
+          {isFiltered && (
+            <button
+              onClick={resetFilters}
+              style="padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)"
+            >Reset</button>
+          )}
         </>
       )}
     </div>
