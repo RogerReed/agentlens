@@ -4741,8 +4741,8 @@
     {
       agent: "Copilot",
       format: 'OpenTelemetry <a href="#gl-trace">trace</a> <a href="#gl-span">spans</a> with a clean single-trace hierarchy. Each conversation is one trace; <a href="#gl-llm-call">LLM calls</a> and tool calls are child spans nested under a session root. No extra configuration needed.',
-      coverage: 'Prompt text, token counts (<a href="#gl-input-tokens">input</a>, <a href="#gl-output-tokens">output</a>), model name, <a href="#gl-ttft">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
-      gaps: `<a href="#gl-cache-read-tokens">Cache</a> token data (read/create) is not part of Copilot's telemetry. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available.`
+      coverage: 'Prompt text, token counts (<a href="#gl-input-tokens">input</a>, <a href="#gl-output-tokens">output</a>, <a href="#gl-cache-read-tokens">cache read</a>), model name, <a href="#gl-ttft">TTFT</a>, tool names, tool arguments, tool results, and file paths are all present natively without any extra configuration.',
+      gaps: "Cache <em>write</em> token counts are not available \u2014 Copilot manages cache creation server-side and does not expose it in telemetry. Cache <em>read</em> tokens are available. No additional configuration unlocks further data \u2014 what Copilot exposes is already fully available."
     },
     {
       agent: "Claude Code",
