@@ -65,25 +65,11 @@ function codexSessionsDirs(): string[] {
   return fs.existsSync(base) ? [base] : []
 }
 
-function copilotOtelPaths(): string[] {
-  const files: string[] = []
-
-  // Explicit env override — a single file path.
-  const envFile = process.env['COPILOT_OTEL_FILE_EXPORTER_PATH']
-  if (envFile && fs.existsSync(envFile)) files.push(envFile)
-
-  // Default directory: ~/.copilot/otel/*.jsonl
-  const otelDir = path.join(homeDir(), '.copilot', 'otel')
-  if (fs.existsSync(otelDir)) {
-    try {
-      fs.readdirSync(otelDir)
-        .filter(f => f.endsWith('.jsonl'))
-        .forEach(f => files.push(path.join(otelDir, f)))
-    } catch { /* ignore */ }
-  }
-
-  // Deduplicate
-  return [...new Set(files)]
+function copilotSessionStateDir(): string | null {
+  // Copilot CLI writes session logs to ~/.copilot/session-state/<uuid>/events.jsonl
+  // automatically, with no env setup required.
+  const dir = path.join(homeDir(), '.copilot', 'session-state')
+  return fs.existsSync(dir) ? dir : null
 }
 
 // ── File state tracking ───────────────────────────────────────────────────────
@@ -276,86 +262,124 @@ export class LogReader {
     }
   }
 
-  // ── Copilot CLI (OTEL file exporter) ─────────────────────────────────────────
-  // Requires env vars set before starting the CLI session:
-  //   COPILOT_OTEL_ENABLED=true
-  //   COPILOT_OTEL_EXPORTER_TYPE=file
-  //   COPILOT_OTEL_FILE_EXPORTER_PATH=~/.copilot/otel/<filename>.jsonl
+  // ── Copilot CLI ──────────────────────────────────────────────────────────────
+  // Reads ~/.copilot/session-state/<uuid>/events.jsonl — written automatically,
+  // no env setup required. Each directory is one session (dirname = session ID).
+  //
+  // Key event types:
+  //   session.start        → data.sessionId, data.selectedModel, data.startTime, data.context.cwd
+  //   user.message         → data.transformedContent (user request text)
+  //   assistant.message    → data.outputTokens, data.toolRequests
+  //   session.shutdown     → data.currentTokens (total context size at end)
 
   private _scanCopilot(): LogSessionResult[] {
     const results: LogSessionResult[] = []
-    const sessionMap = new Map<string, CopilotSessionAccum>()
+    const stateDir = copilotSessionStateDir()
+    if (!stateDir) return results
 
-    for (const filePath of copilotOtelPaths()) {
-      const lines = this._readNewLines(filePath)
-      if (!lines) continue
+    let sessionDirs: string[]
+    try {
+      sessionDirs = fs.readdirSync(stateDir)
+    } catch { return results }
 
-      for (const line of lines) {
-        if (!line.includes('"attributes"')) continue
-        let span: Record<string, unknown>
-        try { span = JSON.parse(line) as Record<string, unknown> } catch { continue }
-        this._accumulateCopilotSpan(span, sessionMap)
-      }
-    }
-
-    for (const [sessionId, acc] of sessionMap) {
-      if (!acc.firstTimestamp) continue
-      results.push({
-        workspace: '',
-        card: _buildCard(sessionId, 'copilot', acc.model, acc.firstTimestamp, acc.lastTimestamp, {
-          totalInput: acc.totalInput,
-          totalOutput: acc.totalOutput,
-          totalCacheRead: acc.totalCacheRead,
-          totalCacheCreate: acc.totalCacheCreate,
-          turns: acc.turns,
-          totalToolCalls: 0,
-          toolCounts: {},
-          filesRead: new Set(),
-          filesChanged: new Set(),
-          filesSearched: new Set(),
-          userRequest: '',
-          timeline: [],
-        }),
-      })
+    for (const sessionDirName of sessionDirs) {
+      const eventsFile = path.join(stateDir, sessionDirName, 'events.jsonl')
+      const result = this._processFile(eventsFile, () => this._parseCopilotFile(eventsFile, sessionDirName))
+      if (result) results.push(result)
     }
 
     return results
   }
 
-  private _accumulateCopilotSpan(
-    span: Record<string, unknown>,
-    sessionMap: Map<string, CopilotSessionAccum>,
-  ): void {
-    // Attributes can be an object or an OTEL array: [{key, value: {stringValue}}]
-    const attrs = _flattenOtelAttrs(span['attributes'])
+  private _parseCopilotFile(filePath: string, sessionId: string): LogSessionResult | null {
+    const lines = this._readNewLines(filePath)
+    if (!lines) return null
 
-    const inputTokens  = _numAttr(attrs, 'gen_ai.usage.input_tokens')
-    const outputTokens = _numAttr(attrs, 'gen_ai.usage.output_tokens')
-    if (inputTokens === 0 && outputTokens === 0) return  // not a usage span
+    let workspace = ''
+    let model = ''
+    let firstTimestamp = ''
+    let lastTimestamp = ''
+    let userRequest = ''
+    let totalOutput = 0
+    let totalInputFromShutdown = 0
+    let turns = 0, totalToolCalls = 0
+    const toolCounts: Record<string, number> = {}
+    const filesChanged = new Set<string>()
 
-    const sessionId = String(
-      attrs['copilot_chat.chat_session_id'] ?? attrs['thread.id'] ?? attrs['session.id'] ?? ''
-    )
-    if (!sessionId) return
+    for (const line of lines) {
+      let event: Record<string, unknown>
+      try { event = JSON.parse(line) as Record<string, unknown> } catch { continue }
 
-    const model = String(attrs['gen_ai.request.model'] ?? attrs['gen_ai.response.model'] ?? 'copilot')
-    const cacheRead   = _numAttr(attrs, 'gen_ai.usage.cache_read.input_tokens')
-    const cacheCreate = _numAttr(attrs, 'gen_ai.usage.cache_creation.input_tokens')
-    const ts = String(span['timestamp'] ?? span['startTimeUnixNano'] ?? span['time'] ?? '')
+      const ts = event['timestamp'] as string | undefined
+      if (ts) { if (!firstTimestamp) firstTimestamp = ts; lastTimestamp = ts }
 
-    const acc = sessionMap.get(sessionId) ?? {
-      firstTimestamp: '', lastTimestamp: '', model, totalInput: 0, totalOutput: 0,
-      totalCacheRead: 0, totalCacheCreate: 0, turns: 0,
+      const type = event['type'] as string | undefined
+      const data = event['data'] as Record<string, unknown> | undefined
+      if (!type || !data) continue
+
+      if (type === 'session.start') {
+        if (data['selectedModel']) model = String(data['selectedModel'])
+        const ctx = data['context'] as Record<string, unknown> | undefined
+        if (ctx?.['cwd']) workspace = String(ctx['cwd'])
+        if (data['startTime'] && !firstTimestamp) firstTimestamp = String(data['startTime'])
+      }
+
+      if (type === 'user.message' && !userRequest) {
+        userRequest = String(data['transformedContent'] ?? '').split('\n')[0].trim()
+      }
+
+      if (type === 'assistant.message') {
+        const outTok = data['outputTokens'] as number | undefined
+        if (outTok) { totalOutput += outTok; turns++ }
+        const toolReqs = data['toolRequests'] as Array<Record<string, unknown>> | undefined
+        if (toolReqs) {
+          for (const req of toolReqs) {
+            const name = String(req['name'] ?? '')
+            if (!name) continue
+            totalToolCalls++
+            toolCounts[name] = (toolCounts[name] ?? 0) + 1
+            // Track file paths from write/edit tools
+            const args = req['arguments'] as Record<string, unknown> | undefined
+            const fp = String(args?.['path'] ?? args?.['file_path'] ?? '')
+            if (fp && (name === 'edit' || name === 'write' || name === 'create')) {
+              filesChanged.add(fp)
+            }
+          }
+        }
+        if (data['model']) model = String(data['model'])
+      }
+
+      // session.shutdown has total context token counts
+      if (type === 'session.shutdown') {
+        totalInputFromShutdown = (data['currentTokens'] as number) ?? 0
+      }
     }
-    if (ts && (!acc.firstTimestamp || ts < acc.firstTimestamp)) acc.firstTimestamp = ts
-    if (ts && ts > acc.lastTimestamp) acc.lastTimestamp = ts
-    acc.model       = model
-    acc.totalInput  += inputTokens
-    acc.totalOutput += outputTokens
-    acc.totalCacheRead   += cacheRead
-    acc.totalCacheCreate += cacheCreate
-    acc.turns++
-    sessionMap.set(sessionId, acc)
+
+    if (!firstTimestamp) return null
+
+    // Input tokens: use session.shutdown total if available (output already counted),
+    // otherwise fall back to output as a rough proxy.
+    const totalInput = totalInputFromShutdown > 0
+      ? Math.max(0, totalInputFromShutdown - totalOutput)
+      : 0
+
+    return {
+      workspace,
+      card: _buildCard(sessionId, 'copilot', model || 'copilot', firstTimestamp, lastTimestamp, {
+        totalInput,
+        totalOutput,
+        totalCacheRead: 0,
+        totalCacheCreate: 0,
+        turns,
+        totalToolCalls,
+        toolCounts,
+        filesRead: new Set(),
+        filesChanged,
+        filesSearched: new Set(),
+        userRequest: userRequest.slice(0, 500),
+        timeline: [],
+      }),
+    }
   }
 
   // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -416,19 +440,6 @@ export class LogReader {
   }
 }
 
-// ── Copilot accumulator ───────────────────────────────────────────────────────
-
-interface CopilotSessionAccum {
-  firstTimestamp: string
-  lastTimestamp: string
-  model: string
-  totalInput: number
-  totalOutput: number
-  totalCacheRead: number
-  totalCacheCreate: number
-  turns: number
-}
-
 // ── Shared card builder ───────────────────────────────────────────────────────
 
 interface CardAccum {
@@ -486,30 +497,6 @@ function _buildCard(
     backgroundSpans: [],
     loopSignals: [],
   }
-}
-
-// ── OTEL attribute helpers ────────────────────────────────────────────────────
-
-/** Normalises OTEL attributes — supports both object and array forms. */
-function _flattenOtelAttrs(raw: unknown): Record<string, unknown> {
-  if (!raw) return {}
-  if (Array.isArray(raw)) {
-    const result: Record<string, unknown> = {}
-    for (const item of raw as Array<{ key?: string; value?: Record<string, unknown> }>) {
-      if (!item.key) continue
-      const v = item.value
-      result[item.key] = v?.['stringValue'] ?? v?.['intValue'] ?? v?.['doubleValue'] ?? v?.['boolValue'] ?? null
-    }
-    return result
-  }
-  return raw as Record<string, unknown>
-}
-
-function _numAttr(attrs: Record<string, unknown>, key: string): number {
-  const v = attrs[key]
-  if (typeof v === 'number') return v
-  if (typeof v === 'string') return parseInt(v) || 0
-  return 0
 }
 
 // ── Text content helpers ──────────────────────────────────────────────────────
