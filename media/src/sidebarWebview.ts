@@ -296,7 +296,8 @@ function render() {
   const cost = currentSession.costUsd ?? 0
   if (costVal) costVal.textContent = cost > 0 ? (cost < 0.01 ? '<$0.01' : '$' + cost.toFixed(2)) : '—'
 
-  // Burn rate row — always visible when session exists; waiting when not yet active
+  // Burn rate — show value when active+data available, waiting only during active session
+  // without data yet, hidden when session is complete
   const burnEl = document.getElementById('sb-burn')
   const burnWaiting = document.getElementById('sb-burn-waiting')
   if (isActive && burnRate) {
@@ -304,9 +305,12 @@ function render() {
     const cph = burnRate.costPerHour > 0.001 ? ` · $${burnRate.costPerHour.toFixed(2)}/hr` : ''
     if (burnEl) { burnEl.textContent = `${tpm} tokens/min${cph}`; burnEl.style.display = '' }
     if (burnWaiting) burnWaiting.style.display = 'none'
-  } else {
+  } else if (isActive) {
     if (burnEl) burnEl.style.display = 'none'
     if (burnWaiting) burnWaiting.style.display = ''
+  } else {
+    if (burnEl) burnEl.style.display = 'none'
+    if (burnWaiting) burnWaiting.style.display = 'none'
   }
 
   // Counters

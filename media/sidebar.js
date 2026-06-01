@@ -204,9 +204,12 @@
         burnEl.style.display = "";
       }
       if (burnWaiting) burnWaiting.style.display = "none";
-    } else {
+    } else if (isActive) {
       if (burnEl) burnEl.style.display = "none";
       if (burnWaiting) burnWaiting.style.display = "";
+    } else {
+      if (burnEl) burnEl.style.display = "none";
+      if (burnWaiting) burnWaiting.style.display = "none";
     }
     const turnsEl = document.getElementById("sb-turns");
     const toolsEl = document.getElementById("sb-tools");
