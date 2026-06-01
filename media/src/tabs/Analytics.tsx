@@ -252,6 +252,10 @@ export function Analytics() {
         </>
       )}
 
+      {/* Context growth */}
+      <SectionHead title="CONTEXT GROWTH" />
+      <ContextGrowthChart sessions={chartSessions.slice(0, CHART_MAX)} timelines={timelines} />
+
       {/* Token usage per session */}
       <SectionHead title="TOKEN USAGE PER SESSION" />
       <div style="display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)">
@@ -260,10 +264,6 @@ export function Analytics() {
       </div>
       {/* Always pass newest-first (rangedSessions); chart reverses internally to oldest-first */}
       <SessionTokenChart sessions={timeOrdered} />
-
-      {/* Context growth — at the bottom */}
-      <SectionHead title="CONTEXT GROWTH" />
-      <ContextGrowthChart sessions={chartSessions.slice(0, CHART_MAX)} timelines={timelines} />
 
     </div>
   )

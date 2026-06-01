@@ -4044,6 +4044,8 @@
           codexSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "codex", sessions: codexSess })
         ] })
       ] }),
+      /* @__PURE__ */ u4(SectionHead, { title: "CONTEXT GROWTH" }),
+      /* @__PURE__ */ u4(ContextGrowthChart, { sessions: chartSessions.slice(0, CHART_MAX), timelines }),
       /* @__PURE__ */ u4(SectionHead, { title: "TOKEN USAGE PER SESSION" }),
       /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
         /* @__PURE__ */ u4("span", { children: [
@@ -4055,9 +4057,7 @@
           " Output tokens"
         ] })
       ] }),
-      /* @__PURE__ */ u4(SessionTokenChart, { sessions: timeOrdered }),
-      /* @__PURE__ */ u4(SectionHead, { title: "CONTEXT GROWTH" }),
-      /* @__PURE__ */ u4(ContextGrowthChart, { sessions: chartSessions.slice(0, CHART_MAX), timelines })
+      /* @__PURE__ */ u4(SessionTokenChart, { sessions: timeOrdered })
     ] });
   }
 
