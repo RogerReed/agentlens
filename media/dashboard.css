@@ -1351,8 +1351,8 @@ body {
   background: none;
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 2px 10px;
-  font-size: 10px;
+  padding: 4px 12px;
+  font-size: 11px;
   color: var(--muted);
   cursor: pointer;
   flex-shrink: 0;

@@ -3247,8 +3247,8 @@
       /* @__PURE__ */ u4("div", { style: "display:flex;gap:0;padding:0 8px;border-bottom:1px solid var(--border);background:var(--vscode-editorWidget-background,var(--bg));overflow-x:auto", children: [
         navBtn("overview", "Overview"),
         navBtn("trace", `Trace${visibleEntries.length > 0 ? " (" + visibleEntries.length + ")" : ""}`),
-        navBtn("flow", "Flow"),
-        navBtn("tools", "Tools"),
+        navBtn("flow", `Flow${sess.totalLlmCalls > 0 ? " (" + sess.totalLlmCalls + ")" : ""}`),
+        navBtn("tools", `Tools${sess.totalToolCalls > 0 ? " (" + sess.totalToolCalls + ")" : ""}`),
         navBtn("files", `Files${sess.filesChanged.length > 0 ? " (" + sess.filesChanged.length + ")" : ""}`)
       ] }),
       /* @__PURE__ */ u4("div", { style: "padding:12px 14px", children: [
