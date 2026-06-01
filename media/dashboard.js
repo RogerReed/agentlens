@@ -3986,6 +3986,50 @@
           "Daily total (right axis)"
         ] }),
         /* @__PURE__ */ u4(CostBarChart, { sessions: pricedChartSess, mode }),
+        dayRows.length > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;justify-content:flex-end;margin-bottom:4px", children: /* @__PURE__ */ u4(
+          "button",
+          {
+            onClick: () => {
+              const headers = ["Date", "Agent", "Model", "Input Tokens", "Output Tokens", "Cache Create Tokens", "Cache Read Tokens", "Total Tokens", "Cost (USD)"];
+              const rows = [];
+              for (const [day, d5] of dayRows) {
+                for (const [, ae] of d5.agents) {
+                  rows.push([
+                    day,
+                    ae.source,
+                    [...ae.models].join("/"),
+                    String(ae.input),
+                    String(ae.output),
+                    String(ae.cacheCreate),
+                    String(ae.cacheRead),
+                    String(ae.input + ae.output + ae.cacheCreate + ae.cacheRead),
+                    ae.cost.toFixed(4)
+                  ]);
+                }
+              }
+              rows.push([
+                "TOTAL",
+                "",
+                "",
+                String(grand.input),
+                String(grand.output),
+                String(grand.cacheCreate),
+                String(grand.cacheRead),
+                String(grand.input + grand.output + grand.cacheCreate + grand.cacheRead),
+                grand.cost.toFixed(4)
+              ]);
+              const csv = [headers, ...rows].map((r5) => r5.map((v4) => `"${v4}"`).join(",")).join("\n");
+              const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+              const a4 = document.createElement("a");
+              a4.href = url;
+              a4.download = "agentlens-cost.csv";
+              a4.click();
+              URL.revokeObjectURL(url);
+            },
+            style: "font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap",
+            children: "\u2193 CSV"
+          }
+        ) }),
         dayRows.length > 0 && /* @__PURE__ */ u4("div", { style: "overflow-x:auto;margin-bottom:8px", children: /* @__PURE__ */ u4("table", { style: "border-collapse:collapse;font-size:10px;min-width:100%;white-space:nowrap", children: [
           /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: ["Date", "Agent", "Model", "Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].map((h5) => /* @__PURE__ */ u4("th", { style: `padding:3px 8px 3px ${h5 === "Date" ? "0" : "6px"};color:var(--muted);font-weight:500;text-align:${["Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].includes(h5) ? "right" : "left"}`, children: h5 }, h5)) }) }),
           /* @__PURE__ */ u4("tbody", { children: dayRows.map(([day, d5]) => {
