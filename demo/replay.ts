@@ -494,6 +494,90 @@ interface CapturedSpan {
   startTime: string; endTime: string
   attributes: SpanAttr[]; status?: { code: number; message?: string }
 }
+
+// Shape of a session summary from an export file (full or redacted)
+interface ExportSession {
+  sessionId: string; traceId?: string; source?: string; model?: string
+  startTime: string; durationMs?: number
+  turns?: number; totalToolCalls?: number
+  inputTokens?: number; outputTokens?: number
+  cacheReadTokens?: number; cacheCreateTokens?: number
+  userRequest?: string; toolCounts?: Record<string, number>
+}
+
+function iattr(key: string, v: number): SpanAttr { return { key, value: { intValue: Math.round(v) } } }
+function sattr(key: string, v: string): SpanAttr { return { key, value: { stringValue: v } } }
+
+// Convert an export-format session summary into synthetic CapturedSpans the
+// collector can parse. Tokens and tool calls are distributed evenly across turns.
+function exportSessionToSpans(sess: ExportSession): CapturedSpan[] {
+  const startMs  = new Date(sess.startTime).getTime()
+  const durMs    = sess.durationMs ?? 5_000
+  const endMs    = startMs + durMs
+  const turns    = Math.max(sess.turns ?? 1, 1)
+  const traceId  = sess.traceId || hex(16)
+  const rootId   = hex(8)
+  const source   = sess.source ?? 'claude_code'
+
+  const rootName = source === 'claude_code' ? 'claude_code.interaction'
+    : source === 'codex' ? 'codex.session' : 'invoke_agent'
+  const llmName  = source === 'claude_code' ? 'claude_code.llm_request'
+    : source === 'codex' ? 'codex.turn' : 'invoke_agent'
+
+  const spans: CapturedSpan[] = []
+
+  // Root span
+  spans.push({
+    traceId, spanId: rootId, name: rootName,
+    startTime: nano(startMs), endTime: nano(endMs),
+    attributes: [
+      sattr('user_prompt', sess.userRequest ?? ''),
+      sattr('gen_ai.system', source),
+    ],
+  })
+
+  // LLM call spans — distribute tokens evenly
+  const turnDurMs = Math.floor(durMs / turns)
+  const inPerTurn  = Math.floor((sess.inputTokens  ?? 0) / turns)
+  const outPerTurn = Math.floor((sess.outputTokens ?? 0) / turns)
+  const crPerTurn  = Math.floor((sess.cacheReadTokens   ?? 0) / turns)
+  const ccPerTurn  = Math.floor((sess.cacheCreateTokens ?? 0) / turns)
+
+  for (let i = 0; i < turns; i++) {
+    const tStart = startMs + i * turnDurMs
+    spans.push({
+      traceId, spanId: hex(8), parentSpanId: rootId, name: llmName,
+      startTime: nano(tStart), endTime: nano(tStart + turnDurMs),
+      attributes: [
+        sattr('gen_ai.request.model', sess.model ?? ''),
+        iattr('gen_ai.usage.input_tokens',               inPerTurn),
+        iattr('gen_ai.usage.output_tokens',              outPerTurn),
+        iattr('gen_ai.usage.cache_read.input_tokens',    crPerTurn),
+        iattr('gen_ai.usage.cache_creation.input_tokens', ccPerTurn),
+      ],
+    })
+  }
+
+  // Tool call spans — distribute evenly across duration
+  const toolEntries = Object.entries(sess.toolCounts ?? {})
+  const totalTools  = sess.totalToolCalls ?? toolEntries.reduce((s, [, n]) => s + n, 0)
+  const toolDurMs   = totalTools > 0 ? Math.floor(durMs / totalTools) : durMs
+  let toolOffset = 0
+  for (const [toolName, count] of toolEntries) {
+    for (let j = 0; j < count; j++) {
+      const tStart = startMs + toolOffset * toolDurMs
+      spans.push({
+        traceId, spanId: hex(8), parentSpanId: rootId,
+        name: source === 'claude_code' ? 'claude_code.tool' : toolName,
+        startTime: nano(tStart), endTime: nano(tStart + toolDurMs),
+        attributes: [sattr('tool.name', toolName)],
+      })
+      toolOffset++
+    }
+  }
+
+  return spans
+}
 interface Fixture {
   name: string; capturedAt: string; durationMs: number; spanCount: number
   agents: string[]; spans: CapturedSpan[]
@@ -587,11 +671,23 @@ async function replayFile(fp: string, label: string, instant: boolean): Promise<
 
   const raw = JSON.parse(fs.readFileSync(fp, 'utf-8'))
 
-  // Support both export format (Span[]) and capture fixture format ({ spans: CapturedSpan[] })
+  // Support three formats:
+  //   export format   — array of session summaries from the Export tab (has sessionId + ISO startTime)
+  //   capture format  — array of raw CapturedSpan objects (nanosecond startTime strings)
+  //   fixture format  — { spans: CapturedSpan[] } object with metadata
   let rawSpans: CapturedSpan[]
   if (Array.isArray(raw)) {
-    rawSpans = raw as CapturedSpan[]
-    log(`File: \x1b[32m${label}\x1b[0m  (${rawSpans.length} spans — export format)`)
+    const first = raw[0] as Record<string, unknown>
+    const isExport = first && typeof first.sessionId === 'string' &&
+      typeof first.startTime === 'string' && first.startTime.includes('T')
+    if (isExport) {
+      const sessions = raw as ExportSession[]
+      rawSpans = sessions.flatMap(exportSessionToSpans)
+      log(`File: \x1b[32m${label}\x1b[0m  (${sessions.length} sessions → ${rawSpans.length} synthetic spans)`)
+    } else {
+      rawSpans = raw as CapturedSpan[]
+      log(`File: \x1b[32m${label}\x1b[0m  (${rawSpans.length} spans — capture format)`)
+    }
   } else {
     const fixture = raw as Fixture
     rawSpans = fixture.spans
