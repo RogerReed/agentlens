@@ -164,7 +164,7 @@ function drawSparkline(canvas: HTMLCanvasElement, tokens: number[], color: strin
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-let state = {
+const state = {
   isActive: __SIDEBAR_INIT__.isActive,
   lastActivityMs: __SIDEBAR_INIT__.lastActivityMs,
   sessionCount: __SIDEBAR_INIT__.sessionCount,
@@ -199,6 +199,14 @@ function render() {
   if (!currentSession) {
     if (block) block.style.display = 'none'
     if (empty) empty.style.display = 'block'
+    const agentEl = document.getElementById('sb-agent')
+    if (agentEl) agentEl.innerHTML = ''
+    const durEl = document.getElementById('sb-dur')
+    if (durEl) durEl.textContent = ''
+    const promptEl = document.getElementById('sb-prompt') as HTMLElement | null
+    if (promptEl) { promptEl.textContent = ''; promptEl.style.display = 'none' }
+    const modelEl = document.getElementById('sb-model')
+    if (modelEl) modelEl.textContent = ''
     renderFooter()
     return
   }

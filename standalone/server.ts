@@ -270,7 +270,7 @@ function computeSidebarPayload(summary: ReturnType<typeof summarizeSpans>, allSp
 }
 
 // Legacy shape kept for data the Preact dashboard still reads
-function computeSidebarData(summary: ReturnType<typeof summarizeSpans>, allSpans: Span[]) {
+function computeSidebarData(summary: ReturnType<typeof summarizeSpans>, _allSpans: Span[]) {
   const sessions = summary.sessions
 
   const filesSet = new Set<string>()
@@ -279,18 +279,6 @@ function computeSidebarData(summary: ReturnType<typeof summarizeSpans>, allSpans
     for (const f of sess.filesChanged) filesSet.add(f)
     errorCount += sess.errors
   }
-  const sessionTokens = sessions.map((sess, i) => {
-    const inputArr: number[] = [], outputArr: number[] = []
-    for (const e of sess.timeline ?? []) {
-      if (e.type === 'llm' && ((e.inputTokens ?? 0) > 0 || (e.outputTokens ?? 0) > 0)) {
-        inputArr.push(e.inputTokens ?? 0); outputArr.push(e.outputTokens ?? 0)
-      }
-    }
-    if (inputArr.length === 0 && (sess.inputTokens > 0 || sess.outputTokens > 0)) {
-      inputArr.push(sess.inputTokens); outputArr.push(sess.outputTokens)
-    }
-    return { session: i + 1, tokens: sess.inputTokens + sess.outputTokens, inputTokens: inputArr, outputTokens: outputArr, source: sess.source }
-  })
   const cacheHitPct = sessions.length > 0
     ? Math.round(sessions.reduce((a, s) => a + s.cacheHitRate, 0) / sessions.length * 100) : 0
   const avgTurns = sessions.length > 0
@@ -315,10 +303,10 @@ function computeSidebarData(summary: ReturnType<typeof summarizeSpans>, allSpans
   } : null
 
   return {
-    sessionCount: sessions.length + inProgressTraceIds.length,
-    turnCount: sessions.reduce((s, sess) => s + sess.totalLlmCalls, 0) + inProgressTurns,
-    totalInputTokens: sessions.reduce((s, sess) => s + sess.inputTokens, 0) + inProgressInput,
-    totalOutputTokens: sessions.reduce((s, sess) => s + sess.outputTokens, 0) + inProgressOutput,
+    sessionCount: sessions.length,
+    turnCount: sessions.reduce((s, sess) => s + sess.totalLlmCalls, 0),
+    totalInputTokens: sessions.reduce((s, sess) => s + sess.inputTokens, 0),
+    totalOutputTokens: sessions.reduce((s, sess) => s + sess.outputTokens, 0),
     filesChangedCount: filesSet.size,
     errors: errorCount,
     totalToolCalls,
@@ -382,7 +370,6 @@ function pushUpdate() {
 function getHtml(): string {
   let sessionSummary: ReturnType<typeof summarizeSpans> | null = null
   try { sessionSummary = summarizeSpans(spans) } catch { /* ignore */ }
-  const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null
   const sessionSummaryJson = safeJson(sessionSummary)
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : {
     isActive: false, lastActivityMs: 0, sessionCount: 0, agentSources: [], currentSession: null, burnRate: null,
@@ -437,13 +424,29 @@ function getHtml(): string {
     }
     #sa-sidebar.sa-collapsed { width: 0; min-width: 0; }
 
-    /* Sidebar content — shared element IDs with sidebarWebview.ts */
+    /* Sidebar content — shared CSS classes with sidebarWebview.ts */
     .sb-card { background: var(--vscode-editor-background); border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 8px 10px; margin-bottom: 6px; }
+    .sb-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--vscode-descriptionForeground); margin-bottom: 4px; }
+    .sb-row { display: flex; align-items: center; gap: 6px; }
     .sb-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .sb-dot.active { background: #56D364; animation: sbPulse 1.5s ease-in-out infinite; }
     .sb-dot.idle { background: var(--vscode-descriptionForeground); opacity: 0.5; }
     @keyframes sbPulse { 0%,100% { opacity:1;transform:scale(1); } 50% { opacity:0.5;transform:scale(1.4); } }
-    @keyframes agentPulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.4); } }
+    .sb-status { font-size: 12px; font-weight: 600; }
+    .sb-muted { color: var(--vscode-descriptionForeground); font-size: 11px; }
+    .sb-prompt { font-size: 10px; color: var(--vscode-foreground); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 3px 0 2px; font-style: italic; }
+    .sb-model { font-size: 10px; color: var(--vscode-textLink-foreground); margin-bottom: 4px; }
+    #sa-sidebar canvas { display: block; width: 100%; height: 80px; }
+    .sb-turn-label { font-size: 10px; color: var(--vscode-descriptionForeground); margin-top: 3px; }
+    .sb-burn { font-size: 12px; font-weight: 600; color: var(--vscode-charts-green, #81c784); }
+    .sb-counters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; }
+    .sb-counter-val { font-size: 16px; font-weight: 700; color: var(--vscode-textLink-foreground); }
+    .sb-counter-key { font-size: 9px; color: var(--vscode-descriptionForeground); text-transform: uppercase; letter-spacing: 0.3px; }
+    .sb-open-btn { display: block; width: 100%; padding: 7px 10px; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; color: var(--vscode-button-foreground); background: var(--vscode-button-background); border: none; border-radius: 4px; margin-bottom: 6px; }
+    .sb-open-btn:hover { background: var(--vscode-button-hoverBackground); }
+    .sb-footer { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 8px; font-size: 11px; color: var(--vscode-descriptionForeground); border-top: 1px solid var(--vscode-panel-border); }
+    .sb-clear-btn { padding: 2px 8px; font-size: 10px; cursor: pointer; border: 1px solid var(--vscode-testing-iconFailed, #f44); border-radius: 3px; background: transparent; color: var(--vscode-testing-iconFailed, #f44); }
+    .sb-clear-btn:hover { background: rgba(255,68,68,0.08); }
     #sa-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:8px 16px; border-radius:4px; font-size:12px; z-index:9999; opacity:0; transition:opacity 0.2s; pointer-events:none; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.4); }
     #sa-toast.visible { opacity:1; }
 
@@ -649,54 +652,88 @@ function getHtml(): string {
 
       <div style="flex:1;overflow-y:auto;padding:0 8px 8px;font-family:var(--vscode-font-family);color:var(--vscode-foreground)">
         <!-- Status row -->
-        <div class="sb-card">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+        <div class="sb-card" style="margin-bottom:6px">
+          <div class="sb-row" style="margin-bottom:2px">
             <span class="sb-dot idle" id="sb-dot"></span>
-            <span id="sb-status-text" style="font-size:12px;font-weight:600;color:var(--vscode-descriptionForeground)">Idle</span>
+            <span class="sb-status" id="sb-status-text">Idle</span>
             <span style="flex:1"></span>
-            <span id="sb-agent" style="display:flex;align-items:center;font-size:11px;color:var(--vscode-descriptionForeground)"></span>
-            <span id="sb-dur" style="font-size:11px;color:var(--vscode-descriptionForeground)"></span>
+            <span id="sb-agent" class="sb-muted" style="display:flex;align-items:center"></span>
+            <span id="sb-dur" class="sb-muted"></span>
           </div>
-          <div id="sb-prompt" style="font-size:10px;color:var(--vscode-foreground);opacity:0.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:3px 0 2px;font-style:italic"></div>
-          <div id="sb-model" style="font-size:10px;color:var(--vscode-textLink-foreground);margin-bottom:2px"></div>
-          <span id="sb-ago" style="font-size:10px;color:var(--vscode-descriptionForeground)"></span>
+          <div id="sb-prompt" class="sb-prompt"></div>
+          <div id="sb-model" class="sb-model"></div>
+          <span id="sb-ago" class="sb-muted" style="font-size:10px"></span>
         </div>
 
-        <!-- Session block -->
+        <!-- Session block (hidden when no sessions) -->
         <div id="sb-session-block" style="display:none">
-          <!-- Sparkline -->
+
+          <!-- Key counters (shown first) -->
           <div class="sb-card">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--vscode-descriptionForeground);margin-bottom:4px">Context Growth</div>
-            <canvas id="sb-sparkline" style="display:block;width:100%;height:80px"></canvas>
-            <div id="sb-turn-label" style="font-size:10px;color:var(--vscode-descriptionForeground);margin-top:3px"></div>
-          </div>
-          <!-- Burn rate -->
-          <div class="sb-card" id="sb-burn-row" style="display:none">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--vscode-descriptionForeground);margin-bottom:4px">Burn Rate</div>
-            <div id="sb-burn" style="font-size:12px;font-weight:600;color:var(--vscode-charts-green,#81c784)"></div>
-          </div>
-          <!-- Counters -->
-          <div class="sb-card">
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center">
-              <div><div id="sb-turns" style="font-size:16px;font-weight:700;color:var(--vscode-textLink-foreground)">—</div><div style="font-size:9px;color:var(--vscode-descriptionForeground);text-transform:uppercase;letter-spacing:.3px">Turns</div></div>
-              <div><div id="sb-tools" style="font-size:16px;font-weight:700;color:var(--vscode-textLink-foreground)">—</div><div style="font-size:9px;color:var(--vscode-descriptionForeground);text-transform:uppercase;letter-spacing:.3px">Tools</div></div>
-              <div><div id="sb-errors" style="font-size:16px;font-weight:700;color:var(--vscode-textLink-foreground)">—</div><div style="font-size:9px;color:var(--vscode-descriptionForeground);text-transform:uppercase;letter-spacing:.3px">Errors</div></div>
-              <div><div id="sb-cache" style="font-size:16px;font-weight:700;color:var(--vscode-textLink-foreground)">—</div><div style="font-size:9px;color:var(--vscode-descriptionForeground);text-transform:uppercase;letter-spacing:.3px">Cache</div></div>
+            <div class="sb-counters">
+              <div>
+                <div class="sb-counter-val" id="sb-turns">—</div>
+                <div class="sb-counter-key">Turns</div>
+              </div>
+              <div>
+                <div class="sb-counter-val" id="sb-tools">—</div>
+                <div class="sb-counter-key">Tools</div>
+              </div>
+              <div>
+                <div class="sb-counter-val" id="sb-errors">—</div>
+                <div class="sb-counter-key">Errors</div>
+              </div>
+              <div>
+                <div class="sb-counter-val" id="sb-cache">—</div>
+                <div class="sb-counter-key">Cache</div>
+              </div>
             </div>
           </div>
+
+          <!-- Context growth sparkline -->
+          <div class="sb-card">
+            <div class="sb-section-label">Context Growth</div>
+            <canvas id="sb-sparkline"></canvas>
+            <div id="sb-turn-label" class="sb-turn-label"></div>
+            <div id="sb-sparkline-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic;padding:2px 0">Waiting for data…</div>
+          </div>
+
+          <!-- Token breakdown (input / output) -->
+          <div class="sb-card" id="sb-tokens-card">
+            <div class="sb-section-label">Tokens</div>
+            <div id="sb-token-bars" style="margin-top:4px"></div>
+            <div id="sb-token-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic;padding:2px 0">Waiting for data…</div>
+          </div>
+
+          <!-- Estimated cost -->
+          <div class="sb-card" id="sb-cost-card">
+            <div class="sb-section-label">Estimated Cost</div>
+            <div id="sb-cost-val" style="font-size:16px;font-weight:700;color:var(--vscode-charts-green,#81c784)">—</div>
+          </div>
+
+          <!-- Burn rate -->
+          <div class="sb-card" id="sb-burn-row">
+            <div class="sb-section-label">Burn Rate</div>
+            <div id="sb-burn" class="sb-burn"></div>
+            <div id="sb-burn-waiting" class="sb-muted" style="display:none;font-size:10px;font-style:italic">Waiting for data…</div>
+          </div>
+
         </div>
 
-        <!-- Empty state -->
-        <div id="sb-empty" style="text-align:center;padding:24px 0;font-size:11px;color:var(--vscode-descriptionForeground)">No sessions recorded yet</div>
+        <!-- Empty state (shown by render() when currentSession is null) -->
+        <div id="sb-empty" class="sb-muted" style="text-align:center;padding:24px 0;font-size:11px;display:none">
+          No sessions recorded yet
+        </div>
 
         <!-- Open dashboard -->
-        <button id="sb-open-btn" style="display:block;width:100%;padding:7px 10px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;color:var(--vscode-button-foreground);background:var(--vscode-button-background);border:none;border-radius:4px;margin-bottom:6px">Open Dashboard</button>
+        <button class="sb-open-btn" id="sb-open-btn">Open Dashboard</button>
+
       </div>
 
       <!-- Footer -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px 8px;font-size:11px;color:var(--vscode-descriptionForeground);border-top:1px solid var(--vscode-panel-border)">
-        <span><span id="sb-session-count">0</span>&nbsp;sessions</span>
-        <button id="sb-clear-btn" style="padding:2px 8px;font-size:10px;cursor:pointer;border:1px solid var(--vscode-testing-iconFailed,#f44);border-radius:3px;background:transparent;color:var(--vscode-testing-iconFailed,#f44)">Clear All</button>
+      <div class="sb-footer">
+        <span><span id="sb-session-count">0</span> sessions stored</span>
+        <button class="sb-clear-btn" id="sb-clear-btn">Clear All Data</button>
       </div>
     </div>
 

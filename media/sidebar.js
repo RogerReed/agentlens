@@ -125,14 +125,17 @@
     if (!currentSession) {
       if (block) block.style.display = "none";
       if (empty) empty.style.display = "block";
-      const agentEl = document.getElementById("sb-agent");
-      if (agentEl) agentEl.innerHTML = "";
-      const durEl = document.getElementById("sb-dur");
-      if (durEl) durEl.textContent = "";
-      const promptEl = document.getElementById("sb-prompt");
-      if (promptEl) promptEl.textContent = "";
-      const modelEl = document.getElementById("sb-model");
-      if (modelEl) modelEl.textContent = "";
+      const agentEl2 = document.getElementById("sb-agent");
+      if (agentEl2) agentEl2.innerHTML = "";
+      const durEl2 = document.getElementById("sb-dur");
+      if (durEl2) durEl2.textContent = "";
+      const promptEl2 = document.getElementById("sb-prompt");
+      if (promptEl2) {
+        promptEl2.textContent = "";
+        promptEl2.style.display = "none";
+      }
+      const modelEl2 = document.getElementById("sb-model");
+      if (modelEl2) modelEl2.textContent = "";
       renderFooter();
       return;
     }

@@ -354,8 +354,6 @@ async function handleAutomation(msg: { label: string; writePromptsFile: boolean;
   const agentLabel = msg.agent === 'claude_code' ? 'Claude' : msg.agent === 'copilot' ? 'Copilot' : msg.agent === 'codex' ? 'Codex' : 'AI'
   const sessionLine = msg.sessionId ? `Session ID: ${msg.sessionId}\n` : ''
   const fullPrompt = `[${msg.label}]\n\n${sessionLine}${msg.prompt}`
-  const snippet = msg.sessionTitle.length > 50 ? msg.sessionTitle.slice(0, 50) + '…' : msg.sessionTitle
-
   if (msg.writePromptsFile) {
     const filename = await writeAutomationPrompt(msg.agent, msg.label, fullPrompt)
     if (filename) {
