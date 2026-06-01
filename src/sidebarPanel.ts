@@ -421,7 +421,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
 
   <!-- Footer -->
   <div class="sb-footer">
-    <span><span id="sb-session-count">0</span> sessions</span>
+    <span><span id="sb-session-count">0</span> sessions stored</span>
     <button class="sb-clear-btn" id="sb-clear-btn">Clear All Data</button>
   </div>
 

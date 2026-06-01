@@ -8,7 +8,7 @@ import {
   dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults,
   focusedSessionId, timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
   vscode, displaySessions, rangedSessions,
-  sessionTextFilter,
+  sessionTextFilter, filteredSessions,
   sessionSortKey, sessionSortDir, type SortKey,
 } from './state'
 import type { TimelineEntry, AgentFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
@@ -377,6 +377,7 @@ function SearchFilterBar() {
               >{labels[key]}{active ? (sortDir === 'desc' ? ' ▼' : ' ▲') : ''}</button>
             )
           })}
+          <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
         </>
       )}
     </div>

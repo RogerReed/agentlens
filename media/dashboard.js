@@ -3421,9 +3421,8 @@
       ] }) }),
       /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)", children: [
         /* @__PURE__ */ u4("span", { children: [
-          sessions.length,
-          " session",
-          sessions.length !== 1 ? "s" : ""
+          sessionSummary.value?.sessions?.length ?? 0,
+          " sessions stored"
         ] }),
         /* @__PURE__ */ u4(
           "button",
@@ -6162,7 +6161,11 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             },
             key
           );
-        })
+        }),
+        /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
+          filteredSessions.value.length,
+          " sessions"
+        ] })
       ] })
     ] });
   }
