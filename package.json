@@ -164,6 +164,7 @@
   ],
   "scripts": {
     "vscode:prepublish": "pnpm run package",
+    "prepublishOnly": "pnpm run package",
     "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
     "standalone": "node esbuild.js && node standalone/server.js",
     "demo": "node demo/run-ts.js demo/replay.ts",
