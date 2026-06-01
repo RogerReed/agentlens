@@ -3275,7 +3275,7 @@
       ] }),
       /* @__PURE__ */ u4("div", { style: "padding:12px 14px", children: [
         section === "overview" && /* @__PURE__ */ u4("div", { children: [
-          sess.userRequest ? /* @__PURE__ */ u4(PromptBlock, { text: sess.userRequest }) : /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;font-size:11px;color:var(--muted)", children: "Prompt not available for this session" }),
+          sess.userRequest ? /* @__PURE__ */ u4(PromptBlock, { text: sess.userRequest }) : sess.turns === 0 ? /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;font-size:11px;color:var(--muted);font-style:italic", children: "Waiting for first turn\u2026" }) : /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;font-size:11px;color:var(--muted)", children: "Prompt not captured for this session" }),
           /* @__PURE__ */ u4("div", { style: "display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:10px", children: [
             { k: "LLM calls", v: String(sess.totalLlmCalls) },
             { k: "Tool calls", v: String(sess.totalToolCalls) },
@@ -3369,14 +3369,7 @@
               /* @__PURE__ */ u4("span", { style: "margin-left:4px", dangerouslySetInnerHTML: { __html: getDataSourceBadgeHtml(sess.dataSource ?? "otel") } })
             ] }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums", children: formatSessionTime(sess) }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 6px;max-width:0;width:100%", children: /* @__PURE__ */ u4(
-              "span",
-              {
-                style: `display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;${prompt ? "font-style:italic;color:var(--foreground)" : "color:var(--muted)"}`,
-                title: prompt || void 0,
-                children: prompt || "\u2014"
-              }
-            ) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 6px;max-width:0;width:100%", children: prompt ? /* @__PURE__ */ u4("span", { style: "display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)", title: prompt, children: prompt }) : sess.turns === 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: "\u2026" }) : /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: "\u2014" }) }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis", children: sess.model || "\u2014" }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;text-align:right;white-space:nowrap;font-size:10px;color:var(--muted)", children: formatCompact(sess.inputTokens + sess.outputTokens) }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;text-align:right;white-space:nowrap;font-size:10px;color:var(--muted)", children: formatMs(sess.durationMs) }),

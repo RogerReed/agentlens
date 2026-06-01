@@ -101,7 +101,9 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
           <div>
             {sess.userRequest
               ? <PromptBlock text={sess.userRequest} />
-              : <div style="margin-bottom:10px;font-size:11px;color:var(--muted)">Prompt not available for this session</div>
+              : sess.turns === 0
+                ? <div style="margin-bottom:10px;font-size:11px;color:var(--muted);font-style:italic">Waiting for first turn…</div>
+                : <div style="margin-bottom:10px;font-size:11px;color:var(--muted)">Prompt not captured for this session</div>
             }
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:10px">
               {[
@@ -248,12 +250,12 @@ function SessionRow({ sess }: { sess: SessionSummaryCard }) {
 
         {/* Prompt */}
         <td style="padding:4px 6px;max-width:0;width:100%">
-          <span
-            style={`display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;${prompt ? 'font-style:italic;color:var(--foreground)' : 'color:var(--muted)'}`}
-            title={prompt || undefined}
-          >
-            {prompt || '—'}
-          </span>
+          {prompt
+            ? <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)" title={prompt}>{prompt}</span>
+            : sess.turns === 0
+              ? <span style="color:var(--muted);font-size:11px">…</span>
+              : <span style="color:var(--muted);font-size:11px">—</span>
+          }
         </td>
 
         {/* Model */}
