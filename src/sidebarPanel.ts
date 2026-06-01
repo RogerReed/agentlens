@@ -160,10 +160,23 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     const spans: Span[] = this.repo.store_.getSpans()
     let lastMs = 0
     for (const span of spans) {
+      const name = span.name || ''
+      // Only count spans that belong to actual agent sessions — ignore background
+      // noise like copilotLanguageModelWrapper calls and other orphan spans.
+      const isAgentSpan =
+        name === 'claude_code.interaction' ||
+        name === 'claude_code.llm_request' ||
+        name === 'claude_code.tool' ||
+        name.startsWith('invoke_agent') ||
+        name.startsWith('codex.turn') ||
+        name.startsWith('codex.session')
+      if (!isAgentSpan) continue
       const ms = span.receivedAt ?? nanoToMs(span.endTime)
       if (ms > lastMs) lastMs = ms
     }
-    const isActive = lastMs > 0 && (Date.now() - lastMs) < 20_000
+    // 45s window: long enough to cover slow LLM responses without flickering off
+    // mid-session, short enough to clear once a session actually ends.
+    const isActive = lastMs > 0 && (Date.now() - lastMs) < 45_000
     return { isActive, lastMs }
   }
 
