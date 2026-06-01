@@ -1227,7 +1227,7 @@ body {
   margin-bottom: 8px;
 }
 .insight-icon {
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
 }
 .insight-warning .insight-icon {
@@ -1247,20 +1247,20 @@ body {
 }
 .insight-title {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 11px;
   color: var(--fg);
 }
 .insight-detail {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
   line-height: 1.5;
   margin-bottom: 10px;
 }
 .insight-action {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.6;
   color: var(--fg);
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: var(--hover);
   border-radius: 6px;
   white-space: pre-wrap;
