@@ -137,7 +137,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       outputTokens: latest.outputTokens,
       cacheReadTokens: latest.cacheReadTokens,
       cacheCreateTokens: latest.cacheCreateTokens,
-      costUsd: calcTokenCostUsd(latest.inputTokens, latest.cacheReadTokens, latest.cacheCreateTokens, latest.outputTokens, latest.model),
+      costUsd: calcTokenCostUsd(Math.max(0, latest.inputTokens - latest.cacheReadTokens - latest.cacheCreateTokens), latest.cacheReadTokens, latest.cacheCreateTokens, latest.outputTokens, latest.model),
     } : null
 
     this.view.webview.postMessage({
@@ -208,7 +208,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       outputTokens: latest.outputTokens,
       cacheReadTokens: latest.cacheReadTokens,
       cacheCreateTokens: latest.cacheCreateTokens,
-      costUsd: calcTokenCostUsd(latest.inputTokens, latest.cacheReadTokens, latest.cacheCreateTokens, latest.outputTokens, latest.model),
+      costUsd: calcTokenCostUsd(Math.max(0, latest.inputTokens - latest.cacheReadTokens - latest.cacheCreateTokens), latest.cacheReadTokens, latest.cacheCreateTokens, latest.outputTokens, latest.model),
     } : null
 
     const burnRate = burnRateResult ? {
