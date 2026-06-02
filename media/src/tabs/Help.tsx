@@ -536,7 +536,7 @@ function BadgesSection() {
       <div class="glossary" style="margin-bottom:8px">
         <div class="glossary-item">
           <dt class="glossary-term" style="min-width:0">
-            <span style={`${badgeStyle}color:#81c784;border-color:#81c784`}>User</span>
+            <span style={`${badgeStyle}color:#7986cb;border-color:#7986cb`}>User</span>
           </dt>
           <dd class="glossary-def">A human typed this prompt directly in the chat. The baseline case — most of your interactive sessions will carry this badge.</dd>
         </div>

@@ -376,7 +376,7 @@ export function getDataSourceBadgeHtml(dataSource: 'otel' | 'log' | undefined): 
   return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`
 }
 
-const INITIATOR_COLORS = { user: '#81c784', agent: '#b0bec5', api: '#80cbc4' } as const
+const INITIATOR_COLORS = { user: '#7986cb', agent: '#b0bec5', api: '#80cbc4' } as const
 const INITIATOR_TOOLTIPS = {
   user:  'Typed directly by a human in the chat',
   agent: 'Spawned by the Agent tool (isSidechain) — a sub-task delegated by Claude',

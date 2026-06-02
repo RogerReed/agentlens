@@ -1560,7 +1560,7 @@
     const tooltip = DATA_SOURCE_TOOLTIP[ds];
     return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`;
   }
-  var INITIATOR_COLORS = { user: "#81c784", agent: "#b0bec5", api: "#80cbc4" };
+  var INITIATOR_COLORS = { user: "#7986cb", agent: "#b0bec5", api: "#80cbc4" };
   var INITIATOR_TOOLTIPS = {
     user: "Typed directly by a human in the chat",
     agent: "Spawned by the Agent tool (isSidechain) \u2014 a sub-task delegated by Claude",
@@ -5456,7 +5456,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4("h4", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:0 0 8px", children: "Initiator" }),
       /* @__PURE__ */ u4("div", { class: "glossary", style: "margin-bottom:8px", children: [
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#81c784;border-color:#81c784`, children: "User" }) }),
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#7986cb;border-color:#7986cb`, children: "User" }) }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", children: "A human typed this prompt directly in the chat. The baseline case \u2014 most of your interactive sessions will carry this badge." })
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
@@ -6283,7 +6283,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   }
   var INITIATOR_FILTER_OPTIONS = [
     { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)" },
-    { value: "user", label: "User", color: "#81c784" },
+    { value: "user", label: "User", color: "#7986cb" },
     { value: "agent", label: "Agent", color: "#b0bec5" },
     { value: "api", label: "API", color: "#80cbc4" }
   ];
