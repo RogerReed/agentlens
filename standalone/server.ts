@@ -79,6 +79,10 @@ function runLogScan() {
 }
 
 function startLogIngestion() {
+  // Register the poll first so it always runs, even if no files exist yet at startup.
+  setInterval(runLogScan, 5_000)
+  console.log('[AgentLens] Log ingestion enabled — scanning local session files')
+
   const BATCH_SIZE = 10
   let files: ReturnType<typeof logReader.collectFileMeta>
   try { files = logReader.collectFileMeta() } catch { return }
@@ -98,8 +102,6 @@ function startLogIngestion() {
   }
 
   setImmediate(() => processBatch(0))
-  setInterval(runLogScan, 30_000)
-  console.log('[AgentLens] Log ingestion enabled — scanning local session files')
 }
 
 // ── OTLP parsing ──────────────────────────────────────────────────────────────

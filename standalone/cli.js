@@ -2349,7 +2349,8 @@ function _buildCard(sessionId, source, model, firstTimestamp, lastTimestamp, acc
   const startMs = _parseTs(firstTimestamp);
   const endMs = _parseTs(lastTimestamp);
   const durationMs = endMs > 0 && startMs > 0 ? Math.max(0, endMs - startMs) : 0;
-  const cacheHitRate = acc.totalInput > 0 ? acc.totalCacheRead / acc.totalInput : 0;
+  const totalContext = acc.totalInput + acc.totalCacheRead + acc.totalCacheCreate;
+  const cacheHitRate = totalContext > 0 ? acc.totalCacheRead / totalContext : 0;
   return {
     sessionId,
     traceId: sessionId,
@@ -2358,7 +2359,7 @@ function _buildCard(sessionId, source, model, firstTimestamp, lastTimestamp, acc
     userRequest: acc.userRequest.slice(0, 500),
     model,
     turns: acc.turns,
-    inputTokens: acc.totalInput,
+    inputTokens: totalContext,
     outputTokens: acc.totalOutput,
     cacheReadTokens: acc.totalCacheRead,
     cacheCreateTokens: acc.totalCacheCreate,
@@ -2465,6 +2466,8 @@ function runLogScan() {
   if (changed) pushUpdate();
 }
 function startLogIngestion() {
+  setInterval(runLogScan, 5e3);
+  console.log("[AgentLens] Log ingestion enabled \u2014 scanning local session files");
   const BATCH_SIZE = 10;
   let files;
   try {
@@ -2490,8 +2493,6 @@ function startLogIngestion() {
     if (next < files.length) setImmediate(() => processBatch(next));
   };
   setImmediate(() => processBatch(0));
-  setInterval(runLogScan, 3e4);
-  console.log("[AgentLens] Log ingestion enabled \u2014 scanning local session files");
 }
 function toAttrs(raw) {
   if (!Array.isArray(raw)) return [];

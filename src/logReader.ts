@@ -519,7 +519,11 @@ function _buildCard(
   const startMs  = _parseTs(firstTimestamp)
   const endMs    = _parseTs(lastTimestamp)
   const durationMs = (endMs > 0 && startMs > 0) ? Math.max(0, endMs - startMs) : 0
-  const cacheHitRate = acc.totalInput > 0 ? acc.totalCacheRead / acc.totalInput : 0
+  // Use total context (raw + cache read + cache create) as the denominator so the
+  // rate stays 0–1. Using raw input_tokens alone produces rates >> 1 in multi-turn
+  // sessions where the cached context dwarfs the new tokens added each turn.
+  const totalContext = acc.totalInput + acc.totalCacheRead + acc.totalCacheCreate
+  const cacheHitRate = totalContext > 0 ? acc.totalCacheRead / totalContext : 0
 
   return {
     sessionId,
@@ -529,7 +533,7 @@ function _buildCard(
     userRequest: acc.userRequest.slice(0, 500),
     model,
     turns: acc.turns,
-    inputTokens: acc.totalInput,
+    inputTokens: totalContext,
     outputTokens: acc.totalOutput,
     cacheReadTokens: acc.totalCacheRead,
     cacheCreateTokens: acc.totalCacheCreate,
