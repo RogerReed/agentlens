@@ -462,6 +462,8 @@ export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[]
 
     const dayKey = (t: string) => t ? new Date(t).toISOString().slice(0, 10) : 'none'
     const textColor = cs.getPropertyValue('--vscode-descriptionForeground').trim() || '#888'
+    let lastDayLabelX = -Infinity
+    const MIN_DAY_LABEL_GAP = 30
 
     sessionData.forEach((s, i) => {
       const slotX = pad.left + i * slotW
@@ -473,16 +475,17 @@ export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[]
       ctx.beginPath()
       ctx.arc(slotX + slotW / 2, pad.top + chartH + 7, 1.5, 0, Math.PI * 2)
       ctx.fillStyle = getAgentColor(s.source); ctx.fill()
-      // Day boundary: vertical line + MM-DD label at the start of each new day
+      // Day boundary: vertical line + MM-DD label (skipped when too close to the previous label)
       if (i > 0 && dayKey(s.startTime) !== dayKey(sessionData[i - 1].startTime)) {
         ctx.strokeStyle = gridColor; ctx.lineWidth = 0.8
         ctx.beginPath(); ctx.moveTo(slotX, pad.top); ctx.lineTo(slotX, pad.top + chartH); ctx.stroke()
         const label = s.startTime ? new Date(s.startTime).toISOString().slice(5, 10) : ''
-        if (label) {
+        if (label && slotX - lastDayLabelX >= MIN_DAY_LABEL_GAP) {
           ctx.fillStyle = textColor
           ctx.font = '8px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
           ctx.textAlign = 'left'; ctx.textBaseline = 'top'
           ctx.fillText(label, slotX + 2, pad.top + 1)
+          lastDayLabelX = slotX
         }
       }
     })

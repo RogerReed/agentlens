@@ -1831,10 +1831,12 @@
       });
       if (n3 > 0) {
         const labelFont = "8px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
+        const MIN_LABEL_GAP = 30;
         let isFirst = true;
+        let lastLabelX = -Infinity;
         for (const [dk, { start, end }] of dayGroups) {
           const x1 = offsetX + start * slotW + barPad;
-          const x22 = offsetX + end * slotW + barPad + barW;
+          const midX = (offsetX + start * slotW + barPad + offsetX + end * slotW + barPad + barW) / 2;
           if (!isFirst) {
             ctx.strokeStyle = gridColor;
             ctx.lineWidth = 0.8;
@@ -1846,13 +1848,14 @@
             ctx.setLineDash([]);
           }
           isFirst = false;
-          if (!isFirst) {
+          if (midX - lastLabelX >= MIN_LABEL_GAP) {
             const label = dk.length >= 10 ? dk.slice(5, 10) : dk;
             ctx.font = labelFont;
             ctx.fillStyle = textColor;
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
             ctx.fillText(label, x1 + 2, pad.top + 1);
+            lastLabelX = midX;
           }
         }
       }
@@ -3761,6 +3764,8 @@
       const halfBar = Math.max(0.5, halfSlot - barPad);
       const dayKey = (t4) => t4 ? new Date(t4).toISOString().slice(0, 10) : "none";
       const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
+      let lastDayLabelX = -Infinity;
+      const MIN_DAY_LABEL_GAP = 30;
       sessionData.forEach((s4, i4) => {
         const slotX = pad.left + i4 * slotW;
         const inH = s4.input / maxIn * chartH;
@@ -3781,12 +3786,13 @@
           ctx.lineTo(slotX, pad.top + chartH);
           ctx.stroke();
           const label = s4.startTime ? new Date(s4.startTime).toISOString().slice(5, 10) : "";
-          if (label) {
+          if (label && slotX - lastDayLabelX >= MIN_DAY_LABEL_GAP) {
             ctx.fillStyle = textColor;
             ctx.font = "8px " + (cs.getPropertyValue("--vscode-font-family").trim() || "sans-serif");
             ctx.textAlign = "left";
             ctx.textBaseline = "top";
             ctx.fillText(label, slotX + 2, pad.top + 1);
+            lastDayLabelX = slotX;
           }
         }
       });
