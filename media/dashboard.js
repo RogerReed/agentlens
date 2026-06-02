@@ -3572,7 +3572,21 @@
           const val = yMax - (yMax - yMin) * i4 / 4;
           if (val > 0) ctx.fillText(formatCompact(val), pad.left - 4, pad.top + chartH * i4 / 4);
         }
-        const xStep = maxTurns <= 10 ? 1 : maxTurns <= 30 ? 5 : maxTurns <= 100 ? 10 : 20;
+        const minLabelPx = 32;
+        const maxLabels = Math.max(2, Math.floor(chartW / minLabelPx));
+        let xStep;
+        if (maxTurns <= maxLabels) {
+          xStep = 1;
+        } else {
+          const raw = maxTurns / maxLabels;
+          if (raw <= 2) xStep = 2;
+          else if (raw <= 5) xStep = 5;
+          else if (raw <= 10) xStep = 10;
+          else if (raw <= 20) xStep = 20;
+          else if (raw <= 25) xStep = 25;
+          else if (raw <= 50) xStep = 50;
+          else xStep = Math.ceil(raw / 50) * 50;
+        }
         ctx.fillStyle = textColor;
         ctx.font = fontStr;
         ctx.textAlign = "center";
@@ -3588,7 +3602,11 @@
           ctx.fillText("T" + t4, x4, pad.top + chartH + 4);
         }
         if (maxTurns > 1 && (maxTurns - 1) % xStep !== 0) {
-          ctx.fillText("T" + maxTurns, xPos(maxTurns), pad.top + chartH + 4);
+          const lastRegularX = xPos(Math.floor((maxTurns - 1) / xStep) * xStep + 1);
+          const lastX = xPos(maxTurns);
+          if (lastX - lastRegularX >= minLabelPx) {
+            ctx.fillText("T" + maxTurns, lastX, pad.top + chartH + 4);
+          }
         }
         const highlighted = fId && pausedRef.current ? seriesData.findIndex((s4) => s4.sessionId === fId) : activeIdx;
         const order = [...seriesData.keys()].sort((a4, b4) => (a4 === highlighted ? 1 : 0) - (b4 === highlighted ? 1 : 0));
@@ -3603,13 +3621,12 @@
             j4 === 0 ? ctx.moveTo(x4, y5) : ctx.lineTo(x4, y5);
           });
           ctx.stroke();
-          const last = series.points[series.points.length - 1];
-          if (last && isHighlighted) {
+          if (isHighlighted) {
             ctx.fillStyle = series.color;
             ctx.font = smallFont;
             ctx.textAlign = "left";
-            ctx.textBaseline = "middle";
-            ctx.fillText(series.label, xPos(last.turn) + 4, yPos(last.tokens));
+            ctx.textBaseline = "top";
+            ctx.fillText(series.label, pad.left + chartW + 4, pad.top);
           }
         });
       }
