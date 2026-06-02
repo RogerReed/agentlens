@@ -38,30 +38,6 @@ Open <http://localhost:3000> after the server starts. The OTLP receiver listens 
 
 > **Log file ingestion** reads local session files from `~/.claude/`, `~/.codex/`, and `~/.copilot/` directly. See [Standalone Mode Options](#standalone-mode-options) for environment variables.
 
-#### Publishing to npm (maintainers)
-
-The package is published to npm automatically when a release tag is pushed. The release workflow uses **npm Trusted Publishing** (OIDC) — no token needs to be stored as a GitHub secret. npm exchanges a short-lived GitHub Actions OIDC credential for a publish token at runtime, scoped only to this package and this workflow run.
-
-**One-time setup on npmjs.com:**
-
-1. Go to [npmjs.com](https://www.npmjs.com) → your profile → Packages → `agentlens-dashboard` (create it first if it doesn't exist yet, or configure it as a pending package)
-2. Under **Publishing** → **Trusted Publishers** → **Add a publisher**
-3. Fill in:
-   - **Repository owner:** `RogerReed`
-   - **Repository name:** `agentlens`
-   - **Workflow filename:** `release.yml`
-   - **Environment name:** *(leave blank)*
-4. Save
-
-No GitHub secret is needed. After this one-time configuration, pushing a version tag triggers the full release:
-
-```bash
-git tag v1.2.3
-git push origin v1.2.3
-```
-
-The workflow builds, runs tests, packages the VSIX, publishes to VS Code Marketplace and Open VSX, and publishes to npm — all from the same tag. The npm package will include a signed provenance attestation linking it to the exact commit and workflow run.
-
 ### Option 3: Docker (otel only)
 
 > **Note:** Docker cannot read local session log files from your host machine without explicit volume mounts for each agent directory. Docker mode receives OTEL traces only — log file ingestion is not available. Use the native process option above if you need log file history.
