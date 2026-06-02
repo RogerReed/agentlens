@@ -1560,7 +1560,7 @@
     const tooltip = DATA_SOURCE_TOOLTIP[ds];
     return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`;
   }
-  var INITIATOR_COLORS = { user: "#4a90d9", agent: "#b0bec5", api: "#80cbc4" };
+  var INITIATOR_COLORS = { user: "#4a90d9", agent: "#b0bec5", api: "#90a4ae" };
   var INITIATOR_TOOLTIPS = {
     user: "Typed directly by a human in the chat",
     agent: "Spawned by the Agent tool (isSidechain) \u2014 a sub-task delegated by Claude",
@@ -5468,7 +5468,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
           ] })
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#80cbc4;border-color:#80cbc4`, children: "API" }) }),
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#90a4ae;border-color:#90a4ae`, children: "API" }) }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", children: [
             "Started non-interactively via ",
             /* @__PURE__ */ u4("code", { children: "claude -p" }),
@@ -6285,7 +6285,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)", activeColor: "#ffffff" },
     { value: "user", label: "User", color: "#4a90d9" },
     { value: "agent", label: "Agent", color: "#b0bec5" },
-    { value: "api", label: "API", color: "#80cbc4" }
+    { value: "api", label: "API", color: "#90a4ae" }
   ];
   function SearchFilterBar() {
     const text = sessionTextFilter.value;

@@ -548,7 +548,7 @@ function BadgesSection() {
         </div>
         <div class="glossary-item">
           <dt class="glossary-term" style="min-width:0">
-            <span style={`${badgeStyle}color:#80cbc4;border-color:#80cbc4`}>API</span>
+            <span style={`${badgeStyle}color:#90a4ae;border-color:#90a4ae`}>API</span>
           </dt>
           <dd class="glossary-def">Started non-interactively via <code>claude -p</code> (pipeline mode). Comes from a script, CI job, or shell automation — human-authored but not a live conversation. Identified by the <code>&lt;local-command-caveat&gt;</code> prefix Claude Code prepends to the prompt.</dd>
         </div>

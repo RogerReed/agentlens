@@ -328,7 +328,7 @@ const INITIATOR_FILTER_OPTIONS: Array<{ value: InitiatorFilter; label: string; c
   { value: 'all',   label: 'All',   color: 'var(--vscode-descriptionForeground,#888)', activeColor: '#ffffff' },
   { value: 'user',  label: 'User',  color: '#4a90d9' },
   { value: 'agent', label: 'Agent', color: '#b0bec5' },
-  { value: 'api',   label: 'API',   color: '#80cbc4' },
+  { value: 'api',   label: 'API',   color: '#90a4ae' },
 ]
 
 function SearchFilterBar() {
