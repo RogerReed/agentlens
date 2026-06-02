@@ -1,0 +1,30 @@
+# Dev tooling
+.vscode/**
+.vscode-test/**
+.github/**
+.staged-issues/**
+demo/**
+src/**
+media/src/**
+walkthrough/**
+out/**
+
+# Test artifacts
+src/test/**
+*.test.ts
+
+# Config / lockfiles
+.gitignore
+.vscodeignore
+.yarnrc
+.mocharc.cjs
+esbuild.js
+pnpm-lock.yaml
+**/tsconfig.json
+**/tsconfig.test.json
+**/eslint.config.mjs
+
+# Source maps and TypeScript source
+**/*.map
+**/*.ts
+**/.vscode-test.*

@@ -157,12 +157,6 @@
     "agentlens": "./standalone/cli.js",
     "agentlens-dashboard": "./standalone/cli.js"
   },
-  "files": [
-    "dist/",
-    "media/",
-    "standalone/cli.js",
-    "standalone/server.js"
-  ],
   "scripts": {
     "vscode:prepublish": "pnpm run package",
     "prepublishOnly": "pnpm run package",
