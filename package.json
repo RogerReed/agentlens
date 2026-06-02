@@ -1,5 +1,5 @@
 {
-  "name": "agentlens-dashboard",
+  "name": "@agentlens.dev/agentlens-dashboard",
   "displayName": "AgentLens - AI Agent Observability",
   "description": "Observability for AI agent sessions in VS Code",
   "version": "0.2.1",
