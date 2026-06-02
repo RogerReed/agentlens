@@ -324,9 +324,9 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   )
 }
 
-const INITIATOR_FILTER_OPTIONS: Array<{ value: InitiatorFilter; label: string; color: string }> = [
-  { value: 'all',   label: 'All',   color: 'var(--vscode-descriptionForeground,#888)' },
-  { value: 'user',  label: 'User',  color: '#7986cb' },
+const INITIATOR_FILTER_OPTIONS: Array<{ value: InitiatorFilter; label: string; color: string; activeColor?: string }> = [
+  { value: 'all',   label: 'All',   color: 'var(--vscode-descriptionForeground,#888)', activeColor: '#ffffff' },
+  { value: 'user',  label: 'User',  color: '#4a90d9' },
   { value: 'agent', label: 'Agent', color: '#b0bec5' },
   { value: 'api',   label: 'API',   color: '#80cbc4' },
 ]
@@ -369,15 +369,16 @@ function SearchFilterBar() {
           <div style="display:flex;gap:3px">
             {INITIATOR_FILTER_OPTIONS.map(o => {
               const active = iFilter === o.value
+              const displayColor = (active && o.activeColor) ? o.activeColor : o.color
               return (
                 <button
                   key={o.value}
                   onClick={() => { initiatorFilter.value = o.value }}
                   style={[
                     'padding:2px 7px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;',
-                    `border:1.5px solid ${o.color};`,
+                    `border:1.5px solid ${displayColor};`,
                     active
-                      ? `background:${o.color}33;color:${o.color};font-weight:600`
+                      ? `background:${displayColor}33;color:${displayColor};font-weight:600`
                       : 'background:transparent;color:var(--muted)',
                   ].join('')}
                   title={o.value === 'all' ? 'Show all sessions' : o.value === 'user' ? 'Human-typed prompts only' : o.value === 'agent' ? 'Agent-spawned sub-tasks only' : 'Non-interactive claude -p calls only'}

@@ -1556,11 +1556,11 @@
   function getDataSourceBadgeHtml(dataSource) {
     const ds = dataSource ?? "otel";
     const label = ds === "log" ? "Log" : "OTEL";
-    const color = ds === "log" ? "#90a4ae" : "var(--accent)";
+    const color = ds === "log" ? "#90a4ae" : "#ffffff";
     const tooltip = DATA_SOURCE_TOOLTIP[ds];
     return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`;
   }
-  var INITIATOR_COLORS = { user: "#7986cb", agent: "#b0bec5", api: "#80cbc4" };
+  var INITIATOR_COLORS = { user: "#4a90d9", agent: "#b0bec5", api: "#80cbc4" };
   var INITIATOR_TOOLTIPS = {
     user: "Typed directly by a human in the chat",
     agent: "Spawned by the Agent tool (isSidechain) \u2014 a sub-task delegated by Claude",
@@ -5445,7 +5445,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4("h4", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:0 0 8px", children: "Data source" }),
       /* @__PURE__ */ u4("div", { class: "glossary", style: "margin-bottom:16px", children: [
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:var(--accent);border-color:var(--accent)`, children: "OTEL" }) }),
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#ffffff;border-color:#ffffff`, children: "OTEL" }) }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", children: "Full OpenTelemetry telemetry \u2014 timing, TTFT, span waterfall, loop signals. Requires the agent to be configured to export traces to AgentLens." })
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
@@ -5456,7 +5456,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4("h4", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:0 0 8px", children: "Initiator" }),
       /* @__PURE__ */ u4("div", { class: "glossary", style: "margin-bottom:8px", children: [
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#7986cb;border-color:#7986cb`, children: "User" }) }),
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#4a90d9;border-color:#4a90d9`, children: "User" }) }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", children: "A human typed this prompt directly in the chat. The baseline case \u2014 most of your interactive sessions will carry this badge." })
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
@@ -6282,8 +6282,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     ] });
   }
   var INITIATOR_FILTER_OPTIONS = [
-    { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)" },
-    { value: "user", label: "User", color: "#7986cb" },
+    { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)", activeColor: "#ffffff" },
+    { value: "user", label: "User", color: "#4a90d9" },
     { value: "agent", label: "Agent", color: "#b0bec5" },
     { value: "api", label: "API", color: "#80cbc4" }
   ];
@@ -6318,6 +6318,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "From" }),
         /* @__PURE__ */ u4("div", { style: "display:flex;gap:3px", children: INITIATOR_FILTER_OPTIONS.map((o4) => {
           const active = iFilter === o4.value;
+          const displayColor = active && o4.activeColor ? o4.activeColor : o4.color;
           return /* @__PURE__ */ u4(
             "button",
             {
@@ -6326,8 +6327,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
               },
               style: [
                 "padding:2px 7px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;",
-                `border:1.5px solid ${o4.color};`,
-                active ? `background:${o4.color}33;color:${o4.color};font-weight:600` : "background:transparent;color:var(--muted)"
+                `border:1.5px solid ${displayColor};`,
+                active ? `background:${displayColor}33;color:${displayColor};font-weight:600` : "background:transparent;color:var(--muted)"
               ].join(""),
               title: o4.value === "all" ? "Show all sessions" : o4.value === "user" ? "Human-typed prompts only" : o4.value === "agent" ? "Agent-spawned sub-tasks only" : "Non-interactive claude -p calls only",
               children: o4.label
