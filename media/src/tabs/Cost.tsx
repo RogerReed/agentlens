@@ -80,6 +80,11 @@ export function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
   }
   const labelEvery = rows.length > 120 ? 24 : rows.length > 48 ? 12 : rows.length > 24 ? 6 : 4
 
+  // Daily mode: compute label stride from bar pixel width so labels never overlap.
+  const pixelsPerBar = (barW + gap) || 1
+  const DAILY_STRIDES = [1, 2, 3, 7, 14, 30]
+  const labelEveryNDaily = DAILY_STRIDES.find(s => s >= Math.ceil(28 / pixelsPerBar)) ?? 30
+
   return (
     <div style="position:relative;margin-bottom:8px">
       <svg viewBox={`0 0 ${W} ${H}`} style="width:100%;height:190px;display:block" onMouseLeave={() => setHovered(null)}>
@@ -153,9 +158,11 @@ export function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
                   {r.day.slice(11) + 'h'}
                 </text>
               )}
-              {!isHourly && (
+              {!isHourly && i % labelEveryNDaily === 0 && (
                 <text x={x + barW / 2} y={H - pad.bottom + 10} text-anchor="middle" fill="var(--vscode-descriptionForeground,#888)" font-size="8">
-                  {r.day.slice(5)}
+                  {labelEveryNDaily >= 14
+                    ? new Date(r.day).toLocaleString('en', { month: 'short' })
+                    : r.day.slice(5)}
                 </text>
               )}
             </g>
@@ -310,14 +317,16 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
       dayGroups.get(dk)!.end = i
     })
 
-    // Day boundary lines + date labels (rotated -90° so more labels fit)
+    // Day boundary lines + date labels
     if (n > 0) {
       const labelFont = '8px ' + (cs.getPropertyValue('--vscode-font-family').trim() || 'sans-serif')
+      const MIN_LABEL_GAP = 30  // minimum pixels between label centres before skipping
 
       let isFirst = true
+      let lastLabelX = -Infinity
       for (const [dk, { start, end }] of dayGroups) {
-        const x1 = offsetX + start * slotW + barPad
-        const x2 = offsetX + end * slotW + barPad + barW
+        const x1  = offsetX + start * slotW + barPad
+        const midX = (offsetX + start * slotW + barPad + offsetX + end * slotW + barPad + barW) / 2
 
         // Dotted boundary line at day start (skip first)
         if (!isFirst) {
@@ -329,14 +338,15 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
         }
         isFirst = false
 
-        // Inline label at top of day boundary line (MM-DD, same style as SessionTokenChart)
-        if (!isFirst) {
+        // Label only when far enough from the previous one
+        if (midX - lastLabelX >= MIN_LABEL_GAP) {
           const label = dk.length >= 10 ? dk.slice(5, 10) : dk
           ctx.font = labelFont
           ctx.fillStyle = textColor
           ctx.textAlign = 'left'
           ctx.textBaseline = 'top'
           ctx.fillText(label, x1 + 2, pad.top + 1)
+          lastLabelX = midX
         }
       }
     }
