@@ -6370,20 +6370,20 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
               dataSourceFilter.value = v4;
             }
           }
+        ),
+        isFiltered && /* @__PURE__ */ u4(
+          "button",
+          {
+            onClick: resetFilters,
+            style: "padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)",
+            children: "Reset"
+          }
         )
       ] }),
-      isSessionsTab && /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
+      /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
         filteredSessions.value.length,
         " sessions"
-      ] }),
-      (isSessionsTab || isAnalyticsTab) && isFiltered && /* @__PURE__ */ u4(
-        "button",
-        {
-          onClick: resetFilters,
-          style: "padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)",
-          children: "Reset"
-        }
-      )
+      ] })
     ] });
   }
   function Tab({ id, label }) {

@@ -423,17 +423,15 @@ function SearchFilterBar() {
             value={dsFilter}
             onChange={v => { dataSourceFilter.value = v }}
           />
+          {isFiltered && (
+            <button
+              onClick={resetFilters}
+              style="padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)"
+            >Reset</button>
+          )}
         </>
       )}
-      {isSessionsTab && (
-        <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
-      )}
-      {(isSessionsTab || isAnalyticsTab) && isFiltered && (
-        <button
-          onClick={resetFilters}
-          style="padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)"
-        >Reset</button>
-      )}
+      <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
     </div>
   )
 }
