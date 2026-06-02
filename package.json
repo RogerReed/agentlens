@@ -2,7 +2,7 @@
   "name": "agentlens-dashboard",
   "displayName": "AgentLens - AI Agent Observability",
   "description": "Observability for AI agent sessions in VS Code",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "publisher": "agentlens",
   "license": "MIT",
   "repository": {
