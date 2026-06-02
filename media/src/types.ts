@@ -181,6 +181,7 @@ export interface SearchQuery {
 
 export type AgentFilter = 'all' | 'copilot' | 'claude_code' | 'codex'
 export type InitiatorFilter = 'all' | 'user' | 'agent' | 'api'
+export type DataSourceFilter = 'all' | 'otel' | 'log'
 export type InsightFilter = 'all' | 'loop' | 'efficiency'
 
 export interface VsCodeApi {

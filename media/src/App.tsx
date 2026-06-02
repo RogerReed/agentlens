@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import {
   sessionSummary, toolCalls, dismissedSpanIds,
   swRetainedSessions, swLastSessionCount,
-  selectedAgentFilter, initiatorFilter, sessionLimit, activeTab,
+  selectedAgentFilter, initiatorFilter, dataSourceFilter, sessionLimit, activeTab,
   sessionTimelines, blobCache,
   dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults,
   focusedSessionId, timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
@@ -11,7 +11,7 @@ import {
   sessionTextFilter, filteredSessions,
   sessionSortKey, sessionSortDir, type SortKey,
 } from './state'
-import type { TimelineEntry, AgentFilter, InitiatorFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
+import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
 
 // Tab components
 import { Sessions } from './tabs/Sessions'
@@ -202,7 +202,7 @@ export function App() {
       {!(['alerts', 'help', 'export', 'automation'] as string[]).includes(normalizeTabId(activeTab.value)) && (
         <TimeRangePicker />
       )}
-      {!(['alerts', 'help', 'export', 'automation', 'analytics'] as string[]).includes(normalizeTabId(activeTab.value)) && (
+      {!(['alerts', 'help', 'export', 'automation'] as string[]).includes(normalizeTabId(activeTab.value)) && (
         <SearchFilterBar />
       )}
       <div class="panel active">
@@ -324,6 +324,12 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   )
 }
 
+const DATA_SOURCE_FILTER_OPTIONS: Array<{ value: DataSourceFilter; label: string; color: string; activeColor?: string }> = [
+  { value: 'all',  label: 'All',  color: 'var(--vscode-descriptionForeground,#888)', activeColor: '#ffffff' },
+  { value: 'otel', label: 'OTEL', color: '#ffffff' },
+  { value: 'log',  label: 'Log',  color: '#90a4ae' },
+]
+
 const INITIATOR_FILTER_OPTIONS: Array<{ value: InitiatorFilter; label: string; color: string; activeColor?: string }> = [
   { value: 'all',   label: 'All',   color: 'var(--vscode-descriptionForeground,#888)', activeColor: '#ffffff' },
   { value: 'user',  label: 'User',  color: '#4a90d9' },
@@ -331,14 +337,47 @@ const INITIATOR_FILTER_OPTIONS: Array<{ value: InitiatorFilter; label: string; c
   { value: 'api',   label: 'API',   color: '#90a4ae' },
 ]
 
+function FilterPills<T extends string>({ options, value, onChange }: {
+  options: Array<{ value: T; label: string; color: string; activeColor?: string; title?: string }>
+  value: T
+  onChange: (v: T) => void
+}) {
+  return (
+    <div style="display:flex;gap:3px">
+      {options.map(o => {
+        const active = value === o.value
+        const displayColor = (active && o.activeColor) ? o.activeColor : o.color
+        return (
+          <button
+            key={o.value}
+            onClick={() => onChange(o.value)}
+            style={[
+              'padding:2px 7px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;',
+              `border:1.5px solid ${displayColor};`,
+              active
+                ? `background:${displayColor}33;color:${displayColor};font-weight:600`
+                : 'background:transparent;color:var(--muted)',
+            ].join('')}
+            title={o.title}
+          >{o.label}</button>
+        )
+      })}
+    </div>
+  )
+}
+
 function SearchFilterBar() {
   const text = sessionTextFilter.value
   const iFilter = initiatorFilter.value
-  const isSessionsTab = normalizeTabId(activeTab.value) === 'sessions'
+  const dsFilter = dataSourceFilter.value
+  const tab = normalizeTabId(activeTab.value)
+  const isSessionsTab = tab === 'sessions'
+  const isAnalyticsTab = tab === 'analytics'
 
   const isFiltered = text !== '' ||
     selectedAgentFilter.value !== 'all' ||
     iFilter !== 'all' ||
+    dsFilter !== 'all' ||
     sessionLimit.value !== 25 ||
     timeRange.value.preset !== 'all' ||
     sessionSortKey.value !== 'start_time' ||
@@ -348,6 +387,7 @@ function SearchFilterBar() {
     sessionTextFilter.value = ''
     selectedAgentFilter.value = 'all'
     initiatorFilter.value = 'all'
+    dataSourceFilter.value = 'all'
     sessionLimit.value = 25
     timeRange.value = { preset: 'all' }
     sessionSortKey.value = 'start_time'
@@ -356,44 +396,43 @@ function SearchFilterBar() {
 
   return (
     <div style="display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap">
-      <input
-        type="text"
-        placeholder="Filter sessions…"
-        value={text}
-        onInput={e => { sessionTextFilter.value = (e.target as HTMLInputElement).value }}
-        style="flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-      />
+      {isSessionsTab && (
+        <input
+          type="text"
+          placeholder="Filter sessions…"
+          value={text}
+          onInput={e => { sessionTextFilter.value = (e.target as HTMLInputElement).value }}
+          style="flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+        />
+      )}
       {isSessionsTab && (
         <>
           <span style="font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">From</span>
-          <div style="display:flex;gap:3px">
-            {INITIATOR_FILTER_OPTIONS.map(o => {
-              const active = iFilter === o.value
-              const displayColor = (active && o.activeColor) ? o.activeColor : o.color
-              return (
-                <button
-                  key={o.value}
-                  onClick={() => { initiatorFilter.value = o.value }}
-                  style={[
-                    'padding:2px 7px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;',
-                    `border:1.5px solid ${displayColor};`,
-                    active
-                      ? `background:${displayColor}33;color:${displayColor};font-weight:600`
-                      : 'background:transparent;color:var(--muted)',
-                  ].join('')}
-                  title={o.value === 'all' ? 'Show all sessions' : o.value === 'user' ? 'Human-typed prompts only' : o.value === 'agent' ? 'Agent-spawned sub-tasks only' : 'Non-interactive claude -p calls only'}
-                >{o.label}</button>
-              )
-            })}
-          </div>
-          <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
-          {isFiltered && (
-            <button
-              onClick={resetFilters}
-              style="padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)"
-            >Reset</button>
-          )}
+          <FilterPills
+            options={INITIATOR_FILTER_OPTIONS.map(o => ({ ...o, title: o.value === 'all' ? 'Show all sessions' : o.value === 'user' ? 'Human-typed prompts only' : o.value === 'agent' ? 'Agent-spawned sub-tasks only' : 'Non-interactive claude -p calls only' }))}
+            value={iFilter}
+            onChange={v => { initiatorFilter.value = v }}
+          />
         </>
+      )}
+      {(isSessionsTab || isAnalyticsTab) && (
+        <>
+          <span style="font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">Source</span>
+          <FilterPills
+            options={DATA_SOURCE_FILTER_OPTIONS.map(o => ({ ...o, title: o.value === 'all' ? 'Show all data sources' : o.value === 'otel' ? 'OpenTelemetry sessions only' : 'Log-file sessions only' }))}
+            value={dsFilter}
+            onChange={v => { dataSourceFilter.value = v }}
+          />
+        </>
+      )}
+      {isSessionsTab && (
+        <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
+      )}
+      {(isSessionsTab || isAnalyticsTab) && isFiltered && (
+        <button
+          onClick={resetFilters}
+          style="padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)"
+        >Reset</button>
       )}
     </div>
   )

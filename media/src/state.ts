@@ -2,7 +2,7 @@ import { signal, computed } from '@preact/signals'
 import { calcSessionCost } from './sessionMetrics'
 import type {
   FullSummary, SessionSummaryCard, TimelineEntry,
-  AgentFilter, InitiatorFilter, InsightFilter, VsCodeApi,
+  AgentFilter, InitiatorFilter, DataSourceFilter, InsightFilter, VsCodeApi,
   DailyStatRow, LifetimeStats, BurnRate, Projection,
 } from './types'
 
@@ -103,6 +103,7 @@ export const focusedSessionId = signal<string | null>(null)
 export const sessionLimit = signal(25)
 export const selectedAgentFilter = signal<AgentFilter>('all')
 export const initiatorFilter = signal<InitiatorFilter>('all')
+export const dataSourceFilter = signal<DataSourceFilter>('all')
 export const insightFilter = signal<InsightFilter>('all')
 export const activeTab = signal('sessions')
 
@@ -142,10 +143,12 @@ export const COLORS = [
 // ── Derived (computed) signals ─────────────────────────────────────────────────
 
 export const agentFilteredSessions = computed<SessionSummaryCard[]>(() => {
-  const all = sessionSummary.value?.sessions ?? []
+  let all = sessionSummary.value?.sessions ?? []
   const filter = selectedAgentFilter.value
-  if (filter === 'all') return all
-  return all.filter(s => s.source === filter)
+  if (filter !== 'all') all = all.filter(s => s.source === filter)
+  const dsFilter = dataSourceFilter.value
+  if (dsFilter !== 'all') all = all.filter(s => (s.dataSource ?? 'otel') === dsFilter)
+  return all
 })
 
 export const displaySessions = computed<SessionSummaryCard[]>(() => {

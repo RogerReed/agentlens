@@ -1406,6 +1406,7 @@
   var sessionLimit = y3(25);
   var selectedAgentFilter = y3("all");
   var initiatorFilter = y3("all");
+  var dataSourceFilter = y3("all");
   var insightFilter = y3("all");
   var activeTab = y3("sessions");
   var swRetainedSessions = y3([]);
@@ -1439,10 +1440,12 @@
     "#7986cb"
   ];
   var agentFilteredSessions = g2(() => {
-    const all = sessionSummary.value?.sessions ?? [];
+    let all = sessionSummary.value?.sessions ?? [];
     const filter = selectedAgentFilter.value;
-    if (filter === "all") return all;
-    return all.filter((s4) => s4.source === filter);
+    if (filter !== "all") all = all.filter((s4) => s4.source === filter);
+    const dsFilter = dataSourceFilter.value;
+    if (dsFilter !== "all") all = all.filter((s4) => (s4.dataSource ?? "otel") === dsFilter);
+    return all;
   });
   var displaySessions = g2(() => {
     const all = agentFilteredSessions.value;
@@ -6184,7 +6187,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         TABS.map((t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id))
       ] }),
       !["alerts", "help", "export", "automation"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(TimeRangePicker, {}),
-      !["alerts", "help", "export", "automation", "analytics"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(SearchFilterBar, {}),
+      !["alerts", "help", "export", "automation"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(SearchFilterBar, {}),
       /* @__PURE__ */ u4("div", { class: "panel active", children: /* @__PURE__ */ u4(ActivePanel, {}) }),
       /* @__PURE__ */ u4("img", { id: "mascot-img", src: "", alt: "AgentLens mascot", style: "display:none" })
     ] });
@@ -6281,28 +6284,57 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       )
     ] });
   }
+  var DATA_SOURCE_FILTER_OPTIONS = [
+    { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)", activeColor: "#ffffff" },
+    { value: "otel", label: "OTEL", color: "#ffffff" },
+    { value: "log", label: "Log", color: "#90a4ae" }
+  ];
   var INITIATOR_FILTER_OPTIONS = [
     { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)", activeColor: "#ffffff" },
     { value: "user", label: "User", color: "#4a90d9" },
     { value: "agent", label: "Agent", color: "#b0bec5" },
     { value: "api", label: "API", color: "#90a4ae" }
   ];
+  function FilterPills({ options, value, onChange }) {
+    return /* @__PURE__ */ u4("div", { style: "display:flex;gap:3px", children: options.map((o4) => {
+      const active = value === o4.value;
+      const displayColor = active && o4.activeColor ? o4.activeColor : o4.color;
+      return /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => onChange(o4.value),
+          style: [
+            "padding:2px 7px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;",
+            `border:1.5px solid ${displayColor};`,
+            active ? `background:${displayColor}33;color:${displayColor};font-weight:600` : "background:transparent;color:var(--muted)"
+          ].join(""),
+          title: o4.title,
+          children: o4.label
+        },
+        o4.value
+      );
+    }) });
+  }
   function SearchFilterBar() {
     const text = sessionTextFilter.value;
     const iFilter = initiatorFilter.value;
-    const isSessionsTab = normalizeTabId(activeTab.value) === "sessions";
-    const isFiltered = text !== "" || selectedAgentFilter.value !== "all" || iFilter !== "all" || sessionLimit.value !== 25 || timeRange.value.preset !== "all" || sessionSortKey.value !== "start_time" || sessionSortDir.value !== "desc";
+    const dsFilter = dataSourceFilter.value;
+    const tab = normalizeTabId(activeTab.value);
+    const isSessionsTab = tab === "sessions";
+    const isAnalyticsTab = tab === "analytics";
+    const isFiltered = text !== "" || selectedAgentFilter.value !== "all" || iFilter !== "all" || dsFilter !== "all" || sessionLimit.value !== 25 || timeRange.value.preset !== "all" || sessionSortKey.value !== "start_time" || sessionSortDir.value !== "desc";
     function resetFilters() {
       sessionTextFilter.value = "";
       selectedAgentFilter.value = "all";
       initiatorFilter.value = "all";
+      dataSourceFilter.value = "all";
       sessionLimit.value = 25;
       timeRange.value = { preset: "all" };
       sessionSortKey.value = "start_time";
       sessionSortDir.value = "desc";
     }
     return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap", children: [
-      /* @__PURE__ */ u4(
+      isSessionsTab && /* @__PURE__ */ u4(
         "input",
         {
           type: "text",
@@ -6316,39 +6348,42 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       ),
       isSessionsTab && /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "From" }),
-        /* @__PURE__ */ u4("div", { style: "display:flex;gap:3px", children: INITIATOR_FILTER_OPTIONS.map((o4) => {
-          const active = iFilter === o4.value;
-          const displayColor = active && o4.activeColor ? o4.activeColor : o4.color;
-          return /* @__PURE__ */ u4(
-            "button",
-            {
-              onClick: () => {
-                initiatorFilter.value = o4.value;
-              },
-              style: [
-                "padding:2px 7px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;",
-                `border:1.5px solid ${displayColor};`,
-                active ? `background:${displayColor}33;color:${displayColor};font-weight:600` : "background:transparent;color:var(--muted)"
-              ].join(""),
-              title: o4.value === "all" ? "Show all sessions" : o4.value === "user" ? "Human-typed prompts only" : o4.value === "agent" ? "Agent-spawned sub-tasks only" : "Non-interactive claude -p calls only",
-              children: o4.label
-            },
-            o4.value
-          );
-        }) }),
-        /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
-          filteredSessions.value.length,
-          " sessions"
-        ] }),
-        isFiltered && /* @__PURE__ */ u4(
-          "button",
+        /* @__PURE__ */ u4(
+          FilterPills,
           {
-            onClick: resetFilters,
-            style: "padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)",
-            children: "Reset"
+            options: INITIATOR_FILTER_OPTIONS.map((o4) => ({ ...o4, title: o4.value === "all" ? "Show all sessions" : o4.value === "user" ? "Human-typed prompts only" : o4.value === "agent" ? "Agent-spawned sub-tasks only" : "Non-interactive claude -p calls only" })),
+            value: iFilter,
+            onChange: (v4) => {
+              initiatorFilter.value = v4;
+            }
           }
         )
-      ] })
+      ] }),
+      (isSessionsTab || isAnalyticsTab) && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "Source" }),
+        /* @__PURE__ */ u4(
+          FilterPills,
+          {
+            options: DATA_SOURCE_FILTER_OPTIONS.map((o4) => ({ ...o4, title: o4.value === "all" ? "Show all data sources" : o4.value === "otel" ? "OpenTelemetry sessions only" : "Log-file sessions only" })),
+            value: dsFilter,
+            onChange: (v4) => {
+              dataSourceFilter.value = v4;
+            }
+          }
+        )
+      ] }),
+      isSessionsTab && /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
+        filteredSessions.value.length,
+        " sessions"
+      ] }),
+      (isSessionsTab || isAnalyticsTab) && isFiltered && /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: resetFilters,
+          style: "padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)",
+          children: "Reset"
+        }
+      )
     ] });
   }
   function Tab({ id, label }) {
