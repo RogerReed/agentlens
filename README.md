@@ -11,7 +11,7 @@ AgentLens receives **OpenTelemetry traces** from Copilot, Claude Code, and Codex
 
 ## Getting Started
 
-### Standalone (npx)
+### Local (OTEL and log files)
 
 The fastest way to get started — run directly on your machine with no install required. Because it runs natively it has full access to your local session log files.
 
@@ -29,7 +29,7 @@ Open <http://localhost:3000> after the server starts. The OTLP receiver listens 
 
 > **Log file ingestion** reads local session files from `~/.claude/`, `~/.codex/`, and `~/.copilot/` directly. See [Standalone Mode Options](#standalone-mode-options) for environment variables.
 
-### VS Code Extension
+### VS Code Extension (OTEL and log files)
 
 The extension receives OTEL traces in real time **and** reads local session log files, so you get both live telemetry and full session history automatically.
 
@@ -38,7 +38,7 @@ The extension receives OTEL traces in real time **and** reads local session log 
 3. AgentLens auto-configures OTEL telemetry for Copilot, Claude Code, and Codex — restart any running agent sessions to start streaming traces
 4. Past session history loads automatically from local log files — no extra setup needed
 
-### Docker
+### Docker (OTEL only)
 
 > **Note:** Docker cannot read local session log files from your host machine without explicit volume mounts for each agent directory. Docker mode receives OTEL traces only — log file ingestion is not available. Use the standalone option above if you need log file history.
 
@@ -246,7 +246,7 @@ AgentLens runs as a standalone web server outside VS Code — useful for CI, rem
 
 ### Native process (recommended for local use)
 
-Runs directly on your machine — no Docker required. Gives the server full access to the local filesystem, which is required for log file ingestion. Quick-start commands are in [Getting Started](#standalone-npx) above.
+Runs directly on your machine — no Docker required. Gives the server full access to the local filesystem, which is required for log file ingestion. Quick-start commands are in [Getting Started](#local-otel-and-log-files) above.
 
 Environment variables:
 
@@ -267,7 +267,7 @@ OTLP_PORT=4319 UI_PORT=3001 bunx agentlens-dashboard
 
 > **Log file ingestion is not available in Docker mode.** The container is isolated from the host filesystem. Use the native process option above if you need local session log history.
 
-Quick-start commands are in [Getting Started](#docker). Additional options:
+Quick-start commands are in [Getting Started](#docker-otel-only). Additional options:
 
 **LAN-accessible** — exposes the dashboard to other devices on your network:
 
