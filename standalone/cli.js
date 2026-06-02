@@ -25,9 +25,10 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 
 // standalone/server.ts
 var http = __toESM(require("http"));
-var fs2 = __toESM(require("fs"));
-var path2 = __toESM(require("path"));
-var os2 = __toESM(require("os"));
+var fs3 = __toESM(require("fs"));
+var path3 = __toESM(require("path"));
+var os3 = __toESM(require("os"));
+var import_child_process = require("child_process");
 
 // src/loopDetector.ts
 var PATTERN_NAMES = {
@@ -1930,19 +1931,507 @@ function classifyOtlpPayload(payload) {
   return "unknown";
 }
 
+// src/logReader.ts
+var fs2 = __toESM(require("fs"));
+var path2 = __toESM(require("path"));
+var os2 = __toESM(require("os"));
+function homeDir() {
+  return os2.homedir();
+}
+function claudeProjectsDirs() {
+  const envVal = process.env["CLAUDE_CONFIG_DIR"];
+  if (envVal) {
+    return envVal.split(",").map((p) => p.trim()).filter(Boolean).map((p) => p.endsWith("projects") ? p : path2.join(p, "projects"));
+  }
+  const home = homeDir();
+  const candidates = [path2.join(home, ".claude", "projects")];
+  if (process.platform === "win32") {
+    const appData = process.env["APPDATA"];
+    if (appData) candidates.unshift(path2.join(appData, "Claude", "projects"));
+  } else {
+    const xdg = process.env["XDG_CONFIG_HOME"];
+    if (xdg) candidates.push(path2.join(xdg, "claude", "projects"));
+  }
+  return candidates.filter((d) => {
+    try {
+      return fs2.statSync(d).isDirectory();
+    } catch {
+      return false;
+    }
+  });
+}
+function codexSessionsDirs() {
+  const envVal = process.env["CODEX_HOME"];
+  if (envVal) {
+    return envVal.split(",").map((p) => p.trim()).filter(Boolean).map((p) => path2.join(p, "sessions"));
+  }
+  const base = path2.join(homeDir(), ".codex", "sessions");
+  return fs2.existsSync(base) ? [base] : [];
+}
+function copilotSessionStateDir() {
+  const dir = path2.join(homeDir(), ".copilot", "session-state");
+  return fs2.existsSync(dir) ? dir : null;
+}
+var LogReader = class {
+  log;
+  fileState = /* @__PURE__ */ new Map();
+  constructor(options = {}) {
+    this.log = options.log ?? (() => {
+    });
+  }
+  /**
+   * Collects all session files across all agents, sorted newest-first by mtime.
+   * Does NOT read file contents. Used by the startup batch-loader to process
+   * files in priority order without one big synchronous block.
+   */
+  collectFileMeta() {
+    const entries = [];
+    for (const projectsDir of claudeProjectsDirs()) {
+      for (const filePath of this._collectJsonlFiles(projectsDir)) {
+        try {
+          entries.push({ filePath, mtimeMs: fs2.statSync(filePath).mtimeMs, agentKey: "claude" });
+        } catch {
+        }
+      }
+    }
+    for (const sessionsDir of codexSessionsDirs()) {
+      for (const filePath of this._collectJsonlFiles(sessionsDir)) {
+        try {
+          entries.push({ filePath, mtimeMs: fs2.statSync(filePath).mtimeMs, agentKey: "codex" });
+        } catch {
+        }
+      }
+    }
+    const stateDir = copilotSessionStateDir();
+    if (stateDir) {
+      try {
+        for (const d of fs2.readdirSync(stateDir)) {
+          const f = path2.join(stateDir, d, "events.jsonl");
+          try {
+            entries.push({ filePath: f, mtimeMs: fs2.statSync(f).mtimeMs, agentKey: "copilot" });
+          } catch {
+          }
+        }
+      } catch {
+      }
+    }
+    entries.sort((a, b) => b.mtimeMs - a.mtimeMs);
+    return entries;
+  }
+  /**
+   * Parses a single file identified by collectFileMeta() and returns a result if
+   * the file is new or has grown since the last scan. Returns null if unchanged.
+   */
+  parseFile(filePath, agentKey) {
+    const sessionId = agentKey === "copilot" ? path2.basename(path2.dirname(filePath)) : path2.basename(filePath, ".jsonl");
+    switch (agentKey) {
+      case "claude":
+        return this._processFile(filePath, () => this._parseClaudeFile(filePath));
+      case "codex":
+        return this._processFile(filePath, () => this._parseCodexFile(filePath, ""));
+      case "copilot":
+        return this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId));
+      default:
+        return null;
+    }
+  }
+  /**
+   * Scans all log directories and returns new/updated session results.
+   * Only files that are new or have grown are re-parsed (incremental).
+   * Used for the periodic 30-second poll after the initial load completes.
+   */
+  scan() {
+    return [
+      ...this._scanClaude(),
+      ...this._scanCodex(),
+      ...this._scanCopilot()
+    ];
+  }
+  // ── Claude Code ─────────────────────────────────────────────────────────────
+  _scanClaude() {
+    const results = [];
+    for (const projectsDir of claudeProjectsDirs()) {
+      this._collectJsonlFiles(projectsDir).forEach((filePath) => {
+        const result = this._processFile(filePath, () => this._parseClaudeFile(filePath));
+        if (result) results.push(result);
+      });
+    }
+    return results;
+  }
+  _parseClaudeFile(filePath) {
+    const lines = this._readNewLines(filePath);
+    if (!lines) return null;
+    const sessionId = path2.basename(filePath, ".jsonl");
+    let workspace = "";
+    let model = "";
+    let firstTimestamp = "";
+    let lastTimestamp = "";
+    let userRequest = "";
+    let totalInput = 0, totalOutput = 0, totalCacheRead = 0, totalCacheCreate = 0;
+    let turns = 0, totalToolCalls = 0;
+    const filesChanged = /* @__PURE__ */ new Set();
+    const filesRead = /* @__PURE__ */ new Set();
+    const toolCounts = {};
+    const timeline = [];
+    let idx = 0;
+    for (const line of lines) {
+      let entry;
+      try {
+        entry = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      const ts = entry["timestamp"];
+      if (ts) {
+        if (!firstTimestamp) firstTimestamp = ts;
+        lastTimestamp = ts;
+      }
+      if (entry["cwd"] && !workspace) workspace = entry["cwd"];
+      if (entry["type"] === "user") {
+        const content = entry["message"]?.["content"];
+        const text = _extractTextContent(content);
+        if (!userRequest && text) userRequest = text;
+        timeline.push({ type: "user_input", spanId: `log-u-${idx}`, label: "User", durationMs: 0, isError: false, timestamp: ts ?? "", responseText: text });
+        idx++;
+      }
+      if (entry["type"] === "assistant") {
+        const msg = entry["message"];
+        if (msg?.["model"]) model = msg["model"];
+        const usage = msg?.["usage"];
+        if (usage) {
+          totalInput += usage["input_tokens"] ?? 0;
+          totalOutput += usage["output_tokens"] ?? 0;
+          totalCacheRead += usage["cache_read_input_tokens"] ?? 0;
+          totalCacheCreate += usage["cache_creation_input_tokens"] ?? 0;
+          turns++;
+        }
+        const content = msg?.["content"] ?? [];
+        let hasToolCall = false;
+        for (const block of content) {
+          if (block["type"] === "tool_use" && block["name"]) {
+            hasToolCall = true;
+            totalToolCalls++;
+            const name = block["name"];
+            toolCounts[name] = (toolCounts[name] ?? 0) + 1;
+            const inp = block["input"] ?? {};
+            const fp = String(inp["file_path"] ?? inp["filePath"] ?? inp["path"] ?? "");
+            if (fp) {
+              if (name === "Read" || name === "read_file") filesRead.add(fp);
+              else if (["Edit", "Write", "MultiEdit", "replace_string_in_file", "create_file"].includes(name)) filesChanged.add(fp);
+            }
+          }
+        }
+        const responseText = content.find((b) => b["type"] === "text")?.["text"];
+        timeline.push({ type: hasToolCall ? "tool" : "llm", spanId: `log-a-${idx}`, label: hasToolCall ? "Tool calls" : "Response", model: model || void 0, inputTokens: usage?.["input_tokens"], outputTokens: usage?.["output_tokens"], durationMs: 0, isError: false, timestamp: ts ?? "", responseText });
+        idx++;
+      }
+    }
+    if (!firstTimestamp) return null;
+    return { workspace, card: _buildCard(sessionId, "claude_code", model || "claude", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: /* @__PURE__ */ new Set(), userRequest, timeline }) };
+  }
+  // ── Codex ───────────────────────────────────────────────────────────────────
+  _scanCodex() {
+    const results = [];
+    for (const sessionsDir of codexSessionsDirs()) {
+      this._collectJsonlFiles(sessionsDir).forEach((filePath) => {
+        const result = this._processFile(filePath, () => this._parseCodexFile(filePath, sessionsDir));
+        if (result) results.push(result);
+      });
+    }
+    return results;
+  }
+  _parseCodexFile(filePath, _sessionsDir) {
+    const lines = this._readNewLines(filePath);
+    if (!lines) return null;
+    const sessionId = path2.basename(filePath, ".jsonl");
+    const workspace = path2.dirname(filePath);
+    let model = "";
+    let firstTimestamp = "";
+    let lastTimestamp = "";
+    let totalInput = 0, totalOutput = 0, totalCacheRead = 0;
+    let turns = 0;
+    for (const line of lines) {
+      let entry;
+      try {
+        entry = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      const ts = entry["timestamp"];
+      if (ts) {
+        if (!firstTimestamp) firstTimestamp = ts;
+        lastTimestamp = ts;
+      }
+      if (entry["type"] === "turn_context") {
+        const payload = entry["payload"];
+        if (payload?.["model"]) model = String(payload["model"]);
+      }
+      if (entry["type"] === "event_msg") {
+        const payload = entry["payload"];
+        if (payload?.["type"] === "token_count") {
+          const info = payload["info"];
+          if (info?.["model"]) model = String(info["model"]);
+          const lastUsage = info?.["last_token_usage"];
+          if (lastUsage) {
+            totalInput += lastUsage["input_tokens"] ?? 0;
+            totalOutput += lastUsage["output_tokens"] ?? 0;
+            totalCacheRead += lastUsage["cached_input_tokens"] ?? 0;
+            turns++;
+          }
+        }
+      }
+    }
+    if (!firstTimestamp) return null;
+    return {
+      workspace,
+      card: _buildCard(sessionId, "codex", model || "codex", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: /* @__PURE__ */ new Set(), filesChanged: /* @__PURE__ */ new Set(), filesSearched: /* @__PURE__ */ new Set(), userRequest: "", timeline: [] })
+    };
+  }
+  // ── Copilot CLI ──────────────────────────────────────────────────────────────
+  // Reads ~/.copilot/session-state/<uuid>/events.jsonl — written automatically,
+  // no env setup required. Each directory is one session (dirname = session ID).
+  //
+  // Key event types:
+  //   session.start        → data.sessionId, data.selectedModel, data.startTime, data.context.cwd
+  //   user.message         → data.transformedContent (user request text)
+  //   assistant.message    → data.outputTokens, data.toolRequests
+  //   session.shutdown     → data.currentTokens (total context size at end)
+  _scanCopilot() {
+    const results = [];
+    const stateDir = copilotSessionStateDir();
+    if (!stateDir) return results;
+    let sessionDirs;
+    try {
+      sessionDirs = fs2.readdirSync(stateDir);
+    } catch {
+      return results;
+    }
+    for (const sessionDirName of sessionDirs) {
+      const eventsFile = path2.join(stateDir, sessionDirName, "events.jsonl");
+      const result = this._processFile(eventsFile, () => this._parseCopilotFile(eventsFile, sessionDirName));
+      if (result) results.push(result);
+    }
+    return results;
+  }
+  _parseCopilotFile(filePath, sessionId) {
+    const lines = this._readNewLines(filePath);
+    if (!lines) return null;
+    let workspace = "";
+    let model = "";
+    let firstTimestamp = "";
+    let lastTimestamp = "";
+    let userRequest = "";
+    let totalOutput = 0;
+    let totalInputFromShutdown = 0;
+    let turns = 0, totalToolCalls = 0;
+    const toolCounts = {};
+    const filesChanged = /* @__PURE__ */ new Set();
+    for (const line of lines) {
+      let event;
+      try {
+        event = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      const ts = event["timestamp"];
+      if (ts) {
+        if (!firstTimestamp) firstTimestamp = ts;
+        lastTimestamp = ts;
+      }
+      const type = event["type"];
+      const data = event["data"];
+      if (!type || !data) continue;
+      if (type === "session.start") {
+        if (data["selectedModel"]) model = String(data["selectedModel"]);
+        const ctx = data["context"];
+        if (ctx?.["cwd"]) workspace = String(ctx["cwd"]);
+        if (data["startTime"] && !firstTimestamp) firstTimestamp = String(data["startTime"]);
+      }
+      if (type === "user.message" && !userRequest) {
+        userRequest = _extractCopilotUserText(String(data["transformedContent"] ?? ""));
+      }
+      if (type === "assistant.message") {
+        const outTok = data["outputTokens"];
+        if (outTok) {
+          totalOutput += outTok;
+          turns++;
+        }
+        const toolReqs = data["toolRequests"];
+        if (toolReqs) {
+          for (const req of toolReqs) {
+            const name = String(req["name"] ?? "");
+            if (!name) continue;
+            totalToolCalls++;
+            toolCounts[name] = (toolCounts[name] ?? 0) + 1;
+            const args = req["arguments"];
+            const fp = String(args?.["path"] ?? args?.["file_path"] ?? "");
+            if (fp && (name === "edit" || name === "write" || name === "create")) {
+              filesChanged.add(fp);
+            }
+          }
+        }
+        if (data["model"]) model = String(data["model"]);
+      }
+      if (type === "session.shutdown") {
+        totalInputFromShutdown = data["currentTokens"] ?? 0;
+      }
+    }
+    if (!firstTimestamp) return null;
+    const totalInput = totalInputFromShutdown > 0 ? Math.max(0, totalInputFromShutdown - totalOutput) : 0;
+    return {
+      workspace,
+      card: _buildCard(sessionId, "copilot", model || "copilot", firstTimestamp, lastTimestamp, {
+        totalInput,
+        totalOutput,
+        totalCacheRead: 0,
+        totalCacheCreate: 0,
+        turns,
+        totalToolCalls,
+        toolCounts,
+        filesRead: /* @__PURE__ */ new Set(),
+        filesChanged,
+        filesSearched: /* @__PURE__ */ new Set(),
+        userRequest: userRequest.slice(0, 500),
+        timeline: []
+      })
+    };
+  }
+  // ── Shared helpers ────────────────────────────────────────────────────────────
+  _collectJsonlFiles(dir) {
+    const results = [];
+    try {
+      const entries = fs2.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = path2.join(dir, entry.name);
+        if (entry.isDirectory()) results.push(...this._collectJsonlFiles(full));
+        else if (entry.isFile() && entry.name.endsWith(".jsonl")) results.push(full);
+      }
+    } catch {
+    }
+    return results;
+  }
+  /** Returns only the new bytes since last read, split into lines. Returns null if unchanged. */
+  _readNewLines(filePath) {
+    try {
+      const stat = fs2.statSync(filePath);
+      const prev = this.fileState.get(filePath);
+      if (prev && stat.mtimeMs === prev.mtimeMs && stat.size === prev.bytesRead) return null;
+      const startByte = prev?.bytesRead ?? 0;
+      const len = stat.size - startByte;
+      if (len <= 0) {
+        this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs });
+        return null;
+      }
+      const fd = fs2.openSync(filePath, "r");
+      const buf = Buffer.alloc(len);
+      fs2.readSync(fd, buf, 0, len, startByte);
+      fs2.closeSync(fd);
+      this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs });
+      return buf.toString("utf8").split("\n").filter((l) => l.trim());
+    } catch (err) {
+      this.log(`[LogReader] read error ${filePath}: ${err}`);
+      return null;
+    }
+  }
+  /** Checks if a file has changed since last scan; if so, delegates to parseFn. */
+  _processFile(filePath, parseFn) {
+    try {
+      const stat = fs2.statSync(filePath);
+      const prev = this.fileState.get(filePath);
+      if (prev && stat.mtimeMs === prev.mtimeMs && stat.size === prev.bytesRead) return null;
+      return parseFn();
+    } catch {
+      return null;
+    }
+  }
+};
+function _buildCard(sessionId, source, model, firstTimestamp, lastTimestamp, acc) {
+  const startMs = _parseTs(firstTimestamp);
+  const endMs = _parseTs(lastTimestamp);
+  const durationMs = endMs > 0 && startMs > 0 ? Math.max(0, endMs - startMs) : 0;
+  const cacheHitRate = acc.totalInput > 0 ? acc.totalCacheRead / acc.totalInput : 0;
+  return {
+    sessionId,
+    traceId: sessionId,
+    source,
+    dataSource: "log",
+    userRequest: acc.userRequest.slice(0, 500),
+    model,
+    turns: acc.turns,
+    inputTokens: acc.totalInput,
+    outputTokens: acc.totalOutput,
+    cacheReadTokens: acc.totalCacheRead,
+    cacheCreateTokens: acc.totalCacheCreate,
+    cacheHitRate,
+    durationMs,
+    startTime: startMs > 0 ? new Date(startMs).toISOString() : "",
+    filesRead: Array.from(acc.filesRead),
+    filesSearched: Array.from(acc.filesSearched),
+    filesChanged: Array.from(acc.filesChanged),
+    toolCounts: acc.toolCounts,
+    totalToolCalls: acc.totalToolCalls,
+    totalLlmCalls: acc.turns,
+    errors: 0,
+    outcome: acc.totalToolCalls > 0 ? "tool_calls" : "text_response",
+    timeline: acc.timeline,
+    backgroundSpans: [],
+    loopSignals: []
+  };
+}
+function _extractCopilotUserText(raw) {
+  const lines = raw.split("\n");
+  let inTag = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (/^<[a-z_]+[^>]*>/.test(trimmed) && !trimmed.startsWith("</")) {
+      if (/<\/[a-z_]+>$/.test(trimmed)) continue;
+      inTag = true;
+      continue;
+    }
+    if (/^<\/[a-z_]+>/.test(trimmed)) {
+      inTag = false;
+      continue;
+    }
+    if (inTag) continue;
+    return trimmed;
+  }
+  return "";
+}
+function _extractTextContent(content) {
+  if (!content) return "";
+  if (typeof content === "string") return content.trim();
+  if (Array.isArray(content)) {
+    for (const block of content) {
+      if (block["type"] === "text" && typeof block["text"] === "string" && block["text"].trim()) {
+        return block["text"].trim();
+      }
+    }
+  }
+  return "";
+}
+function _parseTs(ts) {
+  if (!ts) return 0;
+  const ms = Date.parse(ts);
+  if (!isNaN(ms)) return ms;
+  const n = parseInt(ts);
+  if (!isNaN(n) && n > 1e15) return Math.floor(n / 1e6);
+  return 0;
+}
+
 // standalone/server.ts
 var OTLP_PORT = parseInt(process.env.OTLP_PORT ?? "4318");
 var UI_PORT = parseInt(process.env.UI_PORT ?? "3000");
 var BIND_HOST = process.env.BIND_HOST ?? "127.0.0.1";
-var mediaDir = path2.join(__dirname, "..", "media");
-var DATA_DIR = process.env.DATA_DIR ?? path2.join(os2.homedir(), ".agentlens");
-var DATA_FILE = path2.join(DATA_DIR, "spans.json");
+var mediaDir = path3.join(__dirname, "..", "media");
+var DATA_DIR = process.env.DATA_DIR ?? path3.join(os3.homedir(), ".agentlens");
+var DATA_FILE = path3.join(DATA_DIR, "spans.json");
 var spans = [];
 var sseClients = [];
 try {
-  if (!fs2.existsSync(DATA_DIR)) fs2.mkdirSync(DATA_DIR, { recursive: true });
-  if (fs2.existsSync(DATA_FILE)) {
-    const raw = fs2.readFileSync(DATA_FILE, "utf-8");
+  if (!fs3.existsSync(DATA_DIR)) fs3.mkdirSync(DATA_DIR, { recursive: true });
+  if (fs3.existsSync(DATA_FILE)) {
+    const raw = fs3.readFileSync(DATA_FILE, "utf-8");
     spans = JSON.parse(raw);
     console.log(`[AgentLens] Loaded ${spans.length} spans from ${DATA_FILE}`);
   }
@@ -1954,7 +2443,7 @@ function scheduleSave() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
-      fs2.writeFileSync(DATA_FILE, JSON.stringify(spans));
+      fs3.writeFileSync(DATA_FILE, JSON.stringify(spans));
     } catch (e) {
       console.warn("[AgentLens] Could not save data:", e);
     }
@@ -1963,6 +2452,46 @@ function scheduleSave() {
 function addSpan(span) {
   if (span.receivedAt === void 0) span.receivedAt = Date.now();
   spans.push(span);
+}
+var logSessions = /* @__PURE__ */ new Map();
+var logReader = new LogReader();
+function runLogScan() {
+  const results = logReader.scan();
+  let changed = false;
+  for (const { card } of results) {
+    logSessions.set(card.sessionId, card);
+    changed = true;
+  }
+  if (changed) pushUpdate();
+}
+function startLogIngestion() {
+  const BATCH_SIZE = 10;
+  let files;
+  try {
+    files = logReader.collectFileMeta();
+  } catch {
+    return;
+  }
+  if (files.length === 0) return;
+  const processBatch = (startIdx) => {
+    let changed = false;
+    for (let i = startIdx; i < Math.min(startIdx + BATCH_SIZE, files.length); i++) {
+      try {
+        const result = logReader.parseFile(files[i].filePath, files[i].agentKey);
+        if (result) {
+          logSessions.set(result.card.sessionId, result.card);
+          changed = true;
+        }
+      } catch {
+      }
+    }
+    if (changed) pushUpdate();
+    const next = startIdx + BATCH_SIZE;
+    if (next < files.length) setImmediate(() => processBatch(next));
+  };
+  setImmediate(() => processBatch(0));
+  setInterval(runLogScan, 3e4);
+  console.log("[AgentLens] Log ingestion enabled \u2014 scanning local session files");
 }
 function toAttrs(raw) {
   if (!Array.isArray(raw)) return [];
@@ -2220,6 +2749,14 @@ function buildUpdatePayload() {
   } catch (e) {
     console.warn("[AgentLens] summarizeSpans error:", e);
   }
+  if (logSessions.size > 0) {
+    const otelIds = new Set((sessionSummary?.sessions ?? []).map((s) => s.sessionId));
+    const logOnly = [...logSessions.values()].filter((s) => !otelIds.has(s.sessionId));
+    if (logOnly.length > 0) {
+      const merged = [...logOnly, ...sessionSummary?.sessions ?? []].sort((a, b) => Date.parse(b.startTime || "0") - Date.parse(a.startTime || "0"));
+      sessionSummary = { ...sessionSummary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }, sessions: merged };
+    }
+  }
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : null;
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : null;
   const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null;
@@ -2230,7 +2767,6 @@ function buildUpdatePayload() {
     sessionSummary,
     sidebar,
     analyticsData,
-    // New sidebar monitor fields (picked up by sidebar.js)
     ...sidebarLive ?? {}
   });
 }
@@ -2679,7 +3215,7 @@ var uiServer = http.createServer((req, res) => {
   if (req.method === "POST" && url === "/api/clear") {
     spans = [];
     try {
-      fs2.writeFileSync(DATA_FILE, "[]");
+      fs3.writeFileSync(DATA_FILE, "[]");
     } catch (e) {
       console.warn("[AgentLens] Could not clear data file:", e);
     }
@@ -2697,7 +3233,7 @@ var uiServer = http.createServer((req, res) => {
         const agentSlug = agent === "claude_code" ? "claude" : agent === "codex" ? "codex" : "copilot";
         const agentName = agent === "claude_code" ? "Claude" : agent === "codex" ? "Codex" : "Copilot";
         const filename = `agentlens-prompts-${agentSlug}.md`;
-        const filePath2 = path2.join(process.cwd(), filename);
+        const filePath2 = path3.join(process.cwd(), filename);
         const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace("T", " ").slice(0, 19);
         const entry = `## ${timestamp} \u2014 ${label}
 
@@ -2708,13 +3244,13 @@ ${prompt}
 `;
         let existing = "";
         try {
-          existing = fs2.readFileSync(filePath2, "utf-8");
+          existing = fs3.readFileSync(filePath2, "utf-8");
         } catch {
         }
         const content = existing ? existing + entry : `# AgentLens Prompts \u2014 ${agentName}
 
 ${entry}`;
-        fs2.writeFileSync(filePath2, content, "utf-8");
+        fs3.writeFileSync(filePath2, content, "utf-8");
         console.log(`[AgentLens] Prompt written to ${filePath2}`);
       } catch (e) {
         console.warn("[AgentLens] write-prompts-file error:", e);
@@ -2733,7 +3269,7 @@ ${entry}`;
         if (body.type === "clearAll") {
           spans = [];
           try {
-            fs2.writeFileSync(DATA_FILE, "[]");
+            fs3.writeFileSync(DATA_FILE, "[]");
           } catch (e) {
             console.warn("[AgentLens] Could not clear data file:", e);
           }
@@ -2752,12 +3288,12 @@ ${entry}`;
     res.end(getHtml());
     return;
   }
-  const filePath = path2.join(mediaDir, url);
-  const ext = path2.extname(filePath);
+  const filePath = path3.join(mediaDir, url);
+  const ext = path3.extname(filePath);
   const mime = MIME[ext];
-  if (mime && fs2.existsSync(filePath) && filePath.startsWith(mediaDir)) {
+  if (mime && fs3.existsSync(filePath) && filePath.startsWith(mediaDir)) {
     res.writeHead(200, { "Content-Type": mime });
-    fs2.createReadStream(filePath).pipe(res);
+    fs3.createReadStream(filePath).pipe(res);
     return;
   }
   res.writeHead(404);
@@ -2834,15 +3370,20 @@ otlpServer.listen(OTLP_PORT, BIND_HOST, () => {
   console.log(`[AgentLens] OTLP receiver \u2192 http://${BIND_HOST}:${OTLP_PORT}`);
 });
 uiServer.listen(UI_PORT, BIND_HOST, () => {
-  console.log(`[AgentLens] Dashboard      \u2192 http://${BIND_HOST}:${UI_PORT}`);
-  console.log(`
-Open http://localhost:${UI_PORT} in your browser
+  const url = `http://localhost:${UI_PORT}`;
+  console.log(`[AgentLens] Dashboard      \u2192 ${url}`);
+  const cmd = process.platform === "darwin" ? `open "${url}"` : process.platform === "win32" ? `start "" "${url}"` : `xdg-open "${url}"`;
+  (0, import_child_process.exec)(cmd, (err) => {
+    if (err) console.log(`
+Open ${url} in your browser
 `);
+  });
+  startLogIngestion();
 });
 function shutdown() {
   if (saveTimer) clearTimeout(saveTimer);
   try {
-    fs2.writeFileSync(DATA_FILE, JSON.stringify(spans));
+    fs3.writeFileSync(DATA_FILE, JSON.stringify(spans));
     console.log(`
 [AgentLens] Saved ${spans.length} spans to ${DATA_FILE}`);
   } catch {
@@ -2851,3 +3392,4 @@ function shutdown() {
 }
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
+//# sourceMappingURL=cli.js.map

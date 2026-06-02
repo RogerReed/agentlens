@@ -154,7 +154,8 @@
     }
   },
   "bin": {
-    "agentlens": "./standalone/cli.js"
+    "agentlens": "./standalone/cli.js",
+    "agentlens-dashboard": "./standalone/cli.js"
   },
   "files": [
     "dist/",

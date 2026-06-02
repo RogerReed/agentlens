@@ -10,11 +10,14 @@ import * as http from 'http'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { exec } from 'child_process'
 import { summarizeSpans } from '../src/spanSummarizer'
 import { calcTokenCostUsd } from '../src/pricing'
 import { autoConfigureClaudeCode, autoConfigureCodex, autoConfigureCopilotStandalone } from '../src/autoConfigNode'
 import { classifyOtlpPayload } from '../src/otlpParser'
+import { LogReader } from '../src/logReader'
 import type { Span } from '../src/types'
+import type { SessionSummaryCard } from '../src/summarizers/summarizerTypes'
 
 const OTLP_PORT  = parseInt(process.env.OTLP_PORT  ?? '4318')
 const UI_PORT    = parseInt(process.env.UI_PORT    ?? '3000')
@@ -55,6 +58,48 @@ function scheduleSave() {
 function addSpan(span: Span) {
   if (span.receivedAt === undefined) span.receivedAt = Date.now()
   spans.push(span)
+}
+
+// ── Log file sessions ─────────────────────────────────────────────────────────
+
+// Indexed by sessionId; OTEL-derived sessions (from spans) take precedence —
+// when the same session ID appears in both, the OTEL version is used.
+let logSessions: Map<string, SessionSummaryCard> = new Map()
+
+const logReader = new LogReader()
+
+function runLogScan() {
+  const results = logReader.scan()
+  let changed = false
+  for (const { card } of results) {
+    logSessions.set(card.sessionId, card)
+    changed = true
+  }
+  if (changed) pushUpdate()
+}
+
+function startLogIngestion() {
+  const BATCH_SIZE = 10
+  let files: ReturnType<typeof logReader.collectFileMeta>
+  try { files = logReader.collectFileMeta() } catch { return }
+  if (files.length === 0) return
+
+  const processBatch = (startIdx: number) => {
+    let changed = false
+    for (let i = startIdx; i < Math.min(startIdx + BATCH_SIZE, files.length); i++) {
+      try {
+        const result = logReader.parseFile(files[i].filePath, files[i].agentKey)
+        if (result) { logSessions.set(result.card.sessionId, result.card); changed = true }
+      } catch { /* skip bad file */ }
+    }
+    if (changed) pushUpdate()
+    const next = startIdx + BATCH_SIZE
+    if (next < files.length) setImmediate(() => processBatch(next))
+  }
+
+  setImmediate(() => processBatch(0))
+  setInterval(runLogScan, 30_000)
+  console.log('[AgentLens] Log ingestion enabled — scanning local session files')
 }
 
 // ── OTLP parsing ──────────────────────────────────────────────────────────────
@@ -365,12 +410,23 @@ function computeAnalyticsData(sessions: ReturnType<typeof summarizeSpans>['sessi
 function buildUpdatePayload(): string {
   let sessionSummary: ReturnType<typeof summarizeSpans> | null = null
   try { sessionSummary = summarizeSpans(spans) } catch (e) { console.warn('[AgentLens] summarizeSpans error:', e) }
+
+  // Merge log sessions with OTEL-derived sessions; OTEL wins on ID collision.
+  if (logSessions.size > 0) {
+    const otelIds = new Set((sessionSummary?.sessions ?? []).map(s => s.sessionId))
+    const logOnly = [...logSessions.values()].filter(s => !otelIds.has(s.sessionId))
+    if (logOnly.length > 0) {
+      const merged = [...logOnly, ...(sessionSummary?.sessions ?? [])]
+        .sort((a, b) => Date.parse(b.startTime || '0') - Date.parse(a.startTime || '0'))
+      sessionSummary = { ...(sessionSummary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }), sessions: merged }
+    }
+  }
+
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : null
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : null
   const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null
   return JSON.stringify({
     type: 'update', spans, summary: { toolCalls: {} }, sessionSummary, sidebar, analyticsData,
-    // New sidebar monitor fields (picked up by sidebar.js)
     ...(sidebarLive ?? {}),
   })
 }
@@ -954,8 +1010,17 @@ otlpServer.listen(OTLP_PORT, BIND_HOST, () => {
 })
 
 uiServer.listen(UI_PORT, BIND_HOST, () => {
-  console.log(`[AgentLens] Dashboard      → http://${BIND_HOST}:${UI_PORT}`)
-  console.log(`\nOpen http://localhost:${UI_PORT} in your browser\n`)
+  const url = `http://localhost:${UI_PORT}`
+  console.log(`[AgentLens] Dashboard      → ${url}`)
+
+  // Auto-open browser
+  const cmd = process.platform === 'darwin' ? `open "${url}"`
+            : process.platform === 'win32'  ? `start "" "${url}"`
+            : `xdg-open "${url}"`
+  exec(cmd, err => { if (err) console.log(`\nOpen ${url} in your browser\n`) })
+
+  // Start log ingestion after the server is ready
+  startLogIngestion()
 })
 
 // ── Graceful shutdown — flush data before exit ────────────────────────────────
