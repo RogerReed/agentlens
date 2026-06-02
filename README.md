@@ -40,22 +40,27 @@ Open <http://localhost:3000> after the server starts. The OTLP receiver listens 
 
 #### Publishing to npm (maintainers)
 
-The package is published to npm automatically when a release tag is pushed. The GitHub Actions release workflow (`release.yml`) handles this alongside the VS Code Marketplace and Open VSX publishes.
+The package is published to npm automatically when a release tag is pushed. The release workflow uses **npm Trusted Publishing** (OIDC) — no token needs to be stored as a GitHub secret. npm exchanges a short-lived GitHub Actions OIDC credential for a publish token at runtime, scoped only to this package and this workflow run.
 
-To enable npm publishing, add an **npm automation token** as a repository secret named `NPM_TOKEN`:
+**One-time setup on npmjs.com:**
 
-1. Go to [npmjs.com](https://www.npmjs.com) → Account → Access Tokens → Generate New Token → **Automation**
-2. Copy the token
-3. In the GitHub repository: Settings → Secrets and variables → Actions → New repository secret → name `NPM_TOKEN`, paste the token
+1. Go to [npmjs.com](https://www.npmjs.com) → your profile → Packages → `agentlens-dashboard` (create it first if it doesn't exist yet, or configure it as a pending package)
+2. Under **Publishing** → **Trusted Publishers** → **Add a publisher**
+3. Fill in:
+   - **Repository owner:** `RogerReed`
+   - **Repository name:** `agentlens`
+   - **Workflow filename:** `release.yml`
+   - **Environment name:** *(leave blank)*
+4. Save
 
-Then push a version tag to trigger the full release:
+No GitHub secret is needed. After this one-time configuration, pushing a version tag triggers the full release:
 
 ```bash
 git tag v1.2.3
 git push origin v1.2.3
 ```
 
-The workflow builds, runs tests, packages the VSIX, publishes to VS Code Marketplace and Open VSX, and publishes to npm — all from the same tag. The npm publish step is skipped if `NPM_TOKEN` is not set.
+The workflow builds, runs tests, packages the VSIX, publishes to VS Code Marketplace and Open VSX, and publishes to npm — all from the same tag. The npm package will include a signed provenance attestation linking it to the exact commit and workflow run.
 
 ### Option 3: Docker (otel only)
 
