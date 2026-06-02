@@ -107,7 +107,10 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          registry-url: 'https://registry.npmjs.org'
+          # No registry-url here — actions/setup-node writes an .npmrc that sets
+          # _authToken=${NODE_AUTH_TOKEN}, which takes precedence over OIDC auth
+          # and causes E404 when NODE_AUTH_TOKEN is not set. Omitting registry-url
+          # lets npm Trusted Publishing exchange the GitHub OIDC token directly.
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -117,4 +120,4 @@ jobs:
         # short-lived publish credential — no NPM_TOKEN secret required.
         # --provenance attaches a signed build attestation linking the package
         # to this exact commit and workflow run.
-        run: npm publish --access public --provenance
+        run: npm publish --access public --provenance --registry https://registry.npmjs.org
