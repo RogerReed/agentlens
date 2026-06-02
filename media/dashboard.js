@@ -6203,6 +6203,19 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     const agent = selectedAgentFilter.value;
     const debounce = A2(null);
     const [loading, setLoading] = d2(false);
+    const tab = normalizeTabId(activeTab.value);
+    const showReset = tab === "sessions" || tab === "analytics";
+    const isFiltered = sessionTextFilter.value !== "" || selectedAgentFilter.value !== "all" || initiatorFilter.value !== "all" || dataSourceFilter.value !== "all" || sessionLimit.value !== 25 || timeRange.value.preset !== "all" || sessionSortKey.value !== "start_time" || sessionSortDir.value !== "desc";
+    function resetFilters() {
+      sessionTextFilter.value = "";
+      selectedAgentFilter.value = "all";
+      initiatorFilter.value = "all";
+      dataSourceFilter.value = "all";
+      sessionLimit.value = 25;
+      timeRange.value = { preset: "all" };
+      sessionSortKey.value = "start_time";
+      sessionSortDir.value = "desc";
+    }
     function fireSearch(r5) {
       if (r5.preset === "all") {
         rangedSearchResults.value = null;
@@ -6272,6 +6285,17 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           })
         ] })
       ] }),
+      showReset && isFiltered && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("span", { style: "width:1px;height:14px;background:var(--border);margin:0 8px;flex-shrink:0" }),
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            onClick: resetFilters,
+            style: "padding:3px 12px;font-size:12px;border-radius:4px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)",
+            children: "Reset"
+          }
+        )
+      ] }),
       loading && /* @__PURE__ */ u4("span", { style: "margin-left:8px;font-size:10px;color:var(--muted);opacity:0.6", children: "loading\u2026" }),
       isActive && !loading && /* @__PURE__ */ u4(
         "button",
@@ -6322,17 +6346,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     const tab = normalizeTabId(activeTab.value);
     const isSessionsTab = tab === "sessions";
     const isAnalyticsTab = tab === "analytics";
-    const isFiltered = text !== "" || selectedAgentFilter.value !== "all" || iFilter !== "all" || dsFilter !== "all" || sessionLimit.value !== 25 || timeRange.value.preset !== "all" || sessionSortKey.value !== "start_time" || sessionSortDir.value !== "desc";
-    function resetFilters() {
-      sessionTextFilter.value = "";
-      selectedAgentFilter.value = "all";
-      initiatorFilter.value = "all";
-      dataSourceFilter.value = "all";
-      sessionLimit.value = 25;
-      timeRange.value = { preset: "all" };
-      sessionSortKey.value = "start_time";
-      sessionSortDir.value = "desc";
-    }
     return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap", children: [
       isSessionsTab && /* @__PURE__ */ u4(
         "input",
@@ -6369,14 +6382,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             onChange: (v4) => {
               dataSourceFilter.value = v4;
             }
-          }
-        ),
-        isFiltered && /* @__PURE__ */ u4(
-          "button",
-          {
-            onClick: resetFilters,
-            style: "padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)",
-            children: "Reset"
           }
         )
       ] }),
