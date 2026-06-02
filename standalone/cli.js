@@ -660,6 +660,7 @@ function buildCopilotSessions(invokeAgentSpans, childrenOf) {
       traceId: agent.traceId || "",
       source: "copilot",
       dataSource: "otel",
+      initiator: "agent",
       conversationId: conversationId || void 0,
       userRequest: userReq,
       model,
@@ -1044,6 +1045,7 @@ function buildClaudeSessions(claudeInteractionSpans, spansByTraceId) {
       traceId: interaction.traceId || "",
       source: "claude_code",
       dataSource: "otel",
+      initiator: interaction.parentSpanId || getAttrStr(interaction, "is_sidechain") === "true" ? "agent" : "user",
       userRequest,
       model,
       turns: totalLlmCalls,
@@ -2084,6 +2086,7 @@ var LogReader = class {
     const toolCounts = {};
     const timeline = [];
     let idx = 0;
+    let initiator = "user";
     for (const line of lines) {
       let entry;
       try {
@@ -2098,9 +2101,15 @@ var LogReader = class {
       }
       if (entry["cwd"] && !workspace) workspace = entry["cwd"];
       if (entry["type"] === "user") {
+        if (!userRequest) {
+          if (entry["isSidechain"] === true) initiator = "agent";
+        }
         const content = entry["message"]?.["content"];
         const text = _extractTextContent(content);
-        if (!userRequest && text) userRequest = text;
+        if (!userRequest && text) {
+          userRequest = text;
+          if (initiator === "user" && text.startsWith("<local-command-caveat>")) initiator = "api";
+        }
         timeline.push({ type: "user_input", spanId: `log-u-${idx}`, label: "User", durationMs: 0, isError: false, timestamp: ts ?? "", responseText: text });
         idx++;
       }
@@ -2137,7 +2146,7 @@ var LogReader = class {
       }
     }
     if (!firstTimestamp) return null;
-    return { workspace, card: _buildCard(sessionId, "claude_code", model || "claude", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: /* @__PURE__ */ new Set(), userRequest, timeline }) };
+    return { workspace, card: _buildCard(sessionId, "claude_code", model || "claude", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: /* @__PURE__ */ new Set(), userRequest, timeline, initiator }) };
   }
   // ── Codex ───────────────────────────────────────────────────────────────────
   _scanCodex() {
@@ -2194,7 +2203,7 @@ var LogReader = class {
     if (!firstTimestamp) return null;
     return {
       workspace,
-      card: _buildCard(sessionId, "codex", model || "codex", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: /* @__PURE__ */ new Set(), filesChanged: /* @__PURE__ */ new Set(), filesSearched: /* @__PURE__ */ new Set(), userRequest: "", timeline: [] })
+      card: _buildCard(sessionId, "codex", model || "codex", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: /* @__PURE__ */ new Set(), filesChanged: /* @__PURE__ */ new Set(), filesSearched: /* @__PURE__ */ new Set(), userRequest: "", timeline: [], initiator: "user" })
     };
   }
   // ── Copilot CLI ──────────────────────────────────────────────────────────────
@@ -2302,7 +2311,8 @@ var LogReader = class {
         filesChanged,
         filesSearched: /* @__PURE__ */ new Set(),
         userRequest: userRequest.slice(0, 500),
-        timeline: []
+        timeline: [],
+        initiator: "user"
       })
     };
   }
@@ -2357,6 +2367,7 @@ function _buildCard(sessionId, source, model, firstTimestamp, lastTimestamp, acc
     traceId: sessionId,
     source,
     dataSource: "log",
+    initiator: acc.initiator,
     userRequest: acc.userRequest.slice(0, 500),
     model,
     turns: acc.turns,

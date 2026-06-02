@@ -1555,6 +1555,12 @@
     const tooltip = DATA_SOURCE_TOOLTIP[ds];
     return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`;
   }
+  function getInitiatorBadgeHtml(initiator) {
+    if (!initiator || initiator === "user") return "";
+    const label = initiator === "agent" ? "agent" : "api";
+    const color = initiator === "agent" ? "#b0bec5" : "#80cbc4";
+    return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default;margin-left:3px" title="${initiator === "agent" ? "Spawned by agent (isSidechain)" : "Non-interactive API call (claude -p)"}">${label}</span>`;
+  }
   function getAgentSourceLabel(source) {
     if (source === "claude_code") return "Claude";
     if (source === "codex") return "Codex";
@@ -3369,7 +3375,8 @@
             /* @__PURE__ */ u4("td", { style: "padding:4px 4px 4px 8px;width:16px;color:var(--muted);font-size:9px;white-space:nowrap", children: expanded ? "\u25BC" : "\u25B6" }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 4px;width:auto;white-space:nowrap", children: [
               /* @__PURE__ */ u4("span", { style: `display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0;vertical-align:middle` }),
-              /* @__PURE__ */ u4("span", { style: "margin-left:4px", dangerouslySetInnerHTML: { __html: getDataSourceBadgeHtml(sess.dataSource ?? "otel") } })
+              /* @__PURE__ */ u4("span", { style: "margin-left:4px", dangerouslySetInnerHTML: { __html: getDataSourceBadgeHtml(sess.dataSource ?? "otel") } }),
+              /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getInitiatorBadgeHtml(sess.initiator) } })
             ] }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums", children: formatSessionTime(sess) }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;max-width:0;width:100%", children: prompt ? /* @__PURE__ */ u4("span", { style: "display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)", title: prompt, children: prompt }) : sess.turns === 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: "\u2026" }) : /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: "\u2014" }) }),

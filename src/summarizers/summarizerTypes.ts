@@ -5,6 +5,7 @@ export interface SessionSummaryCard {
   traceId: string
   source: 'copilot' | 'claude_code' | 'codex'
   dataSource: 'otel' | 'log'
+  initiator?: 'user' | 'agent' | 'api'
   conversationId?: string
   userRequest: string
   model: string

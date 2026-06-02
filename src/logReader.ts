@@ -204,6 +204,7 @@ export class LogReader {
     const toolCounts: Record<string, number> = {}
     const timeline: TimelineEntry[] = []
     let idx = 0
+    let initiator: 'user' | 'agent' | 'api' = 'user'
 
     for (const line of lines) {
       let entry: Record<string, unknown>
@@ -214,9 +215,17 @@ export class LogReader {
       if (entry['cwd'] && !workspace) workspace = entry['cwd'] as string
 
       if (entry['type'] === 'user') {
+        // isSidechain: true → session was spawned by the Agent tool, not typed by a human.
+        // <local-command-caveat> prefix → session started via `claude -p` (non-interactive API).
+        if (!userRequest) {
+          if (entry['isSidechain'] === true) initiator = 'agent'
+        }
         const content = (entry['message'] as Record<string, unknown>)?.['content']
         const text = _extractTextContent(content)
-        if (!userRequest && text) userRequest = text
+        if (!userRequest && text) {
+          userRequest = text
+          if (initiator === 'user' && text.startsWith('<local-command-caveat>')) initiator = 'api'
+        }
         timeline.push({ type: 'user_input', spanId: `log-u-${idx}`, label: 'User', durationMs: 0, isError: false, timestamp: ts ?? '', responseText: text })
         idx++
       }
@@ -254,7 +263,7 @@ export class LogReader {
     }
 
     if (!firstTimestamp) return null
-    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: new Set(), userRequest, timeline }) }
+    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: new Set(), userRequest, timeline, initiator }) }
   }
 
   // ── Codex ───────────────────────────────────────────────────────────────────
@@ -317,7 +326,7 @@ export class LogReader {
     if (!firstTimestamp) return null
     return {
       workspace,
-      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(), userRequest: '', timeline: [] }),
+      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(), userRequest: '', timeline: [], initiator: 'user' }),
     }
   }
 
@@ -437,6 +446,7 @@ export class LogReader {
         filesSearched: new Set(),
         userRequest: userRequest.slice(0, 500),
         timeline: [],
+        initiator: 'user',
       }),
     }
   }
@@ -507,6 +517,7 @@ interface CardAccum {
   filesSearched: Set<string>
   userRequest: string
   timeline: TimelineEntry[]
+  initiator: 'user' | 'agent' | 'api'
 }
 
 function _buildCard(
@@ -531,6 +542,7 @@ function _buildCard(
     traceId: sessionId,
     source,
     dataSource: 'log',
+    initiator: acc.initiator,
     userRequest: acc.userRequest.slice(0, 500),
     model,
     turns: acc.turns,
