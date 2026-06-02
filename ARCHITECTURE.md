@@ -9,15 +9,16 @@ AgentLens is a VS Code extension that receives OpenTelemetry (OTLP) telemetry fr
 1. [System Overview](#1-system-overview)
 2. [Extension Activation](#2-extension-activation)
 3. [Data Ingestion Pipeline](#3-data-ingestion-pipeline)
-4. [OTLP Collector](#4-otlp-collector)
-5. [Session Summarizer](#5-session-summarizer)
-6. [Per-Agent Summarizers](#6-per-agent-summarizers)
-7. [SQLite Storage Layer](#7-sqlite-storage-layer)
-8. [Session Data Model](#8-session-data-model)
-9. [Frontend Architecture](#9-frontend-architecture)
-10. [Cost Calculation](#10-cost-calculation)
-11. [Auto-Configuration](#11-auto-configuration)
-12. [Build Pipeline](#12-build-pipeline)
+4. [Local Log Ingestion](#4-local-log-ingestion)
+5. [OTLP Collector](#5-otlp-collector)
+6. [Session Summarizer](#6-session-summarizer)
+7. [Per-Agent Summarizers](#7-per-agent-summarizers)
+8. [SQLite Storage Layer](#8-sqlite-storage-layer)
+9. [Session Data Model](#9-session-data-model)
+10. [Frontend Architecture](#10-frontend-architecture)
+11. [Cost Calculation](#11-cost-calculation)
+12. [Auto-Configuration](#12-auto-configuration)
+13. [Build Pipeline](#13-build-pipeline)
 
 ---
 
@@ -31,10 +32,18 @@ graph TB
         CX[Codex<br/>OTLP HTTP logs]
     end
 
+    subgraph LocalLogs["Local log files"]
+        CL_LOGS["~/.claude/projects/**/*.jsonl"]
+        CX_LOGS["~/.codex/sessions/**/*.jsonl"]
+        CP_LOGS["~/.copilot/session-state/**/*.jsonl"]
+    end
+
     subgraph VSCode Extension
         COL[OtlpCollector<br/>HTTP :4318]
+        LR[LogReader<br/>batch startup + 30s poll]
         STO[SessionStore<br/>5-min rolling span window]
         SUM[SpanSummarizer]
+        WRI[DatabaseWriter]
         DB[(SQLite<br/>agentlens.db)]
         REPO[SessionRepository<br/>DB + live window]
         SID[SidebarPanel<br/>webview]
@@ -43,7 +52,7 @@ graph TB
 
     subgraph Dashboard UI
         STATE[Preact Signals<br/>state.ts]
-        TABS[Tab Components<br/>Sessions · Analytics · Alerts · Automation · Export · Help]
+        TABS[Tab Components<br/>Sessions · Analytics · Cost · Alerts · Automation · Export · Help]
     end
 
     CP -- "POST /v1/traces" --> COL
@@ -51,7 +60,12 @@ graph TB
     CX -- "POST /v1/logs" --> COL
 
     COL -- addSpan --> STO
-    STO -- onUpdate → summarize → enqueue --> DB
+    STO -- onUpdate → summarize → enqueue --> WRI
+
+    CL_LOGS & CX_LOGS & CP_LOGS --> LR
+    LR -- "enqueue(card)" --> WRI
+
+    WRI --> DB
     DB -- listSessions / queryDailyStats --> REPO
     STO -- live spans --> REPO
     REPO --> SID
@@ -95,6 +109,16 @@ sequenceDiagram
         COL-->>EXT: error — detect owner (plugin/standalone/foreign)
         EXT->>EXT: poll last-write.json every 2s<br/>reload DB snapshot on change
     end
+    alt agentLens.enableLogIngestion = true (default)
+        EXT->>LR: new LogReader(log)
+        EXT->>LR: collectFileMeta() → files sorted newest-first
+        loop Batch of 10 files at a time (async, non-blocking)
+            LR->>LR: parseFile(filePath, agentKey)
+            LR->>WRI: enqueue(card, workspace)
+            WRI->>DB: drain → save
+        end
+        EXT->>EXT: setInterval(logReader.scan, 30_000ms)
+    end
     par Auto-configure agents
         EXT->>CFG: autoConfigureCopilot(port)
         EXT->>CFG: autoConfigureClaudeCode(port)
@@ -109,42 +133,103 @@ sequenceDiagram
 
 ## 3. Data Ingestion Pipeline
 
-Spans travel from agent process → HTTP → collector → store → summarizer → SQLite → UI.
+There are two independent ingestion paths: OTLP (network) and local log files (disk). Both converge at `DatabaseWriter`.
 
 ```mermaid
 flowchart TD
-    A[Agent emits OTLP payload<br/>HTTP POST /v1/traces or /v1/logs] --> B{Route}
+    subgraph OTLP["OTLP path (network)"]
+        A[Agent emits OTLP payload<br/>HTTP POST /v1/traces or /v1/logs] --> B{Route}
 
-    B -- /v1/traces --> T[processTraces<br/>Extract resourceSpans → spans]
-    B -- /v1/logs  --> L[processLogs<br/>Extract logRecords → spans]
-    B -- /v1/metrics --> M[processMetrics<br/>count only]
+        B -- /v1/traces --> T[processTraces<br/>Extract resourceSpans → spans]
+        B -- /v1/logs  --> L[processLogs<br/>Extract logRecords → spans]
+        B -- /v1/metrics --> M[processMetrics<br/>count only]
 
-    T --> NS{Is Codex?}
-    NS -- yes --> CS[Synthesise session ID<br/>Map OTEL trace → codex:conversation:turn]
-    NS -- no  --> DS[Direct span<br/>preserve traceId + parentSpanId]
+        T --> NS{Is Codex?}
+        NS -- yes --> CS[Synthesise session ID<br/>Map OTEL trace → codex:conversation:turn]
+        NS -- no  --> DS[Direct span<br/>preserve traceId + parentSpanId]
 
-    L --> LS[Codex log reconstruction<br/>Prompt events → session boundary]
+        L --> LS[Codex log reconstruction<br/>Prompt events → session boundary]
 
-    CS --> ADD[store.addSpan]
-    DS --> ADD
-    LS --> ADD
+        CS --> ADD[store.addSpan]
+        DS --> ADD
+        LS --> ADD
 
-    ADD --> UPD[updateSummary<br/>Increment heuristic counters]
-    ADD --> TRIM[trimSpans<br/>Drop spans older than 5 min]
-    ADD --> CB[Fire onUpdate callbacks]
+        ADD --> UPD[updateSummary<br/>Increment heuristic counters]
+        ADD --> TRIM[trimSpans<br/>Drop spans older than 5 min]
+        ADD --> CB[Fire onUpdate callbacks]
 
-    CB --> WRITE[Summarize → enqueue to DatabaseWriter<br/>Drain → save DB + write last-write.json]
-    CB --> SID_CB[SidebarPanel<br/>300ms debounce + 5s heartbeat]
-    CB --> DSH_CB[DashboardPanel<br/>300ms debounce + 10s heartbeat]
+        CB --> WRITE[Summarize → enqueue to DatabaseWriter]
+        CB --> SID_CB[SidebarPanel<br/>300ms debounce + 5s heartbeat]
+        CB --> DSH_CB[DashboardPanel<br/>300ms debounce + 10s heartbeat]
+    end
+
+    subgraph LOGS["Log file path (disk) — see §4"]
+        LF["~/.claude · ~/.codex · ~/.copilot<br/>JSONL files"] --> LR[LogReader<br/>parseFile / scan]
+        LR -- "enqueue(card)" --> WRITE
+    end
 
     WRITE --> SQLITE[(SQLite<br/>sessions + timeline_entries<br/>+ edit_details + blobs/)]
+    WRITE --> SIG[last-write.json]
 
     DSH_CB --> DSH_U[dashboard.update<br/>repo.listSessions + queryDailyStats<br/>+ queryBurnRate → postMessage]
 ```
 
 ---
 
-## 4. OTLP Collector
+## 4. Local Log Ingestion
+
+A parallel, network-free ingestion path that reads JSONL session files written to disk by each agent. Implemented in `src/logReader.ts` (`LogReader` class).
+
+### File locations
+
+| Agent | Default path | Env override |
+| --- | --- | --- |
+| Claude Code | `~/.claude/projects/<project>/<uuid>.jsonl` | `CLAUDE_CONFIG_DIR` (comma-separated config dirs) |
+| Codex | `~/.codex/sessions/<project>/<uuid>.jsonl` | `CODEX_HOME` (comma-separated home dirs) |
+| Copilot CLI | `~/.copilot/session-state/<uuid>/events.jsonl` | — (written automatically, no setup required) |
+
+Windows: Claude Code also checks `%APPDATA%\Claude\projects`. Linux/Mac: XDG_CONFIG_HOME is also checked for Claude.
+
+### Scan mechanics
+
+```mermaid
+flowchart TD
+    ACT[Extension activate] --> EN{agentLens.enableLogIngestion?}
+    EN -- false --> SKIP[Skip log ingestion]
+    EN -- true --> COL[collectFileMeta<br/>Stat all JSONL files → sort newest-first]
+    COL --> BATCH[Process 10 files at a time — async, non-blocking]
+    BATCH --> PF[parseFile filePath agentKey<br/>_readNewLines: read only new bytes since last scan]
+    PF -- card --> WRI[DatabaseWriter.enqueue]
+    WRI --> DB[(SQLite)]
+    BATCH -- next batch --> BATCH
+    BATCH -- all done --> TIMER[setInterval 30s → scan]
+    TIMER --> INC[scan: re-stat all files<br/>parse only files whose mtime or size changed]
+    INC -- cards --> WRI
+```
+
+**Incremental reads:** `_readNewLines` tracks `{ bytesRead, mtimeMs }` per file. On each call it reads only the bytes appended since the last scan (byte-offset seek), so large history files are processed once at startup and cheaply polled thereafter.
+
+### Data availability
+
+| Field | OTLP | Log files |
+| --- | --- | --- |
+| Session ID, workspace, model | ✓ | ✓ |
+| Token counts (input, output, cache) | ✓ | ✓ |
+| Timestamps, duration | ✓ | ✓ |
+| Tool calls (names, file paths) | ✓ | ✓ (Claude Code, Copilot CLI) |
+| User request text | ✓ | ✓ (Claude Code, Copilot CLI) |
+| TTFT, per-tool timing, streaming speed | ✓ | ✗ |
+| Loop signals | ✓ | ✗ |
+
+Sessions produced by `LogReader` carry `dataSource: 'log'` on `SessionSummaryCard`; OTLP sessions carry `dataSource: 'otel'`. The UI shows an OTEL/Log source badge on each session row.
+
+### Bypasses SessionStore / SpanSummarizer
+
+`LogReader` produces `SessionSummaryCard` objects directly (via `_buildCard`) and writes them straight to `DatabaseWriter`. The OTLP path's `SessionStore` and `SpanSummarizer` are not involved.
+
+---
+
+## 5. OTLP Collector
 
 A minimal HTTP/1.1 server (Node `http` module) that handles three routes and maintains stateful session reconstruction for Codex.
 
@@ -185,7 +270,7 @@ graph LR
 
 ---
 
-## 5. Session Summarizer
+## 6. Session Summarizer
 
 `summarizeSpans()` is called on the live rolling span window (last 5 minutes). It groups raw spans into agent-session cards and computes cross-session efficiency metrics. Historical sessions are read directly from SQLite; the two sources are merged by `SessionRepository`.
 
@@ -224,7 +309,7 @@ flowchart TD
 
 ---
 
-## 6. Per-Agent Summarizers
+## 7. Per-Agent Summarizers
 
 Each agent uses a different span structure. The summarizers normalise these into a common `SessionSummaryCard`.
 
@@ -259,7 +344,7 @@ graph TB
 
 ---
 
-## 7. SQLite Storage Layer
+## 8. SQLite Storage Layer
 
 Introduced in phases 1–4. The database is the authoritative source for all historical session data. The live 5-minute span window supplements it for in-progress sessions.
 
@@ -429,7 +514,7 @@ When two VS Code windows are open and one holds the OTLP collector (port 4318), 
 
 ---
 
-## 8. Session Data Model
+## 9. Session Data Model
 
 ```mermaid
 classDiagram
@@ -437,6 +522,8 @@ classDiagram
         +sessionId: string
         +traceId: string
         +source: copilot, claude_code, codex
+        +dataSource: otel, log
+        +conversationId?: string
         +userRequest: string
         +model: string
         +turns: number
@@ -517,7 +604,7 @@ classDiagram
 
 ---
 
-## 9. Frontend Architecture
+## 10. Frontend Architecture
 
 The dashboard is a Preact application bundled into `media/dashboard.js`. It uses `@preact/signals` for reactive state — no Redux, no Context, no prop drilling.
 
@@ -596,7 +683,7 @@ Six flat top-level tabs; secondary views are sub-panels within the expanded sess
 graph LR
     APP[App.tsx<br/>sticky tab bar · time range picker<br/>agent filter pills · text filter] --> T1
 
-    T1[Sessions<br/>sortable table — all columns<br/>expand-in-place detail panel]
+    T1[Sessions<br/>sortable table — all columns<br/>OTEL/Log source badge per row<br/>expand-in-place detail panel]
     T1 --> D1[Overview sub-tab<br/>stat tiles · burn rate · InsightCards]
     T1 --> D2[Trace sub-tab<br/>waterfall — LLM calls + tool calls<br/>lazy timeline · blob expand]
     T1 --> D3[Flow sub-tab<br/>turn-to-tool semantic graph<br/>canvas · lazy timelines]
@@ -604,7 +691,7 @@ graph LR
     T1 --> D5[Files sub-tab<br/>files changed list · open in editor]
 
     T2[Analytics<br/>ESTIMATED COST · AGENT BREAKDOWN<br/>TOKEN USAGE PER SESSION · CONTEXT GROWTH]
-    T2 --> A1[CostBarChart — per-session bars<br/>daily total overlay · pricing mode toggle]
+    T2 --> A1[CostBarChart — per-session bars<br/>daily total overlay · pricing mode toggle<br/>CSV export download button]
     T2 --> A2[AgentCard ×3 — per-agent stat tiles]
     T2 --> A3[SessionTokenChart — input/output bars<br/>day boundary highlights]
     T2 --> A4[ContextGrowthChart — animated<br/>per-session spotlight · play/pause/speed]
@@ -655,7 +742,7 @@ sequenceDiagram
 
 ---
 
-## 10. Cost Calculation
+## 11. Cost Calculation
 
 Cost is computed in two places:
 
@@ -696,7 +783,7 @@ Pricing data covers: OpenAI (GPT-4.1 through GPT-5.5), Anthropic (Claude Haiku/S
 
 ---
 
-## 11. Auto-Configuration
+## 12. Auto-Configuration
 
 When the extension activates it attempts to configure each agent automatically.
 
@@ -722,7 +809,7 @@ flowchart TD
 
 ---
 
-## 12. Build Pipeline
+## 13. Build Pipeline
 
 Four independent esbuild targets produce four output bundles.
 
@@ -786,6 +873,7 @@ agentlens/
 │   ├── autoConfig.ts             # Copilot VS Code settings
 │   ├── autoConfigNode.ts         # Claude/Codex file-based config
 │   ├── exportData.ts             # JSON export helpers
+│   ├── logReader.ts              # LogReader — local JSONL log ingestion (Claude/Codex/Copilot)
 │   ├── loopDetector.ts           # Loop signal detection
 │   ├── types.ts                  # Shared extension-host types
 │   ├── database/
@@ -841,7 +929,7 @@ agentlens/
 │   │       │                     #   sub-tabs: Overview (InsightCards) · Trace · Flow · Tools · Files
 │   │       ├── Analytics.tsx     # ESTIMATED COST · AGENT BREAKDOWN · TOKEN USAGE · CONTEXT GROWTH
 │   │       ├── Insights.tsx      # InsightCard component + generateInsights; clipboard copy icon
-│   │       ├── Cost.tsx          # CostBarChart (canvas), per-session cost table, fmtUsd
+│   │       ├── Cost.tsx          # CostBarChart (canvas), per-session cost table, M/K token toggle, CSV export, fmtUsd
 │   │       ├── SessionCharts.tsx # ContextGrowthChart (animated), SessionTokenChart, TurnsLink
 │   │       ├── Traces.tsx        # Waterfall rows (Step/StepRow), background span groups
 │   │       ├── Flow.tsx          # Turn-to-tool semantic graph (canvas), FlowCanvas component
@@ -855,7 +943,8 @@ agentlens/
 │   ├── dashboard.css             # Compiled styles
 │   └── sidebar.js                # Compiled sidebar script
 ├── standalone/
-│   └── server.ts                 # Standalone HTTP server (no VS Code)
+│   ├── server.ts                 # Standalone HTTP server (no VS Code)
+│   └── cli.js                    # npx entrypoint: `agentlens` / `agentlens-dashboard` — starts server, auto-opens browser (--no-open to suppress)
 ├── esbuild.js                    # Build configuration (4 targets)
 ├── package.json                  # VS Code manifest + scripts
 └── ARCHITECTURE.md               # This file
