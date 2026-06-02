@@ -3338,18 +3338,18 @@ var otlpServer = http.createServer((req, res) => {
       const kind = classifyOtlpPayload(payload);
       if (req.url === "/v1/traces" || kind === "traces") {
         const n = processTraces(payload, req.url ?? "/v1/traces");
-        if (n > 0) console.log(`[OTLP] ${n} span${n !== 1 ? "s" : ""} ingested (${spans.length} total)`);
+        if (n > 0) console.log(`[AgentLens] ${n} span${n !== 1 ? "s" : ""} ingested (${spans.length} total)`);
       } else if (req.url === "/v1/logs" || kind === "logs") {
         const n = processLogs(payload, req.url ?? "/v1/logs");
-        if (n > 0) console.log(`[OTLP] ${n} log event${n !== 1 ? "s" : ""} ingested`);
+        if (n > 0) console.log(`[AgentLens] ${n} log event${n !== 1 ? "s" : ""} ingested`);
       } else if (kind === "metrics" || req.url === "/v1/metrics") {
       } else {
-        console.warn(`[OTLP] ignored POST ${req.url ?? "/"}: unrecognized OTLP JSON payload`);
+        console.warn(`[AgentLens] ignored POST ${req.url ?? "/"}: unrecognized OTLP JSON payload`);
       }
       pushUpdate();
       scheduleSave();
     } catch (e) {
-      console.error("[OTLP] Parse error:", e);
+      console.error("[AgentLens] Parse error:", e);
     }
     res.writeHead(200);
     res.end();
