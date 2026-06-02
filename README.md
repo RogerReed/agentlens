@@ -43,16 +43,16 @@ Open <http://localhost:3000> after the server starts. The OTLP receiver listens 
 > **Note:** Docker cannot read local session log files from your host machine without explicit volume mounts for each agent directory. Docker mode receives OTEL traces only — log file ingestion is not available. Use the native process option above if you need log file history.
 
 ```bash
-# Ephemeral — data cleared on container stop
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 agentlens/agentlens
+# Ephemeral — data cleared on container stop (always pulls latest)
+docker run --pull=always -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 agentlens/agentlens
 
 # Persistent — data survives restarts (macOS/Linux)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 \
+docker run --pull=always -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 \
   -v ~/.agentlens:/data \
   agentlens/agentlens
 
 # Persistent — data survives restarts (Windows)
-docker run -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
+docker run --pull=always -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
   -v "$env:USERPROFILE\.agentlens:/data" `
   agentlens/agentlens
 ```
@@ -272,13 +272,13 @@ Quick-start commands are in [Getting Started](#option-3-docker-otel-only). Addit
 **LAN-accessible** — exposes the dashboard to other devices on your network:
 
 ```bash
-docker run -p 3000:3000 -p 4318:4318 -v ~/.agentlens:/data agentlens/agentlens
+docker run --pull=always -p 3000:3000 -p 4318:4318 -v ~/.agentlens:/data agentlens/agentlens
 ```
 
 **Custom ports** — if `4318` is already in use by the VS Code extension:
 
 ```bash
-docker run -p 127.0.0.1:3001:3000 -p 127.0.0.1:4319:4318 \
+docker run --pull=always -p 127.0.0.1:3001:3000 -p 127.0.0.1:4319:4318 \
   -v ~/.agentlens:/data \
   agentlens/agentlens
 ```
