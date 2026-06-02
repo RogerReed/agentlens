@@ -78,9 +78,27 @@ function runLogScan() {
   if (changed) pushUpdate()
 }
 
+// Debounced scan triggered by fs.watch events — fires 300 ms after the last event.
+let watchScanTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleWatchScan() {
+  if (watchScanTimer) return
+  watchScanTimer = setTimeout(() => { watchScanTimer = null; runLogScan() }, 300)
+}
+
+function setupLogWatcher() {
+  for (const dir of logReader.getWatchDirs()) {
+    try {
+      fs.watch(dir, { recursive: true, persistent: false }, scheduleWatchScan)
+    } catch { /* dir may not exist yet — poll will cover it */ }
+  }
+}
+
 function startLogIngestion() {
   // Register the poll first so it always runs, even if no files exist yet at startup.
   setInterval(runLogScan, 5_000)
+  // Watch log directories for file-system events so updates appear immediately,
+  // without waiting for the next poll interval.
+  setupLogWatcher()
   console.log('[AgentLens] Log ingestion enabled — scanning local session files')
 
   const BATCH_SIZE = 10

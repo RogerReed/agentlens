@@ -152,10 +152,18 @@ export class LogReader {
     }
   }
 
+  /** Returns all directories that should be watched for file changes. */
+  getWatchDirs(): string[] {
+    return [
+      ...claudeProjectsDirs(),
+      ...codexSessionsDirs(),
+      ...((() => { const d = copilotSessionStateDir(); return d ? [d] : [] })()),
+    ]
+  }
+
   /**
    * Scans all log directories and returns new/updated session results.
-   * Only files that are new or have grown are re-parsed (incremental).
-   * Used for the periodic 30-second poll after the initial load completes.
+   * Files that are new or have changed since the last scan are re-parsed.
    */
   scan(): LogSessionResult[] {
     return [
@@ -455,19 +463,12 @@ export class LogReader {
       const prev = this.fileState.get(filePath)
       if (prev && stat.mtimeMs === prev.mtimeMs && stat.size === prev.bytesRead) return null
 
-      const startByte = prev?.bytesRead ?? 0
-      const len = stat.size - startByte
-      if (len <= 0) {
-        this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs })
-        return null
-      }
-
-      const fd  = fs.openSync(filePath, 'r')
-      const buf = Buffer.alloc(len)
-      fs.readSync(fd, buf, 0, len, startByte)
-      fs.closeSync(fd)
+      // Always re-read the whole file so each scan produces a complete card.
+      // Incremental reads (seeking to prev.bytesRead) produced partial cards that
+      // then replaced the full card in logSessions, losing prior-turn data.
+      const content = fs.readFileSync(filePath, 'utf-8')
       this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs })
-      return buf.toString('utf8').split('\n').filter(l => l.trim())
+      return content.split('\n').filter(l => l.trim())
     } catch (err) {
       this.log(`[LogReader] read error ${filePath}: ${err}`)
       return null

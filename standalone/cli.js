@@ -2035,10 +2035,20 @@ var LogReader = class {
         return null;
     }
   }
+  /** Returns all directories that should be watched for file changes. */
+  getWatchDirs() {
+    return [
+      ...claudeProjectsDirs(),
+      ...codexSessionsDirs(),
+      ...(() => {
+        const d = copilotSessionStateDir();
+        return d ? [d] : [];
+      })()
+    ];
+  }
   /**
    * Scans all log directories and returns new/updated session results.
-   * Only files that are new or have grown are re-parsed (incremental).
-   * Used for the periodic 30-second poll after the initial load completes.
+   * Files that are new or have changed since the last scan are re-parsed.
    */
   scan() {
     return [
@@ -2316,18 +2326,9 @@ var LogReader = class {
       const stat = fs2.statSync(filePath);
       const prev = this.fileState.get(filePath);
       if (prev && stat.mtimeMs === prev.mtimeMs && stat.size === prev.bytesRead) return null;
-      const startByte = prev?.bytesRead ?? 0;
-      const len = stat.size - startByte;
-      if (len <= 0) {
-        this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs });
-        return null;
-      }
-      const fd = fs2.openSync(filePath, "r");
-      const buf = Buffer.alloc(len);
-      fs2.readSync(fd, buf, 0, len, startByte);
-      fs2.closeSync(fd);
+      const content = fs2.readFileSync(filePath, "utf-8");
       this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs });
-      return buf.toString("utf8").split("\n").filter((l) => l.trim());
+      return content.split("\n").filter((l) => l.trim());
     } catch (err) {
       this.log(`[LogReader] read error ${filePath}: ${err}`);
       return null;
@@ -2465,8 +2466,25 @@ function runLogScan() {
   }
   if (changed) pushUpdate();
 }
+var watchScanTimer = null;
+function scheduleWatchScan() {
+  if (watchScanTimer) return;
+  watchScanTimer = setTimeout(() => {
+    watchScanTimer = null;
+    runLogScan();
+  }, 300);
+}
+function setupLogWatcher() {
+  for (const dir of logReader.getWatchDirs()) {
+    try {
+      fs3.watch(dir, { recursive: true, persistent: false }, scheduleWatchScan);
+    } catch {
+    }
+  }
+}
 function startLogIngestion() {
   setInterval(runLogScan, 5e3);
+  setupLogWatcher();
   console.log("[AgentLens] Log ingestion enabled \u2014 scanning local session files");
   const BATCH_SIZE = 10;
   let files;
