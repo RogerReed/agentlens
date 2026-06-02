@@ -27,7 +27,7 @@ agentlens
 
 Open <http://localhost:3000> after the server starts. The OTLP receiver listens on port `4318`. Configure agents to point at `http://localhost:4318` (see [Manual Configuration](#manual-configuration)).
 
-> **Log file ingestion** reads local session files from `~/.claude/`, `~/.codex/`, and `~/.copilot/` directly. See [Standalone Mode Options](#standalone-mode-options) for environment variables.
+> **Log file ingestion** reads local session files from `~/.claude/`, `~/.codex/`, and `~/.copilot/` directly. See [Local Mode Options](#local-mode-options) for environment variables.
 
 ### VS Code Extension (OTEL and log files)
 
@@ -40,7 +40,7 @@ The extension receives OTEL traces in real time **and** reads local session log 
 
 ### Docker (OTEL only)
 
-> **Note:** Docker cannot read local session log files from your host machine without explicit volume mounts for each agent directory. Docker mode receives OTEL traces only — log file ingestion is not available. Use the standalone option above if you need log file history.
+> **Note:** Docker cannot read local session log files from your host machine without explicit volume mounts for each agent directory. Docker mode receives OTEL traces only — log file ingestion is not available. Use the local option above if you need log file history.
 
 ```bash
 # Ephemeral — data cleared on container stop (always pulls latest)
@@ -59,7 +59,7 @@ docker run --pull=always -p 127.0.0.1:3000:3000 -p 127.0.0.1:4318:4318 `
 
 Open <http://localhost:3000> after the container starts.
 
-#### Configuring Agents for Standalone / Docker
+#### Configuring Agents for Local / Docker
 
 Use the included setup scripts to configure agents automatically, or see [Manual Configuration](#manual-configuration) for the manual steps.
 
@@ -168,7 +168,7 @@ Each signal includes a specific recommended action and a **Copy for {Agent}** bu
 
 ## Manual Configuration
 
-The VS Code extension configures agents automatically on first activation. For standalone or Docker mode, run the included setup scripts (see [Configuring Agents for Standalone / Docker](#configuring-agents-for-standalone--docker) above). Replace `4318` with your custom port if you changed `agentLens.otlpPort`.
+The VS Code extension configures agents automatically on first activation. For standalone or Docker mode, run the included setup scripts (see [Configuring Agents for Local / Docker](#configuring-agents-for-local--docker) above). Replace `4318` with your custom port if you changed `agentLens.otlpPort`.
 
 ### GitHub Copilot
 
@@ -240,9 +240,9 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
 
 `log_user_prompt = true` includes your typed prompt; without it sessions show `[session in progress]`. `exporter` sends log events; `trace_exporter` sends trace spans. Both point at the same endpoint. If `config.toml` already has an `[otel]` section, add only the missing keys.
 
-## Standalone Mode Options
+## Local Mode Options
 
-AgentLens runs as a standalone web server outside VS Code — useful for CI, remote machines, or when you prefer a browser tab over the VS Code sidebar.
+AgentLens runs as a local web server outside VS Code — useful for CI, remote machines, or when you prefer a browser tab over the VS Code sidebar.
 
 ### Native process (recommended for local use)
 
@@ -257,7 +257,7 @@ Environment variables:
 | `DATA_DIR` | `~/.agentlens` | Directory for persistent span data |
 | `BIND_HOST` | `127.0.0.1` | Set to `0.0.0.0` for LAN access |
 
-The standalone server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously, use different ports:
+The local server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously, use different ports:
 
 ```bash
 OTLP_PORT=4319 UI_PORT=3001 bunx agentlens-dashboard
@@ -291,7 +291,7 @@ Requires Node.js 18+ and this repository cloned locally.
 
 ```bash
 pnpm install
-pnpm run standalone
+pnpm run local
 ```
 
 ## Automation Prompts File
@@ -308,7 +308,7 @@ When **Write prompts file** is enabled for an automation rule, each trigger appe
 | GitHub Copilot | `agentlens-prompts-copilot.md` |
 | Codex | `agentlens-prompts-codex.md` |
 
-In the VS Code extension, files are written to the workspace root. In standalone mode, files are written to the directory where the server is running.
+In the VS Code extension, files are written to the workspace root. In local mode, files are written to the directory where the server is running.
 
 Each entry uses this format:
 
