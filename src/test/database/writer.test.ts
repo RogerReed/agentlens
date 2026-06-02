@@ -30,6 +30,7 @@ function makeCard(overrides: Partial<SessionSummaryCard> = {}): SessionSummaryCa
     sessionId: 'sess-1',
     traceId: 'trace-1',
     source: 'claude_code',
+    dataSource: 'otel',
     userRequest: 'test prompt',
     model: 'claude-sonnet',
     turns: 2,

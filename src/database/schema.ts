@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   files_searched      TEXT    NOT NULL DEFAULT '[]',
   files_changed_note  TEXT,
   cost_usd            REAL    NOT NULL DEFAULT 0,
+  data_source         TEXT    NOT NULL DEFAULT 'otel',
   created_at          INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER) * 1000)
 );
 

@@ -1544,6 +1544,17 @@
   function formatCompact(n3) {
     return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(n3);
   }
+  var DATA_SOURCE_TOOLTIP = {
+    otel: "OTEL \u2014 Full telemetry: timing, speed, TTFT, loop signals",
+    log: "Log \u2014 Conversation logs: tokens, tool calls, messages (no timing or speed data)"
+  };
+  function getDataSourceBadgeHtml(dataSource) {
+    const ds = dataSource ?? "otel";
+    const label = ds === "log" ? "Log" : "OTEL";
+    const color = ds === "log" ? "#90a4ae" : "var(--accent)";
+    const tooltip = DATA_SOURCE_TOOLTIP[ds];
+    return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`;
+  }
   function getAgentSourceLabel(source) {
     if (source === "claude_code") return "Claude";
     if (source === "codex") return "Codex";
@@ -3196,6 +3207,24 @@
   }
 
   // media/src/tabs/Sessions.tsx
+  function PromptBlock({ text }) {
+    const [expanded, setExpanded] = d2(false);
+    const PREVIEW_CHARS = 300;
+    const truncated = !expanded && text.length > PREVIEW_CHARS;
+    const display = truncated ? text.slice(0, PREVIEW_CHARS).trimEnd() + "\u2026" : text;
+    return /* @__PURE__ */ u4("div", { style: "margin-bottom:10px", children: [
+      /* @__PURE__ */ u4("div", { style: "font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:4px", children: "Prompt" }),
+      /* @__PURE__ */ u4("div", { style: "background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:11px;white-space:pre-wrap;word-break:break-word;line-height:1.5;color:var(--foreground);max-height:200px;overflow-y:auto", children: display }),
+      text.length > PREVIEW_CHARS && /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => setExpanded((e4) => !e4),
+          style: "margin-top:4px;font-size:10px;color:var(--vscode-textLink-foreground,#4fc3f7);background:none;border:none;cursor:pointer;padding:0",
+          children: expanded ? "Show less" : "Show full prompt"
+        }
+      )
+    ] });
+  }
   function SessionDetail({ sess }) {
     const [section, setSection] = d2("overview");
     const timelines = sessionTimelines.value;
@@ -3246,6 +3275,7 @@
       ] }),
       /* @__PURE__ */ u4("div", { style: "padding:12px 14px", children: [
         section === "overview" && /* @__PURE__ */ u4("div", { children: [
+          sess.userRequest ? /* @__PURE__ */ u4(PromptBlock, { text: sess.userRequest }) : sess.turns === 0 ? /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;font-size:11px;color:var(--muted);font-style:italic", children: "Waiting for first turn\u2026" }) : /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;font-size:11px;color:var(--muted)", children: "Prompt not captured for this session" }),
           /* @__PURE__ */ u4("div", { style: "display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:10px", children: [
             { k: "LLM calls", v: String(sess.totalLlmCalls) },
             { k: "Tool calls", v: String(sess.totalToolCalls) },
@@ -3334,16 +3364,12 @@
           style: `cursor:pointer;background:${rowBg};border-bottom:1px solid var(--vscode-panel-border)`,
           children: [
             /* @__PURE__ */ u4("td", { style: "padding:4px 4px 4px 8px;width:16px;color:var(--muted);font-size:9px;white-space:nowrap", children: expanded ? "\u25BC" : "\u25B6" }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 4px;width:10px", children: /* @__PURE__ */ u4("span", { style: `display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0` }) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 4px;width:auto;white-space:nowrap", children: [
+              /* @__PURE__ */ u4("span", { style: `display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0;vertical-align:middle` }),
+              /* @__PURE__ */ u4("span", { style: "margin-left:4px", dangerouslySetInnerHTML: { __html: getDataSourceBadgeHtml(sess.dataSource ?? "otel") } })
+            ] }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums", children: formatSessionTime(sess) }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 6px;max-width:0;width:100%", children: /* @__PURE__ */ u4(
-              "span",
-              {
-                style: "display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)",
-                title: prompt,
-                children: prompt || /* @__PURE__ */ u4("span", { style: "color:var(--muted)", children: "\u2014" })
-              }
-            ) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 6px;max-width:0;width:100%", children: prompt ? /* @__PURE__ */ u4("span", { style: "display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)", title: prompt, children: prompt }) : sess.turns === 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: "\u2026" }) : /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: "\u2014" }) }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis", children: sess.model || "\u2014" }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;text-align:right;white-space:nowrap;font-size:10px;color:var(--muted)", children: formatCompact(sess.inputTokens + sess.outputTokens) }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;text-align:right;white-space:nowrap;font-size:10px;color:var(--muted)", children: formatMs(sess.durationMs) }),
@@ -3412,20 +3438,10 @@
         ] }) }),
         /* @__PURE__ */ u4("tbody", { children: sessions.map((sess) => /* @__PURE__ */ u4(SessionRow, { sess }, sess.sessionId)) })
       ] }) }),
-      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)", children: [
-        /* @__PURE__ */ u4("span", { children: [
-          sessionSummary.value?.sessions?.length ?? 0,
-          " sessions stored"
-        ] }),
-        /* @__PURE__ */ u4(
-          "button",
-          {
-            style: "padding:2px 8px;font-size:10px;cursor:pointer;border:1px solid var(--vscode-testing-iconFailed,#f44);border-radius:3px;background:transparent;color:var(--vscode-testing-iconFailed,#f44)",
-            onClick: () => vscode?.postMessage({ type: "confirmClear" }),
-            children: "Clear All Data"
-          }
-        )
-      ] })
+      /* @__PURE__ */ u4("div", { style: "padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)", children: /* @__PURE__ */ u4("span", { children: [
+        sessionSummary.value?.sessions?.length ?? 0,
+        " sessions stored \u2014 managed by retention policy"
+      ] }) })
     ] });
   }
 
@@ -6013,21 +6029,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           } else {
             searchResults.value = data;
           }
-        } else if (msg.type === "clearAll") {
-          toolCalls.value = {};
-          sessionSummary.value = null;
-          sessionTimelines.value = {};
-          blobCache.value = {};
-          swRetainedSessions.value = [];
-          swLastSessionCount.value = 0;
-          dismissedSpanIds.clear();
-          dailyStats.value = [];
-          lifetimeStats.value = null;
-          burnRateData.value = null;
-          searchResults.value = null;
-          focusedSessionId.value = null;
-          rangedSearchResults.value = null;
-          timeRange.value = { preset: "all" };
         }
       };
       window.addEventListener("message", handler);

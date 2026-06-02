@@ -51,6 +51,7 @@ export interface SessionSummaryCard {
   sessionId: string
   traceId: string
   source: 'copilot' | 'claude_code' | 'codex'
+  dataSource: 'otel' | 'log'
   conversationId?: string
   userRequest: string
   model: string

@@ -161,6 +161,7 @@ export function buildCopilotSessions(
       sessionId: agent.spanId,
       traceId: agent.traceId || '',
       source: 'copilot' as const,
+      dataSource: 'otel' as const,
       conversationId: conversationId || undefined,
       userRequest: userReq,
       model,

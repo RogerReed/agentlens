@@ -23,6 +23,16 @@ export class DatabaseWriter {
   ) {}
 
   enqueue(card: SessionSummaryCard, workspace: string): void {
+    // OTEL always wins: if this is a log-sourced card and an OTEL record already
+    // exists for the same session, skip it so we never downgrade richer data.
+    if (card.dataSource === 'log') {
+      try {
+        const rows = this.db.exec(
+          `SELECT data_source FROM sessions WHERE session_id = '${card.sessionId.replace(/'/g, "''")}'`
+        )
+        if (rows[0]?.values[0]?.[0] === 'otel') return
+      } catch { /* non-fatal — proceed to enqueue */ }
+    }
     this.pending.set(card.sessionId, { card, workspace })
     if (!this.writing) {
       this.drainPromise = this._drain()
@@ -120,8 +130,9 @@ export class DatabaseWriter {
         cache_read_tokens, cache_create_tokens, cache_hit_rate,
         total_tool_calls, total_llm_calls, errors, outcome,
         is_sidechain, speed, user_request, tool_counts, loop_signals,
-        files_read, files_changed, files_searched, files_changed_note, cost_usd
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        files_read, files_changed, files_searched, files_changed_note, cost_usd,
+        data_source
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         card.sessionId,
         card.traceId,
@@ -151,6 +162,7 @@ export class DatabaseWriter {
         JSON.stringify(card.filesSearched),
         card.filesChangedNote ?? null,
         costUsd,
+        card.dataSource,
       ]
     )
   }

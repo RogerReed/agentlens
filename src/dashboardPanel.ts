@@ -42,10 +42,6 @@ export class DashboardPanel {
     DashboardPanel.currentPanel?.panel.webview.postMessage({ type: 'setFilter', agentFilter, sessionLimit })
   }
 
-  static sendClearAll() {
-    DashboardPanel.currentPanel?.panel.webview.postMessage({ type: 'clearAll' })
-  }
-
   static disposePanel() {
     DashboardPanel.currentPanel?.dispose()
   }
@@ -61,21 +57,7 @@ export class DashboardPanel {
     this.panel.webview.html = this.getHtml()
 
     this.panel.webview.onDidReceiveMessage(async msg => {
-      if (msg.type === 'confirmClear') {
-        const answer = await vscode.window.showWarningMessage(
-          'Clear all AgentLens session data? This cannot be undone.',
-          { modal: true },
-          'Clear All'
-        )
-        if (answer === 'Clear All') {
-          vscode.commands.executeCommand('agentLens.clearSessions')
-          this.panel.webview.postMessage({ type: 'clearAll' })
-          this.update()
-        }
-      } else if (msg.type === 'clearAll') {
-        vscode.commands.executeCommand('agentLens.clearSessions')
-        this.update()
-      } else if (msg.type === 'loadSessionDetail' && msg.sessionId) {
+      if (msg.type === 'loadSessionDetail' && msg.sessionId) {
         const timeline = this.repo.loadSessionTimeline(msg.sessionId as string)
         this.panel.webview.postMessage({ type: 'sessionDetail', sessionId: msg.sessionId, timeline })
       } else if (msg.type === 'loadBlob' && msg.spanId && msg.field) {

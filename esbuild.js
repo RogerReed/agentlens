@@ -93,6 +93,19 @@ async function main() {
 		plugins: [esbuildProblemMatcherPlugin],
 	});
 
+	const cliCtx = await esbuild.context({
+		entryPoints: ['standalone/cli.ts'],
+		bundle: true,
+		format: 'cjs',
+		minify: false,
+		sourcemap: !production,
+		sourcesContent: false,
+		platform: 'node',
+		outfile: 'standalone/cli.js',
+		logLevel: 'silent',
+		plugins: [esbuildProblemMatcherPlugin],
+	});
+
 	copySqlWasm();
 
 	if (watch) {
@@ -100,6 +113,7 @@ async function main() {
 		await mediaCtx.watch();
 		await sidebarCtx.watch();
 		await standaloneCtx.watch();
+		await cliCtx.watch();
 	} else {
 		await ctx.rebuild();
 		await ctx.dispose();
@@ -109,6 +123,8 @@ async function main() {
 		await sidebarCtx.dispose();
 		await standaloneCtx.rebuild();
 		await standaloneCtx.dispose();
+		await cliCtx.rebuild();
+		await cliCtx.dispose();
 	}
 }
 

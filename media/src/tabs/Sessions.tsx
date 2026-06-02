@@ -6,6 +6,7 @@ import {
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
+  getDataSourceBadgeHtml,
 } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
@@ -19,6 +20,29 @@ import type { SessionSummaryCard } from '../types'
 // ── Session detail panel (shown in expanded row) ──────────────────────────────
 
 type Section = 'overview' | 'trace' | 'files' | 'flow' | 'tools'
+
+function PromptBlock({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const PREVIEW_CHARS = 300
+  const truncated = !expanded && text.length > PREVIEW_CHARS
+  const display = truncated ? text.slice(0, PREVIEW_CHARS).trimEnd() + '…' : text
+  return (
+    <div style="margin-bottom:10px">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:4px">Prompt</div>
+      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:11px;white-space:pre-wrap;word-break:break-word;line-height:1.5;color:var(--foreground);max-height:200px;overflow-y:auto">
+        {display}
+      </div>
+      {text.length > PREVIEW_CHARS && (
+        <button
+          onClick={() => setExpanded(e => !e)}
+          style="margin-top:4px;font-size:10px;color:var(--vscode-textLink-foreground,#4fc3f7);background:none;border:none;cursor:pointer;padding:0"
+        >
+          {expanded ? 'Show less' : 'Show full prompt'}
+        </button>
+      )}
+    </div>
+  )
+}
 
 function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
   const [section, setSection] = useState<Section>('overview')
@@ -75,6 +99,12 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
 
         {section === 'overview' && (
           <div>
+            {sess.userRequest
+              ? <PromptBlock text={sess.userRequest} />
+              : sess.turns === 0
+                ? <div style="margin-bottom:10px;font-size:11px;color:var(--muted);font-style:italic">Waiting for first turn…</div>
+                : <div style="margin-bottom:10px;font-size:11px;color:var(--muted)">Prompt not captured for this session</div>
+            }
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:10px">
               {[
                 { k: 'LLM calls',  v: String(sess.totalLlmCalls) },
@@ -207,9 +237,10 @@ function SessionRow({ sess }: { sess: SessionSummaryCard }) {
           {expanded ? '▼' : '▶'}
         </td>
 
-        {/* Agent dot */}
-        <td style="padding:4px 4px;width:10px">
-          <span style={`display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0`} />
+        {/* Agent dot + data source badge */}
+        <td style="padding:4px 4px;width:auto;white-space:nowrap">
+          <span style={`display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0;vertical-align:middle`} />
+          <span style="margin-left:4px" dangerouslySetInnerHTML={{ __html: getDataSourceBadgeHtml(sess.dataSource ?? 'otel') }} />
         </td>
 
         {/* Timestamp */}
@@ -219,12 +250,12 @@ function SessionRow({ sess }: { sess: SessionSummaryCard }) {
 
         {/* Prompt */}
         <td style="padding:4px 6px;max-width:0;width:100%">
-          <span
-            style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)"
-            title={prompt}
-          >
-            {prompt || <span style="color:var(--muted)">—</span>}
-          </span>
+          {prompt
+            ? <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)" title={prompt}>{prompt}</span>
+            : sess.turns === 0
+              ? <span style="color:var(--muted);font-size:11px">…</span>
+              : <span style="color:var(--muted);font-size:11px">—</span>
+          }
         </td>
 
         {/* Model */}
@@ -322,12 +353,8 @@ export function Sessions() {
         </tbody>
       </table>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)">
-        <span>{(sessionSummary.value?.sessions?.length ?? 0)} sessions stored</span>
-        <button
-          style="padding:2px 8px;font-size:10px;cursor:pointer;border:1px solid var(--vscode-testing-iconFailed,#f44);border-radius:3px;background:transparent;color:var(--vscode-testing-iconFailed,#f44)"
-          onClick={() => vscode?.postMessage({ type: 'confirmClear' })}
-        >Clear All Data</button>
+      <div style="padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)">
+        <span>{(sessionSummary.value?.sessions?.length ?? 0)} sessions stored — managed by retention policy</span>
       </div>
     </div>
   )

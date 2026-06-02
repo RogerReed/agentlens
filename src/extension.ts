@@ -15,6 +15,7 @@ import { migrateGlobalStateToSqlite } from './database/migration'
 import { runRetention } from './database/retention'
 import { SessionRepository } from './sessionRepository'
 import { summarizeSpans } from './spanSummarizer'
+import { LogReader } from './logReader'
 
 let collector: OtlpCollector | undefined
 let store: SessionStore | undefined
@@ -22,6 +23,7 @@ let outputChannel: vscode.OutputChannel | undefined
 let agentLensDb: AgentLensDb | undefined
 let writer: DatabaseWriter | undefined
 let repository: SessionRepository | undefined
+let logReaderTimer: ReturnType<typeof setInterval> | undefined
 
 // ── Cross-window sync ────────────────────────────────────────────────────────
 
@@ -141,6 +143,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       })
     )
+
   }
 
   // ── Collector ────────────────────────────────────────────────────────────────
@@ -200,6 +203,71 @@ export async function activate(context: vscode.ExtensionContext) {
   const repo = repository ?? fallbackRepository(store)
   const provider = new SidebarPanel(repo, context.extensionUri)
 
+  // ── Log ingestion ─────────────────────────────────────────────────────────
+  const enableLogIngestion = vscode.workspace.getConfiguration('agentLens').get<boolean>('enableLogIngestion', true)
+  if (enableLogIngestion && writer) {
+    const logReader = new LogReader({ log: (msg) => outputChannel!.appendLine(msg) })
+    const fallbackWorkspace = () => vscode.workspace.workspaceFolders?.[0]?.uri.toString() ?? ''
+
+    // Periodic incremental scan: only picks up files that have changed since last run.
+    const runLogScan = () => {
+      const results = logReader.scan()
+      if (results.length === 0) return
+      const ws = fallbackWorkspace()
+      for (const { card, workspace } of results) writer!.enqueue(card, workspace || ws)
+      void writer!.drain().then(() => {
+        agentLensDb?.save()
+        provider.refresh()
+        writeLastWriteSignal(context.globalStorageUri)
+      }).catch(err => outputChannel!.appendLine(`[AgentLens] log ingestion drain error: ${err}`))
+    }
+
+    // Initial load: collect file metadata sorted newest-first, then process in
+    // small batches with setImmediate between each batch. This keeps the event
+    // loop free and shows the most recent sessions first.
+    const BATCH_SIZE = 10
+    const startBatchedLoad = () => {
+      let files: ReturnType<typeof logReader.collectFileMeta>
+      try {
+        files = logReader.collectFileMeta()
+      } catch (err) {
+        outputChannel!.appendLine(`[AgentLens] log ingestion collect error: ${err}`)
+        return
+      }
+      if (files.length === 0) return
+
+      const processBatch = (startIdx: number) => {
+        const ws = fallbackWorkspace()
+        let written = 0
+        for (let i = startIdx; i < Math.min(startIdx + BATCH_SIZE, files.length); i++) {
+          try {
+            const result = logReader.parseFile(files[i].filePath, files[i].agentKey)
+            if (result) { writer!.enqueue(result.card, result.workspace || ws); written++ }
+          } catch { /* skip bad file */ }
+        }
+        if (written > 0) {
+          void writer!.drain().then(() => {
+            agentLensDb?.save()
+            provider.refresh()
+          }).catch(err => outputChannel!.appendLine(`[AgentLens] log ingestion drain error: ${err}`))
+        }
+        const nextIdx = startIdx + BATCH_SIZE
+        if (nextIdx < files.length) {
+          setImmediate(() => processBatch(nextIdx))
+        } else {
+          writeLastWriteSignal(context.globalStorageUri)
+        }
+      }
+
+      setImmediate(() => processBatch(0))
+    }
+
+    startBatchedLoad()
+    logReaderTimer = setInterval(runLogScan, 30_000)
+    context.subscriptions.push({ dispose: () => clearInterval(logReaderTimer) })
+    outputChannel.appendLine('AgentLens: log ingestion enabled — scanning local session logs')
+  }
+
   if (collectorFailed) {
     // Non-collector window: poll the last-write signal; refresh from DB snapshot when it changes.
     let lastKnownWriteMs = readLastWriteMs(context.globalStorageUri)
@@ -229,20 +297,6 @@ export async function activate(context: vscode.ExtensionContext) {
   )
 
   // ── Commands ─────────────────────────────────────────────────────────────────
-  context.subscriptions.push(
-    vscode.commands.registerCommand('agentLens.clearSessions', async () => {
-      store!.clear()
-      writer?.clearAll()
-      if (repository) {
-        await repository.clearBlobs(context.globalStorageUri)
-      }
-      await context.globalState.update('agentLens.dbMigrationVersion', 0)
-      provider.refresh()
-      DashboardPanel.sendClearAll()
-      vscode.window.showInformationMessage('AgentLens: session data cleared')
-    })
-  )
-
   context.subscriptions.push(
     vscode.commands.registerCommand('agentLens.showStorageStats', () => {
       if (!agentLensDb || !repository) {

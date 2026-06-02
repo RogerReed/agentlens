@@ -361,6 +361,21 @@ export function extractSpanSummary(span: Span): string | null {
   return null
 }
 
+// ── Data source badge helpers ─────────────────────────────────────────────────
+
+const DATA_SOURCE_TOOLTIP = {
+  otel: 'OTEL — Full telemetry: timing, speed, TTFT, loop signals',
+  log:  'Log — Conversation logs: tokens, tool calls, messages (no timing or speed data)',
+}
+
+export function getDataSourceBadgeHtml(dataSource: 'otel' | 'log' | undefined): string {
+  const ds = dataSource ?? 'otel'
+  const label = ds === 'log' ? 'Log' : 'OTEL'
+  const color = ds === 'log' ? '#90a4ae' : 'var(--accent)'
+  const tooltip = DATA_SOURCE_TOOLTIP[ds]
+  return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`
+}
+
 // ── Agent label / color helpers ───────────────────────────────────────────────
 
 export function getAgentSourceLabel(source: string | null | undefined): string {

@@ -56,7 +56,7 @@ jobs:
           files: '*.vsix'
           generate_release_notes: true
 
-  publish:
+  publish-vsce:
     needs: package
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -86,3 +86,35 @@ jobs:
         run: |
           npm install -g ovsx
           ovsx publish *.vsix
+
+  publish-npm:
+    needs: package
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      id-token: write  # Required for npm Trusted Publishing (OIDC — no stored secret needed)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish to npm
+        # Trusted Publishing: npm exchanges the GitHub Actions OIDC token for a
+        # short-lived publish credential — no NPM_TOKEN secret required.
+        # --provenance attaches a signed build attestation linking the package
+        # to this exact commit and workflow run.
+        run: npm publish --access public --provenance

@@ -1,0 +1,41 @@
+{
+  "version": "0.2",
+  "words": [
+    "agentlens",
+    "agentlens.dev",
+    "bunx",
+    "npmjs",
+    "npx",
+    "TTFT",
+    "USERPROFILE",
+    "APPDATA",
+    "otlp",
+    "OTLP",
+    "jsonl",
+    "JSONL",
+    "esbuild",
+    "preact",
+    "Preact",
+    "pnpm",
+    "mocha",
+    "codex",
+    "Codex",
+    "mtime",
+    "mtimeMs",
+    "setImmediate",
+    "fsPath",
+    "sqlite",
+    "SQLite",
+    "opentelemetry",
+    "OpenTelemetry"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "media/dashboard.js",
+    "standalone/server.js",
+    "standalone/cli.js",
+    ".vscode-test",
+    "*.jsonl"
+  ]
+}
