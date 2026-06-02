@@ -69,6 +69,7 @@ function AgentCard({ source, sessions }: { source: string; sessions: SessionSumm
 
 export function Analytics() {
   const [mode, setMode] = useState<PricingMode>('token')
+  const [abbrevTokens, setAbbrevTokens] = useState(true)
   const sessions = filteredSessions.value
   const allFiltered = agentFilteredSessions.value
   const timelines = sessionTimelines.value
@@ -131,7 +132,12 @@ export function Analytics() {
     input: g.input + d.input, output: g.output + d.output,
     cacheCreate: g.cacheCreate + d.cacheCreate, cacheRead: g.cacheRead + d.cacheRead, cost: g.cost + d.cost,
   }), { input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0 })
-  const fmtN = (n: number) => n.toLocaleString()
+  const fmtN = (n: number): string => {
+    if (!abbrevTokens) return n.toLocaleString()
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(n >= 10_000_000 ? 1 : 2).replace(/\.0+$/, '') + 'M'
+    if (n >= 1_000)     return (n / 1_000).toFixed(n >= 10_000 ? 0 : 1).replace(/\.0+$/, '') + 'K'
+    return String(n)
+  }
 
   return (
     <div id="analytics-content">
@@ -169,7 +175,12 @@ export function Analytics() {
 
           {/* Multi-dimensional cost table: date → agent, scrollable */}
           {dayRows.length > 0 && (
-            <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+            <div style="display:flex;justify-content:flex-end;align-items:center;gap:4px;margin-bottom:4px">
+              <button
+                onClick={() => setAbbrevTokens(a => !a)}
+                title={abbrevTokens ? 'Switch to full numbers' : 'Switch to abbreviated numbers'}
+                style="font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap"
+              >{abbrevTokens ? '1.2M' : '1,234'}</button>
               <button
                 onClick={() => {
                   const headers = ['Date','Agent','Model','Input Tokens','Output Tokens','Cache Create Tokens','Cache Read Tokens','Total Tokens','Cost (USD)']
