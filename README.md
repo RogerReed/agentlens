@@ -26,11 +26,11 @@ Run the standalone server as a native Node.js process on your local machine — 
 
 ```bash
 # One-off — always uses the latest published version
-bunx @agentlens.dev/agentlens-dashboard
-npx @agentlens.dev/agentlens-dashboard
+bunx agentlens-dashboard
+npx agentlens-dashboard
 
 # Or install globally and run by command name
-npm install -g @agentlens.dev/agentlens-dashboard
+npm install -g agentlens-dashboard
 agentlens
 ```
 
@@ -260,7 +260,7 @@ Environment variables:
 The standalone server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously, use different ports:
 
 ```bash
-OTLP_PORT=4319 UI_PORT=3001 bunx @agentlens.dev/agentlens-dashboard
+OTLP_PORT=4319 UI_PORT=3001 bunx agentlens-dashboard
 ```
 
 ### Docker (OTEL only)
