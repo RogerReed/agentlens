@@ -2,7 +2,7 @@ import { signal, computed } from '@preact/signals'
 import { calcSessionCost } from './sessionMetrics'
 import type {
   FullSummary, SessionSummaryCard, TimelineEntry,
-  AgentFilter, InsightFilter, VsCodeApi,
+  AgentFilter, InitiatorFilter, InsightFilter, VsCodeApi,
   DailyStatRow, LifetimeStats, BurnRate, Projection,
 } from './types'
 
@@ -102,6 +102,7 @@ export const focusedSessionId = signal<string | null>(null)
 
 export const sessionLimit = signal(25)
 export const selectedAgentFilter = signal<AgentFilter>('all')
+export const initiatorFilter = signal<InitiatorFilter>('all')
 export const insightFilter = signal<InsightFilter>('all')
 export const activeTab = signal('sessions')
 
@@ -198,6 +199,10 @@ export const filteredSessions = computed<SessionSummaryCard[]>(() => {
   const text = sessionTextFilter.value.toLowerCase().trim()
   if (text) {
     sessions = sessions.filter(s => (s.userRequest ?? '').toLowerCase().includes(text))
+  }
+  const iFilter = initiatorFilter.value
+  if (iFilter !== 'all') {
+    sessions = sessions.filter(s => (s.initiator ?? 'user') === iFilter)
   }
   const key = sessionSortKey.value
   const dir = sessionSortDir.value

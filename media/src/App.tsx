@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import {
   sessionSummary, toolCalls, dismissedSpanIds,
   swRetainedSessions, swLastSessionCount,
-  selectedAgentFilter, sessionLimit, activeTab,
+  selectedAgentFilter, initiatorFilter, sessionLimit, activeTab,
   sessionTimelines, blobCache,
   dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults,
   focusedSessionId, timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
@@ -11,7 +11,7 @@ import {
   sessionTextFilter, filteredSessions,
   sessionSortKey, sessionSortDir, type SortKey,
 } from './state'
-import type { TimelineEntry, AgentFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
+import type { TimelineEntry, AgentFilter, InitiatorFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
 
 // Tab components
 import { Sessions } from './tabs/Sessions'
@@ -324,12 +324,21 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   )
 }
 
+const INITIATOR_FILTER_OPTIONS: Array<{ value: InitiatorFilter; label: string; color: string }> = [
+  { value: 'all',   label: 'All',   color: 'var(--vscode-descriptionForeground,#888)' },
+  { value: 'user',  label: 'user',  color: '#81c784' },
+  { value: 'agent', label: 'agent', color: '#b0bec5' },
+  { value: 'api',   label: 'api',   color: '#80cbc4' },
+]
+
 function SearchFilterBar() {
   const text = sessionTextFilter.value
+  const iFilter = initiatorFilter.value
   const isSessionsTab = normalizeTabId(activeTab.value) === 'sessions'
 
   const isFiltered = text !== '' ||
     selectedAgentFilter.value !== 'all' ||
+    iFilter !== 'all' ||
     sessionLimit.value !== 25 ||
     timeRange.value.preset !== 'all' ||
     sessionSortKey.value !== 'start_time' ||
@@ -338,6 +347,7 @@ function SearchFilterBar() {
   function resetFilters() {
     sessionTextFilter.value = ''
     selectedAgentFilter.value = 'all'
+    initiatorFilter.value = 'all'
     sessionLimit.value = 25
     timeRange.value = { preset: 'all' }
     sessionSortKey.value = 'start_time'
@@ -355,6 +365,26 @@ function SearchFilterBar() {
       />
       {isSessionsTab && (
         <>
+          <span style="font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">From</span>
+          <div style="display:flex;gap:3px">
+            {INITIATOR_FILTER_OPTIONS.map(o => {
+              const active = iFilter === o.value
+              return (
+                <button
+                  key={o.value}
+                  onClick={() => { initiatorFilter.value = o.value }}
+                  style={[
+                    'padding:2px 7px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;',
+                    `border:1.5px solid ${o.color};`,
+                    active
+                      ? `background:${o.color}33;color:${o.color};font-weight:600`
+                      : 'background:transparent;color:var(--muted)',
+                  ].join('')}
+                  title={o.value === 'all' ? 'Show all sessions' : o.value === 'user' ? 'Human-typed prompts only' : o.value === 'agent' ? 'Agent-spawned sub-tasks only' : 'Non-interactive claude -p calls only'}
+                >{o.label}</button>
+              )
+            })}
+          </div>
           <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
           {isFiltered && (
             <button

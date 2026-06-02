@@ -75,6 +75,10 @@ const HELP_SECTIONS = {
     href: '#help-views',
     heading: 'Views',
   },
+  badges: {
+    href: '#help-badges',
+    heading: 'Badges',
+  },
   glossary: {
     href: '#help-glossary',
     heading: 'Glossary',
@@ -505,6 +509,55 @@ function GlossarySection() {
   )
 }
 
+function BadgesSection() {
+  const badgeStyle = 'font-size:9px;font-weight:600;padding:1px 5px;border-radius:2px;border:1px solid;letter-spacing:0.03em;vertical-align:middle;display:inline-block;margin-right:6px'
+  return (
+    <div class="help-section" id="help-badges">
+      <h3 class="help-heading">{HELP_SECTIONS.badges.heading}</h3>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Each session row shows up to two small badges indicating where the data came from and who initiated the session.</p>
+
+      <h4 style="font-size:11px;font-weight:600;color:var(--fg);margin:0 0 8px">Data source</h4>
+      <div class="glossary" style="margin-bottom:16px">
+        <div class="glossary-item">
+          <dt class="glossary-term" style="min-width:0">
+            <span style={`${badgeStyle}color:var(--accent);border-color:var(--accent)`}>otel</span>
+          </dt>
+          <dd class="glossary-def">Full OpenTelemetry telemetry — timing, TTFT, span waterfall, loop signals. Requires the agent to be configured to export traces to AgentLens.</dd>
+        </div>
+        <div class="glossary-item">
+          <dt class="glossary-term" style="min-width:0">
+            <span style={`${badgeStyle}color:#90a4ae;border-color:#90a4ae`}>log</span>
+          </dt>
+          <dd class="glossary-def">Parsed from local conversation log files (~/.claude/projects, ~/.codex/sessions, etc.) — tokens, tool calls, and messages are available, but timing and TTFT are not. No agent configuration needed.</dd>
+        </div>
+      </div>
+
+      <h4 style="font-size:11px;font-weight:600;color:var(--fg);margin:0 0 8px">Initiator</h4>
+      <div class="glossary" style="margin-bottom:8px">
+        <div class="glossary-item">
+          <dt class="glossary-term" style="min-width:0">
+            <span style={`${badgeStyle}color:#81c784;border-color:#81c784`}>user</span>
+          </dt>
+          <dd class="glossary-def">A human typed this prompt directly in the chat. The baseline case — most of your interactive sessions will carry this badge.</dd>
+        </div>
+        <div class="glossary-item">
+          <dt class="glossary-term" style="min-width:0">
+            <span style={`${badgeStyle}color:#b0bec5;border-color:#b0bec5`}>agent</span>
+          </dt>
+          <dd class="glossary-def">Spawned by the Agent tool (<code>isSidechain: true</code> in the log). Claude delegated a sub-task to another Claude instance — common when using the Agent SDK or the FleetView multi-agent runner. The prompt was written by the model, not a human.</dd>
+        </div>
+        <div class="glossary-item">
+          <dt class="glossary-term" style="min-width:0">
+            <span style={`${badgeStyle}color:#80cbc4;border-color:#80cbc4`}>api</span>
+          </dt>
+          <dd class="glossary-def">Started non-interactively via <code>claude -p</code> (pipeline mode). Comes from a script, CI job, or shell automation — human-authored but not a live conversation. Identified by the <code>&lt;local-command-caveat&gt;</code> prefix Claude Code prepends to the prompt.</dd>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin:0">Use the <strong>From</strong> filter pills in the Sessions tab to show only user, agent, or api sessions.</p>
+    </div>
+  )
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export function Help() {
@@ -517,6 +570,7 @@ export function Help() {
       <InsightsSection />
       <LoopsSection />
       <ViewsSection />
+      <BadgesSection />
       <GlossarySection />
       <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">
         <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
