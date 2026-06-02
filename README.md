@@ -26,8 +26,8 @@ Run the standalone server as a native Node.js process on your local machine — 
 
 ```bash
 # One-off — always uses the latest published version
-bunx agentlens-dashboard
 npx agentlens-dashboard
+bunx agentlens-dashboard
 
 # Or install globally and run by command name
 npm install -g agentlens-dashboard
