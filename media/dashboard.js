@@ -3920,6 +3920,7 @@
   }
   function Analytics() {
     const [mode, setMode] = d2("token");
+    const [abbrevTokens, setAbbrevTokens] = d2(true);
     const sessions = filteredSessions.value;
     const allFiltered = agentFilteredSessions.value;
     const timelines = sessionTimelines.value;
@@ -3972,7 +3973,28 @@
       cacheRead: g4.cacheRead + d5.cacheRead,
       cost: g4.cost + d5.cost
     }), { input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0 });
-    const fmtN = (n3) => n3.toLocaleString();
+    const fmtModel = (m4) => {
+      const s4 = m4.trim().toLowerCase();
+      const cl = s4.match(/^claude-(opus|sonnet|haiku)-(\d+)(?:-(\d+))?(-fast)?$/);
+      if (cl) {
+        const tier = cl[1][0].toUpperCase() + cl[1].slice(1);
+        const ver = cl[3] ? `${cl[2]}.${cl[3]}` : cl[2];
+        return tier + " " + ver + (cl[4] ? " fast" : "");
+      }
+      const codex = s4.match(/^gpt-([\d.]+)-codex(-mini|-max|-nano)?$/);
+      if (codex) return "Codex " + codex[1] + (codex[2] || "");
+      if (s4 === "codex-mini-latest") return "Codex mini";
+      if (s4.startsWith("gpt-")) return "GPT-" + m4.trim().slice(4);
+      const gem = s4.match(/^gemini-([\d.]+)-(pro|flash|ultra)/);
+      if (gem) return "Gemini " + gem[1] + " " + gem[2];
+      return m4;
+    };
+    const fmtN = (n3) => {
+      if (!abbrevTokens) return n3.toLocaleString();
+      if (n3 >= 1e6) return (n3 / 1e6).toFixed(n3 >= 1e7 ? 1 : 2).replace(/\.0+$/, "") + "M";
+      if (n3 >= 1e3) return (n3 / 1e3).toFixed(n3 >= 1e4 ? 0 : 1).replace(/\.0+$/, "") + "K";
+      return String(n3);
+    };
     return /* @__PURE__ */ u4("div", { id: "analytics-content", children: [
       pricedSess.length > 0 && /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4(SectionHead, { title: "ESTIMATED COST" }),
@@ -4002,50 +4024,61 @@
           "Daily total (right axis)"
         ] }),
         /* @__PURE__ */ u4(CostBarChart, { sessions: pricedChartSess, mode }),
-        dayRows.length > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;justify-content:flex-end;margin-bottom:4px", children: /* @__PURE__ */ u4(
-          "button",
-          {
-            onClick: () => {
-              const headers = ["Date", "Agent", "Model", "Input Tokens", "Output Tokens", "Cache Create Tokens", "Cache Read Tokens", "Total Tokens", "Cost (USD)"];
-              const rows = [];
-              for (const [day, d5] of dayRows) {
-                for (const [, ae] of d5.agents) {
-                  rows.push([
-                    day,
-                    ae.source,
-                    [...ae.models].join("/"),
-                    String(ae.input),
-                    String(ae.output),
-                    String(ae.cacheCreate),
-                    String(ae.cacheRead),
-                    String(ae.input + ae.output + ae.cacheCreate + ae.cacheRead),
-                    ae.cost.toFixed(4)
-                  ]);
+        dayRows.length > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;justify-content:flex-end;align-items:center;gap:4px;margin-bottom:4px", children: [
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => setAbbrevTokens((a4) => !a4),
+              title: abbrevTokens ? "Switch to full numbers" : "Switch to abbreviated numbers",
+              style: "font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap",
+              children: abbrevTokens ? "1.2M" : "1,234"
+            }
+          ),
+          /* @__PURE__ */ u4(
+            "button",
+            {
+              onClick: () => {
+                const headers = ["Date", "Agent", "Model", "Input Tokens", "Output Tokens", "Cache Create Tokens", "Cache Read Tokens", "Total Tokens", "Cost (USD)"];
+                const rows = [];
+                for (const [day, d5] of dayRows) {
+                  for (const [, ae] of d5.agents) {
+                    rows.push([
+                      day,
+                      ae.source,
+                      [...ae.models].join("/"),
+                      String(ae.input),
+                      String(ae.output),
+                      String(ae.cacheCreate),
+                      String(ae.cacheRead),
+                      String(ae.input + ae.output + ae.cacheCreate + ae.cacheRead),
+                      ae.cost.toFixed(4)
+                    ]);
+                  }
                 }
-              }
-              rows.push([
-                "TOTAL",
-                "",
-                "",
-                String(grand.input),
-                String(grand.output),
-                String(grand.cacheCreate),
-                String(grand.cacheRead),
-                String(grand.input + grand.output + grand.cacheCreate + grand.cacheRead),
-                grand.cost.toFixed(4)
-              ]);
-              const csv = [headers, ...rows].map((r5) => r5.map((v4) => `"${v4}"`).join(",")).join("\n");
-              const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-              const a4 = document.createElement("a");
-              a4.href = url;
-              a4.download = "agentlens-cost.csv";
-              a4.click();
-              URL.revokeObjectURL(url);
-            },
-            style: "font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap",
-            children: "\u2193 CSV"
-          }
-        ) }),
+                rows.push([
+                  "TOTAL",
+                  "",
+                  "",
+                  String(grand.input),
+                  String(grand.output),
+                  String(grand.cacheCreate),
+                  String(grand.cacheRead),
+                  String(grand.input + grand.output + grand.cacheCreate + grand.cacheRead),
+                  grand.cost.toFixed(4)
+                ]);
+                const csv = [headers, ...rows].map((r5) => r5.map((v4) => `"${v4}"`).join(",")).join("\n");
+                const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+                const a4 = document.createElement("a");
+                a4.href = url;
+                a4.download = "agentlens-cost.csv";
+                a4.click();
+                URL.revokeObjectURL(url);
+              },
+              style: "font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap",
+              children: "\u2193 CSV"
+            }
+          )
+        ] }),
         dayRows.length > 0 && /* @__PURE__ */ u4("div", { style: "overflow-x:auto;margin-bottom:8px", children: /* @__PURE__ */ u4("table", { style: "border-collapse:collapse;font-size:10px;min-width:100%;white-space:nowrap", children: [
           /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: ["Date", "Agent", "Model", "Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].map((h5) => /* @__PURE__ */ u4("th", { style: `padding:3px 8px 3px ${h5 === "Date" ? "0" : "6px"};color:var(--muted);font-weight:500;text-align:${["Input", "Output", "Cache Create", "Cache Read", "Total Tokens", "Cost (USD)"].includes(h5) ? "right" : "left"}`, children: h5 }, h5)) }) }),
           /* @__PURE__ */ u4("tbody", { children: dayRows.map(([day, d5]) => {
@@ -4065,14 +4098,15 @@
               ] }, day),
               agents.map(([src, ae]) => {
                 const agentTotal = ae.input + ae.output + ae.cacheCreate + ae.cacheRead;
-                const modelList = [...ae.models].join(", ") || "\u2014";
+                const modelFull = [...ae.models].join(", ") || "\u2014";
+                const modelShort = [...ae.models].map(fmtModel).join(", ") || "\u2014";
                 return /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
                   /* @__PURE__ */ u4("td", { style: "padding:3px 8px 3px 0" }),
                   /* @__PURE__ */ u4("td", { style: "padding:3px 8px", children: [
                     /* @__PURE__ */ u4("span", { style: "display:inline-block;width:5px;height:5px;border-radius:50%;background:" + getAgentColor(src) + ";vertical-align:middle;margin-right:4px" }),
                     getAgentSourceLabel(src)
                   ] }),
-                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px;color:var(--muted);font-family:monospace;font-size:9px", children: modelList }),
+                  /* @__PURE__ */ u4("td", { style: "padding:3px 8px;color:var(--muted);font-size:9px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: modelFull, children: modelShort }),
                   /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: fmtN(ae.input) }),
                   /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: fmtN(ae.output) }),
                   /* @__PURE__ */ u4("td", { style: "padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: fmtN(ae.cacheCreate) }),

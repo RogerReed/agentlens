@@ -69,6 +69,7 @@ function AgentCard({ source, sessions }: { source: string; sessions: SessionSumm
 
 export function Analytics() {
   const [mode, setMode] = useState<PricingMode>('token')
+  const [abbrevTokens, setAbbrevTokens] = useState(true)
   const sessions = filteredSessions.value
   const allFiltered = agentFilteredSessions.value
   const timelines = sessionTimelines.value
@@ -131,7 +132,33 @@ export function Analytics() {
     input: g.input + d.input, output: g.output + d.output,
     cacheCreate: g.cacheCreate + d.cacheCreate, cacheRead: g.cacheRead + d.cacheRead, cost: g.cost + d.cost,
   }), { input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0 })
-  const fmtN = (n: number) => n.toLocaleString()
+  const fmtModel = (m: string): string => {
+    const s = m.trim().toLowerCase()
+    // claude-{tier}-{major}-{minor}[-fast]  →  Sonnet 4.6 / Opus 4.7 fast
+    const cl = s.match(/^claude-(opus|sonnet|haiku)-(\d+)(?:-(\d+))?(-fast)?$/)
+    if (cl) {
+      const tier = cl[1][0].toUpperCase() + cl[1].slice(1)
+      const ver  = cl[3] ? `${cl[2]}.${cl[3]}` : cl[2]
+      return tier + ' ' + ver + (cl[4] ? ' fast' : '')
+    }
+    // gpt-X.Y-codex[-mini/-max]  →  Codex X.Y / Codex X.Y mini
+    const codex = s.match(/^gpt-([\d.]+)-codex(-mini|-max|-nano)?$/)
+    if (codex) return 'Codex ' + codex[1] + (codex[2] || '')
+    if (s === 'codex-mini-latest') return 'Codex mini'
+    // gpt-4o / gpt-5.1  →  GPT-4o / GPT-5.1
+    if (s.startsWith('gpt-')) return 'GPT-' + m.trim().slice(4)
+    // gemini-2.5-pro  →  Gemini 2.5 pro
+    const gem = s.match(/^gemini-([\d.]+)-(pro|flash|ultra)/)
+    if (gem) return 'Gemini ' + gem[1] + ' ' + gem[2]
+    return m  // unknown: pass through
+  }
+
+  const fmtN = (n: number): string => {
+    if (!abbrevTokens) return n.toLocaleString()
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(n >= 10_000_000 ? 1 : 2).replace(/\.0+$/, '') + 'M'
+    if (n >= 1_000)     return (n / 1_000).toFixed(n >= 10_000 ? 0 : 1).replace(/\.0+$/, '') + 'K'
+    return String(n)
+  }
 
   return (
     <div id="analytics-content">
@@ -169,7 +196,12 @@ export function Analytics() {
 
           {/* Multi-dimensional cost table: date → agent, scrollable */}
           {dayRows.length > 0 && (
-            <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+            <div style="display:flex;justify-content:flex-end;align-items:center;gap:4px;margin-bottom:4px">
+              <button
+                onClick={() => setAbbrevTokens(a => !a)}
+                title={abbrevTokens ? 'Switch to full numbers' : 'Switch to abbreviated numbers'}
+                style="font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap"
+              >{abbrevTokens ? '1.2M' : '1,234'}</button>
               <button
                 onClick={() => {
                   const headers = ['Date','Agent','Model','Input Tokens','Output Tokens','Cache Create Tokens','Cache Read Tokens','Total Tokens','Cost (USD)']
@@ -235,7 +267,8 @@ export function Analytics() {
                         {/* Per-agent rows */}
                         {agents.map(([src, ae]) => {
                           const agentTotal = ae.input + ae.output + ae.cacheCreate + ae.cacheRead
-                          const modelList = [...ae.models].join(', ') || '—'
+                          const modelFull  = [...ae.models].join(', ') || '—'
+                          const modelShort = [...ae.models].map(fmtModel).join(', ') || '—'
                           return (
                             <tr key={day + src} style="border-bottom:1px solid var(--border)">
                               <td style="padding:3px 8px 3px 0" />
@@ -243,7 +276,7 @@ export function Analytics() {
                                 <span style={'display:inline-block;width:5px;height:5px;border-radius:50%;background:' + getAgentColor(src) + ';vertical-align:middle;margin-right:4px'} />
                                 {getAgentSourceLabel(src)}
                               </td>
-                              <td style="padding:3px 8px;color:var(--muted);font-family:monospace;font-size:9px">{modelList}</td>
+                              <td style="padding:3px 8px;color:var(--muted);font-size:9px;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title={modelFull}>{modelShort}</td>
                               <td style="padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">{fmtN(ae.input)}</td>
                               <td style="padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">{fmtN(ae.output)}</td>
                               <td style="padding:3px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">{fmtN(ae.cacheCreate)}</td>
