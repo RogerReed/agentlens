@@ -1555,7 +1555,7 @@
   };
   function getDataSourceBadgeHtml(dataSource) {
     const ds = dataSource ?? "otel";
-    const label = ds === "log" ? "log" : "otel";
+    const label = ds === "log" ? "Log" : "OTEL";
     const color = ds === "log" ? "#90a4ae" : "var(--accent)";
     const tooltip = DATA_SOURCE_TOOLTIP[ds];
     return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`;
@@ -1569,7 +1569,8 @@
   function getInitiatorBadgeHtml(initiator) {
     const key = initiator ?? "user";
     const color = INITIATOR_COLORS[key];
-    return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default;margin-left:3px" title="${INITIATOR_TOOLTIPS[key]}">${key}</span>`;
+    const label = key === "api" ? "API" : key === "user" ? "User" : "Agent";
+    return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default;margin-left:3px" title="${INITIATOR_TOOLTIPS[key]}">${label}</span>`;
   }
   function getAgentSourceLabel(source) {
     if (source === "claude_code") return "Claude";
@@ -5444,22 +5445,22 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4("h4", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:0 0 8px", children: "Data source" }),
       /* @__PURE__ */ u4("div", { class: "glossary", style: "margin-bottom:16px", children: [
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:var(--accent);border-color:var(--accent)`, children: "otel" }) }),
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:var(--accent);border-color:var(--accent)`, children: "OTEL" }) }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", children: "Full OpenTelemetry telemetry \u2014 timing, TTFT, span waterfall, loop signals. Requires the agent to be configured to export traces to AgentLens." })
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#90a4ae;border-color:#90a4ae`, children: "log" }) }),
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#90a4ae;border-color:#90a4ae`, children: "Log" }) }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", children: "Parsed from local conversation log files (~/.claude/projects, ~/.codex/sessions, etc.) \u2014 tokens, tool calls, and messages are available, but timing and TTFT are not. No agent configuration needed." })
         ] })
       ] }),
       /* @__PURE__ */ u4("h4", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:0 0 8px", children: "Initiator" }),
       /* @__PURE__ */ u4("div", { class: "glossary", style: "margin-bottom:8px", children: [
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#81c784;border-color:#81c784`, children: "user" }) }),
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#81c784;border-color:#81c784`, children: "User" }) }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", children: "A human typed this prompt directly in the chat. The baseline case \u2014 most of your interactive sessions will carry this badge." })
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#b0bec5;border-color:#b0bec5`, children: "agent" }) }),
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#b0bec5;border-color:#b0bec5`, children: "Agent" }) }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", children: [
             "Spawned by the Agent tool (",
             /* @__PURE__ */ u4("code", { children: "isSidechain: true" }),
@@ -5467,7 +5468,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
           ] })
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#80cbc4;border-color:#80cbc4`, children: "api" }) }),
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#80cbc4;border-color:#80cbc4`, children: "API" }) }),
           /* @__PURE__ */ u4("dd", { class: "glossary-def", children: [
             "Started non-interactively via ",
             /* @__PURE__ */ u4("code", { children: "claude -p" }),
@@ -6282,9 +6283,9 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   }
   var INITIATOR_FILTER_OPTIONS = [
     { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)" },
-    { value: "user", label: "user", color: "#81c784" },
-    { value: "agent", label: "agent", color: "#b0bec5" },
-    { value: "api", label: "api", color: "#80cbc4" }
+    { value: "user", label: "User", color: "#81c784" },
+    { value: "agent", label: "Agent", color: "#b0bec5" },
+    { value: "api", label: "API", color: "#80cbc4" }
   ];
   function SearchFilterBar() {
     const text = sessionTextFilter.value;

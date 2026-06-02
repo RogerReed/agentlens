@@ -326,9 +326,9 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
 
 const INITIATOR_FILTER_OPTIONS: Array<{ value: InitiatorFilter; label: string; color: string }> = [
   { value: 'all',   label: 'All',   color: 'var(--vscode-descriptionForeground,#888)' },
-  { value: 'user',  label: 'user',  color: '#81c784' },
-  { value: 'agent', label: 'agent', color: '#b0bec5' },
-  { value: 'api',   label: 'api',   color: '#80cbc4' },
+  { value: 'user',  label: 'User',  color: '#81c784' },
+  { value: 'agent', label: 'Agent', color: '#b0bec5' },
+  { value: 'api',   label: 'API',   color: '#80cbc4' },
 ]
 
 function SearchFilterBar() {

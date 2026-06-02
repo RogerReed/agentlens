@@ -520,13 +520,13 @@ function BadgesSection() {
       <div class="glossary" style="margin-bottom:16px">
         <div class="glossary-item">
           <dt class="glossary-term" style="min-width:0">
-            <span style={`${badgeStyle}color:var(--accent);border-color:var(--accent)`}>otel</span>
+            <span style={`${badgeStyle}color:var(--accent);border-color:var(--accent)`}>OTEL</span>
           </dt>
           <dd class="glossary-def">Full OpenTelemetry telemetry — timing, TTFT, span waterfall, loop signals. Requires the agent to be configured to export traces to AgentLens.</dd>
         </div>
         <div class="glossary-item">
           <dt class="glossary-term" style="min-width:0">
-            <span style={`${badgeStyle}color:#90a4ae;border-color:#90a4ae`}>log</span>
+            <span style={`${badgeStyle}color:#90a4ae;border-color:#90a4ae`}>Log</span>
           </dt>
           <dd class="glossary-def">Parsed from local conversation log files (~/.claude/projects, ~/.codex/sessions, etc.) — tokens, tool calls, and messages are available, but timing and TTFT are not. No agent configuration needed.</dd>
         </div>
@@ -536,19 +536,19 @@ function BadgesSection() {
       <div class="glossary" style="margin-bottom:8px">
         <div class="glossary-item">
           <dt class="glossary-term" style="min-width:0">
-            <span style={`${badgeStyle}color:#81c784;border-color:#81c784`}>user</span>
+            <span style={`${badgeStyle}color:#81c784;border-color:#81c784`}>User</span>
           </dt>
           <dd class="glossary-def">A human typed this prompt directly in the chat. The baseline case — most of your interactive sessions will carry this badge.</dd>
         </div>
         <div class="glossary-item">
           <dt class="glossary-term" style="min-width:0">
-            <span style={`${badgeStyle}color:#b0bec5;border-color:#b0bec5`}>agent</span>
+            <span style={`${badgeStyle}color:#b0bec5;border-color:#b0bec5`}>Agent</span>
           </dt>
           <dd class="glossary-def">Spawned by the Agent tool (<code>isSidechain: true</code> in the log). Claude delegated a sub-task to another Claude instance — common when using the Agent SDK or the FleetView multi-agent runner. The prompt was written by the model, not a human.</dd>
         </div>
         <div class="glossary-item">
           <dt class="glossary-term" style="min-width:0">
-            <span style={`${badgeStyle}color:#80cbc4;border-color:#80cbc4`}>api</span>
+            <span style={`${badgeStyle}color:#80cbc4;border-color:#80cbc4`}>API</span>
           </dt>
           <dd class="glossary-def">Started non-interactively via <code>claude -p</code> (pipeline mode). Comes from a script, CI job, or shell automation — human-authored but not a live conversation. Identified by the <code>&lt;local-command-caveat&gt;</code> prefix Claude Code prepends to the prompt.</dd>
         </div>
