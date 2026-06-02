@@ -101,25 +101,20 @@ function startLogIngestion() {
   setupLogWatcher()
   console.log('[AgentLens] Log ingestion enabled — scanning local session files')
 
-  const BATCH_SIZE = 10
   let files: ReturnType<typeof logReader.collectFileMeta>
   try { files = logReader.collectFileMeta() } catch { return }
   if (files.length === 0) return
 
-  const processBatch = (startIdx: number) => {
-    let changed = false
-    for (let i = startIdx; i < Math.min(startIdx + BATCH_SIZE, files.length); i++) {
-      try {
-        const result = logReader.parseFile(files[i].filePath, files[i].agentKey)
-        if (result) { logSessions.set(result.card.sessionId, result.card); changed = true }
-      } catch { /* skip bad file */ }
-    }
-    if (changed) pushUpdate()
-    const next = startIdx + BATCH_SIZE
-    if (next < files.length) setImmediate(() => processBatch(next))
+  // Run the initial batch synchronously so logSessions is populated before the
+  // browser's first HTTP request. The setImmediate approach deferred this past
+  // the first page load, causing a blank screen on startup.
+  for (const file of files) {
+    try {
+      const result = logReader.parseFile(file.filePath, file.agentKey)
+      if (result) logSessions.set(result.card.sessionId, result.card)
+    } catch { /* skip bad file */ }
   }
-
-  setImmediate(() => processBatch(0))
+  console.log(`[AgentLens] Loaded ${logSessions.size} sessions from local logs`)
 }
 
 // ── OTLP parsing ──────────────────────────────────────────────────────────────
@@ -427,21 +422,25 @@ function computeAnalyticsData(sessions: ReturnType<typeof summarizeSpans>['sessi
   return { dailyStats, lifetimeStats }
 }
 
-function buildUpdatePayload(): string {
-  let sessionSummary: ReturnType<typeof summarizeSpans> | null = null
-  try { sessionSummary = summarizeSpans(spans) } catch (e) { console.warn('[AgentLens] summarizeSpans error:', e) }
+function buildSessionSummary(): ReturnType<typeof summarizeSpans> | null {
+  let summary: ReturnType<typeof summarizeSpans> | null = null
+  try { summary = summarizeSpans(spans) } catch (e) { console.warn('[AgentLens] summarizeSpans error:', e) }
 
-  // Merge log sessions with OTEL-derived sessions; OTEL wins on ID collision.
+  // Merge log-sourced sessions; OTEL wins on ID collision.
   if (logSessions.size > 0) {
-    const otelIds = new Set((sessionSummary?.sessions ?? []).map(s => s.sessionId))
+    const otelIds = new Set((summary?.sessions ?? []).map(s => s.sessionId))
     const logOnly = [...logSessions.values()].filter(s => !otelIds.has(s.sessionId))
     if (logOnly.length > 0) {
-      const merged = [...logOnly, ...(sessionSummary?.sessions ?? [])]
+      const merged = [...logOnly, ...(summary?.sessions ?? [])]
         .sort((a, b) => Date.parse(b.startTime || '0') - Date.parse(a.startTime || '0'))
-      sessionSummary = { ...(sessionSummary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }), sessions: merged }
+      summary = { ...(summary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }), sessions: merged }
     }
   }
+  return summary
+}
 
+function buildUpdatePayload(): string {
+  const sessionSummary = buildSessionSummary()
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : null
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : null
   const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null
@@ -461,8 +460,7 @@ function pushUpdate() {
 // ── Dashboard HTML ────────────────────────────────────────────────────────────
 
 function getHtml(): string {
-  let sessionSummary: ReturnType<typeof summarizeSpans> | null = null
-  try { sessionSummary = summarizeSpans(spans) } catch { /* ignore */ }
+  const sessionSummary = buildSessionSummary()
   const sessionSummaryJson = safeJson(sessionSummary)
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : {
     isActive: false, lastActivityMs: 0, sessionCount: 0, agentSources: [], currentSession: null, burnRate: null,

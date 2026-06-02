@@ -2497,7 +2497,6 @@ function startLogIngestion() {
   setInterval(runLogScan, 5e3);
   setupLogWatcher();
   console.log("[AgentLens] Log ingestion enabled \u2014 scanning local session files");
-  const BATCH_SIZE = 10;
   let files;
   try {
     files = logReader.collectFileMeta();
@@ -2505,23 +2504,14 @@ function startLogIngestion() {
     return;
   }
   if (files.length === 0) return;
-  const processBatch = (startIdx) => {
-    let changed = false;
-    for (let i = startIdx; i < Math.min(startIdx + BATCH_SIZE, files.length); i++) {
-      try {
-        const result = logReader.parseFile(files[i].filePath, files[i].agentKey);
-        if (result) {
-          logSessions.set(result.card.sessionId, result.card);
-          changed = true;
-        }
-      } catch {
-      }
+  for (const file of files) {
+    try {
+      const result = logReader.parseFile(file.filePath, file.agentKey);
+      if (result) logSessions.set(result.card.sessionId, result.card);
+    } catch {
     }
-    if (changed) pushUpdate();
-    const next = startIdx + BATCH_SIZE;
-    if (next < files.length) setImmediate(() => processBatch(next));
-  };
-  setImmediate(() => processBatch(0));
+  }
+  console.log(`[AgentLens] Loaded ${logSessions.size} sessions from local logs`);
 }
 function toAttrs(raw) {
   if (!Array.isArray(raw)) return [];
@@ -2772,21 +2762,25 @@ function computeAnalyticsData(sessions) {
   };
   return { dailyStats, lifetimeStats };
 }
-function buildUpdatePayload() {
-  let sessionSummary = null;
+function buildSessionSummary() {
+  let summary = null;
   try {
-    sessionSummary = summarizeSpans(spans);
+    summary = summarizeSpans(spans);
   } catch (e) {
     console.warn("[AgentLens] summarizeSpans error:", e);
   }
   if (logSessions.size > 0) {
-    const otelIds = new Set((sessionSummary?.sessions ?? []).map((s) => s.sessionId));
+    const otelIds = new Set((summary?.sessions ?? []).map((s) => s.sessionId));
     const logOnly = [...logSessions.values()].filter((s) => !otelIds.has(s.sessionId));
     if (logOnly.length > 0) {
-      const merged = [...logOnly, ...sessionSummary?.sessions ?? []].sort((a, b) => Date.parse(b.startTime || "0") - Date.parse(a.startTime || "0"));
-      sessionSummary = { ...sessionSummary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }, sessions: merged };
+      const merged = [...logOnly, ...summary?.sessions ?? []].sort((a, b) => Date.parse(b.startTime || "0") - Date.parse(a.startTime || "0"));
+      summary = { ...summary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }, sessions: merged };
     }
   }
+  return summary;
+}
+function buildUpdatePayload() {
+  const sessionSummary = buildSessionSummary();
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : null;
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : null;
   const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null;
@@ -2814,11 +2808,7 @@ function pushUpdate() {
   });
 }
 function getHtml() {
-  let sessionSummary = null;
-  try {
-    sessionSummary = summarizeSpans(spans);
-  } catch {
-  }
+  const sessionSummary = buildSessionSummary();
   const sessionSummaryJson = safeJson(sessionSummary);
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : {
     isActive: false,
