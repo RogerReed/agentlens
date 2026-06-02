@@ -79,7 +79,17 @@ jobs:
 
       - name: Publish to VS Code Marketplace
         if: env.VSCE_PAT != ''
-        run: vsce publish --packagePath *.vsix
+        run: |
+          set +e
+          vsce publish --packagePath *.vsix > /tmp/vsce_out.txt 2>&1
+          EXIT=$?
+          set -e
+          cat /tmp/vsce_out.txt
+          if [ $EXIT -ne 0 ] && grep -q "already exists" /tmp/vsce_out.txt; then
+            echo "Version already published to VS Code Marketplace — skipping"
+            exit 0
+          fi
+          exit $EXIT
 
       - name: Publish to Open VSX
         if: env.OVSX_PAT != ''
@@ -107,10 +117,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          # No registry-url here — actions/setup-node writes an .npmrc that sets
-          # _authToken=${NODE_AUTH_TOKEN}, which takes precedence over OIDC auth
-          # and causes E404 when NODE_AUTH_TOKEN is not set. Omitting registry-url
-          # lets npm Trusted Publishing exchange the GitHub OIDC token directly.
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -120,4 +127,4 @@ jobs:
         # short-lived publish credential — no NPM_TOKEN secret required.
         # --provenance attaches a signed build attestation linking the package
         # to this exact commit and workflow run.
-        run: npm publish --access public --provenance --registry https://registry.npmjs.org
+        run: npm publish --access public --provenance
