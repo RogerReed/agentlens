@@ -117,10 +117,15 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          # registry-url is intentionally omitted. Adding it causes setup-node to
-          # write "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" to .npmrc;
-          # even with NODE_AUTH_TOKEN='', that explicit entry blocks npm from
-          # performing the OIDC token exchange needed by Trusted Publishing.
+          # registry-url is required so setup-node writes the registry endpoint to
+          # .npmrc. Without it, npm throws ENEEDAUTH before attempting OIDC.
+          # NODE_AUTH_TOKEN must NOT be set in the publish step so npm falls back
+          # to OIDC Trusted Publishing instead of classic token auth.
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm for OIDC Trusted Publishing
+        # Node 20 ships with npm 10.x. OIDC Trusted Publishing requires npm 11.x+.
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -128,6 +133,5 @@ jobs:
       - name: Publish to npm
         # Trusted Publishing: npm exchanges the GitHub Actions OIDC token for a
         # short-lived publish credential — no NPM_TOKEN secret required.
-        # --provenance attaches a signed build attestation linking the package
-        # to this exact commit and workflow run.
+        # NODE_AUTH_TOKEN must not be set; npm falls back to OIDC when it is absent.
         run: npm publish --access public --provenance
