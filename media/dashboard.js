@@ -4803,14 +4803,6 @@
   }
 
   // media/src/tabs/Help.tsx
-  var VIEWS = [
-    ["Sessions", "Session list as a sortable table: timestamp, prompt, model, tokens, duration, and estimated cost per row. Click any row to expand in-place and drill into five sub-tabs \u2014 Overview (stat tiles, burn rate, insights), Trace (full waterfall of LLM calls and tool calls with arguments and results), Flow (turn-to-tool semantic graph), Tools (donut chart of tool distribution), and Files (modified files, clickable to open in the editor)."],
-    ["Analytics", "Aggregate charts and metrics across all sessions in the active time range. Agent Breakdown cards show per-agent token totals, cache rates, and top tools. Estimated Cost shows a bar chart with a daily total overlay line, a day-grouped cost table (date \u2192 agent \u2192 model), and a cost table broken down by model. Token Usage Per Session shows slim bars oldest\u2192newest with agent color dots. Context Growth shows input token accumulation per LLM turn across sessions."],
-    ["Alerts", "Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts."],
-    ["Automation", "Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in local mode they write to a file-based relay."],
-    ["Export", "Export all recorded sessions as a JSON file \u2014 full (includes prompt text) or redacted (prompt text removed, all other fields retained). Exports draw from the full session history in the database, not just the active window. Raw OTEL span export for session replay is planned but not yet available."],
-    ["Help", "This tab \u2014 an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Insights and malfunction detection."]
-  ];
   var TERMS = [
     ["Agent Loop / Malfunction", "A behavioral pattern in which an AI agent is stuck, oscillating, or spiraling into unproductive work. AgentLens detects five patterns: Tool Call Deadlock, State Corruption Spiral, Hallucination Amplification Loop, Ambiguous Success / Escalating Scope, and Infinite Loop \u2014 Context Accumulation."],
     ["Agent", "The AI coding assistant (e.g. GitHub Copilot, Claude Code, Codex) that receives your prompt, reasons about the task, and decides which tools to use. It manages the workflow, breaks down tasks, and may call the underlying LLM multiple times per session to complete a single request. The agent is the orchestrator; the LLM is the engine it drives."],
@@ -4823,7 +4815,7 @@
     ["Context Bloat", "An efficiency insight triggered when input tokens grow significantly across turns within a session."],
     ["Files Changed", "Unique files that were created or modified by the agent during the current data collection period."],
     ["Input Tokens", "The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt."],
-    ["Loop Signal", "A behavioral signal in the Insights tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a \u21BA icon."],
+    ["Loop Signal", "A behavioral signal in the Insights panel (inside the Overview sub-tab of each session) indicating the agent is stuck, oscillating, or making no forward progress. Shown with a \u21BA icon."],
     ["LLM", "Large Language Model. The underlying AI model (e.g. GPT-4o, Claude Sonnet) that generates text, answers questions, or produces code. The agent sends requests to the LLM as needed; the model itself does not manage tools or workflow. It is the engine that generates language and code for the agent to act on."],
     ["LLM Call", "A single request-response cycle to the language model. One session typically includes multiple LLM calls as the agent iterates."],
     ["OTLP", "OpenTelemetry Protocol \u2014 the standard format used to collect and transmit telemetry from AI agents to this extension. AgentLens accepts trace spans and log-derived events."],
@@ -4845,42 +4837,17 @@
     ["TTFT", "Time to First Token \u2014 the latency between sending a prompt and receiving the first token of the response."],
     ["Waterfall", "A span visualization where operations are displayed as horizontal bars on a time axis, with nesting depth shown by indentation. Used in OpenTelemetry tooling; AgentLens surfaces span timing data through the Traces tab instead."]
   ];
-  function termId(term) {
-    return "gl-" + term.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-  }
   var HELP_SECTIONS = {
-    overview: {
-      href: "#help-overview",
-      heading: "Overview"
-    },
-    config: {
-      href: "#help-config",
-      heading: "Setup"
-    },
-    otel: {
-      href: "#help-otel",
-      heading: "OTEL Data"
-    },
-    insights: {
-      href: "#help-insights",
-      heading: "Insights"
-    },
-    loops: {
-      href: "#help-loops",
-      heading: "Loops"
-    },
-    views: {
-      href: "#help-views",
-      heading: "Views"
-    },
-    badges: {
-      href: "#help-badges",
-      heading: "Badges"
-    },
-    glossary: {
-      href: "#help-glossary",
-      heading: "Glossary"
-    }
+    overview: { href: "#help-overview", heading: "Overview" },
+    config: { href: "#help-config", heading: "Setup" },
+    otel: { href: "#help-otel", heading: "OTEL Data" },
+    sessions: { href: "#help-sessions", heading: "Sessions" },
+    analytics: { href: "#help-analytics", heading: "Analytics" },
+    alerts: { href: "#help-alerts", heading: "Alerts" },
+    automation: { href: "#help-automation", heading: "Automation" },
+    export: { href: "#help-export", heading: "Export" },
+    badges: { href: "#help-badges", heading: "Badges" },
+    glossary: { href: "#help-glossary", heading: "Glossary" }
   };
   var TOC_SECTIONS = Object.values(HELP_SECTIONS);
   var AGENT_OTEL_SHAPES = [
@@ -4907,6 +4874,7 @@
   var preStyle = "background:var(--panel-bg);border:1px solid var(--border);border-radius:5px;padding:10px 14px;font-size:11.5px;line-height:1.6;overflow-x:auto;white-space:pre";
   var h4Style = "font-size:13px;font-weight:600;margin:0 0 6px;color:var(--fg,inherit)";
   var mutedP = "font-size:12px;color:var(--muted);margin:0 0 8px";
+  var subHeadStyle = "font-size:13px;font-weight:600;margin:20px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border);color:var(--fg)";
   function InsightBlock({ id, title, why, steps, impact }) {
     return /* @__PURE__ */ u4("div", { class: "glossary-item", id, style: "scroll-margin-top:12px;flex-direction:column;gap:0", children: [
       /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "margin-bottom:6px", children: title }),
@@ -4966,7 +4934,9 @@
         /* @__PURE__ */ u4("a", { href: "#gl-otlp", children: "OpenTelemetry" }),
         " ",
         /* @__PURE__ */ u4("a", { href: "#gl-trace", children: "traces" }),
-        " from GitHub Copilot, Claude Code, and Codex, and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time \u2014 then helps you prompt your agents on inefficiencies to improve interactions."
+        " from GitHub Copilot, Claude Code, and Codex, and also reads ",
+        /* @__PURE__ */ u4("strong", { children: "local session log files" }),
+        " written automatically by each agent as a zero-config fallback \u2014 so history loads even without OTEL configured. Both sources feed one unified dashboard and surface efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time."
       ] }) })
     ] });
   }
@@ -5235,18 +5205,58 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       ] })
     ] });
   }
-  function InsightsSection() {
-    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-insights", children: [
-      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.insights.heading }),
+  function SessionsSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-sessions", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.sessions.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("p", { children: [
-          "The ",
-          /* @__PURE__ */ u4("strong", { children: "Insights" }),
-          " tab surfaces efficiency insights for ",
+        /* @__PURE__ */ u4("p", { children: "The Sessions tab shows all recorded sessions as a sortable table \u2014 timestamp, prompt, model, tokens, duration, and estimated cost per row. Use the filter bar to search by text, filter by agent, data source (OTEL / Log), or initiator (User / Agent / API), set a time range, or cap the number of rows shown. The Reset button clears all active filters back to defaults." }),
+        /* @__PURE__ */ u4("p", { children: "Click any row to expand it in-place. Five sub-tabs appear beneath the row:" }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Sub-tabs" }),
+        /* @__PURE__ */ u4("div", { class: "glossary", style: "margin-bottom:20px", children: [
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Overview" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
+              "Stat tiles \u2014 total tokens, estimated cost, duration, turn count, error count, and cache hit rate. A burn rate card shows tokens per minute for the session. Below the tiles is the ",
+              /* @__PURE__ */ u4("strong", { children: "Insights panel" }),
+              ", which surfaces efficiency signals and loop detection results for that session (see ",
+              /* @__PURE__ */ u4("a", { href: "#help-insights", children: "Insights" }),
+              " and ",
+              /* @__PURE__ */ u4("a", { href: "#help-loops", children: "Loop Detection" }),
+              " below)."
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Trace" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
+              "Full waterfall of every ",
+              /* @__PURE__ */ u4("a", { href: "#gl-llm-call", children: "LLM call" }),
+              " and ",
+              /* @__PURE__ */ u4("a", { href: "#gl-tool-call", children: "tool call" }),
+              " in the session, displayed as horizontal timing bars with nesting depth. Expand any span row to see arguments, results, token counts, and estimated cost per call. The badge on the tab label shows the total span count."
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Flow" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "A turn-to-tool semantic graph showing how the agent moved through the session \u2014 which LLM turns triggered which tools, and in what order. Useful for spotting repeated tool calls or unusual branching. The badge shows the total node count." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Tools" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "A donut chart of tool call distribution for the session \u2014 how many times each tool was invoked, expressed as a percentage of all tool calls. The badge shows the total tool call count." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Files" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Every file created or modified during the session, grouped by path. Click any file to open a diff in the editor. The badge shows the number of unique files touched." })
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("h4", { id: "help-insights", style: subHeadStyle, children: "Insights" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: [
+          "The Insights panel appears inside the ",
+          /* @__PURE__ */ u4("strong", { children: "Overview" }),
+          " sub-tab of each expanded session row. It surfaces efficiency signals for ",
           /* @__PURE__ */ u4("a", { href: "#gl-tokens", children: "token" }),
           " waste, ",
           /* @__PURE__ */ u4("a", { href: "#gl-cache-hit-rate", children: "cache" }),
-          " patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer ",
+          " patterns, tool behavior, and prompt shape \u2014 the signals meant to help you spend fewer ",
           /* @__PURE__ */ u4("a", { href: "#gl-turn", children: "turns" }),
           " and fewer tokens on the same work."
         ] }),
@@ -5341,19 +5351,13 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
               impact: `Going from 0% to 60% cache hit rate reduces effective cost by 80\u201390%. TTFT also drops significantly.`
             }
           )
-        ] })
-      ] })
-    ] });
-  }
-  function LoopsSection() {
-    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-loops", children: [
-      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.loops.heading }),
-      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("p", { children: [
+        ] }),
+        /* @__PURE__ */ u4("h4", { id: "help-loops", style: subHeadStyle, children: "Loop Detection" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: [
           /* @__PURE__ */ u4("a", { href: "#gl-loop-signal", children: "Loop signals" }),
           " are behavioral patterns indicating the ",
           /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agent" }),
-          " is stuck, oscillating, or spiraling into unproductive work. They appear in Insights with warning or critical severity."
+          " is stuck, oscillating, or spiraling into unproductive work. They appear in the Insights panel with warning or critical severity."
         ] }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
           /* @__PURE__ */ u4(
@@ -5413,7 +5417,9 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
           )
         ] }),
         /* @__PURE__ */ u4("p", { style: "margin-top:16px;font-size:12px;color:var(--muted)", children: [
-          "Loop signals appear first in the Insights list, sorted by severity. Use the ",
+          "Loop signals appear in the Insights panel inside the ",
+          /* @__PURE__ */ u4("strong", { children: "Overview" }),
+          " sub-tab of each session, sorted by severity. Use the ",
           /* @__PURE__ */ u4("strong", { children: "Loops" }),
           " filter pill to view only malfunction signals. Use ",
           /* @__PURE__ */ u4("strong", { children: "Ignore" }),
@@ -5422,22 +5428,129 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       ] })
     ] });
   }
-  function ViewsSection() {
-    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-views", children: [
-      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.views.heading }),
-      /* @__PURE__ */ u4("div", { class: "glossary", children: VIEWS.map(([name, desc]) => /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
-        /* @__PURE__ */ u4("dt", { class: "glossary-term", children: name }),
-        /* @__PURE__ */ u4("dd", { class: "glossary-def", children: desc })
-      ] })) })
+  function AnalyticsSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-analytics", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.analytics.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("p", { children: "The Analytics tab shows aggregate charts and metrics across all sessions in the active time range. Use the Source filter to limit to OTEL-traced sessions or log-ingested sessions, and the time range picker to zoom into a specific window. The Reset button restores all filters to defaults." }),
+        /* @__PURE__ */ u4("div", { class: "glossary", children: [
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Agent Breakdown" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "One card per agent showing total input tokens, output tokens, cache hit rate, estimated cost, and top tools used \u2014 all scoped to the active time range and source filter." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Estimated Cost" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
+              "A bar chart of daily spend with a green total-per-day overlay line and inline date labels at day boundaries. Below the chart: a day-grouped cost table (date \u2192 agent \u2192 model) and a model breakdown table. The ",
+              /* @__PURE__ */ u4("strong", { children: "\u2193 CSV" }),
+              " button exports the cost data."
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Token Usage Per Session" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Slim horizontal bars, one per session, ordered oldest to newest. Each bar is colored by agent. Useful for spotting runaway sessions at a glance." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Context Growth" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Input token accumulation across LLM turns within each session, overlaid for all sessions in the active range. A steep upward slope indicates rapid context growth; a flat line means the agent is working efficiently. Click any line to highlight that session." })
+          ] })
+        ] })
+      ] })
     ] });
   }
-  function GlossarySection() {
-    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-glossary", children: [
-      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.glossary.heading }),
-      /* @__PURE__ */ u4("div", { class: "glossary", children: TERMS.map(([term, def]) => /* @__PURE__ */ u4("div", { class: "glossary-item", id: termId(term), style: "scroll-margin-top:44px", children: [
-        /* @__PURE__ */ u4("dt", { class: "glossary-term", children: term }),
-        /* @__PURE__ */ u4("dd", { class: "glossary-def", children: def })
-      ] })) })
+  function AlertsSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-alerts", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.alerts.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("p", { children: "The Alerts tab lets you configure thresholds for six signals. When a live session crosses a threshold, an alert fires and the tab badge increments. Alerts clear automatically when the session ends or you dismiss them." }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "Two alerts use shared token-count thresholds; the other four use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently." }),
+        /* @__PURE__ */ u4("div", { class: "glossary", children: [
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: [
+              "Context Window Filling Up ",
+              /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:400;color:var(--muted)", children: "(warning)" })
+            ] }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when peak input tokens for a session reaches the per-agent threshold. Defaults: Claude Code 170K, Copilot 108K, Codex 340K. Adjust per agent or raise the shared baseline." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: [
+              "Too Many Turns Per Session ",
+              /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:400;color:var(--muted)", children: "(warning)" })
+            ] }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when the LLM turn count reaches the per-agent threshold. High turn counts often indicate scope creep or a task that should be split. Default: 200 turns (adjustable per agent)." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: [
+              "Error Spike ",
+              /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:400;color:var(--muted)", children: "(error)" })
+            ] }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when the error count in a session reaches the per-agent threshold. A spike usually means the agent is stuck in a failure loop. Default: 5 errors (adjustable per agent)." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: [
+              "Long Active Session ",
+              /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:400;color:var(--muted)", children: "(info)" })
+            ] }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when active LLM/tool compute time exceeds the per-agent threshold. Idle time (waiting for you to respond) does not count. Default: 60 minutes (adjustable per agent)." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: [
+              "Zero Cache Utilization ",
+              /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:400;color:var(--muted)", children: "(info)" })
+            ] }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when a session above the token gate has 0% cache hit rate. A large uncached session is paying full price for every token. The gate prevents noise from small sessions. Default gate: 30K tokens (shared, adjustable)." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: [
+              "Identical Tool Repeat ",
+              /* @__PURE__ */ u4("span", { style: "font-size:10px;font-weight:400;color:var(--muted)", children: "(warning)" })
+            ] }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when the same tool with identical arguments repeats beyond the per-agent threshold without a file change between repeats \u2014 a strong deadlock signal. Default: 5 repeats (adjustable per agent)." })
+          ] })
+        ] })
+      ] })
+    ] });
+  }
+  function AutomationSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-automation", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.automation.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("p", { children: "The Automation tab configures prompts that are sent automatically to the agent when a session crosses a threshold \u2014 without you having to intervene manually. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex." }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "In the VS Code extension, automations surface as a notification or open the agent chat directly. In local (npx) mode, they write the prompt to a file-based relay that the agent reads." }),
+        /* @__PURE__ */ u4("div", { class: "glossary", children: [
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Context Dump" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when a session's peak input tokens reaches the configured threshold. Sends a prompt asking the agent to summarize its context and compact before continuing. Helps avoid context-window overflows and keeps token cost in check. Default: 140K tokens." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Loop Breaker" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when the same tool with identical arguments repeats beyond the threshold without a file change between repeats. Sends a prompt instructing the agent to stop and choose a different approach. A hard-stop backstop fires at 8 repeats regardless of configuration. Default: 3 repeats." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Turn Limit Wrap-up" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when a session reaches the agent-specific turn threshold. Sends a prompt asking the agent to summarize progress, merge check-in details, and work toward a clean stopping point before hitting the model's hard turn limit. Default: 120 turns." })
+          ] })
+        ] })
+      ] })
+    ] });
+  }
+  function ExportSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-export", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.export.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("p", { children: "The Export tab lets you download all recorded sessions as a JSON file. Exports draw from the full session history in the database, not just the active time-range window." }),
+        /* @__PURE__ */ u4("div", { class: "glossary", children: [
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Full export" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Includes all session data \u2014 prompt text, tool arguments, tool results, and file diff content. Use this for personal analysis or sharing with yourself across machines." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Redacted export" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Prompt text is removed; all other fields (tokens, cost, timing, tool names, file paths, span structure) are retained. Use this when sharing data for debugging or support without exposing conversation content." })
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin-top:12px", children: "Raw OTEL span export for session replay is planned but not yet available." })
+      ] })
     ] });
   }
   function BadgesSection() {
@@ -5488,15 +5601,26 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       ] })
     ] });
   }
+  function GlossarySection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-glossary", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.glossary.heading }),
+      /* @__PURE__ */ u4("div", { class: "glossary", children: TERMS.map(([term, def]) => /* @__PURE__ */ u4("div", { class: "glossary-item", id: "gl-" + term.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, ""), style: "scroll-margin-top:44px", children: [
+        /* @__PURE__ */ u4("dt", { class: "glossary-term", children: term }),
+        /* @__PURE__ */ u4("dd", { class: "glossary-def", children: def })
+      ] })) })
+    ] });
+  }
   function Help() {
     return /* @__PURE__ */ u4("div", { id: "help-content", children: [
       /* @__PURE__ */ u4(Toc, {}),
       /* @__PURE__ */ u4(OverviewSection, {}),
       /* @__PURE__ */ u4(ConfigSection, {}),
       /* @__PURE__ */ u4(AgentOtelSection, {}),
-      /* @__PURE__ */ u4(InsightsSection, {}),
-      /* @__PURE__ */ u4(LoopsSection, {}),
-      /* @__PURE__ */ u4(ViewsSection, {}),
+      /* @__PURE__ */ u4(SessionsSection, {}),
+      /* @__PURE__ */ u4(AnalyticsSection, {}),
+      /* @__PURE__ */ u4(AlertsSection, {}),
+      /* @__PURE__ */ u4(AutomationSection, {}),
+      /* @__PURE__ */ u4(ExportSection, {}),
       /* @__PURE__ */ u4(BadgesSection, {}),
       /* @__PURE__ */ u4(GlossarySection, {}),
       /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6", children: [
