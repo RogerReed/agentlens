@@ -4807,7 +4807,7 @@
     ["Sessions", "Session list as a sortable table: timestamp, prompt, model, tokens, duration, and estimated cost per row. Click any row to expand in-place and drill into five sub-tabs \u2014 Overview (stat tiles, burn rate, insights), Trace (full waterfall of LLM calls and tool calls with arguments and results), Flow (turn-to-tool semantic graph), Tools (donut chart of tool distribution), and Files (modified files, clickable to open in the editor)."],
     ["Analytics", "Aggregate charts and metrics across all sessions in the active time range. Agent Breakdown cards show per-agent token totals, cache rates, and top tools. Estimated Cost shows a bar chart with a daily total overlay line, a day-grouped cost table (date \u2192 agent \u2192 model), and a cost table broken down by model. Token Usage Per Session shows slim bars oldest\u2192newest with agent color dots. Context Growth shows input token accumulation per LLM turn across sessions."],
     ["Alerts", "Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts."],
-    ["Automation", "Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in standalone mode they write to a file-based relay."],
+    ["Automation", "Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in local mode they write to a file-based relay."],
     ["Export", "Export all recorded sessions as a JSON file \u2014 full (includes prompt text) or redacted (prompt text removed, all other fields retained). Exports draw from the full session history in the database, not just the active window. Raw OTEL span export for session replay is planned but not yet available."],
     ["Help", "This tab \u2014 an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Insights and malfunction detection."]
   ];
@@ -4962,7 +4962,7 @@
         /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
         " is a local observability tool that makes AI ",
         /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agent" }),
-        " sessions more transparent \u2014 see what's happening inside each run. Available as a VS Code extension or standalone Docker image, with no data leaving your machine. It captures ",
+        " sessions more transparent \u2014 see what's happening inside each run. Available as a VS Code extension, a local web app (npx), or Docker, with no data leaving your machine. It captures ",
         /* @__PURE__ */ u4("a", { href: "#gl-otlp", children: "OpenTelemetry" }),
         " ",
         /* @__PURE__ */ u4("a", { href: "#gl-trace", children: "traces" }),

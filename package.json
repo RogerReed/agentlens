@@ -161,7 +161,7 @@
     "vscode:prepublish": "pnpm run package",
     "prepublishOnly": "pnpm run package",
     "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
-    "standalone": "node esbuild.js && node standalone/server.js",
+    "local": "node esbuild.js && node standalone/server.js",
     "demo": "node demo/run-ts.js demo/replay.ts",
     "demo:fast": "node demo/run-ts.js demo/replay.ts --speed 8",
     "demo:show": "node demo/run-ts.js demo/browser.ts",
