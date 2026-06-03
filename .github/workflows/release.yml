@@ -117,7 +117,10 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-          registry-url: 'https://registry.npmjs.org'
+          # registry-url is intentionally omitted. Adding it causes setup-node to
+          # write "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" to .npmrc;
+          # even with NODE_AUTH_TOKEN='', that explicit entry blocks npm from
+          # performing the OIDC token exchange needed by Trusted Publishing.
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -127,9 +130,4 @@ jobs:
         # short-lived publish credential — no NPM_TOKEN secret required.
         # --provenance attaches a signed build attestation linking the package
         # to this exact commit and workflow run.
-        # NODE_AUTH_TOKEN is overridden to empty because actions/setup-node sets
-        # it to a sentinel placeholder (XXXXX-...) which npm uses as the auth
-        # token instead of attempting the OIDC exchange.
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ''

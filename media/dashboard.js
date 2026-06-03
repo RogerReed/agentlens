@@ -1405,6 +1405,8 @@
   var focusedSessionId = y3(null);
   var sessionLimit = y3(25);
   var selectedAgentFilter = y3("all");
+  var initiatorFilter = y3("all");
+  var dataSourceFilter = y3("all");
   var insightFilter = y3("all");
   var activeTab = y3("sessions");
   var swRetainedSessions = y3([]);
@@ -1438,10 +1440,12 @@
     "#7986cb"
   ];
   var agentFilteredSessions = g2(() => {
-    const all = sessionSummary.value?.sessions ?? [];
+    let all = sessionSummary.value?.sessions ?? [];
     const filter = selectedAgentFilter.value;
-    if (filter === "all") return all;
-    return all.filter((s4) => s4.source === filter);
+    if (filter !== "all") all = all.filter((s4) => s4.source === filter);
+    const dsFilter = dataSourceFilter.value;
+    if (dsFilter !== "all") all = all.filter((s4) => (s4.dataSource ?? "otel") === dsFilter);
+    return all;
   });
   var displaySessions = g2(() => {
     const all = agentFilteredSessions.value;
@@ -1479,6 +1483,10 @@
     const text = sessionTextFilter.value.toLowerCase().trim();
     if (text) {
       sessions = sessions.filter((s4) => (s4.userRequest ?? "").toLowerCase().includes(text));
+    }
+    const iFilter = initiatorFilter.value;
+    if (iFilter !== "all") {
+      sessions = sessions.filter((s4) => (s4.initiator ?? "user") === iFilter);
     }
     const key = sessionSortKey.value;
     const dir = sessionSortDir.value;
@@ -1551,9 +1559,21 @@
   function getDataSourceBadgeHtml(dataSource) {
     const ds = dataSource ?? "otel";
     const label = ds === "log" ? "Log" : "OTEL";
-    const color = ds === "log" ? "#90a4ae" : "var(--accent)";
+    const color = ds === "log" ? "#90a4ae" : "#ffffff";
     const tooltip = DATA_SOURCE_TOOLTIP[ds];
     return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`;
+  }
+  var INITIATOR_COLORS = { user: "#4a90d9", agent: "#b0bec5", api: "#90a4ae" };
+  var INITIATOR_TOOLTIPS = {
+    user: "Typed directly by a human in the chat",
+    agent: "Spawned by the Agent tool (isSidechain) \u2014 a sub-task delegated by Claude",
+    api: "Non-interactive API call (claude -p) \u2014 from a script or pipeline"
+  };
+  function getInitiatorBadgeHtml(initiator) {
+    const key = initiator ?? "user";
+    const color = INITIATOR_COLORS[key];
+    const label = key === "api" ? "API" : key === "user" ? "User" : "Agent";
+    return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default;margin-left:3px" title="${INITIATOR_TOOLTIPS[key]}">${label}</span>`;
   }
   function getAgentSourceLabel(source) {
     if (source === "claude_code") return "Claude";
@@ -3369,7 +3389,8 @@
             /* @__PURE__ */ u4("td", { style: "padding:4px 4px 4px 8px;width:16px;color:var(--muted);font-size:9px;white-space:nowrap", children: expanded ? "\u25BC" : "\u25B6" }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 4px;width:auto;white-space:nowrap", children: [
               /* @__PURE__ */ u4("span", { style: `display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0;vertical-align:middle` }),
-              /* @__PURE__ */ u4("span", { style: "margin-left:4px", dangerouslySetInnerHTML: { __html: getDataSourceBadgeHtml(sess.dataSource ?? "otel") } })
+              /* @__PURE__ */ u4("span", { style: "margin-left:4px", dangerouslySetInnerHTML: { __html: getDataSourceBadgeHtml(sess.dataSource ?? "otel") } }),
+              /* @__PURE__ */ u4("span", { dangerouslySetInnerHTML: { __html: getInitiatorBadgeHtml(sess.initiator) } })
             ] }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums", children: formatSessionTime(sess) }),
             /* @__PURE__ */ u4("td", { style: "padding:4px 6px;max-width:0;width:100%", children: prompt ? /* @__PURE__ */ u4("span", { style: "display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-style:italic;color:var(--foreground)", title: prompt, children: prompt }) : sess.turns === 0 ? /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: "\u2026" }) : /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:11px", children: "\u2014" }) }),
@@ -4852,6 +4873,10 @@
       href: "#help-views",
       heading: "Views"
     },
+    badges: {
+      href: "#help-badges",
+      heading: "Badges"
+    },
     glossary: {
       href: "#help-glossary",
       heading: "Glossary"
@@ -5415,6 +5440,54 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       ] })) })
     ] });
   }
+  function BadgesSection() {
+    const badgeStyle = "font-size:9px;font-weight:600;padding:1px 5px;border-radius:2px;border:1px solid;letter-spacing:0.03em;vertical-align:middle;display:inline-block;margin-right:6px";
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-badges", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.badges.heading }),
+      /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "Each session row shows up to two small badges indicating where the data came from and who initiated the session." }),
+      /* @__PURE__ */ u4("h4", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:0 0 8px", children: "Data source" }),
+      /* @__PURE__ */ u4("div", { class: "glossary", style: "margin-bottom:16px", children: [
+        /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#ffffff;border-color:#ffffff`, children: "OTEL" }) }),
+          /* @__PURE__ */ u4("dd", { class: "glossary-def", children: "Full OpenTelemetry telemetry \u2014 timing, TTFT, span waterfall, loop signals. Requires the agent to be configured to export traces to AgentLens." })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#90a4ae;border-color:#90a4ae`, children: "Log" }) }),
+          /* @__PURE__ */ u4("dd", { class: "glossary-def", children: "Parsed from local conversation log files (~/.claude/projects, ~/.codex/sessions, etc.) \u2014 tokens, tool calls, and messages are available, but timing and TTFT are not. No agent configuration needed." })
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("h4", { style: "font-size:11px;font-weight:600;color:var(--fg);margin:0 0 8px", children: "Initiator" }),
+      /* @__PURE__ */ u4("div", { class: "glossary", style: "margin-bottom:8px", children: [
+        /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#4a90d9;border-color:#4a90d9`, children: "User" }) }),
+          /* @__PURE__ */ u4("dd", { class: "glossary-def", children: "A human typed this prompt directly in the chat. The baseline case \u2014 most of your interactive sessions will carry this badge." })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#b0bec5;border-color:#b0bec5`, children: "Agent" }) }),
+          /* @__PURE__ */ u4("dd", { class: "glossary-def", children: [
+            "Spawned by the Agent tool (",
+            /* @__PURE__ */ u4("code", { children: "isSidechain: true" }),
+            " in the log). Claude delegated a sub-task to another Claude instance \u2014 common when using the Agent SDK or the FleetView multi-agent runner. The prompt was written by the model, not a human."
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("div", { class: "glossary-item", children: [
+          /* @__PURE__ */ u4("dt", { class: "glossary-term", style: "min-width:0", children: /* @__PURE__ */ u4("span", { style: `${badgeStyle}color:#90a4ae;border-color:#90a4ae`, children: "API" }) }),
+          /* @__PURE__ */ u4("dd", { class: "glossary-def", children: [
+            "Started non-interactively via ",
+            /* @__PURE__ */ u4("code", { children: "claude -p" }),
+            " (pipeline mode). Comes from a script, CI job, or shell automation \u2014 human-authored but not a live conversation. Identified by the ",
+            /* @__PURE__ */ u4("code", { children: "<local-command-caveat>" }),
+            " prefix Claude Code prepends to the prompt."
+          ] })
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin:0", children: [
+        "Use the ",
+        /* @__PURE__ */ u4("strong", { children: "From" }),
+        " filter pills in the Sessions tab to show only user, agent, or api sessions."
+      ] })
+    ] });
+  }
   function Help() {
     return /* @__PURE__ */ u4("div", { id: "help-content", children: [
       /* @__PURE__ */ u4(Toc, {}),
@@ -5424,6 +5497,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4(InsightsSection, {}),
       /* @__PURE__ */ u4(LoopsSection, {}),
       /* @__PURE__ */ u4(ViewsSection, {}),
+      /* @__PURE__ */ u4(BadgesSection, {}),
       /* @__PURE__ */ u4(GlossarySection, {}),
       /* @__PURE__ */ u4("p", { style: "font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6", children: [
         /* @__PURE__ */ u4("strong", { children: "Disclaimer:" }),
@@ -6113,7 +6187,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         TABS.map((t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id))
       ] }),
       !["alerts", "help", "export", "automation"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(TimeRangePicker, {}),
-      !["alerts", "help", "export", "automation", "analytics"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(SearchFilterBar, {}),
+      !["alerts", "help", "export", "automation"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(SearchFilterBar, {}),
       /* @__PURE__ */ u4("div", { class: "panel active", children: /* @__PURE__ */ u4(ActivePanel, {}) }),
       /* @__PURE__ */ u4("img", { id: "mascot-img", src: "", alt: "AgentLens mascot", style: "display:none" })
     ] });
@@ -6129,6 +6203,19 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     const agent = selectedAgentFilter.value;
     const debounce = A2(null);
     const [loading, setLoading] = d2(false);
+    const tab = normalizeTabId(activeTab.value);
+    const showReset = tab === "sessions" || tab === "analytics";
+    const isFiltered = sessionTextFilter.value !== "" || selectedAgentFilter.value !== "all" || initiatorFilter.value !== "all" || dataSourceFilter.value !== "all" || sessionLimit.value !== 25 || timeRange.value.preset !== "all" || sessionSortKey.value !== "start_time" || sessionSortDir.value !== "desc";
+    function resetFilters() {
+      sessionTextFilter.value = "";
+      selectedAgentFilter.value = "all";
+      initiatorFilter.value = "all";
+      dataSourceFilter.value = "all";
+      sessionLimit.value = 25;
+      timeRange.value = { preset: "all" };
+      sessionSortKey.value = "start_time";
+      sessionSortDir.value = "desc";
+    }
     function fireSearch(r5) {
       if (r5.preset === "all") {
         rangedSearchResults.value = null;
@@ -6198,6 +6285,17 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           })
         ] })
       ] }),
+      showReset && isFiltered && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("span", { style: "width:1px;height:14px;background:var(--border);margin:0 8px;flex-shrink:0" }),
+        /* @__PURE__ */ u4(
+          "button",
+          {
+            onClick: resetFilters,
+            style: "padding:3px 12px;font-size:12px;border-radius:4px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)",
+            children: "Reset"
+          }
+        )
+      ] }),
       loading && /* @__PURE__ */ u4("span", { style: "margin-left:8px;font-size:10px;color:var(--muted);opacity:0.6", children: "loading\u2026" }),
       isActive && !loading && /* @__PURE__ */ u4(
         "button",
@@ -6210,20 +6308,46 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       )
     ] });
   }
+  var DATA_SOURCE_FILTER_OPTIONS = [
+    { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)", activeColor: "#ffffff" },
+    { value: "otel", label: "OTEL", color: "#ffffff" },
+    { value: "log", label: "Log", color: "#90a4ae" }
+  ];
+  var INITIATOR_FILTER_OPTIONS = [
+    { value: "all", label: "All", color: "var(--vscode-descriptionForeground,#888)", activeColor: "#ffffff" },
+    { value: "user", label: "User", color: "#4a90d9" },
+    { value: "agent", label: "Agent", color: "#b0bec5" },
+    { value: "api", label: "API", color: "#90a4ae" }
+  ];
+  function FilterPills({ options, value, onChange }) {
+    return /* @__PURE__ */ u4("div", { style: "display:flex;gap:3px", children: options.map((o4) => {
+      const active = value === o4.value;
+      const displayColor = active && o4.activeColor ? o4.activeColor : o4.color;
+      return /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => onChange(o4.value),
+          style: [
+            "padding:2px 7px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;",
+            `border:1.5px solid ${displayColor};`,
+            active ? `background:${displayColor}33;color:${displayColor};font-weight:600` : "background:transparent;color:var(--muted)"
+          ].join(""),
+          title: o4.title,
+          children: o4.label
+        },
+        o4.value
+      );
+    }) });
+  }
   function SearchFilterBar() {
     const text = sessionTextFilter.value;
-    const isSessionsTab = normalizeTabId(activeTab.value) === "sessions";
-    const isFiltered = text !== "" || selectedAgentFilter.value !== "all" || sessionLimit.value !== 25 || timeRange.value.preset !== "all" || sessionSortKey.value !== "start_time" || sessionSortDir.value !== "desc";
-    function resetFilters() {
-      sessionTextFilter.value = "";
-      selectedAgentFilter.value = "all";
-      sessionLimit.value = 25;
-      timeRange.value = { preset: "all" };
-      sessionSortKey.value = "start_time";
-      sessionSortDir.value = "desc";
-    }
+    const iFilter = initiatorFilter.value;
+    const dsFilter = dataSourceFilter.value;
+    const tab = normalizeTabId(activeTab.value);
+    const isSessionsTab = tab === "sessions";
+    const isAnalyticsTab = tab === "analytics";
     return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap", children: [
-      /* @__PURE__ */ u4(
+      isSessionsTab && /* @__PURE__ */ u4(
         "input",
         {
           type: "text",
@@ -6236,18 +6360,34 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         }
       ),
       isSessionsTab && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
-          filteredSessions.value.length,
-          " sessions"
-        ] }),
-        isFiltered && /* @__PURE__ */ u4(
-          "button",
+        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "From" }),
+        /* @__PURE__ */ u4(
+          FilterPills,
           {
-            onClick: resetFilters,
-            style: "padding:2px 9px;font-size:10px;border-radius:3px;cursor:pointer;white-space:nowrap;border:1px solid var(--vscode-panel-border);background:transparent;color:var(--muted)",
-            children: "Reset"
+            options: INITIATOR_FILTER_OPTIONS.map((o4) => ({ ...o4, title: o4.value === "all" ? "Show all sessions" : o4.value === "user" ? "Human-typed prompts only" : o4.value === "agent" ? "Agent-spawned sub-tasks only" : "Non-interactive claude -p calls only" })),
+            value: iFilter,
+            onChange: (v4) => {
+              initiatorFilter.value = v4;
+            }
           }
         )
+      ] }),
+      (isSessionsTab || isAnalyticsTab) && /* @__PURE__ */ u4(S, { children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "Source" }),
+        /* @__PURE__ */ u4(
+          FilterPills,
+          {
+            options: DATA_SOURCE_FILTER_OPTIONS.map((o4) => ({ ...o4, title: o4.value === "all" ? "Show all data sources" : o4.value === "otel" ? "OpenTelemetry sessions only" : "Log-file sessions only" })),
+            value: dsFilter,
+            onChange: (v4) => {
+              dataSourceFilter.value = v4;
+            }
+          }
+        )
+      ] }),
+      /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
+        filteredSessions.value.length,
+        " sessions"
       ] })
     ] });
   }

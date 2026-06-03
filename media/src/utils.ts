@@ -371,9 +371,23 @@ const DATA_SOURCE_TOOLTIP = {
 export function getDataSourceBadgeHtml(dataSource: 'otel' | 'log' | undefined): string {
   const ds = dataSource ?? 'otel'
   const label = ds === 'log' ? 'Log' : 'OTEL'
-  const color = ds === 'log' ? '#90a4ae' : 'var(--accent)'
+  const color = ds === 'log' ? '#90a4ae' : '#ffffff'
   const tooltip = DATA_SOURCE_TOOLTIP[ds]
   return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`
+}
+
+const INITIATOR_COLORS = { user: '#4a90d9', agent: '#b0bec5', api: '#90a4ae' } as const
+const INITIATOR_TOOLTIPS = {
+  user:  'Typed directly by a human in the chat',
+  agent: 'Spawned by the Agent tool (isSidechain) — a sub-task delegated by Claude',
+  api:   'Non-interactive API call (claude -p) — from a script or pipeline',
+} as const
+
+export function getInitiatorBadgeHtml(initiator: 'user' | 'agent' | 'api' | undefined): string {
+  const key = initiator ?? 'user'
+  const color = INITIATOR_COLORS[key]
+  const label = key === 'api' ? 'API' : key === 'user' ? 'User' : 'Agent'
+  return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default;margin-left:3px" title="${INITIATOR_TOOLTIPS[key]}">${label}</span>`
 }
 
 // ── Agent label / color helpers ───────────────────────────────────────────────

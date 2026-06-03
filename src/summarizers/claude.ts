@@ -303,6 +303,7 @@ export function buildClaudeSessions(
       traceId: interaction.traceId || '',
       source: 'claude_code' as const,
       dataSource: 'otel' as const,
+      initiator: (interaction.parentSpanId || getAttrStr(interaction, 'is_sidechain') === 'true') ? 'agent' as const : 'user' as const,
       userRequest,
       model,
       turns: totalLlmCalls,

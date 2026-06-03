@@ -152,10 +152,18 @@ export class LogReader {
     }
   }
 
+  /** Returns all directories that should be watched for file changes. */
+  getWatchDirs(): string[] {
+    return [
+      ...claudeProjectsDirs(),
+      ...codexSessionsDirs(),
+      ...((() => { const d = copilotSessionStateDir(); return d ? [d] : [] })()),
+    ]
+  }
+
   /**
    * Scans all log directories and returns new/updated session results.
-   * Only files that are new or have grown are re-parsed (incremental).
-   * Used for the periodic 30-second poll after the initial load completes.
+   * Files that are new or have changed since the last scan are re-parsed.
    */
   scan(): LogSessionResult[] {
     return [
@@ -196,6 +204,7 @@ export class LogReader {
     const toolCounts: Record<string, number> = {}
     const timeline: TimelineEntry[] = []
     let idx = 0
+    let initiator: 'user' | 'agent' | 'api' = 'user'
 
     for (const line of lines) {
       let entry: Record<string, unknown>
@@ -206,9 +215,17 @@ export class LogReader {
       if (entry['cwd'] && !workspace) workspace = entry['cwd'] as string
 
       if (entry['type'] === 'user') {
+        // isSidechain: true → session was spawned by the Agent tool, not typed by a human.
+        // <local-command-caveat> prefix → session started via `claude -p` (non-interactive API).
+        if (!userRequest) {
+          if (entry['isSidechain'] === true) initiator = 'agent'
+        }
         const content = (entry['message'] as Record<string, unknown>)?.['content']
         const text = _extractTextContent(content)
-        if (!userRequest && text) userRequest = text
+        if (!userRequest && text) {
+          userRequest = text
+          if (initiator === 'user' && text.startsWith('<local-command-caveat>')) initiator = 'api'
+        }
         timeline.push({ type: 'user_input', spanId: `log-u-${idx}`, label: 'User', durationMs: 0, isError: false, timestamp: ts ?? '', responseText: text })
         idx++
       }
@@ -246,7 +263,7 @@ export class LogReader {
     }
 
     if (!firstTimestamp) return null
-    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: new Set(), userRequest, timeline }) }
+    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: new Set(), userRequest, timeline, initiator }) }
   }
 
   // ── Codex ───────────────────────────────────────────────────────────────────
@@ -309,7 +326,7 @@ export class LogReader {
     if (!firstTimestamp) return null
     return {
       workspace,
-      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(), userRequest: '', timeline: [] }),
+      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(), userRequest: '', timeline: [], initiator: 'user' }),
     }
   }
 
@@ -429,6 +446,7 @@ export class LogReader {
         filesSearched: new Set(),
         userRequest: userRequest.slice(0, 500),
         timeline: [],
+        initiator: 'user',
       }),
     }
   }
@@ -455,19 +473,12 @@ export class LogReader {
       const prev = this.fileState.get(filePath)
       if (prev && stat.mtimeMs === prev.mtimeMs && stat.size === prev.bytesRead) return null
 
-      const startByte = prev?.bytesRead ?? 0
-      const len = stat.size - startByte
-      if (len <= 0) {
-        this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs })
-        return null
-      }
-
-      const fd  = fs.openSync(filePath, 'r')
-      const buf = Buffer.alloc(len)
-      fs.readSync(fd, buf, 0, len, startByte)
-      fs.closeSync(fd)
+      // Always re-read the whole file so each scan produces a complete card.
+      // Incremental reads (seeking to prev.bytesRead) produced partial cards that
+      // then replaced the full card in logSessions, losing prior-turn data.
+      const content = fs.readFileSync(filePath, 'utf-8')
       this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs })
-      return buf.toString('utf8').split('\n').filter(l => l.trim())
+      return content.split('\n').filter(l => l.trim())
     } catch (err) {
       this.log(`[LogReader] read error ${filePath}: ${err}`)
       return null
@@ -506,6 +517,7 @@ interface CardAccum {
   filesSearched: Set<string>
   userRequest: string
   timeline: TimelineEntry[]
+  initiator: 'user' | 'agent' | 'api'
 }
 
 function _buildCard(
@@ -519,17 +531,22 @@ function _buildCard(
   const startMs  = _parseTs(firstTimestamp)
   const endMs    = _parseTs(lastTimestamp)
   const durationMs = (endMs > 0 && startMs > 0) ? Math.max(0, endMs - startMs) : 0
-  const cacheHitRate = acc.totalInput > 0 ? acc.totalCacheRead / acc.totalInput : 0
+  // Use total context (raw + cache read + cache create) as the denominator so the
+  // rate stays 0–1. Using raw input_tokens alone produces rates >> 1 in multi-turn
+  // sessions where the cached context dwarfs the new tokens added each turn.
+  const totalContext = acc.totalInput + acc.totalCacheRead + acc.totalCacheCreate
+  const cacheHitRate = totalContext > 0 ? acc.totalCacheRead / totalContext : 0
 
   return {
     sessionId,
     traceId: sessionId,
     source,
     dataSource: 'log',
+    initiator: acc.initiator,
     userRequest: acc.userRequest.slice(0, 500),
     model,
     turns: acc.turns,
-    inputTokens: acc.totalInput,
+    inputTokens: totalContext,
     outputTokens: acc.totalOutput,
     cacheReadTokens: acc.totalCacheRead,
     cacheCreateTokens: acc.totalCacheCreate,

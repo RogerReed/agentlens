@@ -6,7 +6,7 @@ import {
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
-  getDataSourceBadgeHtml,
+  getDataSourceBadgeHtml, getInitiatorBadgeHtml,
 } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
@@ -241,6 +241,7 @@ function SessionRow({ sess }: { sess: SessionSummaryCard }) {
         <td style="padding:4px 4px;width:auto;white-space:nowrap">
           <span style={`display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0;vertical-align:middle`} />
           <span style="margin-left:4px" dangerouslySetInnerHTML={{ __html: getDataSourceBadgeHtml(sess.dataSource ?? 'otel') }} />
+          <span dangerouslySetInnerHTML={{ __html: getInitiatorBadgeHtml(sess.initiator) }} />
         </td>
 
         {/* Timestamp */}
