@@ -2,15 +2,6 @@ import { esc } from '../utils'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
-const VIEWS: [string, string][] = [
-  ['Sessions',        'Session list as a sortable table: timestamp, prompt, model, tokens, duration, and estimated cost per row. Click any row to expand in-place and drill into five sub-tabs — Overview (stat tiles, burn rate, insights), Trace (full waterfall of LLM calls and tool calls with arguments and results), Flow (turn-to-tool semantic graph), Tools (donut chart of tool distribution), and Files (modified files, clickable to open in the editor).'],
-  ['Analytics',       'Aggregate charts and metrics across all sessions in the active time range. Agent Breakdown cards show per-agent token totals, cache rates, and top tools. Estimated Cost shows a bar chart with a daily total overlay line, a day-grouped cost table (date → agent → model), and a cost table broken down by model. Token Usage Per Session shows slim bars oldest→newest with agent color dots. Context Growth shows input token accumulation per LLM turn across sessions.'],
-  ['Alerts',          'Configurable alerts with shared context/cache rules plus per-agent thresholds for turns, errors, active session time, and identical tool repeats. The tab badge shows the count of active alerts.'],
-  ['Automation',      'Automated prompts triggered when session thresholds are crossed. Configure per-agent automations for Loop Breaker, Turn Limit Wrap-up, and Context Dump. In the VS Code extension, automations show a notification or open the agent chat directly; in local mode they write to a file-based relay.'],
-  ['Export',          'Export all recorded sessions as a JSON file — full (includes prompt text) or redacted (prompt text removed, all other fields retained). Exports draw from the full session history in the database, not just the active window. Raw OTEL span export for session replay is planned but not yet available.'],
-  ['Help',            'This tab — an overview of the plugin, setup, agent OTEL data shapes, view descriptions, a glossary, and documentation for Insights and malfunction detection.'],
-]
-
 const TERMS: [string, string][] = [
   ['Agent Loop / Malfunction', 'A behavioral pattern in which an AI agent is stuck, oscillating, or spiraling into unproductive work. AgentLens detects five patterns: Tool Call Deadlock, State Corruption Spiral, Hallucination Amplification Loop, Ambiguous Success / Escalating Scope, and Infinite Loop — Context Accumulation.'],
   ['Agent',                  'The AI coding assistant (e.g. GitHub Copilot, Claude Code, Codex) that receives your prompt, reasons about the task, and decides which tools to use. It manages the workflow, breaks down tasks, and may call the underlying LLM multiple times per session to complete a single request. The agent is the orchestrator; the LLM is the engine it drives.'],
@@ -23,7 +14,7 @@ const TERMS: [string, string][] = [
   ['Context Bloat',          'An efficiency insight triggered when input tokens grow significantly across turns within a session.'],
   ['Files Changed',          'Unique files that were created or modified by the agent during the current data collection period.'],
   ['Input Tokens',           'The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt.'],
-  ['Loop Signal',            'A behavioral signal in the Insights tab indicating the agent is stuck, oscillating, or making no forward progress. Shown with a ↺ icon.'],
+  ['Loop Signal',            'A behavioral signal in the Insights panel (inside the Overview sub-tab of each session) indicating the agent is stuck, oscillating, or making no forward progress. Shown with a ↺ icon.'],
   ['LLM',                    'Large Language Model. The underlying AI model (e.g. GPT-4o, Claude Sonnet) that generates text, answers questions, or produces code. The agent sends requests to the LLM as needed; the model itself does not manage tools or workflow. It is the engine that generates language and code for the agent to act on.'],
   ['LLM Call',               'A single request-response cycle to the language model. One session typically includes multiple LLM calls as the agent iterates.'],
   ['OTLP',                   'OpenTelemetry Protocol — the standard format used to collect and transmit telemetry from AI agents to this extension. AgentLens accepts trace spans and log-derived events.'],
@@ -46,43 +37,17 @@ const TERMS: [string, string][] = [
   ['Waterfall',              'A span visualization where operations are displayed as horizontal bars on a time axis, with nesting depth shown by indentation. Used in OpenTelemetry tooling; AgentLens surfaces span timing data through the Traces tab instead.'],
 ]
 
-function termId(term: string): string {
-  return 'gl-' + term.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
-}
-
 const HELP_SECTIONS = {
-  overview: {
-    href: '#help-overview',
-    heading: 'Overview',
-  },
-  config: {
-    href: '#help-config',
-    heading: 'Setup',
-  },
-  otel: {
-    href: '#help-otel',
-    heading: 'OTEL Data',
-  },
-  insights: {
-    href: '#help-insights',
-    heading: 'Insights',
-  },
-  loops: {
-    href: '#help-loops',
-    heading: 'Loops',
-  },
-  views: {
-    href: '#help-views',
-    heading: 'Views',
-  },
-  badges: {
-    href: '#help-badges',
-    heading: 'Badges',
-  },
-  glossary: {
-    href: '#help-glossary',
-    heading: 'Glossary',
-  },
+  overview:   { href: '#help-overview',   heading: 'Overview' },
+  config:     { href: '#help-config',     heading: 'Setup' },
+  otel:       { href: '#help-otel',       heading: 'OTEL Data' },
+  sessions:   { href: '#help-sessions',   heading: 'Sessions' },
+  analytics:  { href: '#help-analytics',  heading: 'Analytics' },
+  alerts:     { href: '#help-alerts',     heading: 'Alerts' },
+  automation: { href: '#help-automation', heading: 'Automation' },
+  export:     { href: '#help-export',     heading: 'Export' },
+  badges:     { href: '#help-badges',     heading: 'Badges' },
+  glossary:   { href: '#help-glossary',   heading: 'Glossary' },
 } as const
 
 const TOC_SECTIONS = Object.values(HELP_SECTIONS)
@@ -119,6 +84,7 @@ const codeStyle = 'font-size:11px;background:var(--panel-bg);padding:1px 4px;bor
 const preStyle = 'background:var(--panel-bg);border:1px solid var(--border);border-radius:5px;padding:10px 14px;font-size:11.5px;line-height:1.6;overflow-x:auto;white-space:pre'
 const h4Style = 'font-size:13px;font-weight:600;margin:0 0 6px;color:var(--fg,inherit)'
 const mutedP = 'font-size:12px;color:var(--muted);margin:0 0 8px'
+const subHeadStyle = 'font-size:13px;font-weight:600;margin:20px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border);color:var(--fg)'
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -184,7 +150,7 @@ function OverviewSection() {
       )}
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
-        <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code extension, a local web app (npx), or Docker, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and surfaces efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time — then helps you prompt your agents on inefficiencies to improve interactions.</p>
+        <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code extension, a local web app (npx), or Docker, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and also reads <strong>local session log files</strong> written automatically by each agent as a zero-config fallback — so history loads even without OTEL configured. Both sources feed one unified dashboard and surface efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time.</p>
       </div>
     </div>
   )
@@ -199,7 +165,6 @@ function ConfigSection() {
     </p>
   )
 
-  // ── "Not seeing any data?" callout ──────────────────────────────────────────
   const callout = standalone ? (
     <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
       <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
@@ -265,12 +230,10 @@ chmod +x scripts/configure-agents.sh
     </div>
   )
 
-  // ── Manual config sections ───────────────────────────────────────────────────
   const portNote = (
     <p style={mutedP}>Manual configuration — replace <code style={codeStyle}>4318</code> with your custom port if you changed <em>agentLens.otlpPort</em>.</p>
   )
 
-  // GitHub Copilot: show VS Code settings in extension mode, CLI env vars in standalone
   const copilotSection = (
     <div style="margin-bottom:20px">
       <h4 style={h4Style}>GitHub Copilot</h4>
@@ -379,12 +342,50 @@ function AgentOtelSection() {
   )
 }
 
-function InsightsSection() {
+function SessionsSection() {
   return (
-    <div class="help-section" id="help-insights">
-      <h3 class="help-heading">{HELP_SECTIONS.insights.heading}</h3>
+    <div class="help-section" id="help-sessions">
+      <h3 class="help-heading">{HELP_SECTIONS.sessions.heading}</h3>
       <div class="help-overview-body">
-        <p>The <strong>Insights</strong> tab surfaces efficiency insights for <a href="#gl-tokens">token</a> waste, <a href="#gl-cache-hit-rate">cache</a> patterns, tool behavior, and prompt shape. These are the signals meant to help you spend fewer <a href="#gl-turn">turns</a> and fewer tokens on the same work.</p>
+        <p>The Sessions tab shows all recorded sessions as a sortable table — timestamp, prompt, model, tokens, duration, and estimated cost per row. Use the filter bar to search by text, filter by agent, data source (OTEL / Log), or initiator (User / Agent / API), set a time range, or cap the number of rows shown. The Reset button clears all active filters back to defaults.</p>
+        <p>Click any row to expand it in-place. Five sub-tabs appear beneath the row:</p>
+
+        <h4 style={subHeadStyle}>Sub-tabs</h4>
+        <div class="glossary" style="margin-bottom:20px">
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Overview</dt>
+            <dd class="glossary-def" style="display:block">
+              Stat tiles — total tokens, estimated cost, duration, turn count, error count, and cache hit rate. A burn rate card shows tokens per minute for the session. Below the tiles is the <strong>Insights panel</strong>, which surfaces efficiency signals and loop detection results for that session (see <a href="#help-insights">Insights</a> and <a href="#help-loops">Loop Detection</a> below).
+            </dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Trace</dt>
+            <dd class="glossary-def" style="display:block">
+              Full waterfall of every <a href="#gl-llm-call">LLM call</a> and <a href="#gl-tool-call">tool call</a> in the session, displayed as horizontal timing bars with nesting depth. Expand any span row to see arguments, results, token counts, and estimated cost per call. The badge on the tab label shows the total span count.
+            </dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Flow</dt>
+            <dd class="glossary-def" style="display:block">
+              A turn-to-tool semantic graph showing how the agent moved through the session — which LLM turns triggered which tools, and in what order. Useful for spotting repeated tool calls or unusual branching. The badge shows the total node count.
+            </dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Tools</dt>
+            <dd class="glossary-def" style="display:block">
+              A donut chart of tool call distribution for the session — how many times each tool was invoked, expressed as a percentage of all tool calls. The badge shows the total tool call count.
+            </dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Files</dt>
+            <dd class="glossary-def" style="display:block">
+              Every file created or modified during the session, grouped by path. Click any file to open a diff in the editor. The badge shows the number of unique files touched.
+            </dd>
+          </div>
+        </div>
+
+        <h4 id="help-insights" style={subHeadStyle}>Insights</h4>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">The Insights panel appears inside the <strong>Overview</strong> sub-tab of each expanded session row. It surfaces efficiency signals for <a href="#gl-tokens">token</a> waste, <a href="#gl-cache-hit-rate">cache</a> patterns, tool behavior, and prompt shape — the signals meant to help you spend fewer <a href="#gl-turn">turns</a> and fewer tokens on the same work.</p>
         <div class="glossary">
           <InsightBlock id="help-context-bloat" title="Context Bloat"
             why="Every LLM turn receives the full conversation so far. When tool results are large — full file reads, wide search outputs — the context balloons quickly. Instruction files that repeat the same guidance across turns are another common cause."
@@ -432,78 +433,157 @@ function InsightsSection() {
             impact={`Going from 0% to 60% cache hit rate reduces effective cost by 80–90%. TTFT also drops significantly.`}
           />
         </div>
-      </div>
-    </div>
-  )
-}
 
-function LoopsSection() {
-  return (
-    <div class="help-section" id="help-loops">
-      <h3 class="help-heading">{HELP_SECTIONS.loops.heading}</h3>
-      <div class="help-overview-body">
-        <p><a href="#gl-loop-signal">Loop signals</a> are behavioral patterns indicating the <a href="#gl-agent">agent</a> is stuck, oscillating, or spiraling into unproductive work. They appear in Insights with warning or critical severity.</p>
+        <h4 id="help-loops" style={subHeadStyle}>Loop Detection</h4>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px"><a href="#gl-loop-signal">Loop signals</a> are behavioral patterns indicating the <a href="#gl-agent">agent</a> is stuck, oscillating, or spiraling into unproductive work. They appear in the Insights panel with warning or critical severity.</p>
         <div class="glossary">
-          <LoopBlock id="help-tool-deadlock" title="Tool Call Deadlock"            why="The same tool call — identical name and arguments — was executed 5+ times. The agent is not retaining the result, likely lost in a long context."
+          <LoopBlock id="help-tool-deadlock" title="Tool Call Deadlock"
+            why="The same tool call — identical name and arguments — was executed 5+ times. The agent is not retaining the result, likely lost in a long context."
             example={`The agent ran <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">read_file src/types.ts</code> eight times in one session.`}
             steps={`<li>Add: <em>"After reading a file, do not read it again unless you have modified it."</em></li><li>Scope the task so fewer files are needed.</li><li>Pin non-deterministic commands to fixed output.</li><li>Stop the session and restart with what was already read.</li>`}
             impact="Stopping this pattern prevents runaway token accumulation. 200K tokens looping → 20K tokens with a direct prompt."
           />
-          <LoopBlock id="help-state-spiral" title="State Corruption Spiral"            why="A file was edited (A→B) then reverted (B→A). The agent oscillates because two constraints are mutually exclusive."
+          <LoopBlock id="help-state-spiral" title="State Corruption Spiral"
+            why="A file was edited (A→B) then reverted (B→A). The agent oscillates because two constraints are mutually exclusive."
             example="The agent added a null check (fixing one test), removed it (breaking another), then added it back — cycling."
             steps={`<li>Clarify success criteria with explicit priority ordering.</li><li>Provide the exact final file state if possible.</li><li>Check if tests assert contradictory behavior.</li><li>Use the Files tab to spot A→B→A patterns.</li>`}
             impact="Resolving the conflict takes 2–3 focused turns vs. 20–40 oscillating turns."
           />
-          <LoopBlock id="help-hallucination" title="Hallucination Amplification Loop"            why="The same error appeared 3+ times. The agent's fix attempts fail because the root cause is something the model invented — a nonexistent package, wrong function name, or outdated API."
+          <LoopBlock id="help-hallucination" title="Hallucination Amplification Loop"
+            why="The same error appeared 3+ times. The agent's fix attempts fail because the root cause is something the model invented — a nonexistent package, wrong function name, or outdated API."
             example={`A <code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">ModuleNotFoundError</code> appeared five times as the agent tried different import paths for a package not installed.`}
             steps={`<li>Stop and verify the root cause yourself.</li><li>Tell the agent explicitly what exists.</li><li>Paste actual API responses or function signatures.</li><li>After 2 failures, resolve the underlying issue before re-prompting.</li>`}
             impact="Intervening after 2 recurrences instead of 6 saves ~120,000 tokens in a 30K-token session."
           />
-          <LoopBlock id="help-runaway-steps" title="Ambiguous Success / Escalating Scope"            why="The session consumed far more LLM calls than expected. The prompt has no stopping condition, uses open-ended phrasing, or the agent expands scope on its own."
+          <LoopBlock id="help-runaway-steps" title="Ambiguous Success / Escalating Scope"
+            why="The session consumed far more LLM calls than expected. The prompt has no stopping condition, uses open-ended phrasing, or the agent expands scope on its own."
             example={`"Fix the login bug" accumulated 90+ steps — the agent then noticed unrelated issues and updated 3 extra files.`}
             steps={`<li>Add explicit stopping conditions.</li><li>Avoid open-ended phrasing — name specific functions and files.</li><li>Specify scope: <em>"Only change files in src/auth/"</em>.</li><li>Monitor the context growth chart for steep rises.</li>`}
             impact="A 5-step prompt vs. a 90-step session saves 85 tool calls — a 5–20x token reduction."
           />
-          <LoopBlock id="help-context-accumulation" title="Infinite Loop — Context Accumulation"            why={`<a href="#gl-input-tokens">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`}
+          <LoopBlock id="help-context-accumulation" title="Infinite Loop — Context Accumulation"
+            why={`<a href="#gl-input-tokens">Input tokens</a> grew by 30,000+ across 4+ calls while <a href="#gl-output-ratio">output-to-input ratio</a> collapsed by 70%+. The agent is consuming context while producing less output.`}
             example="First call: 8K in → 600 out (7.5%). Last call: 65K in → 80 out (0.12%). Five turns reading the same files without edits."
             steps={`<li>Stop immediately — cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Traces tab to review what was accomplished.</li>`}
             impact="Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."
           />
         </div>
-
-        <p style="margin-top:16px;font-size:12px;color:var(--muted)">Loop signals appear first in the Insights list, sorted by severity. Use the <strong>Loops</strong> filter pill to view only malfunction signals. Use <strong>Ignore</strong> to dismiss a signal if it was intentional behavior.</p>
+        <p style="margin-top:16px;font-size:12px;color:var(--muted)">Loop signals appear in the Insights panel inside the <strong>Overview</strong> sub-tab of each session, sorted by severity. Use the <strong>Loops</strong> filter pill to view only malfunction signals. Use <strong>Ignore</strong> to dismiss a signal if it was intentional behavior.</p>
       </div>
     </div>
   )
 }
 
-function ViewsSection() {
+function AnalyticsSection() {
   return (
-    <div class="help-section" id="help-views">
-      <h3 class="help-heading">{HELP_SECTIONS.views.heading}</h3>
-      <div class="glossary">
-        {VIEWS.map(([name, desc]) => (
-          <div class="glossary-item">
-            <dt class="glossary-term">{name}</dt>
-            <dd class="glossary-def">{desc}</dd>
+    <div class="help-section" id="help-analytics">
+      <h3 class="help-heading">{HELP_SECTIONS.analytics.heading}</h3>
+      <div class="help-overview-body">
+        <p>The Analytics tab shows aggregate charts and metrics across all sessions in the active time range. Use the Source filter to limit to OTEL-traced sessions or log-ingested sessions, and the time range picker to zoom into a specific window. The Reset button restores all filters to defaults.</p>
+        <div class="glossary">
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Agent Breakdown</dt>
+            <dd class="glossary-def" style="display:block">One card per agent showing total input tokens, output tokens, cache hit rate, estimated cost, and top tools used — all scoped to the active time range and source filter.</dd>
           </div>
-        ))}
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Estimated Cost</dt>
+            <dd class="glossary-def" style="display:block">A bar chart of daily spend with a green total-per-day overlay line and inline date labels at day boundaries. Below the chart: a day-grouped cost table (date → agent → model) and a model breakdown table. The <strong>↓ CSV</strong> button exports the cost data.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Token Usage Per Session</dt>
+            <dd class="glossary-def" style="display:block">Slim horizontal bars, one per session, ordered oldest to newest. Each bar is colored by agent. Useful for spotting runaway sessions at a glance.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Context Growth</dt>
+            <dd class="glossary-def" style="display:block">Input token accumulation across LLM turns within each session, overlaid for all sessions in the active range. A steep upward slope indicates rapid context growth; a flat line means the agent is working efficiently. Click any line to highlight that session.</dd>
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
-function GlossarySection() {
+function AlertsSection() {
   return (
-    <div class="help-section" id="help-glossary">
-      <h3 class="help-heading">{HELP_SECTIONS.glossary.heading}</h3>
-      <div class="glossary">
-        {TERMS.map(([term, def]) => (
-          <div class="glossary-item" id={termId(term)} style="scroll-margin-top:44px">
-            <dt class="glossary-term">{term}</dt>
-            <dd class="glossary-def">{def}</dd>
+    <div class="help-section" id="help-alerts">
+      <h3 class="help-heading">{HELP_SECTIONS.alerts.heading}</h3>
+      <div class="help-overview-body">
+        <p>The Alerts tab lets you configure thresholds for six signals. When a live session crosses a threshold, an alert fires and the tab badge increments. Alerts clear automatically when the session ends or you dismiss them.</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Two alerts use shared token-count thresholds; the other four use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently.</p>
+        <div class="glossary">
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term">Context Window Filling Up <span style="font-size:10px;font-weight:400;color:var(--muted)">(warning)</span></dt>
+            <dd class="glossary-def" style="display:block">Fires when peak input tokens for a session reaches the per-agent threshold. Defaults: Claude Code 170K, Copilot 108K, Codex 340K. Adjust per agent or raise the shared baseline.</dd>
           </div>
-        ))}
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term">Too Many Turns Per Session <span style="font-size:10px;font-weight:400;color:var(--muted)">(warning)</span></dt>
+            <dd class="glossary-def" style="display:block">Fires when the LLM turn count reaches the per-agent threshold. High turn counts often indicate scope creep or a task that should be split. Default: 200 turns (adjustable per agent).</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term">Error Spike <span style="font-size:10px;font-weight:400;color:var(--muted)">(error)</span></dt>
+            <dd class="glossary-def" style="display:block">Fires when the error count in a session reaches the per-agent threshold. A spike usually means the agent is stuck in a failure loop. Default: 5 errors (adjustable per agent).</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term">Long Active Session <span style="font-size:10px;font-weight:400;color:var(--muted)">(info)</span></dt>
+            <dd class="glossary-def" style="display:block">Fires when active LLM/tool compute time exceeds the per-agent threshold. Idle time (waiting for you to respond) does not count. Default: 60 minutes (adjustable per agent).</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term">Zero Cache Utilization <span style="font-size:10px;font-weight:400;color:var(--muted)">(info)</span></dt>
+            <dd class="glossary-def" style="display:block">Fires when a session above the token gate has 0% cache hit rate. A large uncached session is paying full price for every token. The gate prevents noise from small sessions. Default gate: 30K tokens (shared, adjustable).</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term">Identical Tool Repeat <span style="font-size:10px;font-weight:400;color:var(--muted)">(warning)</span></dt>
+            <dd class="glossary-def" style="display:block">Fires when the same tool with identical arguments repeats beyond the per-agent threshold without a file change between repeats — a strong deadlock signal. Default: 5 repeats (adjustable per agent).</dd>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AutomationSection() {
+  return (
+    <div class="help-section" id="help-automation">
+      <h3 class="help-heading">{HELP_SECTIONS.automation.heading}</h3>
+      <div class="help-overview-body">
+        <p>The Automation tab configures prompts that are sent automatically to the agent when a session crosses a threshold — without you having to intervene manually. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex.</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">In the VS Code extension, automations surface as a notification or open the agent chat directly. In local (npx) mode, they write the prompt to a file-based relay that the agent reads.</p>
+        <div class="glossary">
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Context Dump</dt>
+            <dd class="glossary-def" style="display:block">Fires when a session's peak input tokens reaches the configured threshold. Sends a prompt asking the agent to summarize its context and compact before continuing. Helps avoid context-window overflows and keeps token cost in check. Default: 140K tokens.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Loop Breaker</dt>
+            <dd class="glossary-def" style="display:block">Fires when the same tool with identical arguments repeats beyond the threshold without a file change between repeats. Sends a prompt instructing the agent to stop and choose a different approach. A hard-stop backstop fires at 8 repeats regardless of configuration. Default: 3 repeats.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Turn Limit Wrap-up</dt>
+            <dd class="glossary-def" style="display:block">Fires when a session reaches the agent-specific turn threshold. Sends a prompt asking the agent to summarize progress, merge check-in details, and work toward a clean stopping point before hitting the model's hard turn limit. Default: 120 turns.</dd>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ExportSection() {
+  return (
+    <div class="help-section" id="help-export">
+      <h3 class="help-heading">{HELP_SECTIONS.export.heading}</h3>
+      <div class="help-overview-body">
+        <p>The Export tab lets you download all recorded sessions as a JSON file. Exports draw from the full session history in the database, not just the active time-range window.</p>
+        <div class="glossary">
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Full export</dt>
+            <dd class="glossary-def" style="display:block">Includes all session data — prompt text, tool arguments, tool results, and file diff content. Use this for personal analysis or sharing with yourself across machines.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Redacted export</dt>
+            <dd class="glossary-def" style="display:block">Prompt text is removed; all other fields (tokens, cost, timing, tool names, file paths, span structure) are retained. Use this when sharing data for debugging or support without exposing conversation content.</dd>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:12px">Raw OTEL span export for session replay is planned but not yet available.</p>
       </div>
     </div>
   )
@@ -558,6 +638,22 @@ function BadgesSection() {
   )
 }
 
+function GlossarySection() {
+  return (
+    <div class="help-section" id="help-glossary">
+      <h3 class="help-heading">{HELP_SECTIONS.glossary.heading}</h3>
+      <div class="glossary">
+        {TERMS.map(([term, def]) => (
+          <div class="glossary-item" id={'gl-' + term.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')} style="scroll-margin-top:44px">
+            <dt class="glossary-term">{term}</dt>
+            <dd class="glossary-def">{def}</dd>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export function Help() {
@@ -567,9 +663,11 @@ export function Help() {
       <OverviewSection />
       <ConfigSection />
       <AgentOtelSection />
-      <InsightsSection />
-      <LoopsSection />
-      <ViewsSection />
+      <SessionsSection />
+      <AnalyticsSection />
+      <AlertsSection />
+      <AutomationSection />
+      <ExportSection />
       <BadgesSection />
       <GlossarySection />
       <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">

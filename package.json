@@ -1,7 +1,7 @@
 {
   "name": "agentlens-dashboard",
   "displayName": "AgentLens - AI Agent Observability",
-  "description": "Observability for AI agent sessions in VS Code",
+  "description": "Observability for AI agent sessions — OTEL traces and local log file ingestion. VS Code extension, npx, and Docker.",
   "version": "0.4.0",
   "publisher": "agentlens",
   "license": "MIT",
@@ -102,7 +102,7 @@
           {
             "id": "agentlens.autoConfig",
             "title": "Agents Are Ready",
-            "description": "AgentLens automatically configured your agents to send telemetry to the local collector. Restart any running sessions to start collecting traces.",
+            "description": "AgentLens automatically configured your agents to send telemetry to the local collector. Restart any running sessions to start collecting traces. Past session history is already loading from local log files — no restart needed to see it.",
             "media": {
               "markdown": "walkthrough/agents.md"
             }
