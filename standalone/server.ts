@@ -78,28 +78,43 @@ function runLogScan() {
   if (changed) pushUpdate()
 }
 
+// Debounced scan triggered by fs.watch events — fires 300 ms after the last event.
+let watchScanTimer: ReturnType<typeof setTimeout> | null = null
+function scheduleWatchScan() {
+  if (watchScanTimer) return
+  watchScanTimer = setTimeout(() => { watchScanTimer = null; runLogScan() }, 300)
+}
+
+function setupLogWatcher() {
+  for (const dir of logReader.getWatchDirs()) {
+    try {
+      fs.watch(dir, { recursive: true, persistent: false }, scheduleWatchScan)
+    } catch { /* dir may not exist yet — poll will cover it */ }
+  }
+}
+
 function startLogIngestion() {
-  const BATCH_SIZE = 10
+  // Register the poll first so it always runs, even if no files exist yet at startup.
+  setInterval(runLogScan, 5_000)
+  // Watch log directories for file-system events so updates appear immediately,
+  // without waiting for the next poll interval.
+  setupLogWatcher()
+  console.log('[AgentLens] Log ingestion enabled — scanning local session files')
+
   let files: ReturnType<typeof logReader.collectFileMeta>
   try { files = logReader.collectFileMeta() } catch { return }
   if (files.length === 0) return
 
-  const processBatch = (startIdx: number) => {
-    let changed = false
-    for (let i = startIdx; i < Math.min(startIdx + BATCH_SIZE, files.length); i++) {
-      try {
-        const result = logReader.parseFile(files[i].filePath, files[i].agentKey)
-        if (result) { logSessions.set(result.card.sessionId, result.card); changed = true }
-      } catch { /* skip bad file */ }
-    }
-    if (changed) pushUpdate()
-    const next = startIdx + BATCH_SIZE
-    if (next < files.length) setImmediate(() => processBatch(next))
+  // Run the initial batch synchronously so logSessions is populated before the
+  // browser's first HTTP request. The setImmediate approach deferred this past
+  // the first page load, causing a blank screen on startup.
+  for (const file of files) {
+    try {
+      const result = logReader.parseFile(file.filePath, file.agentKey)
+      if (result) logSessions.set(result.card.sessionId, result.card)
+    } catch { /* skip bad file */ }
   }
-
-  setImmediate(() => processBatch(0))
-  setInterval(runLogScan, 30_000)
-  console.log('[AgentLens] Log ingestion enabled — scanning local session files')
+  console.log(`[AgentLens] Loaded ${logSessions.size} sessions from local logs`)
 }
 
 // ── OTLP parsing ──────────────────────────────────────────────────────────────
@@ -407,21 +422,25 @@ function computeAnalyticsData(sessions: ReturnType<typeof summarizeSpans>['sessi
   return { dailyStats, lifetimeStats }
 }
 
-function buildUpdatePayload(): string {
-  let sessionSummary: ReturnType<typeof summarizeSpans> | null = null
-  try { sessionSummary = summarizeSpans(spans) } catch (e) { console.warn('[AgentLens] summarizeSpans error:', e) }
+function buildSessionSummary(): ReturnType<typeof summarizeSpans> | null {
+  let summary: ReturnType<typeof summarizeSpans> | null = null
+  try { summary = summarizeSpans(spans) } catch (e) { console.warn('[AgentLens] summarizeSpans error:', e) }
 
-  // Merge log sessions with OTEL-derived sessions; OTEL wins on ID collision.
+  // Merge log-sourced sessions; OTEL wins on ID collision.
   if (logSessions.size > 0) {
-    const otelIds = new Set((sessionSummary?.sessions ?? []).map(s => s.sessionId))
+    const otelIds = new Set((summary?.sessions ?? []).map(s => s.sessionId))
     const logOnly = [...logSessions.values()].filter(s => !otelIds.has(s.sessionId))
     if (logOnly.length > 0) {
-      const merged = [...logOnly, ...(sessionSummary?.sessions ?? [])]
+      const merged = [...logOnly, ...(summary?.sessions ?? [])]
         .sort((a, b) => Date.parse(b.startTime || '0') - Date.parse(a.startTime || '0'))
-      sessionSummary = { ...(sessionSummary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }), sessions: merged }
+      summary = { ...(summary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }), sessions: merged }
     }
   }
+  return summary
+}
 
+function buildUpdatePayload(): string {
+  const sessionSummary = buildSessionSummary()
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : null
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : null
   const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null
@@ -441,8 +460,7 @@ function pushUpdate() {
 // ── Dashboard HTML ────────────────────────────────────────────────────────────
 
 function getHtml(): string {
-  let sessionSummary: ReturnType<typeof summarizeSpans> | null = null
-  try { sessionSummary = summarizeSpans(spans) } catch { /* ignore */ }
+  const sessionSummary = buildSessionSummary()
   const sessionSummaryJson = safeJson(sessionSummary)
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : {
     isActive: false, lastActivityMs: 0, sessionCount: 0, agentSources: [], currentSession: null, burnRate: null,
@@ -951,19 +969,19 @@ const otlpServer = http.createServer((req, res) => {
       const kind = classifyOtlpPayload(payload)
       if (req.url === '/v1/traces' || kind === 'traces') {
         const n = processTraces(payload, req.url ?? '/v1/traces')
-        if (n > 0) console.log(`[OTLP] ${n} span${n !== 1 ? 's' : ''} ingested (${spans.length} total)`)
+        if (n > 0) console.log(`[AgentLens] ${n} span${n !== 1 ? 's' : ''} ingested (${spans.length} total)`)
       } else if (req.url === '/v1/logs' || kind === 'logs') {
         const n = processLogs(payload, req.url ?? '/v1/logs')
-        if (n > 0) console.log(`[OTLP] ${n} log event${n !== 1 ? 's' : ''} ingested`)
+        if (n > 0) console.log(`[AgentLens] ${n} log event${n !== 1 ? 's' : ''} ingested`)
       } else if (kind === 'metrics' || req.url === '/v1/metrics') {
         // Metrics are accepted so OTLP exporters do not retry, but AgentLens does not display them.
       } else {
-        console.warn(`[OTLP] ignored POST ${req.url ?? '/'}: unrecognized OTLP JSON payload`)
+        console.warn(`[AgentLens] ignored POST ${req.url ?? '/'}: unrecognized OTLP JSON payload`)
       }
       pushUpdate()
       scheduleSave()
     } catch (e) {
-      console.error('[OTLP] Parse error:', e)
+      console.error('[AgentLens] Parse error:', e)
     }
     res.writeHead(200); res.end()
   })

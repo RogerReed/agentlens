@@ -660,6 +660,7 @@ function buildCopilotSessions(invokeAgentSpans, childrenOf) {
       traceId: agent.traceId || "",
       source: "copilot",
       dataSource: "otel",
+      initiator: "agent",
       conversationId: conversationId || void 0,
       userRequest: userReq,
       model,
@@ -1044,6 +1045,7 @@ function buildClaudeSessions(claudeInteractionSpans, spansByTraceId) {
       traceId: interaction.traceId || "",
       source: "claude_code",
       dataSource: "otel",
+      initiator: interaction.parentSpanId || getAttrStr(interaction, "is_sidechain") === "true" ? "agent" : "user",
       userRequest,
       model,
       turns: totalLlmCalls,
@@ -2035,10 +2037,20 @@ var LogReader = class {
         return null;
     }
   }
+  /** Returns all directories that should be watched for file changes. */
+  getWatchDirs() {
+    return [
+      ...claudeProjectsDirs(),
+      ...codexSessionsDirs(),
+      ...(() => {
+        const d = copilotSessionStateDir();
+        return d ? [d] : [];
+      })()
+    ];
+  }
   /**
    * Scans all log directories and returns new/updated session results.
-   * Only files that are new or have grown are re-parsed (incremental).
-   * Used for the periodic 30-second poll after the initial load completes.
+   * Files that are new or have changed since the last scan are re-parsed.
    */
   scan() {
     return [
@@ -2074,6 +2086,7 @@ var LogReader = class {
     const toolCounts = {};
     const timeline = [];
     let idx = 0;
+    let initiator = "user";
     for (const line of lines) {
       let entry;
       try {
@@ -2088,9 +2101,15 @@ var LogReader = class {
       }
       if (entry["cwd"] && !workspace) workspace = entry["cwd"];
       if (entry["type"] === "user") {
+        if (!userRequest) {
+          if (entry["isSidechain"] === true) initiator = "agent";
+        }
         const content = entry["message"]?.["content"];
         const text = _extractTextContent(content);
-        if (!userRequest && text) userRequest = text;
+        if (!userRequest && text) {
+          userRequest = text;
+          if (initiator === "user" && text.startsWith("<local-command-caveat>")) initiator = "api";
+        }
         timeline.push({ type: "user_input", spanId: `log-u-${idx}`, label: "User", durationMs: 0, isError: false, timestamp: ts ?? "", responseText: text });
         idx++;
       }
@@ -2127,7 +2146,7 @@ var LogReader = class {
       }
     }
     if (!firstTimestamp) return null;
-    return { workspace, card: _buildCard(sessionId, "claude_code", model || "claude", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: /* @__PURE__ */ new Set(), userRequest, timeline }) };
+    return { workspace, card: _buildCard(sessionId, "claude_code", model || "claude", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: /* @__PURE__ */ new Set(), userRequest, timeline, initiator }) };
   }
   // ── Codex ───────────────────────────────────────────────────────────────────
   _scanCodex() {
@@ -2184,7 +2203,7 @@ var LogReader = class {
     if (!firstTimestamp) return null;
     return {
       workspace,
-      card: _buildCard(sessionId, "codex", model || "codex", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: /* @__PURE__ */ new Set(), filesChanged: /* @__PURE__ */ new Set(), filesSearched: /* @__PURE__ */ new Set(), userRequest: "", timeline: [] })
+      card: _buildCard(sessionId, "codex", model || "codex", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: /* @__PURE__ */ new Set(), filesChanged: /* @__PURE__ */ new Set(), filesSearched: /* @__PURE__ */ new Set(), userRequest: "", timeline: [], initiator: "user" })
     };
   }
   // ── Copilot CLI ──────────────────────────────────────────────────────────────
@@ -2292,7 +2311,8 @@ var LogReader = class {
         filesChanged,
         filesSearched: /* @__PURE__ */ new Set(),
         userRequest: userRequest.slice(0, 500),
-        timeline: []
+        timeline: [],
+        initiator: "user"
       })
     };
   }
@@ -2316,18 +2336,9 @@ var LogReader = class {
       const stat = fs2.statSync(filePath);
       const prev = this.fileState.get(filePath);
       if (prev && stat.mtimeMs === prev.mtimeMs && stat.size === prev.bytesRead) return null;
-      const startByte = prev?.bytesRead ?? 0;
-      const len = stat.size - startByte;
-      if (len <= 0) {
-        this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs });
-        return null;
-      }
-      const fd = fs2.openSync(filePath, "r");
-      const buf = Buffer.alloc(len);
-      fs2.readSync(fd, buf, 0, len, startByte);
-      fs2.closeSync(fd);
+      const content = fs2.readFileSync(filePath, "utf-8");
       this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs });
-      return buf.toString("utf8").split("\n").filter((l) => l.trim());
+      return content.split("\n").filter((l) => l.trim());
     } catch (err) {
       this.log(`[LogReader] read error ${filePath}: ${err}`);
       return null;
@@ -2349,16 +2360,18 @@ function _buildCard(sessionId, source, model, firstTimestamp, lastTimestamp, acc
   const startMs = _parseTs(firstTimestamp);
   const endMs = _parseTs(lastTimestamp);
   const durationMs = endMs > 0 && startMs > 0 ? Math.max(0, endMs - startMs) : 0;
-  const cacheHitRate = acc.totalInput > 0 ? acc.totalCacheRead / acc.totalInput : 0;
+  const totalContext = acc.totalInput + acc.totalCacheRead + acc.totalCacheCreate;
+  const cacheHitRate = totalContext > 0 ? acc.totalCacheRead / totalContext : 0;
   return {
     sessionId,
     traceId: sessionId,
     source,
     dataSource: "log",
+    initiator: acc.initiator,
     userRequest: acc.userRequest.slice(0, 500),
     model,
     turns: acc.turns,
-    inputTokens: acc.totalInput,
+    inputTokens: totalContext,
     outputTokens: acc.totalOutput,
     cacheReadTokens: acc.totalCacheRead,
     cacheCreateTokens: acc.totalCacheCreate,
@@ -2464,8 +2477,26 @@ function runLogScan() {
   }
   if (changed) pushUpdate();
 }
+var watchScanTimer = null;
+function scheduleWatchScan() {
+  if (watchScanTimer) return;
+  watchScanTimer = setTimeout(() => {
+    watchScanTimer = null;
+    runLogScan();
+  }, 300);
+}
+function setupLogWatcher() {
+  for (const dir of logReader.getWatchDirs()) {
+    try {
+      fs3.watch(dir, { recursive: true, persistent: false }, scheduleWatchScan);
+    } catch {
+    }
+  }
+}
 function startLogIngestion() {
-  const BATCH_SIZE = 10;
+  setInterval(runLogScan, 5e3);
+  setupLogWatcher();
+  console.log("[AgentLens] Log ingestion enabled \u2014 scanning local session files");
   let files;
   try {
     files = logReader.collectFileMeta();
@@ -2473,25 +2504,14 @@ function startLogIngestion() {
     return;
   }
   if (files.length === 0) return;
-  const processBatch = (startIdx) => {
-    let changed = false;
-    for (let i = startIdx; i < Math.min(startIdx + BATCH_SIZE, files.length); i++) {
-      try {
-        const result = logReader.parseFile(files[i].filePath, files[i].agentKey);
-        if (result) {
-          logSessions.set(result.card.sessionId, result.card);
-          changed = true;
-        }
-      } catch {
-      }
+  for (const file of files) {
+    try {
+      const result = logReader.parseFile(file.filePath, file.agentKey);
+      if (result) logSessions.set(result.card.sessionId, result.card);
+    } catch {
     }
-    if (changed) pushUpdate();
-    const next = startIdx + BATCH_SIZE;
-    if (next < files.length) setImmediate(() => processBatch(next));
-  };
-  setImmediate(() => processBatch(0));
-  setInterval(runLogScan, 3e4);
-  console.log("[AgentLens] Log ingestion enabled \u2014 scanning local session files");
+  }
+  console.log(`[AgentLens] Loaded ${logSessions.size} sessions from local logs`);
 }
 function toAttrs(raw) {
   if (!Array.isArray(raw)) return [];
@@ -2742,21 +2762,25 @@ function computeAnalyticsData(sessions) {
   };
   return { dailyStats, lifetimeStats };
 }
-function buildUpdatePayload() {
-  let sessionSummary = null;
+function buildSessionSummary() {
+  let summary = null;
   try {
-    sessionSummary = summarizeSpans(spans);
+    summary = summarizeSpans(spans);
   } catch (e) {
     console.warn("[AgentLens] summarizeSpans error:", e);
   }
   if (logSessions.size > 0) {
-    const otelIds = new Set((sessionSummary?.sessions ?? []).map((s) => s.sessionId));
+    const otelIds = new Set((summary?.sessions ?? []).map((s) => s.sessionId));
     const logOnly = [...logSessions.values()].filter((s) => !otelIds.has(s.sessionId));
     if (logOnly.length > 0) {
-      const merged = [...logOnly, ...sessionSummary?.sessions ?? []].sort((a, b) => Date.parse(b.startTime || "0") - Date.parse(a.startTime || "0"));
-      sessionSummary = { ...sessionSummary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }, sessions: merged };
+      const merged = [...logOnly, ...summary?.sessions ?? []].sort((a, b) => Date.parse(b.startTime || "0") - Date.parse(a.startTime || "0"));
+      summary = { ...summary ?? { backgroundSpans: [], efficiency: { totalInputTokens: 0, totalOutputTokens: 0, totalLlmCalls: 0, avgInputPerCall: 0, avgTtft: 0, cacheHitRate: 0, toolDefWaste: 0, sysInstructionWaste: 0, topTokenConsumers: [] } }, sessions: merged };
     }
   }
+  return summary;
+}
+function buildUpdatePayload() {
+  const sessionSummary = buildSessionSummary();
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : null;
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : null;
   const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null;
@@ -2784,11 +2808,7 @@ function pushUpdate() {
   });
 }
 function getHtml() {
-  let sessionSummary = null;
-  try {
-    sessionSummary = summarizeSpans(spans);
-  } catch {
-  }
+  const sessionSummary = buildSessionSummary();
   const sessionSummaryJson = safeJson(sessionSummary);
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : {
     isActive: false,
@@ -3318,18 +3338,18 @@ var otlpServer = http.createServer((req, res) => {
       const kind = classifyOtlpPayload(payload);
       if (req.url === "/v1/traces" || kind === "traces") {
         const n = processTraces(payload, req.url ?? "/v1/traces");
-        if (n > 0) console.log(`[OTLP] ${n} span${n !== 1 ? "s" : ""} ingested (${spans.length} total)`);
+        if (n > 0) console.log(`[AgentLens] ${n} span${n !== 1 ? "s" : ""} ingested (${spans.length} total)`);
       } else if (req.url === "/v1/logs" || kind === "logs") {
         const n = processLogs(payload, req.url ?? "/v1/logs");
-        if (n > 0) console.log(`[OTLP] ${n} log event${n !== 1 ? "s" : ""} ingested`);
+        if (n > 0) console.log(`[AgentLens] ${n} log event${n !== 1 ? "s" : ""} ingested`);
       } else if (kind === "metrics" || req.url === "/v1/metrics") {
       } else {
-        console.warn(`[OTLP] ignored POST ${req.url ?? "/"}: unrecognized OTLP JSON payload`);
+        console.warn(`[AgentLens] ignored POST ${req.url ?? "/"}: unrecognized OTLP JSON payload`);
       }
       pushUpdate();
       scheduleSave();
     } catch (e) {
-      console.error("[OTLP] Parse error:", e);
+      console.error("[AgentLens] Parse error:", e);
     }
     res.writeHead(200);
     res.end();

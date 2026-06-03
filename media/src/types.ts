@@ -52,6 +52,7 @@ export interface SessionSummaryCard {
   traceId: string
   source: 'copilot' | 'claude_code' | 'codex'
   dataSource: 'otel' | 'log'
+  initiator?: 'user' | 'agent' | 'api'
   conversationId?: string
   userRequest: string
   model: string
@@ -179,6 +180,8 @@ export interface SearchQuery {
 }
 
 export type AgentFilter = 'all' | 'copilot' | 'claude_code' | 'codex'
+export type InitiatorFilter = 'all' | 'user' | 'agent' | 'api'
+export type DataSourceFilter = 'all' | 'otel' | 'log'
 export type InsightFilter = 'all' | 'loop' | 'efficiency'
 
 export interface VsCodeApi {
