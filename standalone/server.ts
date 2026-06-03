@@ -635,7 +635,7 @@ function getHtml(): string {
         setState: function() {},
         postMessage: function(msg) {
           if (msg.type === 'confirmClear') {
-            if (confirm('Clear all AgentLens session data? This cannot be undone.')) {
+            if (confirm('Clear all AgentLens data? OTEL session data is deleted permanently. AgentLens log cache is cleared and will be rebuilt from your local agent log files (the log files themselves are not deleted).')) {
               fetch('/api/clear', { method: 'POST' });
               window.dispatchEvent(new MessageEvent('message', { data: { type: 'clearAll' } }));
             }
@@ -886,9 +886,13 @@ const uiServer = http.createServer((req, res) => {
 
   if (req.method === 'POST' && url === '/api/clear') {
     spans = []
+    logSessions.clear()
+    logReader.clearFileState()
     try { fs.writeFileSync(DATA_FILE, '[]') } catch (e) { console.warn('[AgentLens] Could not clear data file:', e) }
-    pushUpdate()
+    pushUpdate()          // send cleared state to clients immediately
     res.writeHead(200); res.end()
+    // Re-ingest after the response is sent so the client sees the cleared state first.
+    setImmediate(() => runLogScan())
     return
   }
 

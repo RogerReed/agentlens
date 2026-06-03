@@ -47,18 +47,15 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
         }, 300)
       } else if (msg.type === 'confirmClear') {
         const answer = await vscode.window.showWarningMessage(
-          'Clear all AgentLens session data? This cannot be undone.',
+          'Clear all AgentLens data? OTEL session data is deleted permanently. AgentLens log cache is cleared and will be rebuilt from your local agent log files (the log files themselves are not deleted).',
           { modal: true },
           'Clear All'
         )
         if (answer === 'Clear All') {
-          vscode.commands.executeCommand('agentLens.clearSessions')
           this.cachedTimelineSessionId = null
           this.cachedTimelineTurns = 0
           this.cachedTurnInputTokens = []
-          this.refresh()
-          const { DashboardPanel } = require('./dashboardPanel')
-          DashboardPanel.sendClearAll()
+          vscode.commands.executeCommand('agentLens.clearSessions')
         }
       }
     })

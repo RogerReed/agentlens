@@ -99,6 +99,32 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
 
         {section === 'overview' && (
           <div>
+            {sess.dataSource === 'log' && (() => {
+              const isCopilot = sess.source === 'copilot'
+              // Pre-~Feb 2026 Copilot Chat sessions (.json snapshot format): VS Code did not
+              // record token counts at all — outputTokens=0 with turns>0 is the fingerprint.
+              if (isCopilot && sess.outputTokens === 0 && sess.turns > 0) {
+                return (
+                  <div style="margin-bottom:10px;padding:7px 10px;border-radius:4px;border-left:3px solid var(--vscode-editorWarning-foreground,#cca700);background:var(--hover);font-size:11px;color:var(--muted);line-height:1.5">
+                    <span style="color:var(--vscode-editorWarning-foreground,#cca700);font-weight:600">Log-only session — no token data</span>
+                    {' — '}
+                    VS Code Copilot Chat did not record token counts in this era. Token counts and cost estimates are unavailable and cannot be recovered.
+                  </div>
+                )
+              }
+              const missingTokens = isCopilot && sess.inputTokens === 0
+              const parts: string[] = ['traces & TTFT']
+              if (missingTokens) parts.push('input tokens & cache stats')
+              if (isCopilot) parts.push('tool details')
+              return (
+                <div style="margin-bottom:10px;padding:7px 10px;border-radius:4px;border-left:3px solid var(--vscode-editorWarning-foreground,#cca700);background:var(--hover);font-size:11px;color:var(--muted);line-height:1.5">
+                  <span style="color:var(--vscode-editorWarning-foreground,#cca700);font-weight:600">Log-only session</span>
+                  {' — '}
+                  {parts.join(', ')} not available from local logs. Enable OTEL ingestion via the Help tab for full telemetry.
+                </div>
+              )
+            })()}
+
             {sess.userRequest
               ? <PromptBlock text={sess.userRequest} />
               : sess.turns === 0

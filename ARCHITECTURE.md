@@ -36,6 +36,8 @@ graph TB
         CL_LOGS["~/.claude/projects/**/*.jsonl"]
         CX_LOGS["~/.codex/sessions/**/*.jsonl"]
         CP_LOGS["~/.copilot/session-state/**/*.jsonl"]
+        CP_VS["workspaceStorage/<hash>/chatSessions/<uuid>.jsonl<br/>(delta log — newer VS Code Copilot Chat)"]
+        CP_JSON["workspaceStorage/<hash>/chatSessions/<uuid>.json<br/>(snapshot — older VS Code Copilot Chat)"]
     end
 
     subgraph VSCode Extension
@@ -62,7 +64,7 @@ graph TB
     COL -- addSpan --> STO
     STO -- onUpdate → summarize → enqueue --> WRI
 
-    CL_LOGS & CX_LOGS & CP_LOGS --> LR
+    CL_LOGS & CX_LOGS & CP_LOGS & CP_VS & CP_JSON --> LR
     LR -- "enqueue(card)" --> WRI
 
     WRI --> DB
@@ -111,9 +113,17 @@ sequenceDiagram
     end
     alt agentLens.enableLogIngestion = true (default)
         EXT->>LR: new LogReader(log)
-        EXT->>LR: collectFileMeta() → files sorted newest-first
-        loop Batch of 10 files at a time (async, non-blocking)
+        Note over EXT: setImmediate → defer off activation stack
+        EXT->>LR: collectFileMeta() → all session files sorted newest-first
+        Note over EXT: Fast group (.jsonl etc.): batch=10, setTimeout 0ms
+        loop Fast batch
             LR->>LR: parseFile(filePath, agentKey)
+            LR->>WRI: enqueue(card, workspace)
+            WRI->>DB: drain → save
+        end
+        Note over EXT: Slow group (.json snapshots): batch=2, setTimeout 50ms
+        loop Slow batch (after fast group completes)
+            LR->>LR: parseFile(filePath, copilot_vscode_json)
             LR->>WRI: enqueue(card, workspace)
             WRI->>DB: drain → save
         end
@@ -178,17 +188,35 @@ flowchart TD
 
 ## 4. Local Log Ingestion
 
-A parallel, network-free ingestion path that reads JSONL session files written to disk by each agent. Implemented in `src/logReader.ts` (`LogReader` class).
+A parallel, network-free ingestion path that reads session files written to disk by each agent. Implemented in `src/logReader.ts` (`LogReader` class).
 
 ### File locations
 
-| Agent | Default path | Env override |
-| --- | --- | --- |
-| Claude Code | `~/.claude/projects/<project>/<uuid>.jsonl` | `CLAUDE_CONFIG_DIR` (comma-separated config dirs) |
-| Codex | `~/.codex/sessions/<project>/<uuid>.jsonl` | `CODEX_HOME` (comma-separated home dirs) |
-| Copilot CLI | `~/.copilot/session-state/<uuid>/events.jsonl` | — (written automatically, no setup required) |
+| Agent | Format | Default path | Env override |
+| --- | --- | --- | --- |
+| Claude Code | JSONL (append log) | `~/.claude/projects/<project>/<uuid>.jsonl` | `CLAUDE_CONFIG_DIR` (comma-separated config dirs) |
+| Codex | JSONL (append log) | `~/.codex/sessions/<project>/<uuid>.jsonl` | `CODEX_HOME` (comma-separated home dirs) |
+| Copilot CLI | JSONL (event log) | `~/.copilot/session-state/<uuid>/events.jsonl` | — (written automatically) |
+| Copilot Chat (VS Code, newer) | JSONL (delta log) | `workspaceStorage/<hash>/chatSessions/<uuid>.jsonl` | — |
+| Copilot Chat (VS Code, older) | JSON (snapshot) | `workspaceStorage/<hash>/chatSessions/<uuid>.json` | — |
 
-Windows: Claude Code also checks `%APPDATA%\Claude\projects`. Linux/Mac: XDG_CONFIG_HOME is also checked for Claude.
+`workspaceStorage` is at `~/Library/Application Support/Code/User/workspaceStorage` (macOS), `%APPDATA%\Code\User\workspaceStorage` (Windows), or `~/.config/Code/User/workspaceStorage` (Linux). VS Code Insiders uses "Code - Insiders". Windows: Claude Code also checks `%APPDATA%\Claude\projects`. Linux/Mac: `XDG_CONFIG_HOME` is also checked for Claude.
+
+### Copilot Chat — delta log format (`.jsonl`)
+
+VS Code writes one JSONL per session where each line is an operation on the session state object:
+
+| `kind` | Meaning |
+| --- | --- |
+| `0` | Initial session snapshot (`creationDate`, `sessionId`, `inputState.selectedModel`) |
+| `1` | Set — `k` is key path, `v` is new value (e.g. `["requests", N, "completionTokens"]`) |
+| `2` | Push — `k` is key path, `v` is array of items to append |
+
+New turn: `kind=2` with `k=["requests"]` (exactly one element). Response sub-arrays (`k=["requests", N, "response"]`) are ignored. `completionTokens` arrives via kind=1 (streaming final) and optionally embedded in the kind=2 request push object (Format B); kind=1 always wins.
+
+### Copilot Chat — snapshot format (`.json`)
+
+Older VS Code Copilot Chat versions wrote the full session state as a single JSON object. The `requests` array contains all turns with `message.text`, `timestamp`, `modelId`, and tool call data. No token counts are stored. Only collected when no `.jsonl` sibling exists for the same session UUID.
 
 ### Scan mechanics
 
@@ -196,30 +224,40 @@ Windows: Claude Code also checks `%APPDATA%\Claude\projects`. Linux/Mac: XDG_CON
 flowchart TD
     ACT[Extension activate] --> EN{agentLens.enableLogIngestion?}
     EN -- false --> SKIP[Skip log ingestion]
-    EN -- true --> COL[collectFileMeta<br/>Stat all JSONL files → sort newest-first]
-    COL --> BATCH[Process 10 files at a time — async, non-blocking]
-    BATCH --> PF[parseFile filePath agentKey<br/>_readNewLines: read only new bytes since last scan]
-    PF -- card --> WRI[DatabaseWriter.enqueue]
+    EN -- true --> IMM[setImmediate — defer off activation stack]
+    IMM --> COL[collectFileMeta<br/>Stat all session files → sort newest-first<br/>Build jsonlIds Set per chatSessions dir<br/>to skip .json files with .jsonl siblings]
+    COL --> FAST[Fast group — .jsonl + others<br/>batch=10, setTimeout 0 ms between batches]
+    COL --> SLOW[Slow group — .json snapshots avg 1.8 MB<br/>batch=2, setTimeout 50 ms between batches]
+    FAST --> WRI[DatabaseWriter.enqueue]
+    SLOW --> WRI
     WRI --> DB[(SQLite)]
-    BATCH -- next batch --> BATCH
-    BATCH -- all done --> TIMER[setInterval 30s → scan]
+    FAST -- all done --> SIGNAL[writeLastWriteSignal]
+    SLOW -- all done --> SIGNAL
+    SIGNAL --> TIMER[setInterval 30s → scan]
     TIMER --> INC[scan: re-stat all files<br/>parse only files whose mtime or size changed]
     INC -- cards --> WRI
 ```
 
-**Incremental reads:** `_readNewLines` tracks `{ bytesRead, mtimeMs }` per file. On each call it reads only the bytes appended since the last scan (byte-offset seek), so large history files are processed once at startup and cheaply polled thereafter.
+**Incremental reads:** `_readNewLines` / `_readJsonFile` track `{ bytesRead, mtimeMs }` per file in a `Map<string, FileState>`. On each poll only files whose mtime or size has changed are re-parsed — the whole file is re-read each time (not byte-offset) to produce a complete card. `fileState` is not persisted to disk; on extension restart all files are re-scanned once.
+
+**Two-phase startup loading:** the fast group (all non-.json files) runs first and surfaces recent sessions immediately. The slow group (legacy .json snapshots) starts after the fast group finishes, with a 50 ms gap between each 2-file batch to keep the extension host responsive (each ~60 ms parsing window).
 
 ### Data availability
 
-| Field | OTLP | Log files |
-| --- | --- | --- |
-| Session ID, workspace, model | ✓ | ✓ |
-| Token counts (input, output, cache) | ✓ | ✓ |
-| Timestamps, duration | ✓ | ✓ |
-| Tool calls (names, file paths) | ✓ | ✓ (Claude Code, Copilot CLI) |
-| User request text | ✓ | ✓ (Claude Code, Copilot CLI) |
-| TTFT, per-tool timing, streaming speed | ✓ | ✗ |
-| Loop signals | ✓ | ✗ |
+| Field | OTLP | Claude / Codex logs | Copilot CLI log | Copilot Chat JSONL | Copilot Chat JSON |
+| --- | --- | --- | --- | --- | --- |
+| Session ID, workspace | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Model | ✓ | ✓ | ✓ | ✓ (initial model only) | ✓ (first request) |
+| Timestamps, duration | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Input tokens | ✓ | ✓ | ✓ (from `session.shutdown`) | ✗ not stored | ✗ not stored |
+| Output tokens | ✓ | ✓ | ✓ | ✓ (`completionTokens` per turn) | ✗ not stored |
+| Cache read / write tokens | ✓ | ✓ | ✓ (from `session.shutdown`) | ✗ not stored | ✗ not stored |
+| User request text | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Tool calls (names) | ✓ | ✓ | ✓ | ✗ | ✗ (presence only) |
+| File paths from tools | ✓ | ✓ | ✓ | ✗ | ✗ |
+| TTFT, per-tool timing | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Streaming speed, loop signals | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Full turn timeline | ✓ | ✓ | ✗ | ✗ | ✗ |
 
 Sessions produced by `LogReader` carry `dataSource: 'log'` on `SessionSummaryCard`; OTLP sessions carry `dataSource: 'otel'`. The UI shows an OTEL/Log source badge on each session row.
 
@@ -873,7 +911,7 @@ agentlens/
 │   ├── autoConfig.ts             # Copilot VS Code settings
 │   ├── autoConfigNode.ts         # Claude/Codex file-based config
 │   ├── exportData.ts             # JSON export helpers
-│   ├── logReader.ts              # LogReader — local JSONL log ingestion (Claude/Codex/Copilot)
+│   ├── logReader.ts              # LogReader — local log ingestion (Claude/Codex/Copilot CLI/Copilot Chat JSONL+JSON)
 │   ├── loopDetector.ts           # Loop signal detection
 │   ├── types.ts                  # Shared extension-host types
 │   ├── database/

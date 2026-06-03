@@ -15,6 +15,7 @@ export class DatabaseWriter {
   private readonly pending = new Map<string, { card: SessionSummaryCard; workspace: string }>()
   private drainPromise: Promise<void> = Promise.resolve()
   private writing = false
+  private _generation = 0  // incremented by clearAll() to abort in-flight drains
 
   constructor(
     private readonly db: WriteableDb,
@@ -54,6 +55,10 @@ export class DatabaseWriter {
   }
 
   clearAll(): void {
+    // Increment generation so any _drain() currently awaiting _writeOnce() will
+    // see the mismatch and abort before writing further sessions to the DB.
+    this._generation++
+    this.pending.clear()
     try {
       // Delete order respects FK constraints (child tables first).
       // CASCADE would handle it, but explicit order is clearer.
@@ -71,10 +76,13 @@ export class DatabaseWriter {
 
   private async _drain(): Promise<void> {
     this.writing = true
+    const gen = this._generation
     while (this.pending.size > 0) {
+      if (this._generation !== gen) break  // clearAll() was called — abort
       const batch = [...this.pending.entries()]
       this.pending.clear()
       for (const [, { card, workspace }] of batch) {
+        if (this._generation !== gen) break  // abort between writes too
         await this._writeOnce(card, workspace).catch(err => {
           this.log(`DatabaseWriter write error for session ${card.sessionId}: ${err}`)
         })
