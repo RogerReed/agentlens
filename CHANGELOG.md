@@ -2,6 +2,15 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.4.1] — 2026-06-03
+
+### Docs
+
+- **Help tab restructured** — dedicated sections for Sessions, Analytics, Alerts, Automation, and Export now mirror the app's tab layout; Insights and Loop Detection moved from standalone top-level sections into the Sessions section where they live in the app; Sessions section now clearly documents the five sub-tabs (Overview, Trace, Flow, Tools, Files) including that Insights lives inside Overview
+- **Log file ingestion mentioned in descriptions** — Help Overview paragraph, VS Code extension description, and walkthrough "Agents Are Ready" step now surface log file ingestion as a zero-config data source alongside OTEL traces
+
+---
+
 ## [0.4.0] — 2026-06-02
 
 ### Added
