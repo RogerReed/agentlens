@@ -3375,11 +3375,8 @@ function getHtml() {
             fetch('/api/clear', { method: 'POST' });
           } else if (msg.type === 'automation' && msg.prompt) {
             // Build full prompt matching VS Code format: [label] + session ID + body
-            var sessionLine = msg.sessionId ? 'Session ID: ' + msg.sessionId + '
-' : '';
-            var autoFull = '[' + (msg.label || 'Automation') + ']
-
-' + sessionLine + msg.prompt;
+            var sessionLine = msg.sessionId ? 'Session ID: ' + msg.sessionId + '\\n' : '';
+            var autoFull = '[' + (msg.label || 'Automation') + ']\\n\\n' + sessionLine + msg.prompt;
             var autoPreview = msg.prompt.length > 160 ? msg.prompt.slice(0, 160) + '\u2026' : msg.prompt;
             var autoLabel = 'Automation: ' + (msg.label || 'Automation');
             if (msg.writePromptsFile) {
@@ -3440,8 +3437,7 @@ function getHtml() {
               "An alert was triggered in my AI coding session. Please explain what's happening and how I should respond.",
               '',
               'Alert: ' + msg.label,
-            ].concat(msg.detail ? ['Detail: ' + msg.detail] : []).join('
-');
+            ].concat(msg.detail ? ['Detail: ' + msg.detail] : []).join('\\n');
             showActionNotification(
               'Alert: ' + msg.label,
               alertPrompt,
