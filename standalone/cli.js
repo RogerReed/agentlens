@@ -3465,9 +3465,6 @@ function getHtml() {
   <div id="sa-wrap">
     <!-- \u2500\u2500 Sidebar (live session monitor) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 -->
     <div id="sa-sidebar">
-      <!-- Agent key -->
-      <div id="sb-agent-key" style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px;color:var(--vscode-descriptionForeground);padding:8px 8px 4px;align-items:center"></div>
-
       <div style="flex:1;overflow-y:auto;padding:0 8px 8px;font-family:var(--vscode-font-family);color:var(--vscode-foreground)">
         <!-- Status row -->
         <div class="sb-card" style="margin-bottom:6px">
