@@ -1,0 +1,4 @@
+#!/bin/sh
+# Rebuild standalone/cli.js after rebase so the bundle stays in sync with server.ts.
+# $1 is "rebase" or "amend" — rebuild for both.
+node esbuild.js
