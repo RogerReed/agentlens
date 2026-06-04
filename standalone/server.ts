@@ -1,9 +1,10 @@
 /**
  * AgentLens standalone server — runs the dashboard outside VS Code.
  *
- * Two HTTP servers:
+ * Three HTTP servers:
  *   OTLP_PORT (default 4318) — receives OTLP traces/logs from agents
- *   UI_PORT   (default 3000) — serves the dashboard, SSE, and MCP endpoint (/mcp)
+ *   UI_PORT   (default 3000) — serves the dashboard and SSE
+ *   MCP_PORT  (default 4316) — MCP endpoint for Claude Code and other agents
  */
 
 import * as http from 'http'
@@ -15,13 +16,14 @@ import { summarizeSpans } from '../src/spanSummarizer'
 import { calcTokenCostUsd } from '../src/pricing'
 import { autoConfigureClaudeCode, autoConfigureCodex, autoConfigureCopilotStandalone } from '../src/autoConfigNode'
 import { classifyOtlpPayload } from '../src/otlpParser'
-import { createMcpServer, handleMcpRequest } from '../src/mcpServer'
+import { startMcpHttpServer } from '../src/mcpServer'
 import { LogReader } from '../src/logReader'
 import type { Span } from '../src/types'
 import type { SessionSummaryCard } from '../src/summarizers/summarizerTypes'
 
 const OTLP_PORT  = parseInt(process.env.OTLP_PORT  ?? '4318')
 const UI_PORT    = parseInt(process.env.UI_PORT    ?? '3000')
+const MCP_PORT   = parseInt(process.env.MCP_PORT   ?? '4316')
 const BIND_HOST  = process.env.BIND_HOST ?? '127.0.0.1'
 
 const mediaDir  = path.join(__dirname, '..', 'media')
@@ -71,14 +73,13 @@ const logReader = new LogReader()
 
 // ── MCP server ────────────────────────────────────────────────────────────────
 
-// Exposed at /mcp on the UI server. getSessions() is called on every tool
-// invocation so it always reflects the latest merged OTEL + log session data.
-const mcpServer = createMcpServer({
+// Dedicated server on MCP_PORT (default 4316) — same port as the VS Code extension.
+const mcpHttpServer = startMcpHttpServer({
   getSessions: () => {
     const summary = buildSessionSummary()
     return summary?.sessions ?? []
   },
-})
+}, MCP_PORT, BIND_HOST)
 
 function runLogScan() {
   const results = logReader.scan()
@@ -973,16 +974,6 @@ const uiServer = http.createServer((req, res) => {
     return
   }
 
-  // MCP endpoint — serves AgentLens session history to Claude Code and other agents
-  if (url === '/mcp') {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, mcp-session-id')
-    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return }
-    handleMcpRequest(mcpServer, req, res)
-    return
-  }
-
   res.writeHead(404); res.end('Not found')
 })
 
@@ -1064,7 +1055,7 @@ otlpServer.listen(OTLP_PORT, BIND_HOST, () => {
 uiServer.listen(UI_PORT, BIND_HOST, () => {
   const url = `http://localhost:${UI_PORT}`
   console.log(`[AgentLens] Dashboard      → ${url}`)
-  console.log(`[AgentLens] MCP server     → ${url}/mcp`)
+  console.log(`[AgentLens] MCP server     → http://localhost:${MCP_PORT}/mcp`)
 
   // Auto-open browser
   const cmd = process.platform === 'darwin' ? `open "${url}"`
