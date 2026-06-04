@@ -123,6 +123,15 @@ function IconGear() {
   )
 }
 
+function IconRefresh() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  )
+}
+
 function IconHelp() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
@@ -524,10 +533,11 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
       {/* Refresh button for non-live ranges */}
       {isActive && !loading && (
         <button
+          class="icon-btn"
+          style="margin-left:2px;border-bottom:none;margin-bottom:0;border-radius:3px"
           onClick={() => fireSearch(makeTimeRange(range.preset))}
-          style="margin-left:6px;padding:2px 5px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-radius:3px"
           title="Refresh this time range"
-        >↻</button>
+        ><IconRefresh /></button>
       )}
     </div>
   )

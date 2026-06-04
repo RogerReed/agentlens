@@ -6278,6 +6278,12 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       /* @__PURE__ */ u4("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" })
     ] });
   }
+  function IconRefresh() {
+    return /* @__PURE__ */ u4("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", style: "display:block", children: [
+      /* @__PURE__ */ u4("polyline", { points: "23 4 23 10 17 10" }),
+      /* @__PURE__ */ u4("path", { d: "M20.49 15a9 9 0 1 1-2.12-9.36L23 10" })
+    ] });
+  }
   function IconHelp() {
     return /* @__PURE__ */ u4("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", style: "display:block", children: [
       /* @__PURE__ */ u4("circle", { cx: "12", cy: "12", r: "10" }),
@@ -6628,10 +6634,11 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       isActive && !loading && /* @__PURE__ */ u4(
         "button",
         {
+          class: "icon-btn",
+          style: "margin-left:2px;border-bottom:none;margin-bottom:0;border-radius:3px",
           onClick: () => fireSearch(makeTimeRange(range.preset)),
-          style: "margin-left:6px;padding:2px 5px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-radius:3px",
           title: "Refresh this time range",
-          children: "\u21BB"
+          children: /* @__PURE__ */ u4(IconRefresh, {})
         }
       )
     ] });
