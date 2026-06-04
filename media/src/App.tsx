@@ -19,6 +19,7 @@ import { Analytics } from './tabs/Analytics'
 import { Alerts, computeAlertCount, getTriggeredAlerts, checkAlerts, type TriggeredAlert } from './tabs/Alerts'
 import { Export } from './tabs/Export'
 import { Help } from './tabs/Help'
+import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
 
 
@@ -29,6 +30,7 @@ const bellOpen = signal(false)
 const TABS = [
   { id: 'sessions',  label: 'Sessions',  title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
   { id: 'analytics', label: 'Analytics', title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
+  { id: 'patterns',  label: 'Patterns',  title: 'Cross-session behavioral patterns: hot files, prompt efficiency map, CLAUDE.md recommendations, and cost trend.' },
   { id: 'export',    label: 'Export',    title: 'Export raw or redacted OTEL span data as JSON files.' },
 ]
 
@@ -37,6 +39,7 @@ function ActivePanel() {
   switch (tab) {
     case 'sessions':  return <Sessions />
     case 'analytics': return <Analytics />
+    case 'patterns':  return <Patterns />
     case 'export':    return <Export />
     case 'help':      return <Help />
     default:          return null
@@ -359,7 +362,7 @@ export function App() {
   }, [])
 
   const tab = normalizeTabId(activeTab.value)
-  const showFilterBars = tab !== 'export' && tab !== 'help'
+  const showFilterBars = tab !== 'export' && tab !== 'help' && tab !== 'patterns'
 
   return (
     <>
