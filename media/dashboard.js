@@ -4519,11 +4519,20 @@
         return { triggered: false };
     }
   }
-  function computeAlertCount() {
+  function getTriggeredAlerts() {
     const configs = getAlertConfigs();
     const profiles = getAgentProfiles();
     const { sessions, efficiency } = buildDisplaySummary();
-    return configs.filter((cfg) => cfg.enabled && evaluateAlert(cfg, sessions, efficiency, profiles).triggered).length;
+    const out = [];
+    for (const cfg of configs) {
+      if (!cfg.enabled) continue;
+      const result = evaluateAlert(cfg, sessions, efficiency, profiles);
+      if (result.triggered) out.push({ label: cfg.label, severity: cfg.severity, detail: result.detail ?? "" });
+    }
+    return out;
+  }
+  function computeAlertCount() {
+    return getTriggeredAlerts().length;
   }
   var firedAlertKeys = /* @__PURE__ */ new Set();
   function checkAlerts() {
@@ -6178,6 +6187,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   // media/src/App.tsx
   var sidebarOpen = y3(true);
   var configOpen = y3(false);
+  var bellOpen = y3(false);
   var TABS = [
     { id: "sessions", label: "Sessions", title: "Session list with expand-in-place detail \u2014 trace, files, cost, and flagged issues for each session." },
     { id: "analytics", label: "Analytics", title: "Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights." },
@@ -6251,24 +6261,88 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       }
     );
   }
-  function GearButton() {
+  var SEV_COLOR = {
+    error: "#f44747",
+    warning: "#f6a623",
+    info: "#4fc3f7"
+  };
+  var SEV_ICON = {
+    error: "\u26D4",
+    warning: "\u26A0",
+    info: "\u2139"
+  };
+  function AlertStatusCard({ alerts }) {
+    y2(() => {
+      function onKey(e4) {
+        if (e4.key === "Escape") bellOpen.value = false;
+      }
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, []);
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { style: "position:fixed;inset:0;z-index:199", onClick: () => bellOpen.value = false }),
+      /* @__PURE__ */ u4("div", { style: "position:fixed;top:35px;right:8px;width:min(400px,calc(100vw - 16px));background:var(--vscode-editor-background);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,0.5);z-index:200;overflow:hidden", children: [
+        /* @__PURE__ */ u4("div", { style: "padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)", children: "Active Alerts" }),
+        alerts.length === 0 ? /* @__PURE__ */ u4("div", { style: "padding:14px 12px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px", children: [
+          /* @__PURE__ */ u4("span", { style: "color:#81c784;font-size:14px", children: "\u2713" }),
+          " All clear \u2014 no alerts triggered"
+        ] }) : /* @__PURE__ */ u4("div", { children: alerts.map((a4, i4) => {
+          const color = SEV_COLOR[a4.severity] ?? "#f6a623";
+          return /* @__PURE__ */ u4("div", { style: `padding:10px 12px;border-left:3px solid ${color};${i4 > 0 ? "border-top:1px solid var(--border)" : ""}`, children: [
+            /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;margin-bottom:3px", children: [
+              /* @__PURE__ */ u4("span", { style: "font-size:12px", children: SEV_ICON[a4.severity] ?? "\u26A0" }),
+              /* @__PURE__ */ u4("span", { style: `font-size:12px;font-weight:600;color:${color}`, children: a4.label })
+            ] }),
+            a4.detail && /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);line-height:1.4", children: a4.detail })
+          ] }, i4);
+        }) }),
+        /* @__PURE__ */ u4("div", { style: "padding:8px 12px;border-top:1px solid var(--border)", children: /* @__PURE__ */ u4(
+          "button",
+          {
+            style: "font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0",
+            onClick: () => {
+              bellOpen.value = false;
+              configOpen.value = true;
+            },
+            children: "Configure alerts \u2192"
+          }
+        ) })
+      ] })
+    ] });
+  }
+  function BellButton() {
     void displaySessions.value;
     const count = computeAlertCount();
-    const active = configOpen.value;
+    const open = bellOpen.value;
     return /* @__PURE__ */ u4("div", { style: "position:relative;display:flex;align-items:center", children: [
       /* @__PURE__ */ u4(
         "button",
         {
-          class: "icon-btn" + (active ? " active" : ""),
-          title: "Settings \u2014 Alerts & Automation",
+          class: "icon-btn" + (open ? " active" : ""),
+          title: count > 0 ? `${count} alert${count > 1 ? "s" : ""} triggered` : "Alerts \u2014 none triggered",
           onClick: () => {
-            configOpen.value = !configOpen.value;
+            bellOpen.value = !bellOpen.value;
           },
-          children: "\u2699"
+          children: "\u{1F514}"
         }
       ),
-      count > 0 && /* @__PURE__ */ u4("span", { class: "gear-badge", children: count })
+      count > 0 && /* @__PURE__ */ u4("span", { class: "alert-badge", children: count }),
+      open && /* @__PURE__ */ u4(AlertStatusCard, { alerts: getTriggeredAlerts() })
     ] });
+  }
+  function GearButton() {
+    const active = configOpen.value;
+    return /* @__PURE__ */ u4(
+      "button",
+      {
+        class: "icon-btn" + (active ? " active" : ""),
+        title: "Settings \u2014 Alerts & Automation",
+        onClick: () => {
+          configOpen.value = !configOpen.value;
+        },
+        children: "\u2699"
+      }
+    );
   }
   function HelpButton() {
     const isActive = normalizeTabId(activeTab.value) === "help";
@@ -6420,6 +6494,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         ),
         TABS.map((t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id)),
         /* @__PURE__ */ u4("div", { style: "margin-left:auto;display:flex;align-items:center;border-left:1px solid var(--border);padding-left:2px", children: [
+          /* @__PURE__ */ u4(BellButton, {}),
           /* @__PURE__ */ u4(GearButton, {}),
           /* @__PURE__ */ u4(HelpButton, {})
         ] })

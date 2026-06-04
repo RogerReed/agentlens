@@ -290,11 +290,27 @@ function evaluateAlert(
   }
 }
 
-export function computeAlertCount(): number {
+export interface TriggeredAlert {
+  label: string
+  severity: 'error' | 'warning' | 'info'
+  detail: string
+}
+
+export function getTriggeredAlerts(): TriggeredAlert[] {
   const configs = getAlertConfigs()
   const profiles = getAgentProfiles()
   const { sessions, efficiency } = buildDisplaySummary()
-  return configs.filter(cfg => cfg.enabled && evaluateAlert(cfg, sessions, efficiency, profiles).triggered).length
+  const out: TriggeredAlert[] = []
+  for (const cfg of configs) {
+    if (!cfg.enabled) continue
+    const result = evaluateAlert(cfg, sessions, efficiency, profiles)
+    if (result.triggered) out.push({ label: cfg.label, severity: cfg.severity, detail: result.detail ?? '' })
+  }
+  return out
+}
+
+export function computeAlertCount(): number {
+  return getTriggeredAlerts().length
 }
 
 // Tracks which alert instances have already fired a notification this trigger cycle.

@@ -16,7 +16,7 @@ import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, Dai
 // Tab components
 import { Sessions } from './tabs/Sessions'
 import { Analytics } from './tabs/Analytics'
-import { Alerts, computeAlertCount, checkAlerts } from './tabs/Alerts'
+import { Alerts, computeAlertCount, getTriggeredAlerts, checkAlerts, type TriggeredAlert } from './tabs/Alerts'
 import { Export } from './tabs/Export'
 import { Help } from './tabs/Help'
 import { Automation, checkAutomations } from './tabs/Automation'
@@ -24,6 +24,7 @@ import { Automation, checkAutomations } from './tabs/Automation'
 
 const sidebarOpen = signal(true)
 const configOpen = signal(false)
+const bellOpen = signal(false)
 
 const TABS = [
   { id: 'sessions',  label: 'Sessions',  title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
@@ -98,23 +99,88 @@ function ConfigPanel() {
   )
 }
 
-function GearButton() {
-  // Reading displaySessions.value here subscribes this component to session changes,
-  // so the badge count stays in sync with computeAlertCount().
+const SEV_COLOR: Record<string, string> = {
+  error:   '#f44747',
+  warning: '#f6a623',
+  info:    '#4fc3f7',
+}
+const SEV_ICON: Record<string, string> = {
+  error:   '⛔',
+  warning: '⚠',
+  info:    'ℹ',
+}
+
+function AlertStatusCard({ alerts }: { alerts: TriggeredAlert[] }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') bellOpen.value = false }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  return (
+    <>
+      {/* Backdrop — click outside to close */}
+      <div style="position:fixed;inset:0;z-index:199" onClick={() => bellOpen.value = false} />
+      <div style="position:fixed;top:35px;right:8px;width:min(400px,calc(100vw - 16px));background:var(--vscode-editor-background);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,0.5);z-index:200;overflow:hidden">
+        <div style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)">
+          Active Alerts
+        </div>
+        {alerts.length === 0 ? (
+          <div style="padding:14px 12px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px">
+            <span style="color:#81c784;font-size:14px">✓</span> All clear — no alerts triggered
+          </div>
+        ) : (
+          <div>
+            {alerts.map((a, i) => {
+              const color = SEV_COLOR[a.severity] ?? '#f6a623'
+              return (
+                <div key={i} style={`padding:10px 12px;border-left:3px solid ${color};${i > 0 ? 'border-top:1px solid var(--border)' : ''}`}>
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+                    <span style="font-size:12px">{SEV_ICON[a.severity] ?? '⚠'}</span>
+                    <span style={`font-size:12px;font-weight:600;color:${color}`}>{a.label}</span>
+                  </div>
+                  {a.detail && <div style="font-size:11px;color:var(--muted);line-height:1.4">{a.detail}</div>}
+                </div>
+              )
+            })}
+          </div>
+        )}
+        <div style="padding:8px 12px;border-top:1px solid var(--border)">
+          <button
+            style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0"
+            onClick={() => { bellOpen.value = false; configOpen.value = true }}
+          >Configure alerts →</button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function BellButton() {
   void displaySessions.value
   const count = computeAlertCount()
-  const active = configOpen.value
+  const open = bellOpen.value
   return (
     <div style="position:relative;display:flex;align-items:center">
       <button
-        class={'icon-btn' + (active ? ' active' : '')}
-        title="Settings — Alerts & Automation"
-        onClick={() => { configOpen.value = !configOpen.value }}
-      >⚙</button>
-      {count > 0 && (
-        <span class="gear-badge">{count}</span>
-      )}
+        class={'icon-btn' + (open ? ' active' : '')}
+        title={count > 0 ? `${count} alert${count > 1 ? 's' : ''} triggered` : 'Alerts — none triggered'}
+        onClick={() => { bellOpen.value = !bellOpen.value }}
+      >🔔</button>
+      {count > 0 && <span class="alert-badge">{count}</span>}
+      {open && <AlertStatusCard alerts={getTriggeredAlerts()} />}
     </div>
+  )
+}
+
+function GearButton() {
+  const active = configOpen.value
+  return (
+    <button
+      class={'icon-btn' + (active ? ' active' : '')}
+      title="Settings — Alerts & Automation"
+      onClick={() => { configOpen.value = !configOpen.value }}
+    >⚙</button>
   )
 }
 
@@ -283,6 +349,7 @@ export function App() {
         </button>
         {TABS.map(t => <Tab key={t.id} id={t.id} label={t.label} />)}
         <div style="margin-left:auto;display:flex;align-items:center;border-left:1px solid var(--border);padding-left:2px">
+          <BellButton />
           <GearButton />
           <HelpButton />
         </div>
