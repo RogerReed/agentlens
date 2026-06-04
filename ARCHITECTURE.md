@@ -36,8 +36,8 @@ graph TB
         CL_LOGS["~/.claude/projects/**/*.jsonl"]
         CX_LOGS["~/.codex/sessions/**/*.jsonl"]
         CP_LOGS["~/.copilot/session-state/**/*.jsonl"]
-        CP_VS["workspaceStorage/<hash>/chatSessions/<uuid>.jsonl<br/>(delta log — newer VS Code-family Copilot Chat)"]
-        CP_JSON["workspaceStorage/<hash>/chatSessions/<uuid>.json<br/>(snapshot — older VS Code-family Copilot Chat)"]
+        CP_VS["workspaceStorage/{hash}/chatSessions/{uuid}.jsonl<br/>(delta log — newer VS Code-family Copilot Chat)"]
+        CP_JSON["workspaceStorage/{hash}/chatSessions/{uuid}.json<br/>(snapshot — older VS Code-family Copilot Chat)"]
     end
 
     subgraph VSCode Extension
