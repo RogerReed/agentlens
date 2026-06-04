@@ -89,10 +89,11 @@ const TOOLS = [
   {
     name: 'find_relevant_context',
     description:
-      'Given a task description, returns files that were frequently accessed in similar ' +
-      'past sessions, estimated cost/turns for similar tasks, and efficiency tips based ' +
-      'on what went wrong in past sessions. Use this before starting a task to pre-load ' +
-      'likely-needed context and avoid known traps.',
+      'Given a task description, keyword-matches against past session prompts and returns ' +
+      'files accessed in similar sessions, estimated cost/turns, and known traps. ' +
+      'Reliable for established workflows (e.g. "add auth", "fix sidebar tests"); ' +
+      'unreliable for novel tasks where keyword overlap is weak — file suggestions ' +
+      'may pull in unrelated sessions. Treat results as a sanity check, not a reading list.',
     inputSchema: {
       type: 'object' as const,
       required: ['task'],
