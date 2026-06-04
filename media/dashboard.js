@@ -5583,10 +5583,14 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
     const settingsJson = JSON.stringify({ mcpServers: { agentlens: { url: mcpUrl } } }, null, 2);
     const claudeMd = `# AgentLens MCP
 Before starting any task, use the agentlens MCP server to orient yourself:
-- Call get_recent_sessions to see what was worked on recently
-- Call find_relevant_context with a short task description to get files
-  that are typically needed and an estimated cost range
-- Call get_workspace_patterns to understand recurring efficiency issues`;
+
+- Call get_recent_sessions to see what was worked on recently and what it cost
+- Call get_workspace_patterns to surface recurring efficiency problems and known traps
+
+Only call find_relevant_context when your task keywords closely match past session
+prompts (works well for established workflows like auth, tests, or a named component;
+unreliable for new feature work \u2014 keyword overlap is weak and file suggestions will
+often be wrong).`;
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-mcp", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.mcp.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
@@ -5656,7 +5660,9 @@ Before starting any task, use the agentlens MCP server to orient yourself:
             /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
               "Given a ",
               /* @__PURE__ */ u4("code", { style: codeStyle, children: "task" }),
-              " description, keyword-matches against past session prompts and returns: files accessed in similar sessions (with frequency %), estimated cost and turn count range, and known traps (loop signals that appeared in similar sessions). Most useful before starting a task."
+              " description, keyword-matches against past session prompts and returns: files accessed in similar sessions (with frequency %), estimated cost and turn count range, and known traps (loop signals that appeared in similar sessions). ",
+              /* @__PURE__ */ u4("strong", { children: "Important:" }),
+              ' matching is keyword-based, not semantic \u2014 results are reliable for well-established task types (e.g. "add auth", "fix sidebar tests") but often pull in unrelated sessions for novel or cross-cutting work. Treat file suggestions as a sanity check, not a reading list.'
             ] })
           ] }),
           /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
@@ -5675,16 +5681,18 @@ Before starting any task, use the agentlens MCP server to orient yourself:
           ] })
         ] }),
         /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Example prompts" }),
-        /* @__PURE__ */ u4("pre", { style: preStyle, children: `# Before starting a task:
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: `# Always useful \u2014 run these before any task:
+Use agentlens get_recent_sessions to see what was worked on recently.
+Use agentlens get_workspace_patterns to see recurring problems and known traps.
+
+# Worth running when task keywords match established workflows:
 Use agentlens find_relevant_context with task="add OAuth to the auth module"
-to see what files I usually need and what this type of task typically costs.
+to see what files similar sessions touched and what they typically cost.
+(Skip this for new feature work \u2014 keyword matching won't find good matches.)
 
-# To understand recent work:
-Use agentlens get_recent_sessions to summarise what was worked on this week.
-
-# To check efficiency:
-Use agentlens get_efficiency_report to see if my sessions are getting
-more or less expensive, and what the most common problems are.` })
+# To check efficiency trends over time:
+Use agentlens get_efficiency_report to see if sessions are getting more or
+less expensive, and which loop signals keep recurring.` })
       ] })
     ] });
   }
