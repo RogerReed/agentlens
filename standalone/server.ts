@@ -3,7 +3,7 @@
  *
  * Two HTTP servers:
  *   OTLP_PORT (default 4318) — receives OTLP traces/logs from agents
- *   UI_PORT   (default 3000) — serves the dashboard and SSE update stream
+ *   UI_PORT   (default 3000) — serves the dashboard, SSE, and MCP endpoint (/mcp)
  */
 
 import * as http from 'http'
@@ -15,6 +15,7 @@ import { summarizeSpans } from '../src/spanSummarizer'
 import { calcTokenCostUsd } from '../src/pricing'
 import { autoConfigureClaudeCode, autoConfigureCodex, autoConfigureCopilotStandalone } from '../src/autoConfigNode'
 import { classifyOtlpPayload } from '../src/otlpParser'
+import { createMcpServer, handleMcpRequest } from '../src/mcpServer'
 import { LogReader } from '../src/logReader'
 import type { Span } from '../src/types'
 import type { SessionSummaryCard } from '../src/summarizers/summarizerTypes'
@@ -67,6 +68,17 @@ function addSpan(span: Span) {
 let logSessions: Map<string, SessionSummaryCard> = new Map()
 
 const logReader = new LogReader()
+
+// ── MCP server ────────────────────────────────────────────────────────────────
+
+// Exposed at /mcp on the UI server. getSessions() is called on every tool
+// invocation so it always reflects the latest merged OTEL + log session data.
+const mcpServer = createMcpServer({
+  getSessions: () => {
+    const summary = buildSessionSummary()
+    return summary?.sessions ?? []
+  },
+})
 
 function runLogScan() {
   const results = logReader.scan()
@@ -961,6 +973,16 @@ const uiServer = http.createServer((req, res) => {
     return
   }
 
+  // MCP endpoint — serves AgentLens session history to Claude Code and other agents
+  if (url === '/mcp') {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, mcp-session-id')
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return }
+    handleMcpRequest(mcpServer, req, res)
+    return
+  }
+
   res.writeHead(404); res.end('Not found')
 })
 
@@ -1042,6 +1064,7 @@ otlpServer.listen(OTLP_PORT, BIND_HOST, () => {
 uiServer.listen(UI_PORT, BIND_HOST, () => {
   const url = `http://localhost:${UI_PORT}`
   console.log(`[AgentLens] Dashboard      → ${url}`)
+  console.log(`[AgentLens] MCP server     → ${url}/mcp`)
 
   // Auto-open browser
   const cmd = process.platform === 'darwin' ? `open "${url}"`

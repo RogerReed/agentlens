@@ -16,6 +16,7 @@ import { runRetention } from './database/retention'
 import { SessionRepository } from './sessionRepository'
 import { summarizeSpans } from './spanSummarizer'
 import { LogReader } from './logReader'
+import { startMcpHttpServer } from './mcpServer'
 
 let collector: OtlpCollector | undefined
 let store: SessionStore | undefined
@@ -449,6 +450,16 @@ export async function activate(context: vscode.ExtensionContext) {
       writeLastWriteSignal(context.globalStorageUri)
     })
   )
+
+  // ── MCP server ───────────────────────────────────────────────────────────────
+  const mcpPort = vscode.workspace.getConfiguration('agentLens').get<number>('mcpPort', 4316)
+  const mcpServer = startMcpHttpServer(
+    { getSessions: () => repository?.listSessions() ?? [],
+      getTimeline: (id) => repository?.loadSessionTimeline(id) ?? [] },
+    mcpPort,
+  )
+  context.subscriptions.push({ dispose: () => mcpServer.close() })
+  outputChannel.appendLine(`AgentLens MCP server → http://127.0.0.1:${mcpPort}/mcp`)
 
   // ── Status bar ───────────────────────────────────────────────────────────────
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)

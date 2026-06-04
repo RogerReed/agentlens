@@ -48,9 +48,13 @@ graph TB
         WRI[DatabaseWriter]
         DB[(SQLite<br/>agentlens.db)]
         REPO[SessionRepository<br/>DB + live window]
+        MCP[McpServer<br/>HTTP :4316/mcp]
         SID[SidebarPanel<br/>webview]
         DASH[DashboardPanel<br/>webview]
     end
+
+    AGENT_MCP[Claude Code / MCP client] -- "POST :4316/mcp" --> MCP
+    MCP -- listSessions / loadTimeline --> REPO
 
     subgraph Dashboard UI
         STATE[Preact Signals<br/>state.ts]
