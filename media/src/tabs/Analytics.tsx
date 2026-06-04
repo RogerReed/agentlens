@@ -16,13 +16,22 @@ import { computeStats } from './Agents'
 
 // ── Section heading helper ────────────────────────────────────────────────────
 
-function SectionHead({ title, tip, first }: { title: string; tip?: string; first?: boolean }) {
+function SectionHead({ title, tip, first, helpAnchor }: { title: string; tip?: string; first?: boolean; helpAnchor?: string }) {
   return (
-    <h3
-      class={tip ? 'has-metric-tip' : undefined}
-      style={`margin:${first ? '8px' : '16px'} 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px`}
-      data-tip={tip}
-    >{title}</h3>
+    <div style={`display:flex;align-items:center;gap:7px;margin:${first ? '8px' : '16px'} 0 6px`}>
+      <h3
+        class={tip ? 'has-metric-tip' : undefined}
+        style="font-size:12px;color:var(--muted);margin:0"
+        data-tip={tip}
+      >{title}</h3>
+      {helpAnchor && (
+        <button
+          onClick={() => goToHelp(helpAnchor)}
+          title="Learn more"
+          style="display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:17px;height:17px;border-radius:50%;border:1px solid var(--border);background:none;cursor:pointer;color:var(--muted);font-size:11px;font-weight:600;padding:0;line-height:1"
+        >?</button>
+      )}
+    </div>
   )
 }
 
@@ -107,13 +116,8 @@ export function Analytics() {
   })
 
   const disclaimer = (
-    <div style="font-size:11px;background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:6px 10px;margin-bottom:8px;color:var(--muted);display:flex;align-items:center;gap:8px">
-      <span>Estimates only — not your actual bill. Rates last updated: {PRICING_LAST_UPDATED}</span>
-      <button
-        onClick={() => goToHelp('help-costs')}
-        title="Understanding cost estimates"
-        style="display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:15px;height:15px;border-radius:50%;border:1px solid var(--border);background:none;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600;padding:0;line-height:1"
-      >?</button>
+    <div style="font-size:11px;background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:6px 10px;margin-bottom:8px;color:var(--muted)">
+      Estimates only — not your actual bill. Rates last updated: {PRICING_LAST_UPDATED}
     </div>
   )
 
@@ -174,7 +178,7 @@ export function Analytics() {
       {/* Estimated cost */}
       {pricedSess.length > 0 && (
         <>
-          <SectionHead title="ESTIMATED COST" first />
+          <SectionHead title="ESTIMATED COST" first helpAnchor="help-costs" />
           {disclaimer}
 
           {copilotSess.length > 0 && (
