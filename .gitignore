@@ -17,3 +17,6 @@ export_*.json
 agent-lens-export-*.json
 # Local staging
 .staged-issues/
+# Claude Code per-developer settings (permissions, hooks — not project config)
+.claude/settings.json
+.claude/settings.local.json
