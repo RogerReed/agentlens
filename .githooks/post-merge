@@ -1,0 +1,3 @@
+#!/bin/sh
+# Rebuild standalone/cli.js after merge/pull so the bundle stays in sync with server.ts.
+node esbuild.js

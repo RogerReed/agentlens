@@ -4519,6 +4519,21 @@
         return { triggered: false };
     }
   }
+  function getTriggeredAlerts() {
+    const configs = getAlertConfigs();
+    const profiles = getAgentProfiles();
+    const { sessions, efficiency } = buildDisplaySummary();
+    const out = [];
+    for (const cfg of configs) {
+      if (!cfg.enabled) continue;
+      const result = evaluateAlert(cfg, sessions, efficiency, profiles);
+      if (result.triggered) out.push({ label: cfg.label, severity: cfg.severity, detail: result.detail ?? "" });
+    }
+    return out;
+  }
+  function computeAlertCount() {
+    return getTriggeredAlerts().length;
+  }
   var firedAlertKeys = /* @__PURE__ */ new Set();
   function checkAlerts() {
     const configs = getAlertConfigs();
@@ -4863,8 +4878,7 @@
     otel: { href: "#help-otel", heading: "OTEL Data" },
     sessions: { href: "#help-sessions", heading: "Sessions" },
     analytics: { href: "#help-analytics", heading: "Analytics" },
-    alerts: { href: "#help-alerts", heading: "Alerts" },
-    automation: { href: "#help-automation", heading: "Automation" },
+    settings: { href: "#help-settings", heading: "Settings" },
     export: { href: "#help-export", heading: "Export" },
     badges: { href: "#help-badges", heading: "Badges" },
     glossary: { href: "#help-glossary", heading: "Glossary" }
@@ -5221,7 +5235,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             ] })
           ] })
         ] })) }),
-        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: "The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Insights, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side." })
+        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: "The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Insights, Alerts, Automation, Agents, and Flow all use the normalized session model so the three agents can be compared side by side." })
       ] })
     ] });
   }
@@ -5478,12 +5492,27 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       ] })
     ] });
   }
-  function AlertsSection() {
-    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-alerts", children: [
-      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.alerts.heading }),
+  function SettingsSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-settings", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.settings.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("p", { children: "The Alerts tab lets you configure thresholds for six signals. When a live session crosses a threshold, an alert fires and the tab badge increments. Alerts clear automatically when the session ends or you dismiss them." }),
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "Two alerts use shared token-count thresholds; the other four use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently." }),
+        /* @__PURE__ */ u4("p", { children: "Two icons in the top-right of the tab bar give you access to alert status and configuration without cluttering the main navigation." }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Bell icon \u2014 active alert status" }),
+        /* @__PURE__ */ u4("p", { children: [
+          "The bell icon shows a numbered badge when one or more alert thresholds are currently triggered. Click it to open a status card listing every active alert \u2014 severity, name, and detail about which session tripped it. The card also has a ",
+          /* @__PURE__ */ u4("strong", { children: "Configure alerts \u2192" }),
+          " link that jumps straight to the settings panel. When no alerts are firing the bell has no badge."
+        ] }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Gear icon \u2014 settings panel" }),
+        /* @__PURE__ */ u4("p", { children: [
+          "The gear icon opens a slide-in settings panel containing two collapsible sections: ",
+          /* @__PURE__ */ u4("strong", { children: "Alerts" }),
+          " and ",
+          /* @__PURE__ */ u4("strong", { children: "Automation" }),
+          ". Close it with the \xD7 button or by pressing Escape."
+        ] }),
+        /* @__PURE__ */ u4("h4", { id: "help-alerts", style: subHeadStyle, children: "Alerts" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "Configure thresholds for six signals. When a live session crosses a threshold the bell badge increments and the alert appears in the status card. Two alerts use shared token-count thresholds; the other four use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently." }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
           /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
             /* @__PURE__ */ u4("dt", { class: "glossary-term", children: [
@@ -5527,16 +5556,9 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             ] }),
             /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when the same tool with identical arguments repeats beyond the per-agent threshold without a file change between repeats \u2014 a strong deadlock signal. Default: 5 repeats (adjustable per agent)." })
           ] })
-        ] })
-      ] })
-    ] });
-  }
-  function AutomationSection() {
-    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-automation", children: [
-      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.automation.heading }),
-      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("p", { children: "The Automation tab configures prompts that are sent automatically to the agent when a session crosses a threshold \u2014 without you having to intervene manually. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex." }),
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "In the VS Code extension, automations surface as a notification or open the agent chat directly. In local (npx) mode, they write the prompt to a file-based relay that the agent reads." }),
+        ] }),
+        /* @__PURE__ */ u4("h4", { id: "help-automation", style: subHeadStyle, children: "Automation" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "Automations send a prompt to the agent automatically when a session crosses a threshold \u2014 without you having to intervene manually. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex. In the VS Code extension, automations surface as a notification with a copyable prompt. In standalone (npx) mode they appear as an in-page notification." }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
           /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
             /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Context Dump" }),
@@ -5638,8 +5660,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4(AgentOtelSection, {}),
       /* @__PURE__ */ u4(SessionsSection, {}),
       /* @__PURE__ */ u4(AnalyticsSection, {}),
-      /* @__PURE__ */ u4(AlertsSection, {}),
-      /* @__PURE__ */ u4(AutomationSection, {}),
+      /* @__PURE__ */ u4(SettingsSection, {}),
       /* @__PURE__ */ u4(ExportSection, {}),
       /* @__PURE__ */ u4(BadgesSection, {}),
       /* @__PURE__ */ u4(GlossarySection, {}),
@@ -6171,13 +6192,12 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
 
   // media/src/App.tsx
   var sidebarOpen = y3(true);
+  var configOpen = y3(false);
+  var bellOpen = y3(false);
   var TABS = [
-    { id: "sessions", label: "Sessions", primary: true, title: "Session list with expand-in-place detail \u2014 trace, files, cost, and flagged issues for each session." },
-    { id: "analytics", label: "Analytics", primary: true, title: "Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights." },
-    { id: "alerts", label: "Alerts", primary: true, title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
-    { id: "automation", label: "Automation", primary: true, title: "Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed." },
-    { id: "export", label: "Export", primary: true, title: "Export raw or redacted OTEL span data as JSON files." },
-    { id: "help", label: "Help", primary: true, title: "Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard." }
+    { id: "sessions", label: "Sessions", title: "Session list with expand-in-place detail \u2014 trace, files, cost, and flagged issues for each session." },
+    { id: "analytics", label: "Analytics", title: "Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights." },
+    { id: "export", label: "Export", title: "Export raw or redacted OTEL span data as JSON files." }
   ];
   function ActivePanel() {
     const tab = normalizeTabId(activeTab.value);
@@ -6186,10 +6206,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         return /* @__PURE__ */ u4(Sessions, {});
       case "analytics":
         return /* @__PURE__ */ u4(Analytics, {});
-      case "alerts":
-        return /* @__PURE__ */ u4(Alerts, {});
-      case "automation":
-        return /* @__PURE__ */ u4(Automation, {});
       case "export":
         return /* @__PURE__ */ u4(Export, {});
       case "help":
@@ -6200,6 +6216,173 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   }
   function normalizeTabId(tab) {
     return tab;
+  }
+  function CollapsibleSection({ title, children }) {
+    const [open, setOpen] = d2(true);
+    return /* @__PURE__ */ u4("div", { style: "border-bottom:1px solid var(--border)", children: [
+      /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => setOpen((o4) => !o4),
+          style: "display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;background:none;border:none;cursor:pointer;text-align:left;color:var(--fg)",
+          children: [
+            /* @__PURE__ */ u4("span", { style: `color:var(--muted);font-size:9px;display:inline-block;transition:transform 0.15s;transform:rotate(${open ? 90 : 0}deg)`, children: "\u25B6" }),
+            /* @__PURE__ */ u4("span", { style: "font-size:12px;font-weight:600", children: title })
+          ]
+        }
+      ),
+      open && /* @__PURE__ */ u4("div", { style: "padding:0 14px 14px", children })
+    ] });
+  }
+  function ConfigPanel() {
+    const open = configOpen.value;
+    y2(() => {
+      if (!open) return;
+      function onKey(e4) {
+        if (e4.key === "Escape") configOpen.value = false;
+      }
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [open]);
+    return /* @__PURE__ */ u4(
+      "div",
+      {
+        style: `position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--vscode-editor-background);border-left:1px solid var(--border);z-index:200;overflow-y:auto;transition:transform 0.2s ease;transform:${open ? "translateX(0)" : "translateX(100%)"};box-shadow:-4px 0 20px rgba(0,0,0,0.4)`,
+        children: [
+          /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--vscode-editor-background);z-index:1", children: [
+            /* @__PURE__ */ u4("span", { style: "font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)", children: "Settings" }),
+            /* @__PURE__ */ u4(
+              "button",
+              {
+                onClick: () => configOpen.value = false,
+                style: "background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px;line-height:1",
+                title: "Close (Esc)",
+                children: "\xD7"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ u4(CollapsibleSection, { title: "Alerts", children: /* @__PURE__ */ u4(Alerts, {}) }),
+          /* @__PURE__ */ u4(CollapsibleSection, { title: "Automation", children: /* @__PURE__ */ u4(Automation, {}) })
+        ]
+      }
+    );
+  }
+  var SEV_COLOR = {
+    error: "#f44747",
+    warning: "#f6a623",
+    info: "#4fc3f7"
+  };
+  function IconBell() {
+    return /* @__PURE__ */ u4("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", style: "display:block", children: [
+      /* @__PURE__ */ u4("path", { d: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" }),
+      /* @__PURE__ */ u4("path", { d: "M13.73 21a2 2 0 0 1-3.46 0" })
+    ] });
+  }
+  function IconGear() {
+    return /* @__PURE__ */ u4("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", style: "display:block", children: [
+      /* @__PURE__ */ u4("circle", { cx: "12", cy: "12", r: "3" }),
+      /* @__PURE__ */ u4("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" })
+    ] });
+  }
+  function IconRefresh() {
+    return /* @__PURE__ */ u4("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", style: "display:block", children: [
+      /* @__PURE__ */ u4("polyline", { points: "23 4 23 10 17 10" }),
+      /* @__PURE__ */ u4("path", { d: "M20.49 15a9 9 0 1 1-2.12-9.36L23 10" })
+    ] });
+  }
+  function IconHelp() {
+    return /* @__PURE__ */ u4("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", style: "display:block", children: [
+      /* @__PURE__ */ u4("circle", { cx: "12", cy: "12", r: "10" }),
+      /* @__PURE__ */ u4("path", { d: "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" }),
+      /* @__PURE__ */ u4("line", { x1: "12", y1: "17", x2: "12.01", y2: "17", "stroke-width": "3" })
+    ] });
+  }
+  function AlertStatusCard({ alerts }) {
+    y2(() => {
+      function onKey(e4) {
+        if (e4.key === "Escape") bellOpen.value = false;
+      }
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, []);
+    return /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("div", { style: "position:fixed;inset:0;z-index:199", onClick: () => bellOpen.value = false }),
+      /* @__PURE__ */ u4("div", { style: "position:fixed;top:35px;right:8px;width:min(400px,calc(100vw - 16px));background:var(--vscode-editor-background);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,0.5);z-index:200;overflow:hidden", children: [
+        /* @__PURE__ */ u4("div", { style: "padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)", children: "Active Alerts" }),
+        alerts.length === 0 ? /* @__PURE__ */ u4("div", { style: "padding:14px 12px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px", children: [
+          /* @__PURE__ */ u4("span", { style: "color:#81c784;font-size:14px", children: "\u2713" }),
+          " All clear \u2014 no alerts triggered"
+        ] }) : /* @__PURE__ */ u4("div", { children: alerts.map((a4, i4) => {
+          const color = SEV_COLOR[a4.severity] ?? "#f6a623";
+          return /* @__PURE__ */ u4("div", { style: `padding:10px 12px;border-left:3px solid ${color};${i4 > 0 ? "border-top:1px solid var(--border)" : ""}`, children: [
+            /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;margin-bottom:3px", children: [
+              /* @__PURE__ */ u4("span", { style: `display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0` }),
+              /* @__PURE__ */ u4("span", { style: `font-size:12px;font-weight:600;color:${color}`, children: a4.label })
+            ] }),
+            a4.detail && /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);line-height:1.4", children: a4.detail })
+          ] }, i4);
+        }) }),
+        /* @__PURE__ */ u4("div", { style: "padding:8px 12px;border-top:1px solid var(--border)", children: /* @__PURE__ */ u4(
+          "button",
+          {
+            style: "font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0",
+            onClick: () => {
+              bellOpen.value = false;
+              configOpen.value = true;
+            },
+            children: "Configure alerts \u2192"
+          }
+        ) })
+      ] })
+    ] });
+  }
+  function BellButton() {
+    void displaySessions.value;
+    const count = computeAlertCount();
+    const open = bellOpen.value;
+    return /* @__PURE__ */ u4("div", { style: "position:relative;display:flex;align-items:center", children: [
+      /* @__PURE__ */ u4(
+        "button",
+        {
+          class: "icon-btn" + (open ? " active" : ""),
+          title: count > 0 ? `${count} alert${count > 1 ? "s" : ""} triggered` : "Alerts \u2014 none triggered",
+          onClick: () => {
+            bellOpen.value = !bellOpen.value;
+          },
+          children: /* @__PURE__ */ u4(IconBell, {})
+        }
+      ),
+      count > 0 && /* @__PURE__ */ u4("span", { class: "alert-badge", children: count }),
+      open && /* @__PURE__ */ u4(AlertStatusCard, { alerts: getTriggeredAlerts() })
+    ] });
+  }
+  function GearButton() {
+    const active = configOpen.value;
+    return /* @__PURE__ */ u4(
+      "button",
+      {
+        class: "icon-btn" + (active ? " active" : ""),
+        title: "Settings \u2014 Alerts & Automation",
+        onClick: () => {
+          configOpen.value = !configOpen.value;
+        },
+        children: /* @__PURE__ */ u4(IconGear, {})
+      }
+    );
+  }
+  function HelpButton() {
+    const isActive = normalizeTabId(activeTab.value) === "help";
+    return /* @__PURE__ */ u4(
+      "button",
+      {
+        class: "icon-btn" + (isActive ? " active" : ""),
+        title: "Help",
+        onClick: () => {
+          activeTab.value = "help";
+        },
+        children: /* @__PURE__ */ u4(IconHelp, {})
+      }
+    );
   }
   function App() {
     y2(() => {
@@ -6280,7 +6463,12 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             blobCache.value = { ...blobCache.value, [key]: msg.content };
           }
         } else if (msg.type === "switchTab" && msg.tab) {
-          activeTab.value = normalizeTabId(msg.tab);
+          const tab2 = normalizeTabId(msg.tab);
+          if (tab2 === "alerts" || tab2 === "automation") {
+            configOpen.value = true;
+          } else {
+            activeTab.value = tab2;
+          }
         } else if (msg.type === "setFilter") {
           if (msg.agentFilter !== void 0) {
             selectedAgentFilter.value = msg.agentFilter;
@@ -6309,6 +6497,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       window.addEventListener("message", handler);
       return () => window.removeEventListener("message", handler);
     }, []);
+    const tab = normalizeTabId(activeTab.value);
+    const showFilterBars = tab !== "export" && tab !== "help";
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("div", { class: "tabs", children: [
         /* @__PURE__ */ u4(
@@ -6328,11 +6518,17 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             children: sidebarOpen.value ? "\u25C4" : "\u25BA"
           }
         ),
-        TABS.map((t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id))
+        TABS.map((t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id)),
+        /* @__PURE__ */ u4("div", { style: "margin-left:auto;display:flex;align-items:center;border-left:1px solid var(--border);padding-left:2px", children: [
+          /* @__PURE__ */ u4(BellButton, {}),
+          /* @__PURE__ */ u4(GearButton, {}),
+          /* @__PURE__ */ u4(HelpButton, {})
+        ] })
       ] }),
-      !["alerts", "help", "export", "automation"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(TimeRangePicker, {}),
-      !["alerts", "help", "export", "automation"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(SearchFilterBar, {}),
+      showFilterBars && /* @__PURE__ */ u4(TimeRangePicker, {}),
+      showFilterBars && /* @__PURE__ */ u4(SearchFilterBar, {}),
       /* @__PURE__ */ u4("div", { class: "panel active", children: /* @__PURE__ */ u4(ActivePanel, {}) }),
+      /* @__PURE__ */ u4(ConfigPanel, {}),
       /* @__PURE__ */ u4("img", { id: "mascot-img", src: "", alt: "AgentLens mascot", style: "display:none" })
     ] });
   }
@@ -6444,10 +6640,11 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       isActive && !loading && /* @__PURE__ */ u4(
         "button",
         {
+          class: "icon-btn",
+          style: "margin-left:2px;border-bottom:none;margin-bottom:0;border-radius:3px",
           onClick: () => fireSearch(makeTimeRange(range.preset)),
-          style: "margin-left:6px;padding:2px 5px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-radius:3px",
           title: "Refresh this time range",
-          children: "\u21BB"
+          children: /* @__PURE__ */ u4(IconRefresh, {})
         }
       )
     ] });

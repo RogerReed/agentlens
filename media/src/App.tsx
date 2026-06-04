@@ -16,40 +16,215 @@ import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, Dai
 // Tab components
 import { Sessions } from './tabs/Sessions'
 import { Analytics } from './tabs/Analytics'
-import { Alerts, computeAlertCount, checkAlerts } from './tabs/Alerts'
+import { Alerts, computeAlertCount, getTriggeredAlerts, checkAlerts, type TriggeredAlert } from './tabs/Alerts'
 import { Export } from './tabs/Export'
 import { Help } from './tabs/Help'
 import { Automation, checkAutomations } from './tabs/Automation'
 
 
 const sidebarOpen = signal(true)
+const configOpen = signal(false)
+const bellOpen = signal(false)
 
 const TABS = [
-  { id: 'sessions',   label: 'Sessions',   primary: true, title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
-  { id: 'analytics',  label: 'Analytics',  primary: true, title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
-  { id: 'alerts',     label: 'Alerts',     primary: true, title: 'Configurable alerts for context window usage, error rates, session length, and other efficiency signals.' },
-  { id: 'automation', label: 'Automation', primary: true, title: 'Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed.' },
-  { id: 'export',     label: 'Export',     primary: true, title: 'Export raw or redacted OTEL span data as JSON files.' },
-  { id: 'help',       label: 'Help',       primary: true, title: 'Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard.' },
+  { id: 'sessions',  label: 'Sessions',  title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
+  { id: 'analytics', label: 'Analytics', title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
+  { id: 'export',    label: 'Export',    title: 'Export raw or redacted OTEL span data as JSON files.' },
 ]
-
-
 
 function ActivePanel() {
   const tab = normalizeTabId(activeTab.value)
   switch (tab) {
-    case 'sessions':    return <Sessions />
-    case 'analytics':   return <Analytics />
-    case 'alerts':      return <Alerts />
-    case 'automation':  return <Automation />
-    case 'export':      return <Export />
-    case 'help':        return <Help />
-    default:            return null
+    case 'sessions':  return <Sessions />
+    case 'analytics': return <Analytics />
+    case 'export':    return <Export />
+    case 'help':      return <Help />
+    default:          return null
   }
 }
 
 function normalizeTabId(tab: string): string {
   return tab
+}
+
+function CollapsibleSection({ title, children }: { title: string; children: any }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div style="border-bottom:1px solid var(--border)">
+      <button
+        onClick={() => setOpen(o => !o)}
+        style="display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;background:none;border:none;cursor:pointer;text-align:left;color:var(--fg)"
+      >
+        <span style={`color:var(--muted);font-size:9px;display:inline-block;transition:transform 0.15s;transform:rotate(${open ? 90 : 0}deg)`}>▶</span>
+        <span style="font-size:12px;font-weight:600">{title}</span>
+      </button>
+      {open && (
+        <div style="padding:0 14px 14px">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ConfigPanel() {
+  const open = configOpen.value
+
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') configOpen.value = false }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
+  return (
+    <div
+      style={`position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--vscode-editor-background);border-left:1px solid var(--border);z-index:200;overflow-y:auto;transition:transform 0.2s ease;transform:${open ? 'translateX(0)' : 'translateX(100%)'};box-shadow:-4px 0 20px rgba(0,0,0,0.4)`}
+    >
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--vscode-editor-background);z-index:1">
+        <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Settings</span>
+        <button
+          onClick={() => configOpen.value = false}
+          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px;line-height:1"
+          title="Close (Esc)"
+        >×</button>
+      </div>
+      <CollapsibleSection title="Alerts">
+        <Alerts />
+      </CollapsibleSection>
+      <CollapsibleSection title="Automation">
+        <Automation />
+      </CollapsibleSection>
+    </div>
+  )
+}
+
+const SEV_COLOR: Record<string, string> = {
+  error:   '#f44747',
+  warning: '#f6a623',
+  info:    '#4fc3f7',
+}
+
+function IconBell() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  )
+}
+
+function IconGear() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  )
+}
+
+function IconRefresh() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  )
+}
+
+function IconHelp() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="3" />
+    </svg>
+  )
+}
+
+function AlertStatusCard({ alerts }: { alerts: TriggeredAlert[] }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') bellOpen.value = false }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  return (
+    <>
+      {/* Backdrop — click outside to close */}
+      <div style="position:fixed;inset:0;z-index:199" onClick={() => bellOpen.value = false} />
+      <div style="position:fixed;top:35px;right:8px;width:min(400px,calc(100vw - 16px));background:var(--vscode-editor-background);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,0.5);z-index:200;overflow:hidden">
+        <div style="padding:8px 12px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)">
+          Active Alerts
+        </div>
+        {alerts.length === 0 ? (
+          <div style="padding:14px 12px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px">
+            <span style="color:#81c784;font-size:14px">✓</span> All clear — no alerts triggered
+          </div>
+        ) : (
+          <div>
+            {alerts.map((a, i) => {
+              const color = SEV_COLOR[a.severity] ?? '#f6a623'
+              return (
+                <div key={i} style={`padding:10px 12px;border-left:3px solid ${color};${i > 0 ? 'border-top:1px solid var(--border)' : ''}`}>
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+                    <span style={`display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0`} />
+                    <span style={`font-size:12px;font-weight:600;color:${color}`}>{a.label}</span>
+                  </div>
+                  {a.detail && <div style="font-size:11px;color:var(--muted);line-height:1.4">{a.detail}</div>}
+                </div>
+              )
+            })}
+          </div>
+        )}
+        <div style="padding:8px 12px;border-top:1px solid var(--border)">
+          <button
+            style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:0"
+            onClick={() => { bellOpen.value = false; configOpen.value = true }}
+          >Configure alerts →</button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function BellButton() {
+  void displaySessions.value
+  const count = computeAlertCount()
+  const open = bellOpen.value
+  return (
+    <div style="position:relative;display:flex;align-items:center">
+      <button
+        class={'icon-btn' + (open ? ' active' : '')}
+        title={count > 0 ? `${count} alert${count > 1 ? 's' : ''} triggered` : 'Alerts — none triggered'}
+        onClick={() => { bellOpen.value = !bellOpen.value }}
+      ><IconBell /></button>
+      {count > 0 && <span class="alert-badge">{count}</span>}
+      {open && <AlertStatusCard alerts={getTriggeredAlerts()} />}
+    </div>
+  )
+}
+
+function GearButton() {
+  const active = configOpen.value
+  return (
+    <button
+      class={'icon-btn' + (active ? ' active' : '')}
+      title="Settings — Alerts & Automation"
+      onClick={() => { configOpen.value = !configOpen.value }}
+    ><IconGear /></button>
+  )
+}
+
+function HelpButton() {
+  const isActive = normalizeTabId(activeTab.value) === 'help'
+  return (
+    <button
+      class={'icon-btn' + (isActive ? ' active' : '')}
+      title="Help"
+      onClick={() => { activeTab.value = 'help' }}
+    ><IconHelp /></button>
+  )
 }
 
 export function App() {
@@ -148,7 +323,12 @@ export function App() {
           blobCache.value = { ...blobCache.value, [key]: msg.content }
         }
       } else if (msg.type === 'switchTab' && msg.tab) {
-        activeTab.value = normalizeTabId(msg.tab)
+        const tab = normalizeTabId(msg.tab)
+        if (tab === 'alerts' || tab === 'automation') {
+          configOpen.value = true
+        } else {
+          activeTab.value = tab
+        }
       } else if (msg.type === 'setFilter') {
         if (msg.agentFilter !== undefined) {
           selectedAgentFilter.value = msg.agentFilter
@@ -178,6 +358,9 @@ export function App() {
     return () => window.removeEventListener('message', handler)
   }, [])
 
+  const tab = normalizeTabId(activeTab.value)
+  const showFilterBars = tab !== 'export' && tab !== 'help'
+
   return (
     <>
       <div class="tabs">
@@ -197,18 +380,20 @@ export function App() {
           {sidebarOpen.value ? '◄' : '►'}
         </button>
         {TABS.map(t => <Tab key={t.id} id={t.id} label={t.label} />)}
+        <div style="margin-left:auto;display:flex;align-items:center;border-left:1px solid var(--border);padding-left:2px">
+          <BellButton />
+          <GearButton />
+          <HelpButton />
+        </div>
       </div>
 
-      {!(['alerts', 'help', 'export', 'automation'] as string[]).includes(normalizeTabId(activeTab.value)) && (
-        <TimeRangePicker />
-      )}
-      {!(['alerts', 'help', 'export', 'automation'] as string[]).includes(normalizeTabId(activeTab.value)) && (
-        <SearchFilterBar />
-      )}
+      {showFilterBars && <TimeRangePicker />}
+      {showFilterBars && <SearchFilterBar />}
       <div class="panel active">
         <ActivePanel />
       </div>
 
+      <ConfigPanel />
       <img id="mascot-img" src="" alt="AgentLens mascot" style="display:none" />
     </>
   )
@@ -348,10 +533,11 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
       {/* Refresh button for non-live ranges */}
       {isActive && !loading && (
         <button
+          class="icon-btn"
+          style="margin-left:2px;border-bottom:none;margin-bottom:0;border-radius:3px"
           onClick={() => fireSearch(makeTimeRange(range.preset))}
-          style="margin-left:6px;padding:2px 5px;font-size:11px;cursor:pointer;background:transparent;border:none;color:var(--muted);border-radius:3px"
           title="Refresh this time range"
-        >↻</button>
+        ><IconRefresh /></button>
       )}
     </div>
   )
@@ -457,5 +643,3 @@ function Tab({ id, label }: { id: string; label: string; title?: string }) {
     </button>
   )
 }
-
-

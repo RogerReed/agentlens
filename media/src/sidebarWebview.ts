@@ -330,23 +330,7 @@ function renderFooter() {
   if (countEl) countEl.textContent = String(state.sessionCount)
 }
 
-function renderAgentKey() {
-  const el = document.getElementById('sb-agent-key')
-  if (!el) return
-  const known = ['copilot', 'claude_code', 'codex']
-  const sources = state.agentSources.filter(s => known.includes(s))
-  el.innerHTML = sources.length
-    ? sources.map(src =>
-        `<span style="display:flex;align-items:center;gap:4px">` +
-        `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${agentColor(src)}"></span>` +
-        `${agentLabel(src)}</span>`
-      ).join('')
-    : ''
-}
-
 // ── Init + message handler ────────────────────────────────────────────────────
-
-renderAgentKey()
 render()
 
 // Keep idle timer ticking
@@ -375,7 +359,7 @@ window.addEventListener('message', (e: MessageEvent<UpdateMsg>) => {
   if (msg.isActive !== undefined) state.isActive = msg.isActive
   if (msg.lastActivityMs !== undefined) state.lastActivityMs = msg.lastActivityMs
   if (msg.sessionCount !== undefined) state.sessionCount = msg.sessionCount
-  if (msg.agentSources) { state.agentSources = msg.agentSources; renderAgentKey() }
+  if (msg.agentSources) { state.agentSources = msg.agentSources }
   if ('currentSession' in msg) {
     const incoming = msg.currentSession ?? null
     // Reset retained burn rate when switching to a different session

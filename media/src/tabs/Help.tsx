@@ -43,8 +43,7 @@ const HELP_SECTIONS = {
   otel:       { href: '#help-otel',       heading: 'OTEL Data' },
   sessions:   { href: '#help-sessions',   heading: 'Sessions' },
   analytics:  { href: '#help-analytics',  heading: 'Analytics' },
-  alerts:     { href: '#help-alerts',     heading: 'Alerts' },
-  automation: { href: '#help-automation', heading: 'Automation' },
+  settings:   { href: '#help-settings',   heading: 'Settings' },
   export:     { href: '#help-export',     heading: 'Export' },
   badges:     { href: '#help-badges',     heading: 'Badges' },
   glossary:   { href: '#help-glossary',   heading: 'Glossary' },
@@ -336,7 +335,7 @@ function AgentOtelSection() {
             </div>
           ))}
         </div>
-        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Insights, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side.</p>
+        <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Insights, Alerts, Automation, Agents, and Flow all use the normalized session model so the three agents can be compared side by side.</p>
       </div>
     </div>
   )
@@ -503,13 +502,21 @@ function AnalyticsSection() {
   )
 }
 
-function AlertsSection() {
+function SettingsSection() {
   return (
-    <div class="help-section" id="help-alerts">
-      <h3 class="help-heading">{HELP_SECTIONS.alerts.heading}</h3>
+    <div class="help-section" id="help-settings">
+      <h3 class="help-heading">{HELP_SECTIONS.settings.heading}</h3>
       <div class="help-overview-body">
-        <p>The Alerts tab lets you configure thresholds for six signals. When a live session crosses a threshold, an alert fires and the tab badge increments. Alerts clear automatically when the session ends or you dismiss them.</p>
-        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Two alerts use shared token-count thresholds; the other four use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently.</p>
+        <p>Two icons in the top-right of the tab bar give you access to alert status and configuration without cluttering the main navigation.</p>
+
+        <h4 style={subHeadStyle}>Bell icon — active alert status</h4>
+        <p>The bell icon shows a numbered badge when one or more alert thresholds are currently triggered. Click it to open a status card listing every active alert — severity, name, and detail about which session tripped it. The card also has a <strong>Configure alerts →</strong> link that jumps straight to the settings panel. When no alerts are firing the bell has no badge.</p>
+
+        <h4 style={subHeadStyle}>Gear icon — settings panel</h4>
+        <p>The gear icon opens a slide-in settings panel containing two collapsible sections: <strong>Alerts</strong> and <strong>Automation</strong>. Close it with the × button or by pressing Escape.</p>
+
+        <h4 id="help-alerts" style={subHeadStyle}>Alerts</h4>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Configure thresholds for six signals. When a live session crosses a threshold the bell badge increments and the alert appears in the status card. Two alerts use shared token-count thresholds; the other four use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently.</p>
         <div class="glossary">
           <div class="glossary-item" style="flex-direction:column;gap:2px">
             <dt class="glossary-term">Context Window Filling Up <span style="font-size:10px;font-weight:400;color:var(--muted)">(warning)</span></dt>
@@ -536,18 +543,9 @@ function AlertsSection() {
             <dd class="glossary-def" style="display:block">Fires when the same tool with identical arguments repeats beyond the per-agent threshold without a file change between repeats — a strong deadlock signal. Default: 5 repeats (adjustable per agent).</dd>
           </div>
         </div>
-      </div>
-    </div>
-  )
-}
 
-function AutomationSection() {
-  return (
-    <div class="help-section" id="help-automation">
-      <h3 class="help-heading">{HELP_SECTIONS.automation.heading}</h3>
-      <div class="help-overview-body">
-        <p>The Automation tab configures prompts that are sent automatically to the agent when a session crosses a threshold — without you having to intervene manually. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex.</p>
-        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">In the VS Code extension, automations surface as a notification or open the agent chat directly. In local (npx) mode, they write the prompt to a file-based relay that the agent reads.</p>
+        <h4 id="help-automation" style={subHeadStyle}>Automation</h4>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Automations send a prompt to the agent automatically when a session crosses a threshold — without you having to intervene manually. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex. In the VS Code extension, automations surface as a notification with a copyable prompt. In standalone (npx) mode they appear as an in-page notification.</p>
         <div class="glossary">
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Context Dump</dt>
@@ -665,8 +663,7 @@ export function Help() {
       <AgentOtelSection />
       <SessionsSection />
       <AnalyticsSection />
-      <AlertsSection />
-      <AutomationSection />
+      <SettingsSection />
       <ExportSection />
       <BadgesSection />
       <GlossarySection />

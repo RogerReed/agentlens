@@ -6,6 +6,10 @@ node_modules
 *.vsix
 standalone/server.js
 standalone/server.js.map
+standalone/cli.js.map
+media/dashboard.js.map
+media/dashboard.css.map
+media/sidebar.js.map
 # Captured fixture files contain real telemetry — opt-in to commit specific ones
 demo/fixtures/*.json
 # Session data exports
@@ -13,3 +17,6 @@ export_*.json
 agent-lens-export-*.json
 # Local staging
 .staged-issues/
+# Claude Code per-developer settings (permissions, hooks — not project config)
+.claude/settings.json
+.claude/settings.local.json

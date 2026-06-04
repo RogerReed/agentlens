@@ -346,9 +346,6 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
 
   <div class="sb-body">
 
-    <!-- Agent key -->
-    <div id="sb-agent-key" style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px;color:var(--vscode-descriptionForeground);margin-bottom:6px;align-items:center"></div>
-
     <!-- Status row -->
     <div class="sb-card" style="margin-bottom:6px">
       <div class="sb-row" style="margin-bottom:2px">

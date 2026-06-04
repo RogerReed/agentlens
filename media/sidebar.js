@@ -225,16 +225,6 @@
     const countEl = document.getElementById("sb-session-count");
     if (countEl) countEl.textContent = String(state.sessionCount);
   }
-  function renderAgentKey() {
-    const el = document.getElementById("sb-agent-key");
-    if (!el) return;
-    const known = ["copilot", "claude_code", "codex"];
-    const sources = state.agentSources.filter((s) => known.includes(s));
-    el.innerHTML = sources.length ? sources.map(
-      (src) => `<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${agentColor(src)}"></span>${agentLabel(src)}</span>`
-    ).join("") : "";
-  }
-  renderAgentKey();
   render();
   setInterval(() => {
     if (!state.isActive && state.lastActivityMs) {
@@ -250,7 +240,6 @@
     if (msg.sessionCount !== void 0) state.sessionCount = msg.sessionCount;
     if (msg.agentSources) {
       state.agentSources = msg.agentSources;
-      renderAgentKey();
     }
     if ("currentSession" in msg) {
       const incoming = msg.currentSession ?? null;
