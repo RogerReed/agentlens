@@ -1,6 +1,6 @@
 import { useState, useRef } from 'preact/hooks'
 import { filteredSessions } from '../state'
-import { getAgentSourceLabel } from '../utils'
+import { getAgentSourceLabel, formatSessionTime } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
 import type { SessionSummaryCard } from '../types'
@@ -19,9 +19,12 @@ const sectionHead = 'font-size:11px;font-weight:600;text-transform:uppercase;let
 
 // ── Efficiency Map ────────────────────────────────────────────────────────────
 
+type MatchSort = 'time' | 'prompt' | 'cost' | 'turns' | 'cache'
+
 function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
   const [filter, setFilter] = useState('')
   const [tooltip, setTooltip] = useState<{ x: number; y: number; s: SessionSummaryCard } | null>(null)
+  const [sort, setSort] = useState<{ col: MatchSort; dir: 'asc' | 'desc' }>({ col: 'cost', dir: 'desc' })
   const svgRef = useRef<SVGSVGElement>(null)
 
   const points = sessions
@@ -30,19 +33,21 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
       s,
       cost: sessionCost(s),
       turns: s.totalLlmCalls,
-      hasSignal: (s.loopSignals?.length ?? 0) > 0,
-      hasErrors: s.errors > 0,
+      cacheHitRate: s.cacheHitRate ?? 0,
       matches: filter ? (s.userRequest ?? '').toLowerCase().includes(filter.toLowerCase()) : true,
     }))
 
   if (points.length === 0) return <div class="empty-state" style="padding:20px">No sessions with turn data yet.</div>
 
+  const matched = points.filter(p => p.matches)
+  const axisPoints = filter.trim() && matched.length > 0 ? matched : points
+
   const W = 560, H = 240, PAD = { top: 12, right: 16, bottom: 32, left: 52 }
   const cw = W - PAD.left - PAD.right
   const ch = H - PAD.top - PAD.bottom
 
-  const maxCost  = Math.max(...points.map(p => p.cost), 0.01)
-  const maxTurns = Math.max(...points.map(p => p.turns), 1)
+  const maxCost  = Math.max(...axisPoints.map(p => p.cost), 0.01) * 1.15
+  const maxTurns = Math.max(...axisPoints.map(p => p.turns), 1) * 1.15
 
   const xPos = (cost: number)  => PAD.left + (cost / maxCost) * cw
   const yPos = (turns: number) => PAD.top  + ch - (turns / maxTurns) * ch
@@ -50,11 +55,27 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
   const xTicks = [0, 0.25, 0.5, 0.75, 1].map(f => ({ v: f * maxCost, x: PAD.left + f * cw }))
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => ({ v: Math.round(f * maxTurns), y: PAD.top + ch - f * ch }))
 
-  const matched = points.filter(p => p.matches)
-  const topMatches = filter.trim() ? matched.slice(0, 10) : []
+  const sortedMatches = filter.trim() ? (() => {
+    const m = [...matched]
+    const d = sort.dir === 'asc' ? 1 : -1
+    if (sort.col === 'time')   m.sort((a, b) => d * (new Date(a.s.startTime).getTime() - new Date(b.s.startTime).getTime()))
+    if (sort.col === 'prompt') m.sort((a, b) => d * (a.s.userRequest ?? '').localeCompare(b.s.userRequest ?? ''))
+    if (sort.col === 'cost')   m.sort((a, b) => d * (a.cost - b.cost))
+    if (sort.col === 'turns')  m.sort((a, b) => d * (a.turns - b.turns))
+    if (sort.col === 'cache')  m.sort((a, b) => d * (a.cacheHitRate - b.cacheHitRate))
+    return m.slice(0, 10)
+  })() : []
+
+  const toggleSort = (col: MatchSort) =>
+    setSort(s => s.col === col ? { col, dir: s.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: 'desc' })
+
+  const topMatchIds = new Set(sortedMatches.map(p => p.s.traceId))
 
   return (
     <div>
+      <div style="margin-bottom:8px;padding:8px 10px;font-size:11px;color:var(--muted);line-height:1.6;background:var(--card-bg);border:1px solid var(--border);border-radius:4px">
+        Each dot is one session. <strong style="color:var(--fg)">Right</strong> = more expensive. <strong style="color:var(--fg)">Up</strong> = more model calls. <strong style="color:var(--fg)">Top-right</strong> dots cost the most and required the most back-and-forth — start there. <strong style="color:#81c784">Green</strong> = model reused cached context between calls (efficient). <strong style="color:#f44747">Red</strong> = model reprocessed everything from scratch on every call (wasteful).
+      </div>
       <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
         <input
           type="text"
@@ -65,13 +86,18 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
         />
         <span style="font-size:10px;color:var(--muted)">{matched.length} sessions</span>
         <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)">
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#81c784" /> clean
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f6a623;margin-left:6px" /> signals
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f44747;margin-left:6px" /> errors
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#81c784" /> cache ≥60%
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f6a623;margin-left:6px" /> 20–60%
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f44747;margin-left:6px" /> &lt;20%
         </span>
       </div>
       <div style="position:relative">
-        <svg ref={svgRef} width={W} height={H} style="overflow:visible;max-width:100%">
+        <svg ref={svgRef} width={W} height={H} style="overflow:hidden;max-width:100%">
+          <defs>
+            <clipPath id="plot-area">
+              <rect x={PAD.left} y={PAD.top} width={cw} height={ch} />
+            </clipPath>
+          </defs>
           {yTicks.map(t => (
             <line key={t.v} x1={PAD.left} y1={t.y} x2={PAD.left + cw} y2={t.y} stroke="var(--border)" stroke-width="1" />
           ))}
@@ -79,7 +105,7 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
           <line x1={PAD.left} y1={PAD.top + ch} x2={PAD.left + cw} y2={PAD.top + ch} stroke="var(--border)" stroke-width="1" />
           <text x={PAD.left + cw / 2} y={H - 2} text-anchor="middle" font-size="10" fill="var(--muted)">Cost (USD)</text>
           <text x={10} y={PAD.top + ch / 2} text-anchor="middle" font-size="10" fill="var(--muted)"
-            transform={`rotate(-90,10,${PAD.top + ch / 2})`}>Turns</text>
+            transform={`rotate(-90,10,${PAD.top + ch / 2})`}>LLM calls</text>
           {xTicks.map(t => (
             <g key={t.v}>
               <line x1={t.x} y1={PAD.top + ch} x2={t.x} y2={PAD.top + ch + 4} stroke="var(--border)" />
@@ -94,18 +120,21 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
               <text x={PAD.left - 6} y={t.y + 4} text-anchor="end" font-size="9" fill="var(--muted)">{t.v}</text>
             </g>
           ))}
-          {points.map((p, i) => {
-            const cx = xPos(p.cost), cy = yPos(p.turns)
-            const color = p.hasErrors ? '#f44747' : p.hasSignal ? '#f6a623' : '#81c784'
-            const opacity = filter ? (p.matches ? 1 : 0.12) : 0.75
-            return (
-              <circle key={i} cx={cx} cy={cy} r={filter && p.matches ? 5 : 4}
-                fill={color} opacity={opacity} style="cursor:pointer"
-                onMouseEnter={() => setTooltip({ x: cx, y: cy, s: p.s })}
-                onMouseLeave={() => setTooltip(null)}
-              />
-            )
-          })}
+          <g clip-path="url(#plot-area)">
+            {points.map((p, i) => {
+              const inTop = filter.trim() ? topMatchIds.has(p.s.traceId) : false
+              if (filter.trim() && !inTop) return null
+              const cx = xPos(p.cost), cy = yPos(p.turns)
+              const color = p.cacheHitRate >= 0.6 ? '#81c784' : p.cacheHitRate >= 0.2 ? '#f6a623' : '#f44747'
+              return (
+                <circle key={i} cx={cx} cy={cy} r={filter.trim() ? 6 : 4}
+                  fill={color} opacity={0.85} style="cursor:pointer"
+                  onMouseEnter={() => setTooltip({ x: cx, y: cy, s: p.s })}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              )
+            })}
+          </g>
         </svg>
         {tooltip && (() => {
           const s = tooltip.s
@@ -119,32 +148,44 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
               <div style="color:var(--muted);font-size:10px;line-height:1.6">
                 <div>{getAgentSourceLabel(s.source)} · {s.model?.split('-').slice(-2).join('-')}</div>
                 <div>{s.startTime.slice(0, 10)} · {fmtUsd(sessionCost(s))} · {s.totalLlmCalls} turns</div>
-                {(s.loopSignals?.length ?? 0) > 0 && (
-                  <div style="color:#f6a623">{s.loopSignals.map(l => l.type).join(', ')}</div>
-                )}
+                <div>cache hit rate: {Math.round((s.cacheHitRate ?? 0) * 100)}%</div>
               </div>
             </div>
           )
         })()}
       </div>
 
-      {topMatches.length > 0 && (
-        <div style="margin-top:12px;display:flex;flex-direction:column;gap:4px">
-          <div style="font-size:10px;color:var(--muted);margin-bottom:2px">Top {topMatches.length} matches</div>
-          {topMatches.map((p, i) => (
-            <div key={i} style="display:flex;align-items:baseline;gap:8px;padding:5px 8px;background:var(--card-bg);border:1px solid var(--border);border-radius:4px">
-              <span style="flex:1;font-size:11px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                {p.s.userRequest?.slice(0, 90) ?? '—'}
-              </span>
-              <span style="flex-shrink:0;font-size:10px;color:var(--muted);white-space:nowrap">
-                {fmtUsd(p.cost)} · {p.turns} turns
-                {p.hasSignal && <span style="color:#f6a623;margin-left:4px">↺</span>}
-                {p.hasErrors && <span style="color:#f44747;margin-left:4px">✕</span>}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+      {sortedMatches.length > 0 && (() => {
+        const thStyle = (col: MatchSort) =>
+          `padding:4px 8px 4px 0;color:${sort.col === col ? 'var(--fg)' : 'var(--muted)'};font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;font-size:11px`
+        const arrow = (col: MatchSort) => sort.col === col ? (sort.dir === 'desc' ? ' ↓' : ' ↑') : ''
+        return (
+          <div style="margin-top:12px;overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:11px">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <th style={thStyle('time')}   onClick={() => toggleSort('time')}>Time{arrow('time')}</th>
+                  <th style={thStyle('prompt')} onClick={() => toggleSort('prompt')}>Prompt{arrow('prompt')}</th>
+                  <th style={`${thStyle('cost')};text-align:right`}  onClick={() => toggleSort('cost')}>Cost{arrow('cost')}</th>
+                  <th style={`${thStyle('turns')};text-align:right`} onClick={() => toggleSort('turns')}>Turns{arrow('turns')}</th>
+                  <th style={`${thStyle('cache')};text-align:right`} onClick={() => toggleSort('cache')}>Cache hit{arrow('cache')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedMatches.map((p, i) => (
+                  <tr key={i} style="border-bottom:1px solid var(--border)">
+                    <td style="padding:4px 8px 4px 0;white-space:nowrap;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums">{formatSessionTime(p.s)}</td>
+                    <td style="padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)">{p.s.userRequest?.slice(0, 80) ?? '—'}</td>
+                    <td style="padding:4px 8px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">{fmtUsd(p.cost)}</td>
+                    <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">{p.turns}</td>
+                    <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)">{Math.round(p.cacheHitRate * 100)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -286,7 +327,7 @@ function CostTrend({ sessions }: { sessions: SessionSummaryCard[] }) {
 function HotFiles({ sessions }: { sessions: SessionSummaryCard[] }) {
   const [mode, setMode] = useState<'read' | 'changed' | 'both'>('read')
 
-  const fileMap = new Map<string, { read: number; changed: number; sessionCount: number }>()
+  const fileMap = new Map<string, { read: number; changed: number; sessionCount: number; lastSeen: string }>()
   for (const s of sessions) {
     const seen = new Set<string>()
     const files = mode === 'read'    ? (s.filesRead ?? [])
@@ -295,25 +336,35 @@ function HotFiles({ sessions }: { sessions: SessionSummaryCard[] }) {
     for (const f of files) {
       if (!seen.has(f)) {
         seen.add(f)
-        const e = fileMap.get(f) ?? { read: 0, changed: 0, sessionCount: 0 }
+        const e = fileMap.get(f) ?? { read: 0, changed: 0, sessionCount: 0, lastSeen: '' }
         e.sessionCount++
+        // Always track read/changed counts regardless of mode so both columns are meaningful
         if (s.filesRead?.includes(f)) e.read++
         if (s.filesChanged?.includes(f)) e.changed++
+        if (!e.lastSeen || s.startTime > e.lastSeen) e.lastSeen = s.startTime
         fileMap.set(f, e)
       }
     }
   }
 
-  const total = sessions.length || 1
   const rows = [...fileMap.entries()]
-    .map(([file, v]) => ({ file, ...v, pct: Math.round(v.sessionCount / total * 100) }))
+    .map(([file, v]) => ({ file, ...v }))
     .sort((a, b) => b.sessionCount - a.sessionCount)
     .slice(0, 10)
 
   if (rows.length === 0) return <div class="empty-state">No file access data yet.</div>
 
+  const tip = mode === 'read'
+    ? <><strong style="color:var(--fg)">Read-heavy files</strong> are loaded into the agent's context window every session — the context window is the block of text sent to the model on each call, and every token in it costs money. Files read frequently mean the agent is spending tokens re-loading content it already needed last time. Documenting their purpose in your instructions file lets the agent orient itself without reading the whole file. Large files are especially costly — splitting them into smaller focused modules reduces how much fills the context window per session.</>
+    : mode === 'changed'
+    ? <><strong style="color:var(--fg)">Frequently changed files</strong> are your highest-churn surface area — the agent reads them into its context window, edits them, then often re-reads them to verify. Add guidance in your instructions file: what conventions to follow, what tests to run after edits, and what parts should not be modified without a specific reason. Clear constraints reduce back-and-forth and prevent the agent from undoing its own prior work.</>
+    : <><strong style="color:var(--fg)">Hot files</strong> are loaded into the agent's context window most often across sessions — every read costs tokens. Files with high Read counts are candidates for documentation in your instructions file so the agent doesn't need to re-read them raw. Files with high Changed counts are high-churn; add constraints and testing requirements. Large files that appear here are strong candidates for splitting into smaller focused modules to keep context window usage lean.</>
+
   return (
     <div>
+      <div style="margin-bottom:10px;padding:8px 10px;font-size:11px;color:var(--muted);line-height:1.6;background:var(--card-bg);border:1px solid var(--border);border-radius:4px">
+        {tip}
+      </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <span style="font-size:11px;color:var(--muted)">Show:</span>
         <button class={'tab-mini' + (mode === 'read'    ? ' active' : '')} onClick={() => setMode('read')}>Read</button>
@@ -326,33 +377,22 @@ function HotFiles({ sessions }: { sessions: SessionSummaryCard[] }) {
             <tr style="border-bottom:1px solid var(--border)">
               <th style="text-align:left;padding:4px 8px 4px 0;color:var(--muted);font-weight:500">File</th>
               <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap">Sessions</th>
-              <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500">%</th>
-              <th style="text-align:left;padding:4px 8px;color:var(--muted);font-weight:500">Frequency</th>
-              <th style="padding:4px 0;color:var(--muted);font-weight:500">CLAUDE.md?</th>
+              <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap" title="Sessions where the agent read this file">Read</th>
+              <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap" title="Sessions where the agent modified this file">Changed</th>
+              <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap">Last seen</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(r => (
+            {rows.map((r, i) => (
               <tr key={r.file} style="border-bottom:1px solid var(--border)">
                 <td style="padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title={r.file}>
                   <span style="color:var(--muted);font-size:10px">{r.file.replace(basename(r.file), '')}</span>
                   <span style="color:var(--fg)">{basename(r.file)}</span>
                 </td>
                 <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">{r.sessionCount}</td>
-                <td style="padding:4px 8px;text-align:right;color:var(--muted)">{r.pct}%</td>
-                <td style="padding:4px 8px;min-width:120px">
-                  <div style="height:6px;border-radius:3px;background:var(--border);overflow:hidden">
-                    <div style={`height:100%;width:${r.pct}%;background:${r.pct >= 50 ? 'var(--accent)' : 'var(--muted)'};border-radius:3px`} />
-                  </div>
-                </td>
-                <td style="padding:4px 0;text-align:center">
-                  {r.pct >= 40 && (
-                    <span style="font-size:10px;background:rgba(79,195,247,0.15);color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:1px 5px"
-                      title="Appears in 40%+ of sessions — consider mentioning in CLAUDE.md">
-                      candidate
-                    </span>
-                  )}
-                </td>
+                <td style="padding:4px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">{r.read || '—'}</td>
+                <td style="padding:4px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">{r.changed || '—'}</td>
+                <td style="padding:4px 8px;text-align:right;color:var(--muted);white-space:nowrap;font-size:10px">{r.lastSeen ? r.lastSeen.slice(0, 10) : '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -375,25 +415,9 @@ export function Patterns() {
 
   return (
     <div id="patterns-content" style="display:flex;flex-direction:column;gap:20px">
-      <div style="font-size:10px;color:var(--muted);text-align:right">{sessions.length} sessions</div>
-
       <section>
         <h3 style={sectionHead}>Efficiency Map</h3>
         <EfficiencyMap sessions={sessions} />
-      </section>
-
-      {divider}
-
-      <section>
-        <h3 style={sectionHead}>CLAUDE.md Tips</h3>
-        <ClaudeMdTips sessions={sessions} />
-      </section>
-
-      {divider}
-
-      <section>
-        <h3 style={sectionHead}>Cost Trend</h3>
-        <CostTrend sessions={sessions} />
       </section>
 
       {divider}

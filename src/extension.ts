@@ -16,6 +16,7 @@ import { runRetention } from './database/retention'
 import { SessionRepository } from './sessionRepository'
 import { summarizeSpans } from './spanSummarizer'
 import { LogReader } from './logReader'
+import { detectLoopSignals } from './loopDetector'
 
 let collector: OtlpCollector | undefined
 let store: SessionStore | undefined
@@ -217,7 +218,10 @@ export async function activate(context: vscode.ExtensionContext) {
       const results = lr.scan()
       if (results.length === 0) return
       const ws = fallbackWorkspace()
-      for (const { card, workspace } of results) writer!.enqueue(card, workspace || ws)
+      for (const { card, workspace } of results) {
+        card.loopSignals = detectLoopSignals(card)
+        writer!.enqueue(card, workspace || ws)
+      }
       void writer!.drain().then(() => {
         agentLensDb?.save()
         provider.refresh()
@@ -258,7 +262,11 @@ export async function activate(context: vscode.ExtensionContext) {
           for (let i = idx; i < Math.min(idx + batchSize, files.length); i++) {
             try {
               const result = lr.parseFile(files[i].filePath, files[i].agentKey)
-              if (result) { writer!.enqueue(result.card, result.workspace || ws); written++ }
+              if (result) {
+                result.card.loopSignals = detectLoopSignals(result.card)
+                writer!.enqueue(result.card, result.workspace || ws)
+                written++
+              }
             } catch { /* skip bad file */ }
           }
           if (written > 0) {

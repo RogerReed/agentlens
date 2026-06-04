@@ -12,6 +12,7 @@ const TERMS: [string, string][] = [
   ['Cache Hit Rate',         'The percentage of input tokens served from a server-side prompt cache instead of being reprocessed. Higher rates reduce latency and cost.'],
   ['Cache Read Tokens',      'Input tokens served from the server-side prompt cache, avoiding reprocessing. Shown in efficiency metrics.'],
   ['Context Bloat',          'An efficiency insight triggered when input tokens grow significantly across turns within a session.'],
+  ['Context Window',         'The block of text sent to the language model on every LLM call. It includes your system instructions, conversation history, tool definitions, and the current prompt. Every token in the context window costs money — larger context windows mean higher cost per call. Agents that frequently read large files or accumulate long conversation histories fill the context window quickly, driving up cost per session.'],
   ['Files Changed',          'Unique files that were created or modified by the agent during the current data collection period.'],
   ['Input Tokens',           'The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt.'],
   ['Loop Signal',            'A behavioral signal in the Insights panel (inside the Overview sub-tab of each session) indicating the agent is stuck, oscillating, or making no forward progress. Shown with a ↺ icon.'],
