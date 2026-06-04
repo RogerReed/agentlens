@@ -1735,6 +1735,19 @@ function calcTokenCostUsd(inputTokens, cacheReadTokens, cacheWriteTokens, output
 var path = __toESM(require("path"));
 var os = __toESM(require("os"));
 var fs = __toESM(require("fs/promises"));
+
+// src/vscodeFamilyIdes.ts
+var VSCODE_FAMILY_IDE_NAMES = [
+  "Code",
+  "Code - Insiders",
+  "Cursor",
+  "Windsurf",
+  "VSCodium",
+  "Trae",
+  "Kiro"
+];
+
+// src/autoConfigNode.ts
 async function autoConfigureCodex(port) {
   const codexHome = process.env.CODEX_HOME || path.join(os.homedir(), ".codex");
   const configPath = path.join(codexHome, "config.toml");
@@ -1861,7 +1874,6 @@ async function autoConfigureClaudeCode(port) {
     return { changed: false, error: String(e) };
   }
 }
-var VS_CODE_VARIANTS = ["Code", "Code - Insiders", "Cursor", "Windsurf"];
 function vscodeUserSettingsPaths() {
   const home = os.homedir();
   let base;
@@ -1872,7 +1884,7 @@ function vscodeUserSettingsPaths() {
   } else {
     base = process.env.APPDATA ?? path.join(home, "AppData", "Roaming");
   }
-  return VS_CODE_VARIANTS.map((v) => path.join(base, v, "User", "settings.json"));
+  return VSCODE_FAMILY_IDE_NAMES.map((v) => path.join(base, v, "User", "settings.json"));
 }
 async function autoConfigureCopilotStandalone(port) {
   const required = {
@@ -1974,27 +1986,24 @@ function copilotSessionStateDir() {
   const dir = path2.join(homeDir(), ".copilot", "session-state");
   return fs2.existsSync(dir) ? dir : null;
 }
-function copilotVSCodeChatRoots() {
+function vscodeFamilyWorkspaceStorageRoots() {
   const home = homeDir();
   const candidates = [];
-  switch (process.platform) {
-    case "win32": {
-      const appData = process.env["APPDATA"];
-      if (appData) {
-        candidates.push(path2.join(appData, "Code", "User", "workspaceStorage"));
-        candidates.push(path2.join(appData, "Code - Insiders", "User", "workspaceStorage"));
+  for (const name of VSCODE_FAMILY_IDE_NAMES) {
+    switch (process.platform) {
+      case "win32": {
+        const appData = process.env["APPDATA"];
+        if (appData) candidates.push(path2.join(appData, name, "User", "workspaceStorage"));
+        break;
       }
-      break;
-    }
-    case "darwin":
-      candidates.push(path2.join(home, "Library", "Application Support", "Code", "User", "workspaceStorage"));
-      candidates.push(path2.join(home, "Library", "Application Support", "Code - Insiders", "User", "workspaceStorage"));
-      break;
-    default: {
-      const xdg = process.env["XDG_CONFIG_HOME"] ?? path2.join(home, ".config");
-      candidates.push(path2.join(xdg, "Code", "User", "workspaceStorage"));
-      candidates.push(path2.join(xdg, "Code - Insiders", "User", "workspaceStorage"));
-      break;
+      case "darwin":
+        candidates.push(path2.join(home, "Library", "Application Support", name, "User", "workspaceStorage"));
+        break;
+      default: {
+        const xdg = process.env["XDG_CONFIG_HOME"] ?? path2.join(home, ".config");
+        candidates.push(path2.join(xdg, name, "User", "workspaceStorage"));
+        break;
+      }
     }
   }
   return candidates.filter((d) => {
@@ -2052,7 +2061,7 @@ var LogReader = class {
       } catch {
       }
     }
-    for (const root of copilotVSCodeChatRoots()) {
+    for (const root of vscodeFamilyWorkspaceStorageRoots()) {
       try {
         for (const hashDir of fs2.readdirSync(root)) {
           const chatDir = path2.join(root, hashDir, "chatSessions");
@@ -2115,7 +2124,7 @@ var LogReader = class {
         const d = copilotSessionStateDir();
         return d ? [d] : [];
       })(),
-      ...copilotVSCodeChatRoots()
+      ...vscodeFamilyWorkspaceStorageRoots()
     ];
   }
   /**
@@ -2416,7 +2425,7 @@ var LogReader = class {
   // NOT available: input tokens, cache tokens, model per turn.
   _scanCopilotVSCode() {
     const results = [];
-    for (const root of copilotVSCodeChatRoots()) {
+    for (const root of vscodeFamilyWorkspaceStorageRoots()) {
       try {
         for (const hashDir of fs2.readdirSync(root)) {
           const chatDir = path2.join(root, hashDir, "chatSessions");
