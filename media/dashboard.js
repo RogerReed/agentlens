@@ -3298,6 +3298,26 @@
       ] }),
       /* @__PURE__ */ u4("div", { style: "padding:12px 14px", children: [
         section === "overview" && /* @__PURE__ */ u4("div", { children: [
+          sess.dataSource === "log" && (() => {
+            const isCopilot = sess.source === "copilot";
+            if (isCopilot && sess.outputTokens === 0 && sess.turns > 0) {
+              return /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;padding:7px 10px;border-radius:4px;border-left:3px solid var(--vscode-editorWarning-foreground,#cca700);background:var(--hover);font-size:11px;color:var(--muted);line-height:1.5", children: [
+                /* @__PURE__ */ u4("span", { style: "color:var(--vscode-editorWarning-foreground,#cca700);font-weight:600", children: "Log-only session \u2014 no token data" }),
+                " \u2014 ",
+                "VS Code Copilot Chat did not record token counts in this era. Token counts and cost estimates are unavailable and cannot be recovered."
+              ] });
+            }
+            const missingTokens = isCopilot && sess.inputTokens === 0;
+            const parts = ["traces & TTFT"];
+            if (missingTokens) parts.push("input tokens & cache stats");
+            if (isCopilot) parts.push("tool details");
+            return /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;padding:7px 10px;border-radius:4px;border-left:3px solid var(--vscode-editorWarning-foreground,#cca700);background:var(--hover);font-size:11px;color:var(--muted);line-height:1.5", children: [
+              /* @__PURE__ */ u4("span", { style: "color:var(--vscode-editorWarning-foreground,#cca700);font-weight:600", children: "Log-only session" }),
+              " \u2014 ",
+              parts.join(", "),
+              " not available from local logs. Enable OTEL ingestion via the Help tab for full telemetry."
+            ] });
+          })(),
           sess.userRequest ? /* @__PURE__ */ u4(PromptBlock, { text: sess.userRequest }) : sess.turns === 0 ? /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;font-size:11px;color:var(--muted);font-style:italic", children: "Waiting for first turn\u2026" }) : /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;font-size:11px;color:var(--muted)", children: "Prompt not captured for this session" }),
           /* @__PURE__ */ u4("div", { style: "display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:10px", children: [
             { k: "LLM calls", v: String(sess.totalLlmCalls) },
@@ -6226,7 +6246,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         const msg = e4.data;
         if (msg.type === "update") {
           if (msg.summary?.toolCalls) toolCalls.value = msg.summary.toolCalls;
-          sessionSummary.value = msg.sessionSummary ?? sessionSummary.value;
+          if (msg.sessionSummary !== void 0) sessionSummary.value = msg.sessionSummary;
           if (msg.analyticsData) {
             dailyStats.value = msg.analyticsData.dailyStats;
             lifetimeStats.value = msg.analyticsData.lifetimeStats;

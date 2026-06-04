@@ -205,13 +205,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // ── Log ingestion ─────────────────────────────────────────────────────────
   const enableLogIngestion = vscode.workspace.getConfiguration('agentLens').get<boolean>('enableLogIngestion', true)
+  let logReader: LogReader | undefined
+  let startBatchedLoad: ((onAllDone?: () => void) => void) | undefined
   if (enableLogIngestion && writer) {
-    const logReader = new LogReader({ log: (msg) => outputChannel!.appendLine(msg) })
+    logReader = new LogReader({ log: (msg) => outputChannel!.appendLine(msg) })
+    const lr = logReader  // non-null alias for use inside closures
     const fallbackWorkspace = () => vscode.workspace.workspaceFolders?.[0]?.uri.toString() ?? ''
 
     // Periodic incremental scan: only picks up files that have changed since last run.
     const runLogScan = () => {
-      const results = logReader.scan()
+      const results = lr.scan()
       if (results.length === 0) return
       const ws = fallbackWorkspace()
       for (const { card, workspace } of results) writer!.enqueue(card, workspace || ws)
@@ -222,47 +225,74 @@ export async function activate(context: vscode.ExtensionContext) {
       }).catch(err => outputChannel!.appendLine(`[AgentLens] log ingestion drain error: ${err}`))
     }
 
-    // Initial load: collect file metadata sorted newest-first, then process in
-    // small batches with setImmediate between each batch. This keeps the event
-    // loop free and shows the most recent sessions first.
-    const BATCH_SIZE = 10
-    const startBatchedLoad = () => {
-      let files: ReturnType<typeof logReader.collectFileMeta>
+    // Initial load: collect file metadata sorted newest-first, then process in two
+    // priority groups so the extension host stays responsive throughout.
+    //
+    // Fast group  (.jsonl and other small files): batch=10, no artificial delay.
+    // Slow group  (copilot_vscode_json — legacy .json snapshots that average 1.8 MB):
+    //             batch=2 with a 50 ms gap between batches.  This keeps each event-loop
+    //             tick under ~100 ms so VS Code can process incoming messages.
+    //
+    // Both groups use setTimeout(fn, 0) rather than setImmediate so the host can
+    // drain its own message queue between batches.
+    startBatchedLoad = (onAllDone?: () => void) => {
+      let allFiles: ReturnType<typeof lr.collectFileMeta>
       try {
-        files = logReader.collectFileMeta()
+        allFiles = lr.collectFileMeta()
       } catch (err) {
         outputChannel!.appendLine(`[AgentLens] log ingestion collect error: ${err}`)
+        onAllDone?.()
         return
       }
-      if (files.length === 0) return
+      if (allFiles.length === 0) { onAllDone?.(); return }
 
-      const processBatch = (startIdx: number) => {
-        const ws = fallbackWorkspace()
-        let written = 0
-        for (let i = startIdx; i < Math.min(startIdx + BATCH_SIZE, files.length); i++) {
-          try {
-            const result = logReader.parseFile(files[i].filePath, files[i].agentKey)
-            if (result) { writer!.enqueue(result.card, result.workspace || ws); written++ }
-          } catch { /* skip bad file */ }
+      const processGroup = (
+        files: typeof allFiles,
+        batchSize: number,
+        delayMs: number,
+        onDone: () => void,
+      ) => {
+        const step = (idx: number) => {
+          const ws = fallbackWorkspace()
+          let written = 0
+          for (let i = idx; i < Math.min(idx + batchSize, files.length); i++) {
+            try {
+              const result = lr.parseFile(files[i].filePath, files[i].agentKey)
+              if (result) { writer!.enqueue(result.card, result.workspace || ws); written++ }
+            } catch { /* skip bad file */ }
+          }
+          if (written > 0) {
+            void writer!.drain().then(() => {
+              agentLensDb?.save()
+              provider.refresh()
+            }).catch(err => outputChannel!.appendLine(`[AgentLens] log ingestion drain error: ${err}`))
+          }
+          const next = idx + batchSize
+          if (next < files.length) {
+            setTimeout(() => step(next), delayMs)
+          } else {
+            onDone()
+          }
         }
-        if (written > 0) {
-          void writer!.drain().then(() => {
-            agentLensDb?.save()
-            provider.refresh()
-          }).catch(err => outputChannel!.appendLine(`[AgentLens] log ingestion drain error: ${err}`))
-        }
-        const nextIdx = startIdx + BATCH_SIZE
-        if (nextIdx < files.length) {
-          setImmediate(() => processBatch(nextIdx))
-        } else {
-          writeLastWriteSignal(context.globalStorageUri)
-        }
+        if (files.length > 0) setTimeout(() => step(0), delayMs)
+        else onDone()
       }
 
-      setImmediate(() => processBatch(0))
+      const fastFiles = allFiles.filter(f => f.agentKey !== 'copilot_vscode_json')
+      const slowFiles = allFiles.filter(f => f.agentKey === 'copilot_vscode_json')
+
+      processGroup(fastFiles, 10, 0, () => {
+        writeLastWriteSignal(context.globalStorageUri)
+        // Slow-pass: legacy .json snapshots loaded at low priority after fast pass completes.
+        processGroup(slowFiles, 2, 50, () => {
+          writeLastWriteSignal(context.globalStorageUri)
+          onAllDone?.()
+        })
+      })
     }
 
-    startBatchedLoad()
+    // Defer off the activation stack so activation itself completes instantly.
+    setImmediate(() => startBatchedLoad!())
     logReaderTimer = setInterval(runLogScan, 30_000)
     context.subscriptions.push({ dispose: () => clearInterval(logReaderTimer) })
     outputChannel.appendLine('AgentLens: log ingestion enabled — scanning local session logs')
@@ -393,6 +423,31 @@ export async function activate(context: vscode.ExtensionContext) {
   )
   context.subscriptions.push(
     vscode.commands.registerCommand('agentLens.exportDataRedacted', () => runExport(exportSpansRedacted))
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('agentLens.clearSessions', () => {
+      if (!repository || !writer) return
+      // Clear DB and live span window
+      repository.clearAll()
+      store?.clear()
+      agentLensDb?.save()
+      // Re-ingest from local log files so log-sourced sessions reappear immediately
+      // Refresh both panels to show the cleared state before re-ingestion starts.
+      provider.refresh()
+      if (repository) DashboardPanel.setRepository(repository)
+      if (logReader && startBatchedLoad) {
+        logReader.clearFileState()
+        // Delay so the cleared state renders before log sessions flow back in.
+        // When all files are loaded, do a final refresh so the dashboard reflects
+        // the fully re-ingested state.
+        setTimeout(() => startBatchedLoad!(() => {
+          provider.refresh()
+          if (repository) DashboardPanel.setRepository(repository)
+        }), 500)
+      }
+      writeLastWriteSignal(context.globalStorageUri)
+    })
   )
 
   // ── Status bar ───────────────────────────────────────────────────────────────

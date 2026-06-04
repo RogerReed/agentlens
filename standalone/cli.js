@@ -1974,12 +1974,47 @@ function copilotSessionStateDir() {
   const dir = path2.join(homeDir(), ".copilot", "session-state");
   return fs2.existsSync(dir) ? dir : null;
 }
+function copilotVSCodeChatRoots() {
+  const home = homeDir();
+  const candidates = [];
+  switch (process.platform) {
+    case "win32": {
+      const appData = process.env["APPDATA"];
+      if (appData) {
+        candidates.push(path2.join(appData, "Code", "User", "workspaceStorage"));
+        candidates.push(path2.join(appData, "Code - Insiders", "User", "workspaceStorage"));
+      }
+      break;
+    }
+    case "darwin":
+      candidates.push(path2.join(home, "Library", "Application Support", "Code", "User", "workspaceStorage"));
+      candidates.push(path2.join(home, "Library", "Application Support", "Code - Insiders", "User", "workspaceStorage"));
+      break;
+    default: {
+      const xdg = process.env["XDG_CONFIG_HOME"] ?? path2.join(home, ".config");
+      candidates.push(path2.join(xdg, "Code", "User", "workspaceStorage"));
+      candidates.push(path2.join(xdg, "Code - Insiders", "User", "workspaceStorage"));
+      break;
+    }
+  }
+  return candidates.filter((d) => {
+    try {
+      return fs2.statSync(d).isDirectory();
+    } catch {
+      return false;
+    }
+  });
+}
 var LogReader = class {
   log;
   fileState = /* @__PURE__ */ new Map();
   constructor(options = {}) {
     this.log = options.log ?? (() => {
     });
+  }
+  /** Clears cached file state so the next scan re-reads all files from scratch. */
+  clearFileState() {
+    this.fileState.clear();
   }
   /**
    * Collects all session files across all agents, sorted newest-first by mtime.
@@ -2017,6 +2052,36 @@ var LogReader = class {
       } catch {
       }
     }
+    for (const root of copilotVSCodeChatRoots()) {
+      try {
+        for (const hashDir of fs2.readdirSync(root)) {
+          const chatDir = path2.join(root, hashDir, "chatSessions");
+          let names;
+          try {
+            names = fs2.readdirSync(chatDir);
+          } catch {
+            continue;
+          }
+          const jsonlIds = new Set(names.filter((n) => n.endsWith(".jsonl")).map((n) => n.slice(0, -6)));
+          for (const name of names) {
+            if (name.endsWith(".jsonl")) {
+              const f = path2.join(chatDir, name);
+              try {
+                entries.push({ filePath: f, mtimeMs: fs2.statSync(f).mtimeMs, agentKey: "copilot_vscode" });
+              } catch {
+              }
+            } else if (name.endsWith(".json") && !jsonlIds.has(name.slice(0, -5))) {
+              const f = path2.join(chatDir, name);
+              try {
+                entries.push({ filePath: f, mtimeMs: fs2.statSync(f).mtimeMs, agentKey: "copilot_vscode_json" });
+              } catch {
+              }
+            }
+          }
+        }
+      } catch {
+      }
+    }
     entries.sort((a, b) => b.mtimeMs - a.mtimeMs);
     return entries;
   }
@@ -2025,7 +2090,7 @@ var LogReader = class {
    * the file is new or has grown since the last scan. Returns null if unchanged.
    */
   parseFile(filePath, agentKey) {
-    const sessionId = agentKey === "copilot" ? path2.basename(path2.dirname(filePath)) : path2.basename(filePath, ".jsonl");
+    const sessionId = agentKey === "copilot" ? path2.basename(path2.dirname(filePath)) : agentKey === "copilot_vscode_json" ? path2.basename(filePath, ".json") : path2.basename(filePath, ".jsonl");
     switch (agentKey) {
       case "claude":
         return this._processFile(filePath, () => this._parseClaudeFile(filePath));
@@ -2033,6 +2098,10 @@ var LogReader = class {
         return this._processFile(filePath, () => this._parseCodexFile(filePath, ""));
       case "copilot":
         return this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId));
+      case "copilot_vscode":
+        return this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId));
+      case "copilot_vscode_json":
+        return this._processFile(filePath, () => this._parseCopilotVSCodeJsonFile(filePath, sessionId));
       default:
         return null;
     }
@@ -2045,7 +2114,8 @@ var LogReader = class {
       ...(() => {
         const d = copilotSessionStateDir();
         return d ? [d] : [];
-      })()
+      })(),
+      ...copilotVSCodeChatRoots()
     ];
   }
   /**
@@ -2056,7 +2126,8 @@ var LogReader = class {
     return [
       ...this._scanClaude(),
       ...this._scanCodex(),
-      ...this._scanCopilot()
+      ...this._scanCopilot(),
+      ...this._scanCopilotVSCode()
     ];
   }
   // ── Claude Code ─────────────────────────────────────────────────────────────
@@ -2167,6 +2238,7 @@ var LogReader = class {
     let model = "";
     let firstTimestamp = "";
     let lastTimestamp = "";
+    let userRequest = "";
     let totalInput = 0, totalOutput = 0, totalCacheRead = 0;
     let turns = 0;
     for (const line of lines) {
@@ -2187,6 +2259,10 @@ var LogReader = class {
       }
       if (entry["type"] === "event_msg") {
         const payload = entry["payload"];
+        if (payload?.["type"] === "user_message" && !userRequest) {
+          const msg = String(payload["message"] ?? "").trim();
+          if (msg) userRequest = _extractCodexUserText(msg);
+        }
         if (payload?.["type"] === "token_count") {
           const info = payload["info"];
           if (info?.["model"]) model = String(info["model"]);
@@ -2203,7 +2279,7 @@ var LogReader = class {
     if (!firstTimestamp) return null;
     return {
       workspace,
-      card: _buildCard(sessionId, "codex", model || "codex", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: /* @__PURE__ */ new Set(), filesChanged: /* @__PURE__ */ new Set(), filesSearched: /* @__PURE__ */ new Set(), userRequest: "", timeline: [], initiator: "user" })
+      card: _buildCard(sessionId, "codex", model || "codex", firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: /* @__PURE__ */ new Set(), filesChanged: /* @__PURE__ */ new Set(), filesSearched: /* @__PURE__ */ new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: "user" })
     };
   }
   // ── Copilot CLI ──────────────────────────────────────────────────────────────
@@ -2214,7 +2290,7 @@ var LogReader = class {
   //   session.start        → data.sessionId, data.selectedModel, data.startTime, data.context.cwd
   //   user.message         → data.transformedContent (user request text)
   //   assistant.message    → data.outputTokens, data.toolRequests
-  //   session.shutdown     → data.currentTokens (total context size at end)
+  //   session.shutdown     → data.modelMetrics[model].usage.{inputTokens,cacheReadTokens,cacheWriteTokens}
   _scanCopilot() {
     const results = [];
     const stateDir = copilotSessionStateDir();
@@ -2242,6 +2318,8 @@ var LogReader = class {
     let userRequest = "";
     let totalOutput = 0;
     let totalInputFromShutdown = 0;
+    let totalCacheRead = 0;
+    let totalCacheCreate = 0;
     let turns = 0, totalToolCalls = 0;
     const toolCounts = {};
     const filesChanged = /* @__PURE__ */ new Set();
@@ -2292,23 +2370,285 @@ var LogReader = class {
         if (data["model"]) model = String(data["model"]);
       }
       if (type === "session.shutdown") {
-        totalInputFromShutdown = data["currentTokens"] ?? 0;
+        const metrics = data["modelMetrics"];
+        if (metrics) {
+          for (const entry of Object.values(metrics)) {
+            const usage = entry?.["usage"];
+            if (!usage) continue;
+            totalInputFromShutdown += usage["inputTokens"] ?? 0;
+            totalCacheRead += usage["cacheReadTokens"] ?? 0;
+            totalCacheCreate += usage["cacheWriteTokens"] ?? 0;
+          }
+        }
       }
     }
     if (!firstTimestamp) return null;
-    const totalInput = totalInputFromShutdown > 0 ? Math.max(0, totalInputFromShutdown - totalOutput) : 0;
     return {
       workspace,
       card: _buildCard(sessionId, "copilot", model || "copilot", firstTimestamp, lastTimestamp, {
-        totalInput,
+        totalInput: totalInputFromShutdown,
         totalOutput,
-        totalCacheRead: 0,
-        totalCacheCreate: 0,
+        totalCacheRead,
+        totalCacheCreate,
         turns,
         totalToolCalls,
         toolCounts,
         filesRead: /* @__PURE__ */ new Set(),
         filesChanged,
+        filesSearched: /* @__PURE__ */ new Set(),
+        userRequest: userRequest.slice(0, 500),
+        timeline: [],
+        initiator: "user"
+      })
+    };
+  }
+  // ── Copilot Chat (VS Code sidebar) ───────────────────────────────────────────
+  // Reads workspaceStorage/<hash>/chatSessions/<uuid>.jsonl — written automatically
+  // by VS Code for every Copilot Chat panel session, no env setup required.
+  //
+  // The JSONL is a delta log; each line is an operation on a shared session object:
+  //   kind=0  initial session snapshot (creationDate, sessionId, selectedModel)
+  //   kind=1  set  — k is key path, v is new value
+  //   kind=2  push — k is key path, v is array of items to append
+  //
+  // Data available: sessionId, creationDate, workspace (via workspace.json),
+  //   initial model, completionTokens per turn, turn timestamps, turn duration.
+  // NOT available: input tokens, cache tokens, model per turn.
+  _scanCopilotVSCode() {
+    const results = [];
+    for (const root of copilotVSCodeChatRoots()) {
+      try {
+        for (const hashDir of fs2.readdirSync(root)) {
+          const chatDir = path2.join(root, hashDir, "chatSessions");
+          let names;
+          try {
+            names = fs2.readdirSync(chatDir);
+          } catch {
+            continue;
+          }
+          const jsonlIds = new Set(names.filter((n) => n.endsWith(".jsonl")).map((n) => n.slice(0, -6)));
+          for (const name of names) {
+            if (name.endsWith(".jsonl")) {
+              const filePath = path2.join(chatDir, name);
+              const sessionId = path2.basename(filePath, ".jsonl");
+              const result = this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId));
+              if (result) results.push(result);
+            } else if (name.endsWith(".json") && !jsonlIds.has(name.slice(0, -5))) {
+              const filePath = path2.join(chatDir, name);
+              const sessionId = path2.basename(filePath, ".json");
+              const result = this._processFile(filePath, () => this._parseCopilotVSCodeJsonFile(filePath, sessionId));
+              if (result) results.push(result);
+            }
+          }
+        }
+      } catch {
+      }
+    }
+    return results;
+  }
+  _parseCopilotVSCodeFile(filePath, sessionId) {
+    const lines = this._readNewLines(filePath);
+    if (!lines) return null;
+    const workspaceJsonPath = path2.join(path2.dirname(filePath), "..", "workspace.json");
+    let workspace = "";
+    try {
+      const wj = JSON.parse(fs2.readFileSync(workspaceJsonPath, "utf-8"));
+      const folderUri = String(wj["folder"] ?? "");
+      if (folderUri.startsWith("file:///")) {
+        let p = decodeURIComponent(folderUri.slice(7));
+        if (process.platform === "win32" && /^\/[A-Za-z]:/.test(p)) p = p.slice(1);
+        workspace = p;
+      }
+    } catch {
+    }
+    let sessionCreatedMs = 0;
+    let model = "";
+    let userRequest = "";
+    let totalOutput = 0;
+    const turnCompletionTokens = /* @__PURE__ */ new Map();
+    const turnPromptTokens = /* @__PURE__ */ new Map();
+    const turnTimestamps = [];
+    let requestPushCount = 0;
+    for (const line of lines) {
+      let entry;
+      try {
+        entry = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      const kind = entry["kind"];
+      const k = entry["k"];
+      const v = entry["v"];
+      if (kind === 0 && v && typeof v === "object") {
+        const sv = v;
+        if (typeof sv["creationDate"] === "number") sessionCreatedMs = sv["creationDate"];
+        const inputState = sv["inputState"];
+        const selModel = inputState?.["selectedModel"];
+        const meta = selModel?.["metadata"];
+        if (typeof meta?.["family"] === "string") model = meta["family"];
+        else if (typeof selModel?.["id"] === "string") model = selModel["id"];
+      }
+      if (kind === 2 && Array.isArray(k) && k.length === 1 && k[0] === "requests" && Array.isArray(v)) {
+        for (let j = 0; j < v.length; j++) {
+          const req = v[j];
+          const turnIdx = requestPushCount + j;
+          if (typeof req["timestamp"] === "number") turnTimestamps[turnIdx] = req["timestamp"];
+          if (typeof req["completionTokens"] === "number" && !turnCompletionTokens.has(turnIdx)) {
+            turnCompletionTokens.set(turnIdx, req["completionTokens"]);
+          }
+          if (turnIdx === 0 && !userRequest) {
+            const msg = req["message"];
+            if (typeof msg?.["text"] === "string" && msg["text"].trim()) {
+              userRequest = msg["text"].trim();
+            }
+          }
+          if (!model && typeof req["modelId"] === "string") {
+            model = req["modelId"].replace(/^copilot\//, "");
+          }
+        }
+        requestPushCount += v.length;
+      }
+      if (kind === 1 && Array.isArray(k) && k[0] === "requests" && typeof k[1] === "number") {
+        const idx = k[1];
+        if (k[2] === "completionTokens" && typeof v === "number") {
+          turnCompletionTokens.set(idx, v);
+        }
+        if (k[2] === "result" && v && typeof v === "object") {
+          const result = v;
+          const usage = result["usage"];
+          if (usage) {
+            if (typeof usage["completionTokens"] === "number") {
+              turnCompletionTokens.set(idx, usage["completionTokens"]);
+            }
+            if (typeof usage["promptTokens"] === "number") {
+              turnPromptTokens.set(idx, usage["promptTokens"]);
+            }
+          }
+          if (!userRequest) {
+            const meta = result["metadata"];
+            const rendered = meta?.["renderedUserMessage"];
+            if (rendered) {
+              for (const chunk of rendered) {
+                if (chunk["type"] === 1 && typeof chunk["text"] === "string") {
+                  userRequest = _extractVSCodeCopilotUserText(chunk["text"]);
+                  if (userRequest) break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    for (const tokens of turnCompletionTokens.values()) totalOutput += tokens;
+    let totalInput = 0;
+    for (const tokens of turnPromptTokens.values()) totalInput += tokens;
+    const turns = turnCompletionTokens.size;
+    if (turns === 0 || sessionCreatedMs === 0) return null;
+    const startTs = new Date(sessionCreatedMs).toISOString();
+    const lastTurnMs = turnTimestamps.length > 0 ? Math.max(...turnTimestamps) : sessionCreatedMs;
+    const endTs = new Date(lastTurnMs).toISOString();
+    return {
+      workspace,
+      card: _buildCard(sessionId, "copilot", model || "copilot", startTs, endTs, {
+        totalInput,
+        totalOutput,
+        totalCacheRead: 0,
+        totalCacheCreate: 0,
+        turns,
+        totalToolCalls: 0,
+        toolCounts: {},
+        filesRead: /* @__PURE__ */ new Set(),
+        filesChanged: /* @__PURE__ */ new Set(),
+        filesSearched: /* @__PURE__ */ new Set(),
+        userRequest: userRequest.slice(0, 500),
+        timeline: [],
+        initiator: "user"
+      })
+    };
+  }
+  // ── Copilot Chat (VS Code sidebar) — legacy JSON snapshot format ─────────────
+  // Older Copilot Chat versions (before the delta-log JSONL format) wrote each
+  // session as a single <uuid>.json file containing the full session state object.
+  // These files are only collected when no .jsonl sibling exists for the same UUID.
+  //
+  // Data available: sessionId, creationDate, lastMessageDate, model (from per-turn
+  //   modelId or inputState.selectedModel), user prompt (message.text), turn count,
+  //   tool call presence.
+  // Not available: output/input/cache tokens (not stored in older format).
+  _parseCopilotVSCodeJsonFile(filePath, sessionId) {
+    const data = this._readJsonFile(filePath);
+    if (!data) return null;
+    const creationMs = typeof data["creationDate"] === "number" ? data["creationDate"] : 0;
+    const lastMs = typeof data["lastMessageDate"] === "number" ? data["lastMessageDate"] : 0;
+    if (!creationMs) return null;
+    const requests = data["requests"];
+    if (!Array.isArray(requests) || requests.length === 0) return null;
+    const workspaceJsonPath = path2.join(path2.dirname(filePath), "..", "workspace.json");
+    let workspace = "";
+    try {
+      const wj = JSON.parse(fs2.readFileSync(workspaceJsonPath, "utf-8"));
+      const folderUri = String(wj["folder"] ?? "");
+      if (folderUri.startsWith("file:///")) {
+        let p = decodeURIComponent(folderUri.slice(7));
+        if (process.platform === "win32" && /^\/[A-Za-z]:/.test(p)) p = p.slice(1);
+        workspace = p;
+      }
+    } catch {
+    }
+    let model = "";
+    const inputState = data["inputState"];
+    if (inputState) {
+      const selModel = inputState["selectedModel"];
+      const meta = selModel?.["metadata"];
+      if (typeof meta?.["family"] === "string") model = meta["family"];
+      else if (typeof selModel?.["id"] === "string") model = selModel["id"];
+    }
+    let userRequest = "";
+    let totalToolCalls = 0;
+    const toolCounts = {};
+    for (const req of requests) {
+      if (!model && typeof req["modelId"] === "string") {
+        model = req["modelId"].replace(/^copilot\//, "");
+      }
+      if (!userRequest) {
+        const msg = req["message"];
+        if (typeof msg?.["text"] === "string" && msg["text"].trim()) {
+          userRequest = msg["text"].trim();
+        } else if (Array.isArray(msg?.["parts"])) {
+          for (const part of msg["parts"]) {
+            if (typeof part["text"] === "string" && part["text"].trim() && !part["text"].trim().startsWith("<")) {
+              userRequest = part["text"].trim();
+              break;
+            }
+          }
+        }
+      }
+      const response = req["response"];
+      if (Array.isArray(response)) {
+        for (const entry of response) {
+          if (entry["kind"] === "toolInvocationSerialized") {
+            totalToolCalls++;
+            const toolId = String(entry["toolId"] ?? "unknown");
+            toolCounts[toolId] = (toolCounts[toolId] ?? 0) + 1;
+          }
+        }
+      }
+    }
+    const sid = String(data["sessionId"] ?? sessionId);
+    const startTs = new Date(creationMs).toISOString();
+    const endTs = new Date(lastMs || creationMs).toISOString();
+    return {
+      workspace,
+      card: _buildCard(sid, "copilot", model || "copilot", startTs, endTs, {
+        totalInput: 0,
+        totalOutput: 0,
+        totalCacheRead: 0,
+        totalCacheCreate: 0,
+        turns: requests.length,
+        totalToolCalls,
+        toolCounts,
+        filesRead: /* @__PURE__ */ new Set(),
+        filesChanged: /* @__PURE__ */ new Set(),
         filesSearched: /* @__PURE__ */ new Set(),
         userRequest: userRequest.slice(0, 500),
         timeline: [],
@@ -2329,6 +2669,20 @@ var LogReader = class {
     } catch {
     }
     return results;
+  }
+  /** Reads and parses a JSON file, updating file state. Returns null if unchanged or on error. */
+  _readJsonFile(filePath) {
+    try {
+      const stat = fs2.statSync(filePath);
+      const prev = this.fileState.get(filePath);
+      if (prev && stat.mtimeMs === prev.mtimeMs && stat.size === prev.bytesRead) return null;
+      const content = fs2.readFileSync(filePath, "utf-8");
+      this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs });
+      return JSON.parse(content);
+    } catch (err) {
+      this.log(`[LogReader] read error ${filePath}: ${err}`);
+      return null;
+    }
   }
   /** Returns only the new bytes since last read, split into lines. Returns null if unchanged. */
   _readNewLines(filePath) {
@@ -2410,6 +2764,18 @@ function _extractCopilotUserText(raw) {
     return trimmed;
   }
   return "";
+}
+function _extractCodexUserText(raw) {
+  const marker = "## My request for Codex:\n";
+  const idx = raw.indexOf(marker);
+  if (idx !== -1) return raw.slice(idx + marker.length).trim();
+  return raw;
+}
+function _extractVSCodeCopilotUserText(raw) {
+  const stripped = raw.replace(/^[\s\S]*<\/[^>]+>\s*/, "").trim();
+  if (stripped && stripped !== raw.trim()) return stripped.split("\n")[0]?.trim() ?? "";
+  if (!stripped) return "";
+  return raw.trim().split("\n")[0]?.trim() ?? "";
 }
 function _extractTextContent(content) {
   if (!content) return "";
@@ -2987,7 +3353,7 @@ function getHtml() {
         setState: function() {},
         postMessage: function(msg) {
           if (msg.type === 'confirmClear') {
-            if (confirm('Clear all AgentLens session data? This cannot be undone.')) {
+            if (confirm('Clear all AgentLens data? OTEL session data is deleted permanently. AgentLens log cache is cleared and will be rebuilt from your local agent log files (the log files themselves are not deleted).')) {
               fetch('/api/clear', { method: 'POST' });
               window.dispatchEvent(new MessageEvent('message', { data: { type: 'clearAll' } }));
             }
@@ -3234,6 +3600,8 @@ var uiServer = http.createServer((req, res) => {
   }
   if (req.method === "POST" && url === "/api/clear") {
     spans = [];
+    logSessions.clear();
+    logReader.clearFileState();
     try {
       fs3.writeFileSync(DATA_FILE, "[]");
     } catch (e) {
@@ -3242,6 +3610,7 @@ var uiServer = http.createServer((req, res) => {
     pushUpdate();
     res.writeHead(200);
     res.end();
+    setImmediate(() => runLogScan());
     return;
   }
   if (req.method === "POST" && url === "/api/write-prompts-file") {

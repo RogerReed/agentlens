@@ -1,23 +1,30 @@
 /**
- * Reads local session logs for Claude Code, Codex, and Copilot CLI and
- * synthesises SessionSummaryCard records from them.
+ * Reads local session logs for Claude Code, Codex, Copilot CLI, and
+ * Copilot Chat (VS Code sidebar), and synthesises SessionSummaryCard records.
  *
- * Agent log paths (Mac/Linux → Windows):
+ * Agent log paths (Mac → Windows → Linux):
  *
  *   Claude Code  ~/.claude/projects/<project>/<uuid>.jsonl
- *                %APPDATA%\Claude\projects\<project>\<uuid>.jsonl   (Windows)
+ *                %APPDATA%\Claude\projects\<project>\<uuid>.jsonl
  *                Override: CLAUDE_CONFIG_DIR (comma-separated list of config dirs)
  *
  *   Codex        ~/.codex/sessions/<project>/<uuid>.jsonl
  *                Override: CODEX_HOME (comma-separated list of home dirs)
  *
- *   Copilot CLI  ~/.copilot/otel/*.jsonl  (requires env setup — see below)
- *                Override: COPILOT_OTEL_FILE_EXPORTER_PATH (explicit file path)
+ *   Copilot CLI  ~/.copilot/session-state/<uuid>/events.jsonl
+ *
+ *   Copilot Chat ~/Library/Application Support/Code/User/workspaceStorage/<hash>/chatSessions/<uuid>.jsonl
+ *   (VS Code)    %APPDATA%\Code\User\workspaceStorage\<hash>\chatSessions\<uuid>.jsonl
+ *                ~/.config/Code/User/workspaceStorage/<hash>/chatSessions/<uuid>.jsonl
+ *                (VS Code Insiders: "Code - Insiders" in place of "Code")
  *
  * Data available from logs (vs OTEL):
- *   Available: session/session ID, workspace, model, timestamps, token counts
- *              (incl. cache reads/writes), tool calls from content blocks
- *   Not available: TTFT, per-tool timing, streaming speed, loop signals
+ *   Claude / Codex: session ID, workspace, model, timestamps, full token counts
+ *                   (incl. cache reads/writes), tool calls
+ *   Copilot CLI:    session ID, workspace, model, timestamps, input/output/cache tokens
+ *   Copilot Chat:   session ID, workspace, initial model, timestamps, output tokens per turn
+ *                   (input tokens and cache tokens are not stored by VS Code)
+ *   Not available in any log: TTFT, per-tool timing, streaming speed, loop signals
  */
 
 import * as fs from 'fs'
@@ -72,6 +79,39 @@ function copilotSessionStateDir(): string | null {
   return fs.existsSync(dir) ? dir : null
 }
 
+function copilotVSCodeChatRoots(): string[] {
+  // VS Code Copilot Chat writes one JSONL per session into:
+  //   macOS:   ~/Library/Application Support/Code/User/workspaceStorage/<hash>/chatSessions/
+  //   Windows: %APPDATA%\Code\User\workspaceStorage\<hash>\chatSessions\
+  //   Linux:   ~/.config/Code/User/workspaceStorage/<hash>/chatSessions/
+  // VS Code Insiders uses "Code - Insiders" in place of "Code".
+  const home = homeDir()
+  const candidates: string[] = []
+
+  switch (process.platform) {
+    case 'win32': {
+      const appData = process.env['APPDATA']
+      if (appData) {
+        candidates.push(path.join(appData, 'Code', 'User', 'workspaceStorage'))
+        candidates.push(path.join(appData, 'Code - Insiders', 'User', 'workspaceStorage'))
+      }
+      break
+    }
+    case 'darwin':
+      candidates.push(path.join(home, 'Library', 'Application Support', 'Code', 'User', 'workspaceStorage'))
+      candidates.push(path.join(home, 'Library', 'Application Support', 'Code - Insiders', 'User', 'workspaceStorage'))
+      break
+    default: {
+      const xdg = process.env['XDG_CONFIG_HOME'] ?? path.join(home, '.config')
+      candidates.push(path.join(xdg, 'Code', 'User', 'workspaceStorage'))
+      candidates.push(path.join(xdg, 'Code - Insiders', 'User', 'workspaceStorage'))
+      break
+    }
+  }
+
+  return candidates.filter(d => { try { return fs.statSync(d).isDirectory() } catch { return false } })
+}
+
 // ── File state tracking ───────────────────────────────────────────────────────
 
 interface FileState {
@@ -99,6 +139,11 @@ export class LogReader {
     this.log = options.log ?? (() => { /* silent */ })
   }
 
+  /** Clears cached file state so the next scan re-reads all files from scratch. */
+  clearFileState(): void {
+    this.fileState.clear()
+  }
+
   /**
    * Collects all session files across all agents, sorted newest-first by mtime.
    * Does NOT read file contents. Used by the startup batch-loader to process
@@ -119,7 +164,7 @@ export class LogReader {
         try { entries.push({ filePath, mtimeMs: fs.statSync(filePath).mtimeMs, agentKey: 'codex' }) } catch { /* skip */ }
       }
     }
-    // Copilot session-state
+    // Copilot CLI session-state
     const stateDir = copilotSessionStateDir()
     if (stateDir) {
       try {
@@ -128,6 +173,30 @@ export class LogReader {
           try { entries.push({ filePath: f, mtimeMs: fs.statSync(f).mtimeMs, agentKey: 'copilot' }) } catch { /* skip */ }
         }
       } catch { /* ignore */ }
+    }
+
+    // Copilot Chat (VS Code sidebar) — workspaceStorage/<hash>/chatSessions/
+    // Two file formats exist: <uuid>.jsonl (delta log, newer) and <uuid>.json (full snapshot, older).
+    // Prefer .jsonl; skip a .json file when a .jsonl sibling exists for the same session UUID.
+    // Build a Set from the directory listing to avoid per-file fs.existsSync calls.
+    for (const root of copilotVSCodeChatRoots()) {
+      try {
+        for (const hashDir of fs.readdirSync(root)) {
+          const chatDir = path.join(root, hashDir, 'chatSessions')
+          let names: string[]
+          try { names = fs.readdirSync(chatDir) } catch { continue }
+          const jsonlIds = new Set(names.filter(n => n.endsWith('.jsonl')).map(n => n.slice(0, -6)))
+          for (const name of names) {
+            if (name.endsWith('.jsonl')) {
+              const f = path.join(chatDir, name)
+              try { entries.push({ filePath: f, mtimeMs: fs.statSync(f).mtimeMs, agentKey: 'copilot_vscode' }) } catch { /* skip */ }
+            } else if (name.endsWith('.json') && !jsonlIds.has(name.slice(0, -5))) {
+              const f = path.join(chatDir, name)
+              try { entries.push({ filePath: f, mtimeMs: fs.statSync(f).mtimeMs, agentKey: 'copilot_vscode_json' }) } catch { /* skip */ }
+            }
+          }
+        }
+      } catch { /* root not accessible */ }
     }
 
     // Newest first — caller processes in this order so recent sessions appear first.
@@ -142,13 +211,17 @@ export class LogReader {
   parseFile(filePath: string, agentKey: string): LogSessionResult | null {
     const sessionId = agentKey === 'copilot'
       ? path.basename(path.dirname(filePath))  // directory name is session UUID
-      : path.basename(filePath, '.jsonl')
+      : agentKey === 'copilot_vscode_json'
+        ? path.basename(filePath, '.json')
+        : path.basename(filePath, '.jsonl')
 
     switch (agentKey) {
-      case 'claude':  return this._processFile(filePath, () => this._parseClaudeFile(filePath))
-      case 'codex':   return this._processFile(filePath, () => this._parseCodexFile(filePath, ''))
-      case 'copilot': return this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId))
-      default:        return null
+      case 'claude':              return this._processFile(filePath, () => this._parseClaudeFile(filePath))
+      case 'codex':               return this._processFile(filePath, () => this._parseCodexFile(filePath, ''))
+      case 'copilot':             return this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId))
+      case 'copilot_vscode':      return this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId))
+      case 'copilot_vscode_json': return this._processFile(filePath, () => this._parseCopilotVSCodeJsonFile(filePath, sessionId))
+      default:                    return null
     }
   }
 
@@ -158,6 +231,7 @@ export class LogReader {
       ...claudeProjectsDirs(),
       ...codexSessionsDirs(),
       ...((() => { const d = copilotSessionStateDir(); return d ? [d] : [] })()),
+      ...copilotVSCodeChatRoots(),
     ]
   }
 
@@ -170,6 +244,7 @@ export class LogReader {
       ...this._scanClaude(),
       ...this._scanCodex(),
       ...this._scanCopilot(),
+      ...this._scanCopilotVSCode(),
     ]
   }
 
@@ -290,6 +365,7 @@ export class LogReader {
     let model = ''
     let firstTimestamp = ''
     let lastTimestamp = ''
+    let userRequest = ''
     let totalInput = 0, totalOutput = 0, totalCacheRead = 0
     let turns = 0
 
@@ -306,9 +382,12 @@ export class LogReader {
         if (payload?.['model']) model = String(payload['model'])
       }
 
-      // event_msg with token_count payload has per-turn usage
       if (entry['type'] === 'event_msg') {
         const payload = entry['payload'] as Record<string, unknown> | undefined
+        if (payload?.['type'] === 'user_message' && !userRequest) {
+          const msg = String(payload['message'] ?? '').trim()
+          if (msg) userRequest = _extractCodexUserText(msg)
+        }
         if (payload?.['type'] === 'token_count') {
           const info = payload['info'] as Record<string, unknown> | undefined
           if (info?.['model']) model = String(info['model'])
@@ -326,7 +405,7 @@ export class LogReader {
     if (!firstTimestamp) return null
     return {
       workspace,
-      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(), userRequest: '', timeline: [], initiator: 'user' }),
+      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }),
     }
   }
 
@@ -338,7 +417,7 @@ export class LogReader {
   //   session.start        → data.sessionId, data.selectedModel, data.startTime, data.context.cwd
   //   user.message         → data.transformedContent (user request text)
   //   assistant.message    → data.outputTokens, data.toolRequests
-  //   session.shutdown     → data.currentTokens (total context size at end)
+  //   session.shutdown     → data.modelMetrics[model].usage.{inputTokens,cacheReadTokens,cacheWriteTokens}
 
   private _scanCopilot(): LogSessionResult[] {
     const results: LogSessionResult[] = []
@@ -370,6 +449,8 @@ export class LogReader {
     let userRequest = ''
     let totalOutput = 0
     let totalInputFromShutdown = 0
+    let totalCacheRead = 0
+    let totalCacheCreate = 0
     let turns = 0, totalToolCalls = 0
     const toolCounts: Record<string, number> = {}
     const filesChanged = new Set<string>()
@@ -417,27 +498,31 @@ export class LogReader {
         if (data['model']) model = String(data['model'])
       }
 
-      // session.shutdown has total context token counts
       if (type === 'session.shutdown') {
-        totalInputFromShutdown = (data['currentTokens'] as number) ?? 0
+        // modelMetrics[model].usage has the real cumulative token counts.
+        // data['currentTokens'] is only the context window size at shutdown — do not use it.
+        const metrics = data['modelMetrics'] as Record<string, Record<string, unknown>> | undefined
+        if (metrics) {
+          for (const entry of Object.values(metrics)) {
+            const usage = (entry as Record<string, unknown>)?.['usage'] as Record<string, number> | undefined
+            if (!usage) continue
+            totalInputFromShutdown += usage['inputTokens']     ?? 0
+            totalCacheRead          += usage['cacheReadTokens']  ?? 0
+            totalCacheCreate        += usage['cacheWriteTokens'] ?? 0
+          }
+        }
       }
     }
 
     if (!firstTimestamp) return null
 
-    // Input tokens: use session.shutdown total if available (output already counted),
-    // otherwise fall back to output as a rough proxy.
-    const totalInput = totalInputFromShutdown > 0
-      ? Math.max(0, totalInputFromShutdown - totalOutput)
-      : 0
-
     return {
       workspace,
       card: _buildCard(sessionId, 'copilot', model || 'copilot', firstTimestamp, lastTimestamp, {
-        totalInput,
+        totalInput: totalInputFromShutdown,
         totalOutput,
-        totalCacheRead: 0,
-        totalCacheCreate: 0,
+        totalCacheRead,
+        totalCacheCreate,
         turns,
         totalToolCalls,
         toolCounts,
@@ -447,6 +532,291 @@ export class LogReader {
         userRequest: userRequest.slice(0, 500),
         timeline: [],
         initiator: 'user',
+      }),
+    }
+  }
+
+  // ── Copilot Chat (VS Code sidebar) ───────────────────────────────────────────
+  // Reads workspaceStorage/<hash>/chatSessions/<uuid>.jsonl — written automatically
+  // by VS Code for every Copilot Chat panel session, no env setup required.
+  //
+  // The JSONL is a delta log; each line is an operation on a shared session object:
+  //   kind=0  initial session snapshot (creationDate, sessionId, selectedModel)
+  //   kind=1  set  — k is key path, v is new value
+  //   kind=2  push — k is key path, v is array of items to append
+  //
+  // Data available: sessionId, creationDate, workspace (via workspace.json),
+  //   initial model, completionTokens per turn, turn timestamps, turn duration.
+  // NOT available: input tokens, cache tokens, model per turn.
+
+  private _scanCopilotVSCode(): LogSessionResult[] {
+    const results: LogSessionResult[] = []
+    for (const root of copilotVSCodeChatRoots()) {
+      try {
+        for (const hashDir of fs.readdirSync(root)) {
+          const chatDir = path.join(root, hashDir, 'chatSessions')
+          let names: string[]
+          try { names = fs.readdirSync(chatDir) } catch { continue }
+          const jsonlIds = new Set(names.filter(n => n.endsWith('.jsonl')).map(n => n.slice(0, -6)))
+          for (const name of names) {
+            if (name.endsWith('.jsonl')) {
+              const filePath = path.join(chatDir, name)
+              const sessionId = path.basename(filePath, '.jsonl')
+              const result = this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId))
+              if (result) results.push(result)
+            } else if (name.endsWith('.json') && !jsonlIds.has(name.slice(0, -5))) {
+              const filePath = path.join(chatDir, name)
+              const sessionId = path.basename(filePath, '.json')
+              const result = this._processFile(filePath, () => this._parseCopilotVSCodeJsonFile(filePath, sessionId))
+              if (result) results.push(result)
+            }
+          }
+        }
+      } catch { /* root not accessible */ }
+    }
+    return results
+  }
+
+  private _parseCopilotVSCodeFile(filePath: string, sessionId: string): LogSessionResult | null {
+    const lines = this._readNewLines(filePath)
+    if (!lines) return null
+
+    // Workspace from sibling workspace.json two levels up (workspaceStorage/<hash>/workspace.json)
+    const workspaceJsonPath = path.join(path.dirname(filePath), '..', 'workspace.json')
+    let workspace = ''
+    try {
+      const wj = JSON.parse(fs.readFileSync(workspaceJsonPath, 'utf-8')) as Record<string, unknown>
+      const folderUri = String(wj['folder'] ?? '')
+      if (folderUri.startsWith('file:///')) {
+        let p = decodeURIComponent(folderUri.slice(7))  // strip 'file://'
+        // On Windows file:///C:/... → /C:/... → strip leading slash
+        if (process.platform === 'win32' && /^\/[A-Za-z]:/.test(p)) p = p.slice(1)
+        workspace = p
+      }
+    } catch { /* no workspace.json — no-folder or untitled window */ }
+
+    let sessionCreatedMs = 0
+    let model = ''
+    let userRequest = ''
+    let totalOutput = 0
+
+    // Per-turn data keyed by turn index.
+    // completionTokens appears in three formats depending on VS Code / Copilot Chat version:
+    //   Format A (current):  kind=1, k=["requests", N, "completionTokens"], v=number
+    //   Format B (current):  embedded in kind=2 push object as req.completionTokens
+    //   Format C (pre-mid-2026): kind=1, k=["requests", N, "result"], v.usage.completionTokens
+    //     Format C also carries v.usage.promptTokens (per-turn input tokens — correct for billing).
+    // kind=1 always takes precedence over Format B (arrives later, streaming-final value).
+    const turnCompletionTokens = new Map<number, number>()
+    const turnPromptTokens = new Map<number, number>()  // Format C only
+    const turnTimestamps: number[] = []
+    let requestPushCount = 0  // tracks implicit turn index for kind=2 pushes
+
+    for (const line of lines) {
+      let entry: Record<string, unknown>
+      try { entry = JSON.parse(line) as Record<string, unknown> } catch { continue }
+
+      const kind = entry['kind'] as number | undefined
+      const k = entry['k']
+      const v = entry['v']
+
+      // kind=0: initial session snapshot
+      if (kind === 0 && v && typeof v === 'object') {
+        const sv = v as Record<string, unknown>
+        if (typeof sv['creationDate'] === 'number') sessionCreatedMs = sv['creationDate']
+        const inputState = sv['inputState'] as Record<string, unknown> | undefined
+        const selModel = inputState?.['selectedModel'] as Record<string, unknown> | undefined
+        const meta = selModel?.['metadata'] as Record<string, unknown> | undefined
+        if (typeof meta?.['family'] === 'string') model = meta['family']
+        else if (typeof selModel?.['id'] === 'string') model = selModel['id']
+      }
+
+      // kind=2 push to 'requests' — new turn(s); may already carry completionTokens (Format B).
+      // k must be exactly ['requests']; k=['requests', N, 'response'] are sub-array pushes for
+      // turn response entries and must not be treated as new request objects.
+      if (kind === 2 && Array.isArray(k) && k.length === 1 && k[0] === 'requests' && Array.isArray(v)) {
+        for (let j = 0; j < (v as unknown[]).length; j++) {
+          const req = (v as Array<Record<string, unknown>>)[j]
+          const turnIdx = requestPushCount + j
+          if (typeof req['timestamp'] === 'number') turnTimestamps[turnIdx] = req['timestamp']
+          // Format B: completionTokens already in the push object (don't overwrite kind=1 value)
+          if (typeof req['completionTokens'] === 'number' && !turnCompletionTokens.has(turnIdx)) {
+            turnCompletionTokens.set(turnIdx, req['completionTokens'])
+          }
+          // Format B: message.text is the raw user prompt — much cleaner than renderedUserMessage
+          if (turnIdx === 0 && !userRequest) {
+            const msg = req['message'] as Record<string, unknown> | undefined
+            if (typeof msg?.['text'] === 'string' && (msg['text'] as string).trim()) {
+              userRequest = (msg['text'] as string).trim()
+            }
+          }
+          // Format B: modelId field (e.g. "copilot/gpt-4.1")
+          if (!model && typeof req['modelId'] === 'string') {
+            model = (req['modelId'] as string).replace(/^copilot\//, '')
+          }
+        }
+        requestPushCount += (v as unknown[]).length
+      }
+
+      // kind=1 sets on a specific request key (Format A/C, or late-arriving streaming final value)
+      if (kind === 1 && Array.isArray(k) && k[0] === 'requests' && typeof k[1] === 'number') {
+        const idx = k[1] as number
+        // Format A: output tokens stored directly at the completionTokens key
+        if (k[2] === 'completionTokens' && typeof v === 'number') {
+          turnCompletionTokens.set(idx, v)
+        }
+        if (k[2] === 'result' && v && typeof v === 'object') {
+          const result = v as Record<string, unknown>
+          // Format C (pre-mid-2026): token counts nested inside result.usage
+          const usage = result['usage'] as Record<string, number> | undefined
+          if (usage) {
+            if (typeof usage['completionTokens'] === 'number') {
+              turnCompletionTokens.set(idx, usage['completionTokens'])
+            }
+            if (typeof usage['promptTokens'] === 'number') {
+              turnPromptTokens.set(idx, usage['promptTokens'])
+            }
+          }
+          // User message from renderedUserMessage (any-turn fallback when message.text not available)
+          if (!userRequest) {
+            const meta = result['metadata'] as Record<string, unknown> | undefined
+            const rendered = meta?.['renderedUserMessage'] as Array<Record<string, unknown>> | undefined
+            if (rendered) {
+              for (const chunk of rendered) {
+                if (chunk['type'] === 1 && typeof chunk['text'] === 'string') {
+                  userRequest = _extractVSCodeCopilotUserText(chunk['text'])
+                  if (userRequest) break
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (const tokens of turnCompletionTokens.values()) totalOutput += tokens
+    let totalInput = 0
+    for (const tokens of turnPromptTokens.values()) totalInput += tokens
+    const turns = turnCompletionTokens.size
+    if (turns === 0 || sessionCreatedMs === 0) return null
+
+    const startTs = new Date(sessionCreatedMs).toISOString()
+    const lastTurnMs = turnTimestamps.length > 0 ? Math.max(...turnTimestamps) : sessionCreatedMs
+    const endTs = new Date(lastTurnMs).toISOString()
+
+    return {
+      workspace,
+      card: _buildCard(sessionId, 'copilot', model || 'copilot', startTs, endTs, {
+        totalInput,
+        totalOutput,
+        totalCacheRead: 0,
+        totalCacheCreate: 0,
+        turns,
+        totalToolCalls: 0,
+        toolCounts: {},
+        filesRead: new Set(),
+        filesChanged: new Set(),
+        filesSearched: new Set(),
+        userRequest: userRequest.slice(0, 500),
+        timeline: [],
+        initiator: 'user',
+      }),
+    }
+  }
+
+  // ── Copilot Chat (VS Code sidebar) — legacy JSON snapshot format ─────────────
+  // Older Copilot Chat versions (before the delta-log JSONL format) wrote each
+  // session as a single <uuid>.json file containing the full session state object.
+  // These files are only collected when no .jsonl sibling exists for the same UUID.
+  //
+  // Data available: sessionId, creationDate, lastMessageDate, model (from per-turn
+  //   modelId or inputState.selectedModel), user prompt (message.text), turn count,
+  //   tool call presence.
+  // Not available: output/input/cache tokens (not stored in older format).
+
+  private _parseCopilotVSCodeJsonFile(filePath: string, sessionId: string): LogSessionResult | null {
+    const data = this._readJsonFile(filePath)
+    if (!data) return null
+
+    const creationMs = typeof data['creationDate'] === 'number' ? data['creationDate'] : 0
+    const lastMs     = typeof data['lastMessageDate'] === 'number' ? data['lastMessageDate'] : 0
+    if (!creationMs) return null
+
+    const requests = data['requests']
+    if (!Array.isArray(requests) || requests.length === 0) return null
+
+    // Workspace from sibling workspace.json two levels up (workspaceStorage/<hash>/workspace.json)
+    const workspaceJsonPath = path.join(path.dirname(filePath), '..', 'workspace.json')
+    let workspace = ''
+    try {
+      const wj = JSON.parse(fs.readFileSync(workspaceJsonPath, 'utf-8')) as Record<string, unknown>
+      const folderUri = String(wj['folder'] ?? '')
+      if (folderUri.startsWith('file:///')) {
+        let p = decodeURIComponent(folderUri.slice(7))
+        if (process.platform === 'win32' && /^\/[A-Za-z]:/.test(p)) p = p.slice(1)
+        workspace = p
+      }
+    } catch { /* no workspace.json — no-folder or untitled window */ }
+
+    // Model: prefer per-turn modelId on first request; fall back to inputState
+    let model = ''
+    const inputState = data['inputState'] as Record<string, unknown> | undefined
+    if (inputState) {
+      const selModel = inputState['selectedModel'] as Record<string, unknown> | undefined
+      const meta = selModel?.['metadata'] as Record<string, unknown> | undefined
+      if (typeof meta?.['family'] === 'string') model = meta['family']
+      else if (typeof selModel?.['id'] === 'string') model = selModel['id']
+    }
+
+    let userRequest = ''
+    let totalToolCalls = 0
+    const toolCounts: Record<string, number> = {}
+
+    for (const req of requests as Array<Record<string, unknown>>) {
+      if (!model && typeof req['modelId'] === 'string') {
+        model = (req['modelId'] as string).replace(/^copilot\//, '')
+      }
+      if (!userRequest) {
+        const msg = req['message'] as Record<string, unknown> | undefined
+        if (typeof msg?.['text'] === 'string' && (msg['text'] as string).trim()) {
+          userRequest = (msg['text'] as string).trim()
+        } else if (Array.isArray(msg?.['parts'])) {
+          // Older format: message has no top-level text, only a parts array
+          for (const part of msg['parts'] as Array<Record<string, unknown>>) {
+            if (typeof part['text'] === 'string' && (part['text'] as string).trim()
+                && !((part['text'] as string).trim().startsWith('<'))) {
+              userRequest = (part['text'] as string).trim()
+              break
+            }
+          }
+        }
+      }
+      const response = req['response']
+      if (Array.isArray(response)) {
+        for (const entry of response as Array<Record<string, unknown>>) {
+          if (entry['kind'] === 'toolInvocationSerialized') {
+            totalToolCalls++
+            const toolId = String(entry['toolId'] ?? 'unknown')
+            toolCounts[toolId] = (toolCounts[toolId] ?? 0) + 1
+          }
+        }
+      }
+    }
+
+    const sid = String(data['sessionId'] ?? sessionId)
+    const startTs = new Date(creationMs).toISOString()
+    const endTs   = new Date(lastMs || creationMs).toISOString()
+
+    return {
+      workspace,
+      card: _buildCard(sid, 'copilot', model || 'copilot', startTs, endTs, {
+        totalInput: 0, totalOutput: 0, totalCacheRead: 0, totalCacheCreate: 0,
+        turns: (requests as unknown[]).length,
+        totalToolCalls,
+        toolCounts,
+        filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(),
+        userRequest: userRequest.slice(0, 500),
+        timeline: [], initiator: 'user',
       }),
     }
   }
@@ -464,6 +834,21 @@ export class LogReader {
       }
     } catch { /* directory gone or no permission */ }
     return results
+  }
+
+  /** Reads and parses a JSON file, updating file state. Returns null if unchanged or on error. */
+  private _readJsonFile(filePath: string): Record<string, unknown> | null {
+    try {
+      const stat = fs.statSync(filePath)
+      const prev = this.fileState.get(filePath)
+      if (prev && stat.mtimeMs === prev.mtimeMs && stat.size === prev.bytesRead) return null
+      const content = fs.readFileSync(filePath, 'utf-8')
+      this.fileState.set(filePath, { bytesRead: stat.size, mtimeMs: stat.mtimeMs })
+      return JSON.parse(content) as Record<string, unknown>
+    } catch (err) {
+      this.log(`[LogReader] read error ${filePath}: ${err}`)
+      return null
+    }
   }
 
   /** Returns only the new bytes since last read, split into lines. Returns null if unchanged. */
@@ -596,6 +981,31 @@ function _extractCopilotUserText(raw: string): string {
     return trimmed
   }
   return ''
+}
+
+/**
+ * Strips IDE-injected context from a Codex user_message event.
+ * When invoked from within VS Code, Codex prepends context in the form:
+ *   "# Context from my IDE setup:\n\n## Active file: ...\n\n## My request for Codex:\n<actual prompt>"
+ * The actual user text always follows "## My request for Codex:".
+ * For plain messages (no preamble), the raw text is returned as-is.
+ */
+function _extractCodexUserText(raw: string): string {
+  const marker = '## My request for Codex:\n'
+  const idx = raw.indexOf(marker)
+  if (idx !== -1) return raw.slice(idx + marker.length).trim()
+  return raw
+}
+
+function _extractVSCodeCopilotUserText(raw: string): string {
+  // renderedUserMessage is prefixed with injected XML blocks (<attachments>, <context>, …).
+  // The actual user-typed text follows after the last closing tag.
+  // Greedy match up through the last </tag> then take what remains.
+  const stripped = raw.replace(/^[\s\S]*<\/[^>]+>\s*/, '').trim()
+  if (stripped && stripped !== raw.trim()) return stripped.split('\n')[0]?.trim() ?? ''
+  // stripped is empty → entire message was XML with no trailing user text (e.g. attachment-only).
+  if (!stripped) return ''
+  return raw.trim().split('\n')[0]?.trim() ?? ''
 }
 
 function _extractTextContent(content: unknown): string {

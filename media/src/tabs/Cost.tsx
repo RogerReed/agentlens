@@ -461,6 +461,10 @@ export function Cost() {
                 title="Annual plan holders staying on request-based billing after Jun 1, 2026 — higher multipliers apply"
               >Annual plan (request)</button>
             </div>
+            <div style="margin-top:5px;font-size:10px;color:var(--muted);line-height:1.5">
+              Sessions before Jun 1, 2026 were billed per request — use Annual plan (request) for those.
+              Copilot Chat log sessions with no token data will show $0 in token mode regardless of billing period.
+            </div>
           </div>
         )}
         {codexSessions.length > 0 && (

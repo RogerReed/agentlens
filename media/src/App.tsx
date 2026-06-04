@@ -114,7 +114,7 @@ export function App() {
       }
       if (msg.type === 'update') {
         if (msg.summary?.toolCalls) toolCalls.value = msg.summary.toolCalls
-        sessionSummary.value = msg.sessionSummary ?? sessionSummary.value
+        if (msg.sessionSummary !== undefined) sessionSummary.value = msg.sessionSummary
         if (msg.analyticsData) {
           dailyStats.value = msg.analyticsData.dailyStats
           lifetimeStats.value = msg.analyticsData.lifetimeStats
