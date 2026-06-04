@@ -150,10 +150,15 @@
           "default": true,
           "description": "Read local session logs for Claude Code, Codex, and Copilot CLI as a data source. Log data has lower fidelity than OTEL — timing, speed, and loop signals are not available. OTEL data always takes precedence: if a session exists from OTEL, the log file is ignored. Loading is done incrementally in the background and will not block the UI."
         },
+        "agentLens.enableMcpServer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start the AgentLens MCP server so Claude Code can query your session history. The server listens on agentLens.mcpPort (default 4316). See the AgentLens Help tab → Agent Integration for setup instructions."
+        },
         "agentLens.mcpPort": {
           "type": "number",
           "default": 4316,
-          "description": "Local port for the AgentLens MCP server. Configure Claude Code to connect with: { \"mcpServers\": { \"agentlens\": { \"url\": \"http://localhost:4316/mcp\" } } }"
+          "description": "Local port for the AgentLens MCP server (when agentLens.enableMcpServer is true). Configure Claude Code to connect with: { \"mcpServers\": { \"agentlens\": { \"url\": \"http://localhost:4316/mcp\" } } }"
         }
       }
     },
