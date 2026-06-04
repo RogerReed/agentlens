@@ -581,7 +581,9 @@ function getHtml(): string {
       return el;
     }
 
-    function showActionNotification(label, prompt, color, preview, copyLabel) {
+    // showActionNotification(label, prompt, color, preview, secondaryAction, dismissMs)
+    // secondaryAction: { label: string, onClick: function } | null — rendered before Copy Prompt
+    function showActionNotification(label, prompt, color, preview, secondaryAction, dismissMs) {
       color = color || '#f6a623';
       var container = getNotifContainer();
       var notif = document.createElement('div');
@@ -592,7 +594,7 @@ function getHtml(): string {
 
       var labelEl = document.createElement('span');
       labelEl.style.cssText = 'font-weight:600;color:' + color + ';line-height:1.3;';
-      labelEl.textContent = 'AgentLens Automation [' + label + ']';
+      labelEl.textContent = label;
 
       var closeBtn = document.createElement('button');
       closeBtn.textContent = '×';
@@ -610,8 +612,19 @@ function getHtml(): string {
         notif.appendChild(previewEl);
       }
 
+      var actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+
+      if (secondaryAction) {
+        var secBtn = document.createElement('button');
+        secBtn.textContent = secondaryAction.label;
+        secBtn.style.cssText = 'background:none;border:1px solid #555;border-radius:3px;color:#ccc;cursor:pointer;font-size:11px;padding:4px 10px;';
+        secBtn.onclick = function() { secondaryAction.onClick(); notif.remove(); };
+        actions.appendChild(secBtn);
+      }
+
       var copyBtn = document.createElement('button');
-      copyBtn.textContent = copyLabel || 'Copy Prompt';
+      copyBtn.textContent = 'Copy Prompt';
       copyBtn.style.cssText = 'background:none;border:1px solid ' + color + ';border-radius:3px;color:' + color + ';cursor:pointer;font-size:11px;padding:4px 10px;';
       copyBtn.onclick = function() {
         navigator.clipboard.writeText(prompt).then(function() {
@@ -623,10 +636,11 @@ function getHtml(): string {
           showToast('Could not copy — check browser clipboard permissions');
         });
       };
+      actions.appendChild(copyBtn);
 
-      notif.appendChild(copyBtn);
+      notif.appendChild(actions);
       container.appendChild(notif);
-      setTimeout(function() { notif.remove(); }, 30000);
+      setTimeout(function() { notif.remove(); }, dismissMs || 30000);
     }
 
     window.acquireVsCodeApi = function() {
@@ -642,27 +656,24 @@ function getHtml(): string {
           } else if (msg.type === 'clearAll') {
             fetch('/api/clear', { method: 'POST' });
           } else if (msg.type === 'automation' && msg.prompt) {
-            // Strip the session header block and preview the action body
-            var autoBody = msg.prompt;
-            var sepIdx = msg.prompt.indexOf('\\n--- ');
-            if (sepIdx !== -1) {
-              var bodyStart = msg.prompt.indexOf('\\n\\n', sepIdx);
-              if (bodyStart !== -1) autoBody = msg.prompt.slice(bodyStart).trim();
-            }
-            var autoPreview = autoBody.length > 160 ? autoBody.slice(0, 160) + '…' : autoBody;
+            // Build full prompt matching VS Code format: [label] + session ID + body
+            var sessionLine = msg.sessionId ? 'Session ID: ' + msg.sessionId + '\\n' : '';
+            var autoFull = '[' + (msg.label || 'Automation') + ']\\n\\n' + sessionLine + msg.prompt;
+            var autoPreview = msg.prompt.length > 160 ? msg.prompt.slice(0, 160) + '…' : msg.prompt;
+            var autoLabel = 'Automation: ' + (msg.label || 'Automation');
             if (msg.writePromptsFile) {
               fetch('/api/write-prompts-file', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ agent: msg.agent, label: msg.label, prompt: msg.prompt })
+                body: JSON.stringify({ agent: msg.agent, label: msg.label, prompt: autoFull })
               }).then(function() {
                 var slug = msg.agent === 'claude_code' ? 'claude' : msg.agent === 'codex' ? 'codex' : 'copilot';
                 showToast('Prompt written to agentlens-prompts-' + slug + '.md');
               }).catch(function() {
-                showActionNotification(msg.label || 'Automation', msg.prompt, '#f6a623', autoPreview);
+                showActionNotification(autoLabel, autoFull, '#f6a623', autoPreview);
               });
             } else {
-              showActionNotification(msg.label || 'Automation', msg.prompt, '#f6a623', autoPreview);
+              showActionNotification(autoLabel, autoFull, '#f6a623', autoPreview);
             }
           } else if (msg.type === 'askAI' && msg.prompt) {
             navigator.clipboard.writeText(msg.prompt).then(function() {
@@ -703,25 +714,25 @@ function getHtml(): string {
               }));
             }, 0);
           } else if (msg.type === 'alert' && msg.label) {
-            var color = msg.severity === 'error' ? '#f44747' : msg.severity === 'info' ? '#4fc3f7' : '#f6a623';
-            var container = getNotifContainer();
-            var notif = document.createElement('div');
-            notif.style.cssText = 'background:#252526;border:1px solid #3e3e42;border-left:3px solid ' + color + ';border-radius:4px;padding:10px 12px;font-size:12px;color:#ccc;box-shadow:0 2px 8px rgba(0,0,0,0.4);';
-            var header = document.createElement('div');
-            header.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;';
-            var labelEl = document.createElement('div');
-            labelEl.style.cssText = 'flex:1;';
-            labelEl.innerHTML = '<span style="font-weight:600;color:' + color + '">AgentLens: ' + msg.label + '</span>' +
-              (msg.detail ? '<div style="margin-top:4px;color:#999;font-size:11px">' + msg.detail + '</div>' : '');
-            var closeBtn = document.createElement('button');
-            closeBtn.textContent = '×';
-            closeBtn.style.cssText = 'background:none;border:none;color:#888;cursor:pointer;font-size:16px;padding:0;line-height:1;flex-shrink:0;';
-            closeBtn.onclick = function() { notif.remove(); };
-            header.appendChild(labelEl);
-            header.appendChild(closeBtn);
-            notif.appendChild(header);
-            container.appendChild(notif);
-            setTimeout(function() { notif.remove(); }, 20000);
+            var alertColor = msg.severity === 'error' ? '#f44747' : msg.severity === 'info' ? '#4fc3f7' : '#f6a623';
+            var alertPrompt = [
+              "An alert was triggered in my AI coding session. Please explain what's happening and how I should respond.",
+              '',
+              'Alert: ' + msg.label,
+            ].concat(msg.detail ? ['Detail: ' + msg.detail] : []).join('\\n');
+            showActionNotification(
+              'Alert: ' + msg.label,
+              alertPrompt,
+              alertColor,
+              msg.detail || null,
+              {
+                label: 'View Alerts',
+                onClick: function() {
+                  window.dispatchEvent(new MessageEvent('message', { data: { type: 'switchTab', tab: 'alerts' } }));
+                }
+              },
+              30000
+            );
           }
         }
       };
