@@ -4878,8 +4878,7 @@
     otel: { href: "#help-otel", heading: "OTEL Data" },
     sessions: { href: "#help-sessions", heading: "Sessions" },
     analytics: { href: "#help-analytics", heading: "Analytics" },
-    alerts: { href: "#help-alerts", heading: "Alerts" },
-    automation: { href: "#help-automation", heading: "Automation" },
+    settings: { href: "#help-settings", heading: "Settings" },
     export: { href: "#help-export", heading: "Export" },
     badges: { href: "#help-badges", heading: "Badges" },
     glossary: { href: "#help-glossary", heading: "Glossary" }
@@ -5236,7 +5235,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             ] })
           ] })
         ] })) }),
-        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: "The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Insights, Alerts, Automation, Agents, and Flow use the normalized session model so the three agents can be compared side by side." })
+        /* @__PURE__ */ u4("p", { style: "margin-top:14px;font-size:12px;color:var(--muted)", children: "The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Insights, Alerts, Automation, Agents, and Flow all use the normalized session model so the three agents can be compared side by side." })
       ] })
     ] });
   }
@@ -5493,12 +5492,27 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       ] })
     ] });
   }
-  function AlertsSection() {
-    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-alerts", children: [
-      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.alerts.heading }),
+  function SettingsSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-settings", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.settings.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("p", { children: "The Alerts tab lets you configure thresholds for six signals. When a live session crosses a threshold, an alert fires and the tab badge increments. Alerts clear automatically when the session ends or you dismiss them." }),
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "Two alerts use shared token-count thresholds; the other four use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently." }),
+        /* @__PURE__ */ u4("p", { children: "Two icons in the top-right of the tab bar give you access to alert status and configuration without cluttering the main navigation." }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Bell icon \u2014 active alert status" }),
+        /* @__PURE__ */ u4("p", { children: [
+          "The bell icon shows a numbered badge when one or more alert thresholds are currently triggered. Click it to open a status card listing every active alert \u2014 severity, name, and detail about which session tripped it. The card also has a ",
+          /* @__PURE__ */ u4("strong", { children: "Configure alerts \u2192" }),
+          " link that jumps straight to the settings panel. When no alerts are firing the bell has no badge."
+        ] }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Gear icon \u2014 settings panel" }),
+        /* @__PURE__ */ u4("p", { children: [
+          "The gear icon opens a slide-in settings panel containing two collapsible sections: ",
+          /* @__PURE__ */ u4("strong", { children: "Alerts" }),
+          " and ",
+          /* @__PURE__ */ u4("strong", { children: "Automation" }),
+          ". Close it with the \xD7 button or by pressing Escape."
+        ] }),
+        /* @__PURE__ */ u4("h4", { id: "help-alerts", style: subHeadStyle, children: "Alerts" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "Configure thresholds for six signals. When a live session crosses a threshold the bell badge increments and the alert appears in the status card. Two alerts use shared token-count thresholds; the other four use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently." }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
           /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
             /* @__PURE__ */ u4("dt", { class: "glossary-term", children: [
@@ -5542,16 +5556,9 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             ] }),
             /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Fires when the same tool with identical arguments repeats beyond the per-agent threshold without a file change between repeats \u2014 a strong deadlock signal. Default: 5 repeats (adjustable per agent)." })
           ] })
-        ] })
-      ] })
-    ] });
-  }
-  function AutomationSection() {
-    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-automation", children: [
-      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.automation.heading }),
-      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
-        /* @__PURE__ */ u4("p", { children: "The Automation tab configures prompts that are sent automatically to the agent when a session crosses a threshold \u2014 without you having to intervene manually. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex." }),
-        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "In the VS Code extension, automations surface as a notification or open the agent chat directly. In local (npx) mode, they write the prompt to a file-based relay that the agent reads." }),
+        ] }),
+        /* @__PURE__ */ u4("h4", { id: "help-automation", style: subHeadStyle, children: "Automation" }),
+        /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 12px", children: "Automations send a prompt to the agent automatically when a session crosses a threshold \u2014 without you having to intervene manually. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex. In the VS Code extension, automations surface as a notification with a copyable prompt. In standalone (npx) mode they appear as an in-page notification." }),
         /* @__PURE__ */ u4("div", { class: "glossary", children: [
           /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
             /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Context Dump" }),
@@ -5653,8 +5660,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4(AgentOtelSection, {}),
       /* @__PURE__ */ u4(SessionsSection, {}),
       /* @__PURE__ */ u4(AnalyticsSection, {}),
-      /* @__PURE__ */ u4(AlertsSection, {}),
-      /* @__PURE__ */ u4(AutomationSection, {}),
+      /* @__PURE__ */ u4(SettingsSection, {}),
       /* @__PURE__ */ u4(ExportSection, {}),
       /* @__PURE__ */ u4(BadgesSection, {}),
       /* @__PURE__ */ u4(GlossarySection, {}),
