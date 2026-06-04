@@ -173,7 +173,12 @@ export class DashboardPanel {
         filesChanged:     s.filesChanged,
         loopSignals:      s.loopSignals,
       }
-      if (redact) return base
+      if (redact) return {
+        ...base,
+        userRequest:  '[redacted]',
+        filesRead:    (s.filesRead    ?? []).map(() => '[redacted]'),
+        filesChanged: (s.filesChanged ?? []).map(() => '[redacted]'),
+      }
       return { ...base, userRequest: s.userRequest }
     })
 

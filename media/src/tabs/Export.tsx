@@ -71,16 +71,17 @@ export function Export() {
             <span class="export-card-badge export-badge-redacted">Safer to share</span>
           </div>
           <p class="export-card-desc">
-            Same export with prompt text removed. Safe to attach to bug reports
+            Same export with prompt text and file paths replaced. Safe to attach to bug reports
             or share with teammates for cost and efficiency analysis.
           </p>
           <ul class="export-card-includes">
-            <li><span class="export-redacted-label">[removed]</span> Prompt text</li>
+            <li><span class="export-redacted-label">[redacted]</span> Prompt text</li>
+            <li><span class="export-redacted-label">[redacted]</span> File names and paths</li>
             <li>✓ Token counts, cache stats, model names</li>
-            <li>✓ Tool call counts and file paths changed</li>
+            <li>✓ Tool call counts (no paths)</li>
             <li>✓ Duration, errors, outcome, loop signals</li>
           </ul>
-          <div class="export-card-safe">Safer to share — no prompt content.</div>
+          <div class="export-card-safe">Safer to share — no prompt text or file paths.</div>
           <button
             class={'export-btn export-btn-secondary' + (redactedDone ? ' export-btn-done' : '')}
             onClick={doRedacted}

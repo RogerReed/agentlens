@@ -4802,17 +4802,21 @@
             /* @__PURE__ */ u4("span", { class: "export-card-title", children: "Export Session Data (Redacted)" }),
             /* @__PURE__ */ u4("span", { class: "export-card-badge export-badge-redacted", children: "Safer to share" })
           ] }),
-          /* @__PURE__ */ u4("p", { class: "export-card-desc", children: "Same export with prompt text removed. Safe to attach to bug reports or share with teammates for cost and efficiency analysis." }),
+          /* @__PURE__ */ u4("p", { class: "export-card-desc", children: "Same export with prompt text and file paths replaced. Safe to attach to bug reports or share with teammates for cost and efficiency analysis." }),
           /* @__PURE__ */ u4("ul", { class: "export-card-includes", children: [
             /* @__PURE__ */ u4("li", { children: [
-              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[removed]" }),
+              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[redacted]" }),
               " Prompt text"
             ] }),
+            /* @__PURE__ */ u4("li", { children: [
+              /* @__PURE__ */ u4("span", { class: "export-redacted-label", children: "[redacted]" }),
+              " File names and paths"
+            ] }),
             /* @__PURE__ */ u4("li", { children: "\u2713 Token counts, cache stats, model names" }),
-            /* @__PURE__ */ u4("li", { children: "\u2713 Tool call counts and file paths changed" }),
+            /* @__PURE__ */ u4("li", { children: "\u2713 Tool call counts (no paths)" }),
             /* @__PURE__ */ u4("li", { children: "\u2713 Duration, errors, outcome, loop signals" })
           ] }),
-          /* @__PURE__ */ u4("div", { class: "export-card-safe", children: "Safer to share \u2014 no prompt content." }),
+          /* @__PURE__ */ u4("div", { class: "export-card-safe", children: "Safer to share \u2014 no prompt text or file paths." }),
           /* @__PURE__ */ u4(
             "button",
             {
