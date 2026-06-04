@@ -4964,7 +4964,7 @@
         /* @__PURE__ */ u4("strong", { children: "AgentLens" }),
         " is a local observability tool that makes AI ",
         /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agent" }),
-        " sessions more transparent \u2014 see what's happening inside each run. Available as a VS Code extension, a local web app (npx), or Docker, with no data leaving your machine. It captures ",
+        " sessions more transparent \u2014 see what's happening inside each run. Available as a VS Code-family IDE extension (VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro), a local web app (npx), or Docker, with no data leaving your machine. It captures ",
         /* @__PURE__ */ u4("a", { href: "#gl-otlp", children: "OpenTelemetry" }),
         " ",
         /* @__PURE__ */ u4("a", { href: "#gl-trace", children: "traces" }),
@@ -5038,7 +5038,7 @@ chmod +x scripts/configure-agents.sh
     ] }) : /* @__PURE__ */ u4("div", { style: "margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px", children: [
       /* @__PURE__ */ u4("p", { style: "font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)", children: "Not seeing any data?" }),
       /* @__PURE__ */ u4("p", { style: "font-size:12px;color:var(--muted);margin:0 0 8px", children: [
-        "AgentLens automatically configures all supported agents on first activation. Just restart each ",
+        "AgentLens automatically configures all supported agents on first activation. Works in VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro, and other VS Code-family IDEs. Just restart each ",
         /* @__PURE__ */ u4("a", { href: "#gl-agent", children: "agent" }),
         " once \u2014 ",
         /* @__PURE__ */ u4("a", { href: "#gl-session", children: "sessions" }),
@@ -5054,7 +5054,7 @@ chmod +x scripts/configure-agents.sh
             /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Ctrl+Shift+P" }),
             " \u2192 ",
             /* @__PURE__ */ u4("em", { children: "Reload Window" }),
-            " to restart the VS Code extension host."
+            " to restart the extension host (works in all VS Code-family IDEs)."
           ] })
         ] }),
         /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
@@ -5114,15 +5114,15 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
 [System.Environment]::SetEnvironmentVariable("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", "User")` })
       ] }) : /* @__PURE__ */ u4(S, { children: [
         /* @__PURE__ */ u4("p", { style: mutedP, children: [
-          "Add to VS Code ",
+          "Add to ",
           /* @__PURE__ */ u4("strong", { children: "User Settings" }),
-          " (",
+          " in your VS Code-family IDE (",
           /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Cmd+Shift+P" }),
           " / ",
           /* @__PURE__ */ u4("kbd", { style: kbdStyle, children: "Ctrl+Shift+P" }),
           " \u2192 ",
           /* @__PURE__ */ u4("em", { children: "Preferences: Open User Settings (JSON)" }),
-          "):"
+          "). Works in VS Code, Cursor, Windsurf, VSCodium, Trae, and Kiro."
         ] }),
         /* @__PURE__ */ u4("pre", { style: preStyle, children: `{
   "github.copilot.chat.otel.enabled": true,

@@ -33,6 +33,8 @@ Open <http://localhost:3000> after the server starts. The OTLP receiver listens 
 
 The extension receives OTEL traces in real time **and** reads local session log files, so you get both live telemetry and full session history automatically.
 
+Works in **VS Code, Cursor, Windsurf, VSCodium, Trae, and Kiro** — install from your IDE's extension marketplace or from the VS Code Marketplace directly.
+
 1. **[Install from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)**
 2. Open the **AgentLens** view from the Activity Bar
 3. AgentLens auto-configures OTEL telemetry for Copilot, Claude Code, and Codex — restart any running agent sessions to start streaming traces
@@ -78,7 +80,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ## Features
 
 - **OpenTelemetry collection** — Built-in OTEL receiver captures real-time traces and logs from Copilot, Claude Code, and Codex with no external infrastructure; auto-configured on first activation
-- **Log file ingestion** — Reads local session files written automatically by each agent as a zero-config fallback, backfilling history when OTEL isn't configured (VS Code and native process only)
+- **Log file ingestion** — Reads local session files written automatically by each agent as a zero-config fallback, backfilling history when OTEL isn't configured (VS Code-family IDEs and native process only)
 - **Sessions Table** — Drill into any session: expand a row to see a full waterfall trace, turn-to-tool flow graph, tool distribution chart, and modified files — all without leaving the session list
 - **Analytics** — Aggregate charts across the active time range: per-agent breakdown, estimated cost with a daily total overlay, token usage per session, and context growth
 - **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, broken down by model in a day-grouped table
@@ -96,15 +98,18 @@ The VS Code extension runs a built-in OTEL HTTP receiver on port `4318` and auto
 
 See [Manual Configuration](#manual-configuration) for the specific settings each agent needs. OTEL is the only data source available in Docker mode.
 
-### Log file ingestion (fallback source, VS Code and native process only)
+### Log file ingestion (fallback source, VS Code-family IDEs and native process only)
 
-AgentLens also reads the local session files that Claude Code, Codex, and Copilot CLI write automatically to your home directory. This requires no configuration and backfills session history that predates OTEL setup. Log-sourced sessions show a **Log** badge. **Not available in Docker mode** — the container cannot access host log directories without explicit volume mounts for every agent path.
+AgentLens also reads the local session files that Claude Code, Codex, Copilot CLI, and Copilot Chat write automatically to your home directory. This requires no configuration and backfills session history that predates OTEL setup. Log-sourced sessions show a **Log** badge. **Not available in Docker mode** — the container cannot access host log directories without explicit volume mounts for every agent path.
 
 | Agent | Log file location (Mac/Linux) | Windows |
 | --- | --- | --- |
 | **Claude Code** | `~/.claude/projects/<project>/<session>.jsonl` | `%APPDATA%\Claude\projects\...` |
 | **Codex CLI** | `~/.codex/sessions/<project>/<session>.jsonl` | `%USERPROFILE%\.codex\sessions\...` |
 | **Copilot CLI** | `~/.copilot/session-state/<session>/events.jsonl` | `%USERPROFILE%\.copilot\session-state\...` |
+| **Copilot Chat** | `~/Library/Application Support/<IDE>/User/workspaceStorage/…/chatSessions/` | `%APPDATA%\<IDE>\User\workspaceStorage\…\chatSessions\` |
+
+Copilot Chat sessions are scanned across all installed VS Code-family IDEs automatically — VS Code, VS Code Insiders, Cursor, Windsurf, VSCodium, Trae, and Kiro.
 
 Loading is incremental and runs in the background, sorted newest-first so recent sessions appear immediately. A 30-second poll picks up new sessions as they complete.
 
@@ -172,7 +177,7 @@ The VS Code extension configures agents automatically on first activation. For s
 
 ### GitHub Copilot
 
-**VS Code extension** — Add to VS Code User Settings (`Cmd+Shift+P` / `Ctrl+Shift+P` → *Preferences: Open User Settings (JSON)*):
+**VS Code-family IDE extension** — Add to User Settings (`Cmd+Shift+P` / `Ctrl+Shift+P` → *Preferences: Open User Settings (JSON)*) in VS Code, Cursor, Windsurf, or any VS Code-family IDE:
 
 ```json
 {

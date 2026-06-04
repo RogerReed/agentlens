@@ -149,7 +149,7 @@ function OverviewSection() {
       )}
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
-        <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code extension, a local web app (npx), or Docker, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and also reads <strong>local session log files</strong> written automatically by each agent as a zero-config fallback — so history loads even without OTEL configured. Both sources feed one unified dashboard and surface efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time.</p>
+        <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code-family IDE extension (VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro), a local web app (npx), or Docker, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and also reads <strong>local session log files</strong> written automatically by each agent as a zero-config fallback — so history loads even without OTEL configured. Both sources feed one unified dashboard and surface efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time.</p>
       </div>
     </div>
   )
@@ -203,13 +203,13 @@ chmod +x scripts/configure-agents.sh
   ) : (
     <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
       <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
-      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">AgentLens automatically configures all supported agents on first activation. Just restart each <a href="#gl-agent">agent</a> once — <a href="#gl-session">sessions</a> will start appearing immediately.</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">AgentLens automatically configures all supported agents on first activation. Works in VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro, and other VS Code-family IDEs. Just restart each <a href="#gl-agent">agent</a> once — <a href="#gl-session">sessions</a> will start appearing immediately.</p>
       <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart after AgentLens activates:</p>
       <table style="font-size:11px;border-collapse:collapse;width:100%">
         <tbody style="color:var(--muted)">
           <tr style="border-bottom:1px solid var(--border)">
             <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">GitHub Copilot</td>
-            <td style="padding:4px 0;vertical-align:top"><kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Reload Window</em> to restart the VS Code extension host.</td>
+            <td style="padding:4px 0;vertical-align:top"><kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Reload Window</em> to restart the extension host (works in all VS Code-family IDEs).</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border)">
             <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code (CLI)</td>
@@ -249,7 +249,7 @@ export OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true
         </>
       ) : (
         <>
-          <p style={mutedP}>Add to VS Code <strong>User Settings</strong> (<kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Preferences: Open User Settings (JSON)</em>):</p>
+          <p style={mutedP}>Add to <strong>User Settings</strong> in your VS Code-family IDE (<kbd style={kbdStyle}>Cmd+Shift+P</kbd> / <kbd style={kbdStyle}>Ctrl+Shift+P</kbd> → <em>Preferences: Open User Settings (JSON)</em>). Works in VS Code, Cursor, Windsurf, VSCodium, Trae, and Kiro.</p>
           <pre style={preStyle}>{`{
   "github.copilot.chat.otel.enabled": true,
   "github.copilot.chat.otel.exporterType": "otlp-http",
