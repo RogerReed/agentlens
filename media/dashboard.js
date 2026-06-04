@@ -5678,75 +5678,8 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
   function basename(p5) {
     return p5.replace(/\\/g, "/").split("/").pop() ?? p5;
   }
-  var MARKER_KEY = "agentLens.patternMarkers";
-  function loadMarkers() {
-    try {
-      return JSON.parse(localStorage.getItem(MARKER_KEY) ?? "[]");
-    } catch {
-      return [];
-    }
-  }
-  function saveMarkers(m4) {
-    try {
-      localStorage.setItem(MARKER_KEY, JSON.stringify(m4));
-    } catch {
-    }
-  }
-  function HotFilesPanel({ sessions }) {
-    const [showChanged, setShowChanged] = d2(false);
-    const fileMap = /* @__PURE__ */ new Map();
-    for (const s4 of sessions) {
-      const seen = /* @__PURE__ */ new Set();
-      const allFiles = [
-        ...showChanged ? s4.filesChanged ?? [] : [],
-        ...s4.filesRead ?? [],
-        ...showChanged ? [] : s4.filesChanged ?? []
-      ];
-      for (const f5 of allFiles) {
-        if (!seen.has(f5)) {
-          seen.add(f5);
-          const e4 = fileMap.get(f5) ?? { read: 0, changed: 0, sessionCount: 0 };
-          e4.sessionCount++;
-          if (s4.filesRead?.includes(f5)) e4.read++;
-          if (s4.filesChanged?.includes(f5)) e4.changed++;
-          fileMap.set(f5, e4);
-        }
-      }
-    }
-    const total = sessions.length || 1;
-    const rows = [...fileMap.entries()].map(([file, v4]) => ({ file, ...v4, pct: Math.round(v4.sessionCount / total * 100) })).sort((a4, b4) => b4.sessionCount - a4.sessionCount).slice(0, 30);
-    if (rows.length === 0) return /* @__PURE__ */ u4("div", { class: "empty-state", children: "No file access data yet." });
-    return /* @__PURE__ */ u4("div", { children: [
-      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;margin-bottom:10px", children: [
-        /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: "Show:" }),
-        /* @__PURE__ */ u4("button", { class: "tab-mini" + (!showChanged ? " active" : ""), onClick: () => setShowChanged(false), children: "Read + Changed" }),
-        /* @__PURE__ */ u4("button", { class: "tab-mini" + (showChanged ? " active" : ""), onClick: () => setShowChanged(true), children: "Changed only" })
-      ] }),
-      /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
-        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
-          /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 8px 4px 0;color:var(--muted);font-weight:500", children: "File" }),
-          /* @__PURE__ */ u4("th", { style: "text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap", children: "Sessions" }),
-          /* @__PURE__ */ u4("th", { style: "text-align:right;padding:4px 8px;color:var(--muted);font-weight:500", children: "%" }),
-          /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 8px;color:var(--muted);font-weight:500", children: "Frequency" }),
-          /* @__PURE__ */ u4("th", { style: "padding:4px 0;color:var(--muted);font-weight:500", children: "CLAUDE.md?" })
-        ] }) }),
-        /* @__PURE__ */ u4("tbody", { children: rows.map((r5) => /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
-          /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: r5.file, children: [
-            /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:10px", children: r5.file.replace(basename(r5.file), "") }),
-            /* @__PURE__ */ u4("span", { style: "color:var(--fg)", children: basename(r5.file) })
-          ] }),
-          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums", children: r5.sessionCount }),
-          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: [
-            r5.pct,
-            "%"
-          ] }),
-          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;min-width:120px", children: /* @__PURE__ */ u4("div", { style: `height:6px;border-radius:3px;background:var(--border);overflow:hidden`, children: /* @__PURE__ */ u4("div", { style: `height:100%;width:${r5.pct}%;background:${r5.pct >= 50 ? "var(--accent)" : "var(--muted)"};border-radius:3px` }) }) }),
-          /* @__PURE__ */ u4("td", { style: "padding:4px 0;text-align:center", children: r5.pct >= 40 && /* @__PURE__ */ u4("span", { style: "font-size:10px;background:rgba(79,195,247,0.15);color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:1px 5px", title: "Appears in 40%+ of sessions \u2014 consider mentioning in CLAUDE.md", children: "candidate" }) })
-        ] }, r5.file)) })
-      ] }) })
-    ] });
-  }
-  function ScatterPlot({ sessions }) {
+  var sectionHead = "font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0 0 10px";
+  function EfficiencyMap({ sessions }) {
     const [filter, setFilter] = d2("");
     const [tooltip, setTooltip] = d2(null);
     const svgRef = A2(null);
@@ -5768,6 +5701,8 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
     const yPos = (turns) => PAD.top + ch - turns / maxTurns * ch;
     const xTicks = [0, 0.25, 0.5, 0.75, 1].map((f5) => ({ v: f5 * maxCost, x: PAD.left + f5 * cw }));
     const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f5) => ({ v: Math.round(f5 * maxTurns), y: PAD.top + ch - f5 * ch }));
+    const matched = points.filter((p5) => p5.matches);
+    const topMatches = filter.trim() ? matched.slice(0, 10) : [];
     return /* @__PURE__ */ u4("div", { children: [
       /* @__PURE__ */ u4("div", { style: "margin-bottom:8px;display:flex;align-items:center;gap:8px", children: [
         /* @__PURE__ */ u4(
@@ -5781,7 +5716,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
           }
         ),
         /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted)", children: [
-          points.filter((p5) => p5.matches).length,
+          matched.length,
           " sessions"
         ] }),
         /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)", children: [
@@ -5795,18 +5730,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       ] }),
       /* @__PURE__ */ u4("div", { style: "position:relative", children: [
         /* @__PURE__ */ u4("svg", { ref: svgRef, width: W, height: H2, style: "overflow:visible;max-width:100%", children: [
-          yTicks.map((t4) => /* @__PURE__ */ u4(
-            "line",
-            {
-              x1: PAD.left,
-              y1: t4.y,
-              x2: PAD.left + cw,
-              y2: t4.y,
-              stroke: "var(--border)",
-              "stroke-width": "1"
-            },
-            t4.v
-          )),
+          yTicks.map((t4) => /* @__PURE__ */ u4("line", { x1: PAD.left, y1: t4.y, x2: PAD.left + cw, y2: t4.y, stroke: "var(--border)", "stroke-width": "1" }, t4.v)),
           /* @__PURE__ */ u4("line", { x1: PAD.left, y1: PAD.top, x2: PAD.left, y2: PAD.top + ch, stroke: "var(--border)", "stroke-width": "1" }),
           /* @__PURE__ */ u4("line", { x1: PAD.left, y1: PAD.top + ch, x2: PAD.left + cw, y2: PAD.top + ch, stroke: "var(--border)", "stroke-width": "1" }),
           /* @__PURE__ */ u4("text", { x: PAD.left + cw / 2, y: H2 - 2, "text-anchor": "middle", "font-size": "10", fill: "var(--muted)", children: "Cost (USD)" }),
@@ -5833,7 +5757,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
           points.map((p5, i4) => {
             const cx = xPos(p5.cost), cy = yPos(p5.turns);
             const color = p5.hasErrors ? "#f44747" : p5.hasSignal ? "#f6a623" : "#81c784";
-            const opacity = filter ? p5.matches ? 1 : 0.15 : 0.75;
+            const opacity = filter ? p5.matches ? 1 : 0.12 : 0.75;
             return /* @__PURE__ */ u4(
               "circle",
               {
@@ -5874,10 +5798,28 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
             ] })
           ] });
         })()
+      ] }),
+      topMatches.length > 0 && /* @__PURE__ */ u4("div", { style: "margin-top:12px;display:flex;flex-direction:column;gap:4px", children: [
+        /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-bottom:2px", children: [
+          "Top ",
+          topMatches.length,
+          " matches"
+        ] }),
+        topMatches.map((p5, i4) => /* @__PURE__ */ u4("div", { style: "display:flex;align-items:baseline;gap:8px;padding:5px 8px;background:var(--card-bg);border:1px solid var(--border);border-radius:4px", children: [
+          /* @__PURE__ */ u4("span", { style: "flex:1;font-size:11px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap", children: p5.s.userRequest?.slice(0, 90) ?? "\u2014" }),
+          /* @__PURE__ */ u4("span", { style: "flex-shrink:0;font-size:10px;color:var(--muted);white-space:nowrap", children: [
+            fmtUsd2(p5.cost),
+            " \xB7 ",
+            p5.turns,
+            " turns",
+            p5.hasSignal && /* @__PURE__ */ u4("span", { style: "color:#f6a623;margin-left:4px", children: "\u21BA" }),
+            p5.hasErrors && /* @__PURE__ */ u4("span", { style: "color:#f44747;margin-left:4px", children: "\u2715" })
+          ] })
+        ] }, i4))
       ] })
     ] });
   }
-  function ClaudeMdPanel({ sessions }) {
+  function ClaudeMdTips({ sessions }) {
     const [copied, setCopied] = d2(null);
     const total = sessions.length || 1;
     const fileMap = /* @__PURE__ */ new Map();
@@ -5903,11 +5845,10 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
     };
     const suggestions = [];
     for (const { file, pct } of hotFiles) {
-      const line = `# ${basename(file)} (${file})`;
       suggestions.push({
         key: file,
-        text: `"${basename(file)}" appears in ${pct}% of sessions \u2014 add a reference so the agent can find it without searching.`,
-        copy: line
+        text: `"${basename(file)}" appears in ${pct}% of sessions \u2014 add a reference so the agent finds it without searching.`,
+        copy: `# ${basename(file)} (${file})`
       });
     }
     if (freqSignals.length > 0) {
@@ -5915,7 +5856,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       const label = type === "exact_tool_repeat" ? "tool call loops" : type === "runaway_steps" ? "runaway turn counts" : type.replace(/_/g, " ");
       suggestions.push({
         key: "signals",
-        text: `"${label}" appeared in ${count} sessions. Add scope guidance to prevent open-ended tasks.`,
+        text: `"${label}" appeared in ${count} sessions \u2014 add scope guidance to prevent open-ended tasks.`,
         copy: `# Scope guidance
 Keep tasks narrowly scoped. Name specific files and functions. Define a stopping condition.`
       });
@@ -5929,9 +5870,9 @@ Avoid "refactor" or "clean up" without explicit scope. Specify files, functions,
       });
     }
     if (suggestions.length === 0) {
-      return /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:20px", children: "No strong recommendations yet \u2014 keep working and patterns will emerge with more sessions." });
+      return /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:20px", children: "No strong recommendations yet \u2014 patterns will emerge with more sessions." });
     }
-    return /* @__PURE__ */ u4("div", { style: "display:flex;flex-direction:column;gap:10px", children: suggestions.map((s4) => /* @__PURE__ */ u4("div", { style: "background:var(--card-bg);border:1px solid var(--border);border-radius:5px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px", children: [
+    return /* @__PURE__ */ u4("div", { style: "display:flex;flex-direction:column;gap:8px", children: suggestions.map((s4) => /* @__PURE__ */ u4("div", { style: "background:var(--card-bg);border:1px solid var(--border);border-radius:5px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px", children: [
       /* @__PURE__ */ u4("div", { style: "flex:1;font-size:12px;color:var(--muted);line-height:1.5", children: s4.text }),
       /* @__PURE__ */ u4(
         "button",
@@ -5943,156 +5884,137 @@ Avoid "refactor" or "clean up" without explicit scope. Specify files, functions,
       )
     ] }, s4.key)) });
   }
-  function TrendPanel({ sessions }) {
-    const [markers, setMarkers] = d2(loadMarkers);
-    const [newLabel, setNewLabel] = d2("");
-    const [newDate, setNewDate] = d2((/* @__PURE__ */ new Date()).toISOString().slice(0, 10));
+  function CostTrend({ sessions }) {
     const dayMap = /* @__PURE__ */ new Map();
     for (const s4 of sessions) {
       if (!s4.startTime) continue;
       const day = s4.startTime.slice(0, 10);
-      const e4 = dayMap.get(day) ?? { cost: 0, turns: 0, n: 0 };
+      const e4 = dayMap.get(day) ?? { cost: 0, n: 0 };
       e4.cost += sessionCost(s4);
-      e4.turns += s4.totalLlmCalls;
       e4.n++;
       dayMap.set(day, e4);
     }
     const days = [...dayMap.entries()].sort((a4, b4) => a4[0].localeCompare(b4[0]));
-    if (days.length < 2) return /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:20px", children: "Not enough data yet \u2014 trend appears after 2+ days of sessions." });
-    const W = 560, H2 = 160, PAD = { top: 12, right: 16, bottom: 30, left: 52 };
+    if (days.length < 2) return /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:20px", children: "Not enough data \u2014 trend appears after 2+ days of sessions." });
+    const W = 560, H2 = 140, PAD = { top: 12, right: 16, bottom: 28, left: 52 };
     const cw = W - PAD.left - PAD.right;
     const ch = H2 - PAD.top - PAD.bottom;
     const maxCost = Math.max(...days.map(([, v4]) => v4.cost), 0.01);
     const xPos = (i4) => PAD.left + i4 / (days.length - 1) * cw;
     const yPos = (cost) => PAD.top + ch - cost / maxCost * ch;
-    const points = days.map(([, v4], i4) => ({ x: xPos(i4), y: yPos(v4.cost), cost: v4.cost, n: v4.n }));
+    const points = days.map(([, v4], i4) => ({ x: xPos(i4), y: yPos(v4.cost), cost: v4.cost }));
     const polyline = points.map((p5) => `${p5.x},${p5.y}`).join(" ");
-    const addMarker = () => {
-      if (!newLabel.trim()) return;
-      const next = [...markers, { date: newDate, label: newLabel.trim() }].sort((a4, b4) => a4.date.localeCompare(b4.date));
-      setMarkers(next);
-      saveMarkers(next);
-      setNewLabel("");
-    };
-    const removeMarker = (i4) => {
-      const next = markers.filter((_4, j4) => j4 !== i4);
-      setMarkers(next);
-      saveMarkers(next);
-    };
+    return /* @__PURE__ */ u4("svg", { width: W, height: H2, style: "overflow:visible;max-width:100%;display:block", children: [
+      [0, 0.5, 1].map((f5) => {
+        const y5 = PAD.top + ch - f5 * ch;
+        return /* @__PURE__ */ u4("line", { x1: PAD.left, y1: y5, x2: PAD.left + cw, y2: y5, stroke: "var(--border)", "stroke-width": "1" }, f5);
+      }),
+      /* @__PURE__ */ u4("line", { x1: PAD.left, y1: PAD.top, x2: PAD.left, y2: PAD.top + ch, stroke: "var(--border)" }),
+      /* @__PURE__ */ u4("line", { x1: PAD.left, y1: PAD.top + ch, x2: PAD.left + cw, y2: PAD.top + ch, stroke: "var(--border)" }),
+      /* @__PURE__ */ u4("text", { x: PAD.left - 4, y: PAD.top + 4, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: fmtUsd2(maxCost) }),
+      /* @__PURE__ */ u4("text", { x: PAD.left - 4, y: PAD.top + ch / 2 + 4, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: fmtUsd2(maxCost / 2) }),
+      /* @__PURE__ */ u4("text", { x: PAD.left - 4, y: PAD.top + ch + 4, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: "$0" }),
+      /* @__PURE__ */ u4("text", { x: PAD.left, y: PAD.top + ch + 16, "text-anchor": "start", "font-size": "9", fill: "var(--muted)", children: days[0][0].slice(5) }),
+      /* @__PURE__ */ u4("text", { x: PAD.left + cw, y: PAD.top + ch + 16, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: days[days.length - 1][0].slice(5) }),
+      /* @__PURE__ */ u4(
+        "polygon",
+        {
+          points: `${PAD.left},${PAD.top + ch} ${polyline} ${PAD.left + cw},${PAD.top + ch}`,
+          fill: "rgba(79,195,247,0.1)"
+        }
+      ),
+      /* @__PURE__ */ u4("polyline", { points: polyline, fill: "none", stroke: "var(--accent)", "stroke-width": "1.5" }),
+      points.map((p5, i4) => /* @__PURE__ */ u4("circle", { cx: p5.x, cy: p5.y, r: 3, fill: "var(--accent)" }, i4))
+    ] });
+  }
+  function HotFiles({ sessions }) {
+    const [mode, setMode] = d2("read");
+    const fileMap = /* @__PURE__ */ new Map();
+    for (const s4 of sessions) {
+      const seen = /* @__PURE__ */ new Set();
+      const files = mode === "read" ? s4.filesRead ?? [] : mode === "changed" ? s4.filesChanged ?? [] : [...s4.filesRead ?? [], ...s4.filesChanged ?? []];
+      for (const f5 of files) {
+        if (!seen.has(f5)) {
+          seen.add(f5);
+          const e4 = fileMap.get(f5) ?? { read: 0, changed: 0, sessionCount: 0 };
+          e4.sessionCount++;
+          if (s4.filesRead?.includes(f5)) e4.read++;
+          if (s4.filesChanged?.includes(f5)) e4.changed++;
+          fileMap.set(f5, e4);
+        }
+      }
+    }
+    const total = sessions.length || 1;
+    const rows = [...fileMap.entries()].map(([file, v4]) => ({ file, ...v4, pct: Math.round(v4.sessionCount / total * 100) })).sort((a4, b4) => b4.sessionCount - a4.sessionCount).slice(0, 10);
+    if (rows.length === 0) return /* @__PURE__ */ u4("div", { class: "empty-state", children: "No file access data yet." });
     return /* @__PURE__ */ u4("div", { children: [
-      /* @__PURE__ */ u4("svg", { width: W, height: H2, style: "overflow:visible;max-width:100%;display:block;margin-bottom:8px", children: [
-        [0, 0.5, 1].map((f5) => {
-          const y5 = PAD.top + ch - f5 * ch;
-          return /* @__PURE__ */ u4("line", { x1: PAD.left, y1: y5, x2: PAD.left + cw, y2: y5, stroke: "var(--border)", "stroke-width": "1" }, f5);
-        }),
-        /* @__PURE__ */ u4("line", { x1: PAD.left, y1: PAD.top, x2: PAD.left, y2: PAD.top + ch, stroke: "var(--border)" }),
-        /* @__PURE__ */ u4("line", { x1: PAD.left, y1: PAD.top + ch, x2: PAD.left + cw, y2: PAD.top + ch, stroke: "var(--border)" }),
-        /* @__PURE__ */ u4("text", { x: PAD.left - 4, y: PAD.top + 4, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: fmtUsd2(maxCost) }),
-        /* @__PURE__ */ u4("text", { x: PAD.left - 4, y: PAD.top + ch / 2 + 4, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: fmtUsd2(maxCost / 2) }),
-        /* @__PURE__ */ u4("text", { x: PAD.left - 4, y: PAD.top + ch + 4, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: "$0" }),
-        /* @__PURE__ */ u4("text", { x: PAD.left, y: PAD.top + ch + 16, "text-anchor": "start", "font-size": "9", fill: "var(--muted)", children: days[0][0].slice(5) }),
-        /* @__PURE__ */ u4("text", { x: PAD.left + cw, y: PAD.top + ch + 16, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: days[days.length - 1][0].slice(5) }),
-        /* @__PURE__ */ u4(
-          "polygon",
-          {
-            points: `${PAD.left},${PAD.top + ch} ${polyline} ${PAD.left + cw},${PAD.top + ch}`,
-            fill: "rgba(79,195,247,0.1)"
-          }
-        ),
-        /* @__PURE__ */ u4("polyline", { points: polyline, fill: "none", stroke: "var(--accent)", "stroke-width": "1.5" }),
-        points.map((p5, i4) => /* @__PURE__ */ u4("circle", { cx: p5.x, cy: p5.y, r: 3, fill: "var(--accent)" }, i4)),
-        markers.map((m4) => {
-          const dayIdx = days.findIndex(([d5]) => d5 >= m4.date);
-          if (dayIdx < 0) return null;
-          const x4 = xPos(dayIdx);
-          return /* @__PURE__ */ u4("g", { children: [
-            /* @__PURE__ */ u4("line", { x1: x4, y1: PAD.top, x2: x4, y2: PAD.top + ch, stroke: "#f6a623", "stroke-width": "1", "stroke-dasharray": "3 2" }),
-            /* @__PURE__ */ u4("text", { x: x4 + 3, y: PAD.top + 10, "font-size": "9", fill: "#f6a623", children: m4.label })
-          ] }, m4.date + m4.label);
-        })
+      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;margin-bottom:10px", children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: "Show:" }),
+        /* @__PURE__ */ u4("button", { class: "tab-mini" + (mode === "read" ? " active" : ""), onClick: () => setMode("read"), children: "Read" }),
+        /* @__PURE__ */ u4("button", { class: "tab-mini" + (mode === "changed" ? " active" : ""), onClick: () => setMode("changed"), children: "Changed" }),
+        /* @__PURE__ */ u4("button", { class: "tab-mini" + (mode === "both" ? " active" : ""), onClick: () => setMode("both"), children: "Both" })
       ] }),
-      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px", children: [
-        /* @__PURE__ */ u4("span", { style: "color:var(--muted);flex-shrink:0", children: "Add marker:" }),
-        /* @__PURE__ */ u4(
-          "input",
-          {
-            type: "date",
-            value: newDate,
-            onInput: (e4) => setNewDate(e4.target.value),
-            style: "padding:2px 6px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-          }
-        ),
-        /* @__PURE__ */ u4(
-          "input",
-          {
-            type: "text",
-            placeholder: "e.g. edited CLAUDE.md",
-            value: newLabel,
-            onInput: (e4) => setNewLabel(e4.target.value),
-            onKeyDown: (e4) => {
-              if (e4.key === "Enter") addMarker();
-            },
-            style: "flex:1;min-width:140px;padding:2px 6px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-          }
-        ),
-        /* @__PURE__ */ u4(
-          "button",
-          {
-            onClick: addMarker,
-            style: "padding:2px 10px;font-size:11px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted)",
-            children: "Add"
-          }
-        )
-      ] }),
-      markers.length > 0 && /* @__PURE__ */ u4("div", { style: "margin-top:8px;display:flex;flex-wrap:wrap;gap:6px", children: markers.map((m4, i4) => /* @__PURE__ */ u4("span", { style: "display:inline-flex;align-items:center;gap:4px;font-size:10px;background:rgba(246,166,35,0.12);border:1px solid #f6a623;border-radius:3px;padding:2px 7px;color:#f6a623", children: [
-        m4.date.slice(5),
-        " ",
-        m4.label,
-        /* @__PURE__ */ u4(
-          "button",
-          {
-            onClick: () => removeMarker(i4),
-            style: "background:none;border:none;color:#f6a623;cursor:pointer;padding:0;line-height:1;font-size:12px",
-            children: "\xD7"
-          }
-        )
-      ] }, i4)) })
+      /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
+        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+          /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 8px 4px 0;color:var(--muted);font-weight:500", children: "File" }),
+          /* @__PURE__ */ u4("th", { style: "text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap", children: "Sessions" }),
+          /* @__PURE__ */ u4("th", { style: "text-align:right;padding:4px 8px;color:var(--muted);font-weight:500", children: "%" }),
+          /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 8px;color:var(--muted);font-weight:500", children: "Frequency" }),
+          /* @__PURE__ */ u4("th", { style: "padding:4px 0;color:var(--muted);font-weight:500", children: "CLAUDE.md?" })
+        ] }) }),
+        /* @__PURE__ */ u4("tbody", { children: rows.map((r5) => /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+          /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: r5.file, children: [
+            /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:10px", children: r5.file.replace(basename(r5.file), "") }),
+            /* @__PURE__ */ u4("span", { style: "color:var(--fg)", children: basename(r5.file) })
+          ] }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums", children: r5.sessionCount }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted)", children: [
+            r5.pct,
+            "%"
+          ] }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;min-width:120px", children: /* @__PURE__ */ u4("div", { style: "height:6px;border-radius:3px;background:var(--border);overflow:hidden", children: /* @__PURE__ */ u4("div", { style: `height:100%;width:${r5.pct}%;background:${r5.pct >= 50 ? "var(--accent)" : "var(--muted)"};border-radius:3px` }) }) }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 0;text-align:center", children: r5.pct >= 40 && /* @__PURE__ */ u4(
+            "span",
+            {
+              style: "font-size:10px;background:rgba(79,195,247,0.15);color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:1px 5px",
+              title: "Appears in 40%+ of sessions \u2014 consider mentioning in CLAUDE.md",
+              children: "candidate"
+            }
+          ) })
+        ] }, r5.file)) })
+      ] }) })
     ] });
   }
   function Patterns() {
     const sessions = filteredSessions.value;
-    const [panel, setPanel] = d2("files");
     if (sessions.length === 0) {
       return /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions recorded yet \u2014 patterns will appear once you have session history." });
     }
-    const h3Style = "font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0";
-    const panels = [
-      { id: "files", label: "Hot Files" },
-      { id: "scatter", label: "Efficiency Map" },
-      { id: "claude", label: "CLAUDE.md Tips" },
-      { id: "trend", label: "Cost Trend" }
-    ];
-    return /* @__PURE__ */ u4("div", { id: "patterns-content", children: [
-      /* @__PURE__ */ u4("div", { style: "display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0", children: [
-        panels.map((p5) => /* @__PURE__ */ u4(
-          "button",
-          {
-            class: "tab-mini" + (panel === p5.id ? " active" : ""),
-            style: "border-bottom:none;border-radius:3px 3px 0 0;margin-bottom:-1px",
-            onClick: () => setPanel(p5.id),
-            children: p5.label
-          },
-          p5.id
-        )),
-        /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);align-self:center;padding-bottom:4px", children: [
-          sessions.length,
-          " sessions"
-        ] })
+    const divider = /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border);margin:4px 0" });
+    return /* @__PURE__ */ u4("div", { id: "patterns-content", style: "display:flex;flex-direction:column;gap:20px", children: [
+      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);text-align:right", children: [
+        sessions.length,
+        " sessions"
       ] }),
-      panel === "files" && /* @__PURE__ */ u4(HotFilesPanel, { sessions }),
-      panel === "scatter" && /* @__PURE__ */ u4(ScatterPlot, { sessions }),
-      panel === "claude" && /* @__PURE__ */ u4(ClaudeMdPanel, { sessions }),
-      panel === "trend" && /* @__PURE__ */ u4(TrendPanel, { sessions })
+      /* @__PURE__ */ u4("section", { children: [
+        /* @__PURE__ */ u4("h3", { style: sectionHead, children: "Efficiency Map" }),
+        /* @__PURE__ */ u4(EfficiencyMap, { sessions })
+      ] }),
+      divider,
+      /* @__PURE__ */ u4("section", { children: [
+        /* @__PURE__ */ u4("h3", { style: sectionHead, children: "CLAUDE.md Tips" }),
+        /* @__PURE__ */ u4(ClaudeMdTips, { sessions })
+      ] }),
+      divider,
+      /* @__PURE__ */ u4("section", { children: [
+        /* @__PURE__ */ u4("h3", { style: sectionHead, children: "Cost Trend" }),
+        /* @__PURE__ */ u4(CostTrend, { sessions })
+      ] }),
+      divider,
+      /* @__PURE__ */ u4("section", { children: [
+        /* @__PURE__ */ u4("h3", { style: sectionHead, children: "Hot Files" }),
+        /* @__PURE__ */ u4(HotFiles, { sessions })
+      ] })
     ] });
   }
 
