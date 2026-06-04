@@ -79,6 +79,7 @@ function AgentCard({ source, sessions }: { source: string; sessions: SessionSumm
 export function Analytics() {
   const [mode, setMode] = useState<PricingMode>('token')
   const [abbrevTokens, setAbbrevTokens] = useState(true)
+  const [showZeroCost, setShowZeroCost] = useState(false)
   const sessions = filteredSessions.value
   const allFiltered = agentFilteredSessions.value
   const timelines = sessionTimelines.value
@@ -210,6 +211,11 @@ export function Analytics() {
           {dayRows.length > 0 && (
             <div style="display:flex;justify-content:flex-end;align-items:center;gap:4px;margin-bottom:4px">
               <button
+                onClick={() => setShowZeroCost(s => !s)}
+                title={showZeroCost ? 'Hide $0.00 rows' : 'Show $0.00 rows (included/free models)'}
+                style={`font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:${showZeroCost ? 'var(--hover)' : 'transparent'};color:var(--muted);white-space:nowrap`}
+              >Show $0</button>
+              <button
                 onClick={() => setAbbrevTokens(a => !a)}
                 title={abbrevTokens ? 'Switch to full numbers' : 'Switch to abbreviated numbers'}
                 style="font-size:10px;padding:2px 8px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--muted);white-space:nowrap"
@@ -259,8 +265,10 @@ export function Analytics() {
                   </tr>
                 </thead>
                 <tbody>
-                  {dayRows.map(([day, d]) => {
-                    const agents = [...d.agents.entries()].sort((a, b) => b[1].cost - a[1].cost)
+                  {dayRows.filter(([, d]) => showZeroCost || d.cost > 0).map(([day, d]) => {
+                    const agents = [...d.agents.entries()]
+                      .filter(([, ae]) => showZeroCost || ae.cost > 0)
+                      .sort((a, b) => b[1].cost - a[1].cost)
                     const dayTotal = d.input + d.output + d.cacheCreate + d.cacheRead
                     return (
                       <>
