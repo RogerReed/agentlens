@@ -540,7 +540,7 @@ function getHtml(): string {
     #sa-toast.visible { opacity:1; }
 
     /* ── Main panel ──────────────────────────────────────────────────────── */
-    #sa-main { flex: 1; overflow-y: auto; min-width: 0; padding: 16px 18px; }
+    #sa-main { flex: 1; overflow-y: auto; min-width: 0; padding: 0 18px 16px; }
     #app { min-height: 100%; }
   </style>
 </head>
@@ -747,7 +747,7 @@ function getHtml(): string {
   <div id="sa-wrap">
     <!-- ── Sidebar (live session monitor) ────────────────────────────────── -->
     <div id="sa-sidebar">
-      <div style="flex:1;overflow-y:auto;padding:0 8px 8px;font-family:var(--vscode-font-family);color:var(--vscode-foreground)">
+      <div style="flex:1;overflow-y:auto;padding:8px 8px 8px;font-family:var(--vscode-font-family);color:var(--vscode-foreground)">
         <!-- Status row -->
         <div class="sb-card" style="margin-bottom:6px">
           <div class="sb-row" style="margin-bottom:2px">
