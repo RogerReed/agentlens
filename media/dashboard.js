@@ -5608,7 +5608,9 @@ Before starting any task, use the agentlens MCP server to orient yourself:
         /* @__PURE__ */ u4("p", { style: mutedP, children: [
           "Verify it's up by opening ",
           /* @__PURE__ */ u4("a", { href: mcpUrl, target: "_blank", rel: "noreferrer", style: codeStyle, children: mcpUrl }),
-          " \u2014 you should get an MCP JSON-RPC response (an error about missing method is expected; it means the server is listening)."
+          " in a browser \u2014 you should see ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: `{"status":"ok","server":"agentlens-mcp",...}` }),
+          ". If the page doesn't load, the server isn't running."
         ] }),
         /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Step 2 \u2014 Configure Claude Code" }),
         /* @__PURE__ */ u4("p", { style: mutedP, children: [

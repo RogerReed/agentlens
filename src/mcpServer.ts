@@ -439,6 +439,13 @@ export function handleMcpRequest(
   req: http.IncomingMessage,
   res: http.ServerResponse,
 ): void {
+  // Simple GET health check so opening the URL in a browser gives a clear response.
+  if (req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ status: 'ok', server: 'agentlens-mcp', transport: 'streamable-http', endpoint: req.url }))
+    return
+  }
+
   // Buffer and parse the body before passing to the transport.
   let raw = ''
   req.on('data', (chunk: Buffer) => { raw += chunk.toString() })
