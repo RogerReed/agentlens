@@ -6266,11 +6266,25 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     warning: "#f6a623",
     info: "#4fc3f7"
   };
-  var SEV_ICON = {
-    error: "\u26D4",
-    warning: "\u26A0",
-    info: "\u2139"
-  };
+  function IconBell() {
+    return /* @__PURE__ */ u4("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", style: "display:block", children: [
+      /* @__PURE__ */ u4("path", { d: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" }),
+      /* @__PURE__ */ u4("path", { d: "M13.73 21a2 2 0 0 1-3.46 0" })
+    ] });
+  }
+  function IconGear() {
+    return /* @__PURE__ */ u4("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", style: "display:block", children: [
+      /* @__PURE__ */ u4("circle", { cx: "12", cy: "12", r: "3" }),
+      /* @__PURE__ */ u4("path", { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" })
+    ] });
+  }
+  function IconHelp() {
+    return /* @__PURE__ */ u4("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", style: "display:block", children: [
+      /* @__PURE__ */ u4("circle", { cx: "12", cy: "12", r: "10" }),
+      /* @__PURE__ */ u4("path", { d: "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" }),
+      /* @__PURE__ */ u4("line", { x1: "12", y1: "17", x2: "12.01", y2: "17", "stroke-width": "3" })
+    ] });
+  }
   function AlertStatusCard({ alerts }) {
     y2(() => {
       function onKey(e4) {
@@ -6290,7 +6304,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           const color = SEV_COLOR[a4.severity] ?? "#f6a623";
           return /* @__PURE__ */ u4("div", { style: `padding:10px 12px;border-left:3px solid ${color};${i4 > 0 ? "border-top:1px solid var(--border)" : ""}`, children: [
             /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;margin-bottom:3px", children: [
-              /* @__PURE__ */ u4("span", { style: "font-size:12px", children: SEV_ICON[a4.severity] ?? "\u26A0" }),
+              /* @__PURE__ */ u4("span", { style: `display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0` }),
               /* @__PURE__ */ u4("span", { style: `font-size:12px;font-weight:600;color:${color}`, children: a4.label })
             ] }),
             a4.detail && /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted);line-height:1.4", children: a4.detail })
@@ -6323,7 +6337,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           onClick: () => {
             bellOpen.value = !bellOpen.value;
           },
-          children: "\u{1F514}"
+          children: /* @__PURE__ */ u4(IconBell, {})
         }
       ),
       count > 0 && /* @__PURE__ */ u4("span", { class: "alert-badge", children: count }),
@@ -6340,7 +6354,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         onClick: () => {
           configOpen.value = !configOpen.value;
         },
-        children: "\u2699"
+        children: /* @__PURE__ */ u4(IconGear, {})
       }
     );
   }
@@ -6354,7 +6368,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         onClick: () => {
           activeTab.value = "help";
         },
-        children: "?"
+        children: /* @__PURE__ */ u4(IconHelp, {})
       }
     );
   }

@@ -104,10 +104,33 @@ const SEV_COLOR: Record<string, string> = {
   warning: '#f6a623',
   info:    '#4fc3f7',
 }
-const SEV_ICON: Record<string, string> = {
-  error:   '⛔',
-  warning: '⚠',
-  info:    'ℹ',
+
+function IconBell() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  )
+}
+
+function IconGear() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  )
+}
+
+function IconHelp() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" stroke-width="3" />
+    </svg>
+  )
 }
 
 function AlertStatusCard({ alerts }: { alerts: TriggeredAlert[] }) {
@@ -136,7 +159,7 @@ function AlertStatusCard({ alerts }: { alerts: TriggeredAlert[] }) {
               return (
                 <div key={i} style={`padding:10px 12px;border-left:3px solid ${color};${i > 0 ? 'border-top:1px solid var(--border)' : ''}`}>
                   <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-                    <span style="font-size:12px">{SEV_ICON[a.severity] ?? '⚠'}</span>
+                    <span style={`display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};flex-shrink:0`} />
                     <span style={`font-size:12px;font-weight:600;color:${color}`}>{a.label}</span>
                   </div>
                   {a.detail && <div style="font-size:11px;color:var(--muted);line-height:1.4">{a.detail}</div>}
@@ -166,7 +189,7 @@ function BellButton() {
         class={'icon-btn' + (open ? ' active' : '')}
         title={count > 0 ? `${count} alert${count > 1 ? 's' : ''} triggered` : 'Alerts — none triggered'}
         onClick={() => { bellOpen.value = !bellOpen.value }}
-      >🔔</button>
+      ><IconBell /></button>
       {count > 0 && <span class="alert-badge">{count}</span>}
       {open && <AlertStatusCard alerts={getTriggeredAlerts()} />}
     </div>
@@ -180,7 +203,7 @@ function GearButton() {
       class={'icon-btn' + (active ? ' active' : '')}
       title="Settings — Alerts & Automation"
       onClick={() => { configOpen.value = !configOpen.value }}
-    >⚙</button>
+    ><IconGear /></button>
   )
 }
 
@@ -191,7 +214,7 @@ function HelpButton() {
       class={'icon-btn' + (isActive ? ' active' : '')}
       title="Help"
       onClick={() => { activeTab.value = 'help' }}
-    >?</button>
+    ><IconHelp /></button>
   )
 }
 
