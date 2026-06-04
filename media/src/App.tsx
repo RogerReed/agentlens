@@ -23,33 +23,110 @@ import { Automation, checkAutomations } from './tabs/Automation'
 
 
 const sidebarOpen = signal(true)
+const configOpen = signal(false)
 
 const TABS = [
-  { id: 'sessions',   label: 'Sessions',   primary: true, title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
-  { id: 'analytics',  label: 'Analytics',  primary: true, title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
-  { id: 'alerts',     label: 'Alerts',     primary: true, title: 'Configurable alerts for context window usage, error rates, session length, and other efficiency signals.' },
-  { id: 'automation', label: 'Automation', primary: true, title: 'Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed.' },
-  { id: 'export',     label: 'Export',     primary: true, title: 'Export raw or redacted OTEL span data as JSON files.' },
-  { id: 'help',       label: 'Help',       primary: true, title: 'Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard.' },
+  { id: 'sessions',  label: 'Sessions',  title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
+  { id: 'analytics', label: 'Analytics', title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
+  { id: 'export',    label: 'Export',    title: 'Export raw or redacted OTEL span data as JSON files.' },
 ]
-
-
 
 function ActivePanel() {
   const tab = normalizeTabId(activeTab.value)
   switch (tab) {
-    case 'sessions':    return <Sessions />
-    case 'analytics':   return <Analytics />
-    case 'alerts':      return <Alerts />
-    case 'automation':  return <Automation />
-    case 'export':      return <Export />
-    case 'help':        return <Help />
-    default:            return null
+    case 'sessions':  return <Sessions />
+    case 'analytics': return <Analytics />
+    case 'export':    return <Export />
+    case 'help':      return <Help />
+    default:          return null
   }
 }
 
 function normalizeTabId(tab: string): string {
   return tab
+}
+
+function CollapsibleSection({ title, children }: { title: string; children: any }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div style="border-bottom:1px solid var(--border)">
+      <button
+        onClick={() => setOpen(o => !o)}
+        style="display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;background:none;border:none;cursor:pointer;text-align:left;color:var(--fg)"
+      >
+        <span style={`color:var(--muted);font-size:9px;display:inline-block;transition:transform 0.15s;transform:rotate(${open ? 90 : 0}deg)`}>▶</span>
+        <span style="font-size:12px;font-weight:600">{title}</span>
+      </button>
+      {open && (
+        <div style="padding:0 14px 14px">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ConfigPanel() {
+  const open = configOpen.value
+
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') configOpen.value = false }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
+  return (
+    <div
+      style={`position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--vscode-editor-background);border-left:1px solid var(--border);z-index:200;overflow-y:auto;transition:transform 0.2s ease;transform:${open ? 'translateX(0)' : 'translateX(100%)'};box-shadow:-4px 0 20px rgba(0,0,0,0.4)`}
+    >
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--vscode-editor-background);z-index:1">
+        <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Settings</span>
+        <button
+          onClick={() => configOpen.value = false}
+          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px;line-height:1"
+          title="Close (Esc)"
+        >×</button>
+      </div>
+      <CollapsibleSection title="Alerts">
+        <Alerts />
+      </CollapsibleSection>
+      <CollapsibleSection title="Automation">
+        <Automation />
+      </CollapsibleSection>
+    </div>
+  )
+}
+
+function GearButton() {
+  // Reading displaySessions.value here subscribes this component to session changes,
+  // so the badge count stays in sync with computeAlertCount().
+  void displaySessions.value
+  const count = computeAlertCount()
+  const active = configOpen.value
+  return (
+    <div style="position:relative;display:flex;align-items:center">
+      <button
+        class={'icon-btn' + (active ? ' active' : '')}
+        title="Settings — Alerts & Automation"
+        onClick={() => { configOpen.value = !configOpen.value }}
+      >⚙</button>
+      {count > 0 && (
+        <span class="gear-badge">{count}</span>
+      )}
+    </div>
+  )
+}
+
+function HelpButton() {
+  const isActive = normalizeTabId(activeTab.value) === 'help'
+  return (
+    <button
+      class={'icon-btn' + (isActive ? ' active' : '')}
+      title="Help"
+      onClick={() => { activeTab.value = 'help' }}
+    >?</button>
+  )
 }
 
 export function App() {
@@ -148,7 +225,12 @@ export function App() {
           blobCache.value = { ...blobCache.value, [key]: msg.content }
         }
       } else if (msg.type === 'switchTab' && msg.tab) {
-        activeTab.value = normalizeTabId(msg.tab)
+        const tab = normalizeTabId(msg.tab)
+        if (tab === 'alerts' || tab === 'automation') {
+          configOpen.value = true
+        } else {
+          activeTab.value = tab
+        }
       } else if (msg.type === 'setFilter') {
         if (msg.agentFilter !== undefined) {
           selectedAgentFilter.value = msg.agentFilter
@@ -178,6 +260,9 @@ export function App() {
     return () => window.removeEventListener('message', handler)
   }, [])
 
+  const tab = normalizeTabId(activeTab.value)
+  const showFilterBars = tab !== 'export' && tab !== 'help'
+
   return (
     <>
       <div class="tabs">
@@ -197,18 +282,19 @@ export function App() {
           {sidebarOpen.value ? '◄' : '►'}
         </button>
         {TABS.map(t => <Tab key={t.id} id={t.id} label={t.label} />)}
+        <div style="margin-left:auto;display:flex;align-items:center;border-left:1px solid var(--border);padding-left:2px">
+          <GearButton />
+          <HelpButton />
+        </div>
       </div>
 
-      {!(['alerts', 'help', 'export', 'automation'] as string[]).includes(normalizeTabId(activeTab.value)) && (
-        <TimeRangePicker />
-      )}
-      {!(['alerts', 'help', 'export', 'automation'] as string[]).includes(normalizeTabId(activeTab.value)) && (
-        <SearchFilterBar />
-      )}
+      {showFilterBars && <TimeRangePicker />}
+      {showFilterBars && <SearchFilterBar />}
       <div class="panel active">
         <ActivePanel />
       </div>
 
+      <ConfigPanel />
       <img id="mascot-img" src="" alt="AgentLens mascot" style="display:none" />
     </>
   )
@@ -457,5 +543,3 @@ function Tab({ id, label }: { id: string; label: string; title?: string }) {
     </button>
   )
 }
-
-

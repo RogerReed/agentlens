@@ -4519,6 +4519,12 @@
         return { triggered: false };
     }
   }
+  function computeAlertCount() {
+    const configs = getAlertConfigs();
+    const profiles = getAgentProfiles();
+    const { sessions, efficiency } = buildDisplaySummary();
+    return configs.filter((cfg) => cfg.enabled && evaluateAlert(cfg, sessions, efficiency, profiles).triggered).length;
+  }
   var firedAlertKeys = /* @__PURE__ */ new Set();
   function checkAlerts() {
     const configs = getAlertConfigs();
@@ -6171,13 +6177,11 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
 
   // media/src/App.tsx
   var sidebarOpen = y3(true);
+  var configOpen = y3(false);
   var TABS = [
-    { id: "sessions", label: "Sessions", primary: true, title: "Session list with expand-in-place detail \u2014 trace, files, cost, and flagged issues for each session." },
-    { id: "analytics", label: "Analytics", primary: true, title: "Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights." },
-    { id: "alerts", label: "Alerts", primary: true, title: "Configurable alerts for context window usage, error rates, session length, and other efficiency signals." },
-    { id: "automation", label: "Automation", primary: true, title: "Real-time automations that prompt agents to compact context, break loops, and self-assess when configured thresholds are crossed." },
-    { id: "export", label: "Export", primary: true, title: "Export raw or redacted OTEL span data as JSON files." },
-    { id: "help", label: "Help", primary: true, title: "Overview of the plugin, descriptions of each view, and a glossary of terms used throughout the dashboard." }
+    { id: "sessions", label: "Sessions", title: "Session list with expand-in-place detail \u2014 trace, files, cost, and flagged issues for each session." },
+    { id: "analytics", label: "Analytics", title: "Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights." },
+    { id: "export", label: "Export", title: "Export raw or redacted OTEL span data as JSON files." }
   ];
   function ActivePanel() {
     const tab = normalizeTabId(activeTab.value);
@@ -6186,10 +6190,6 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         return /* @__PURE__ */ u4(Sessions, {});
       case "analytics":
         return /* @__PURE__ */ u4(Analytics, {});
-      case "alerts":
-        return /* @__PURE__ */ u4(Alerts, {});
-      case "automation":
-        return /* @__PURE__ */ u4(Automation, {});
       case "export":
         return /* @__PURE__ */ u4(Export, {});
       case "help":
@@ -6200,6 +6200,89 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   }
   function normalizeTabId(tab) {
     return tab;
+  }
+  function CollapsibleSection({ title, children }) {
+    const [open, setOpen] = d2(true);
+    return /* @__PURE__ */ u4("div", { style: "border-bottom:1px solid var(--border)", children: [
+      /* @__PURE__ */ u4(
+        "button",
+        {
+          onClick: () => setOpen((o4) => !o4),
+          style: "display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;background:none;border:none;cursor:pointer;text-align:left;color:var(--fg)",
+          children: [
+            /* @__PURE__ */ u4("span", { style: `color:var(--muted);font-size:9px;display:inline-block;transition:transform 0.15s;transform:rotate(${open ? 90 : 0}deg)`, children: "\u25B6" }),
+            /* @__PURE__ */ u4("span", { style: "font-size:12px;font-weight:600", children: title })
+          ]
+        }
+      ),
+      open && /* @__PURE__ */ u4("div", { style: "padding:0 14px 14px", children })
+    ] });
+  }
+  function ConfigPanel() {
+    const open = configOpen.value;
+    y2(() => {
+      if (!open) return;
+      function onKey(e4) {
+        if (e4.key === "Escape") configOpen.value = false;
+      }
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [open]);
+    return /* @__PURE__ */ u4(
+      "div",
+      {
+        style: `position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--vscode-editor-background);border-left:1px solid var(--border);z-index:200;overflow-y:auto;transition:transform 0.2s ease;transform:${open ? "translateX(0)" : "translateX(100%)"};box-shadow:-4px 0 20px rgba(0,0,0,0.4)`,
+        children: [
+          /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--vscode-editor-background);z-index:1", children: [
+            /* @__PURE__ */ u4("span", { style: "font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)", children: "Settings" }),
+            /* @__PURE__ */ u4(
+              "button",
+              {
+                onClick: () => configOpen.value = false,
+                style: "background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px;line-height:1",
+                title: "Close (Esc)",
+                children: "\xD7"
+              }
+            )
+          ] }),
+          /* @__PURE__ */ u4(CollapsibleSection, { title: "Alerts", children: /* @__PURE__ */ u4(Alerts, {}) }),
+          /* @__PURE__ */ u4(CollapsibleSection, { title: "Automation", children: /* @__PURE__ */ u4(Automation, {}) })
+        ]
+      }
+    );
+  }
+  function GearButton() {
+    void displaySessions.value;
+    const count = computeAlertCount();
+    const active = configOpen.value;
+    return /* @__PURE__ */ u4("div", { style: "position:relative;display:flex;align-items:center", children: [
+      /* @__PURE__ */ u4(
+        "button",
+        {
+          class: "icon-btn" + (active ? " active" : ""),
+          title: "Settings \u2014 Alerts & Automation",
+          onClick: () => {
+            configOpen.value = !configOpen.value;
+          },
+          children: "\u2699"
+        }
+      ),
+      count > 0 && /* @__PURE__ */ u4("span", { class: "gear-badge", children: count })
+    ] });
+  }
+  function HelpButton() {
+    const isActive = normalizeTabId(activeTab.value) === "help";
+    return /* @__PURE__ */ u4(
+      "button",
+      {
+        class: "icon-btn" + (isActive ? " active" : ""),
+        title: "Help",
+        onClick: () => {
+          activeTab.value = "help";
+        },
+        children: "?"
+      }
+    );
   }
   function App() {
     y2(() => {
@@ -6280,7 +6363,12 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             blobCache.value = { ...blobCache.value, [key]: msg.content };
           }
         } else if (msg.type === "switchTab" && msg.tab) {
-          activeTab.value = normalizeTabId(msg.tab);
+          const tab2 = normalizeTabId(msg.tab);
+          if (tab2 === "alerts" || tab2 === "automation") {
+            configOpen.value = true;
+          } else {
+            activeTab.value = tab2;
+          }
         } else if (msg.type === "setFilter") {
           if (msg.agentFilter !== void 0) {
             selectedAgentFilter.value = msg.agentFilter;
@@ -6309,6 +6397,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       window.addEventListener("message", handler);
       return () => window.removeEventListener("message", handler);
     }, []);
+    const tab = normalizeTabId(activeTab.value);
+    const showFilterBars = tab !== "export" && tab !== "help";
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("div", { class: "tabs", children: [
         /* @__PURE__ */ u4(
@@ -6328,11 +6418,16 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
             children: sidebarOpen.value ? "\u25C4" : "\u25BA"
           }
         ),
-        TABS.map((t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id))
+        TABS.map((t4) => /* @__PURE__ */ u4(Tab, { id: t4.id, label: t4.label }, t4.id)),
+        /* @__PURE__ */ u4("div", { style: "margin-left:auto;display:flex;align-items:center;border-left:1px solid var(--border);padding-left:2px", children: [
+          /* @__PURE__ */ u4(GearButton, {}),
+          /* @__PURE__ */ u4(HelpButton, {})
+        ] })
       ] }),
-      !["alerts", "help", "export", "automation"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(TimeRangePicker, {}),
-      !["alerts", "help", "export", "automation"].includes(normalizeTabId(activeTab.value)) && /* @__PURE__ */ u4(SearchFilterBar, {}),
+      showFilterBars && /* @__PURE__ */ u4(TimeRangePicker, {}),
+      showFilterBars && /* @__PURE__ */ u4(SearchFilterBar, {}),
       /* @__PURE__ */ u4("div", { class: "panel active", children: /* @__PURE__ */ u4(ActivePanel, {}) }),
+      /* @__PURE__ */ u4(ConfigPanel, {}),
       /* @__PURE__ */ u4("img", { id: "mascot-img", src: "", alt: "AgentLens mascot", style: "display:none" })
     ] });
   }

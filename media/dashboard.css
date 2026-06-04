@@ -272,6 +272,41 @@ body {
   border-color: var(--accent);
   background: rgba(79, 195, 247, 0.07);
 }
+.icon-btn {
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  background: none;
+  margin-bottom: -1px;
+  line-height: 1;
+}
+.icon-btn:hover {
+  color: var(--fg);
+  background: var(--hover);
+}
+.icon-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: rgba(79, 195, 247, 0.07);
+}
+.gear-badge {
+  position: absolute;
+  top: 3px;
+  right: 1px;
+  background: #f6a623;
+  color: #000;
+  border-radius: 8px;
+  padding: 1px 4px;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 14px;
+  text-align: center;
+  line-height: 14px;
+  pointer-events: none;
+}
 .tab-dropdown-item {
   display: block;
   width: 100%;
