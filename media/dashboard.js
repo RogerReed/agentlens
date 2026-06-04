@@ -5594,7 +5594,7 @@ Before starting any task, use the agentlens MCP server to orient yourself:
         /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Step 1 \u2014 Confirm the MCP server is running" }),
         /* @__PURE__ */ u4("p", { style: mutedP, children: standalone ? /* @__PURE__ */ u4(S, { children: [
           "The standalone server exposes the MCP endpoint at ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: mcpUrl }),
+          /* @__PURE__ */ u4("a", { href: mcpUrl, target: "_blank", rel: "noreferrer", style: codeStyle, children: mcpUrl }),
           " automatically \u2014 no extra setup needed."
         ] }) : /* @__PURE__ */ u4(S, { children: [
           "The VS Code extension starts an MCP server on port 4316 by default when AgentLens activates. To disable it, set ",
@@ -5607,7 +5607,7 @@ Before starting any task, use the agentlens MCP server to orient yourself:
         ] }) }),
         /* @__PURE__ */ u4("p", { style: mutedP, children: [
           "Verify it's up by opening ",
-          /* @__PURE__ */ u4("code", { style: codeStyle, children: mcpUrl }),
+          /* @__PURE__ */ u4("a", { href: mcpUrl, target: "_blank", rel: "noreferrer", style: codeStyle, children: mcpUrl }),
           " \u2014 you should get an MCP JSON-RPC response (an error about missing method is expected; it means the server is listening)."
         ] }),
         /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Step 2 \u2014 Configure Claude Code" }),

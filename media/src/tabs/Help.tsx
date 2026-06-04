@@ -586,11 +586,11 @@ Before starting any task, use the agentlens MCP server to orient yourself:
         <h4 style={subHeadStyle}>Step 1 — Confirm the MCP server is running</h4>
         <p style={mutedP}>
           {standalone
-            ? <>The standalone server exposes the MCP endpoint at <code style={codeStyle}>{mcpUrl}</code> automatically — no extra setup needed.</>
+            ? <>The standalone server exposes the MCP endpoint at <a href={mcpUrl} target="_blank" rel="noreferrer" style={codeStyle}>{mcpUrl}</a> automatically — no extra setup needed.</>
             : <>The VS Code extension starts an MCP server on port 4316 by default when AgentLens activates. To disable it, set <code style={codeStyle}>agentLens.enableMcpServer</code> to <code style={codeStyle}>false</code> in VS Code settings. To change the port, set <code style={codeStyle}>agentLens.mcpPort</code>.</>
           }
         </p>
-        <p style={mutedP}>Verify it's up by opening <code style={codeStyle}>{mcpUrl}</code> — you should get an MCP JSON-RPC response (an error about missing method is expected; it means the server is listening).</p>
+        <p style={mutedP}>Verify it's up by opening <a href={mcpUrl} target="_blank" rel="noreferrer" style={codeStyle}>{mcpUrl}</a> — you should get an MCP JSON-RPC response (an error about missing method is expected; it means the server is listening).</p>
 
         <h4 style={subHeadStyle}>Step 2 — Configure Claude Code</h4>
         <p style={mutedP}>Add the following to <code style={codeStyle}>~/.claude/settings.json</code> (create the file if it doesn't exist):</p>
