@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks'
 import {
   filteredSessions, sessionSummary, agentFilteredSessions,
   sessionTimelines,
-  CHART_MAX, vscode,
+  CHART_MAX, vscode, goToHelp,
 } from '../state'
 import { getAgentColor, getAgentSourceLabel, formatMs, formatCompact } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
@@ -107,8 +107,13 @@ export function Analytics() {
   })
 
   const disclaimer = (
-    <div style="font-size:11px;background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:6px 10px;margin-bottom:8px;color:var(--muted)">
-      Estimates only — not your actual bill. Rates last updated: {PRICING_LAST_UPDATED}
+    <div style="font-size:11px;background:var(--hover);border:1px solid var(--border);border-radius:4px;padding:6px 10px;margin-bottom:8px;color:var(--muted);display:flex;align-items:center;gap:8px">
+      <span>Estimates only — not your actual bill. Rates last updated: {PRICING_LAST_UPDATED}</span>
+      <button
+        onClick={() => goToHelp('help-costs')}
+        title="Understanding cost estimates"
+        style="display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:15px;height:15px;border-radius:50%;border:1px solid var(--border);background:none;cursor:pointer;color:var(--muted);font-size:10px;font-weight:600;padding:0;line-height:1"
+      >?</button>
     </div>
   )
 
