@@ -83,10 +83,11 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - **Log file ingestion** — Reads local session files written automatically by each agent as a zero-config fallback, backfilling history when OTEL isn't configured (VS Code-family IDEs and native process only)
 - **Sessions Table** — Drill into any session: expand a row to see a full waterfall trace, turn-to-tool flow graph, tool distribution chart, and modified files — all without leaving the session list
 - **Analytics** — Aggregate charts across the active time range: per-agent breakdown, estimated cost with a daily total overlay, token usage per session, and context growth
+- **Patterns** — Cross-session behavioral trends: an efficiency scatter plot (cost vs. LLM calls, colored by cache hit rate) and hot files ranked by how often the agent reads or changes them — click any dot or bar to jump straight to that session
 - **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, broken down by model in a day-grouped table
 - **Efficiency & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns with suggested prompts to correct course
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat tool calls — per-agent or shared
-- **Export** — Export all sessions as JSON (full or redacted) directly from the SQLite history
+- **Export** — Export filtered sessions as JSON (full or redacted); respects the active agent, source, time range, and text filters
 
 ## Data Sources
 
