@@ -16,11 +16,11 @@ import { computeStats } from './Agents'
 
 // ── Section heading helper ────────────────────────────────────────────────────
 
-function SectionHead({ title, tip }: { title: string; tip?: string }) {
+function SectionHead({ title, tip, first }: { title: string; tip?: string; first?: boolean }) {
   return (
     <h3
       class={tip ? 'has-metric-tip' : undefined}
-      style="margin:16px 0 6px;font-size:12px;color:var(--muted)"
+      style={`margin:${first ? '0' : '16px'} 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px`}
       data-tip={tip}
     >{title}</h3>
   )
@@ -166,7 +166,7 @@ export function Analytics() {
       {/* Estimated cost */}
       {pricedSess.length > 0 && (
         <>
-          <SectionHead title="ESTIMATED COST" />
+          <SectionHead title="ESTIMATED COST" first />
           {disclaimer}
 
           {copilotSess.length > 0 && (
@@ -322,7 +322,7 @@ export function Analytics() {
       )}
 
       {/* Context growth */}
-      <SectionHead title="CONTEXT GROWTH" />
+      <SectionHead title="CONTEXT GROWTH" first={pricedSess.length === 0} />
       <ContextGrowthChart sessions={chartSessions} timelines={timelines} />
 
       {/* Token usage per session */}
