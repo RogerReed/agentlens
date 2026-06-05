@@ -670,7 +670,7 @@ function ExportSection() {
     <div class="help-section" id="help-export">
       <h3 class="help-heading">{HELP_SECTIONS.export.heading}</h3>
       <div class="help-overview-body">
-        <p>The Export tab lets you download all recorded sessions as a JSON file. Exports draw from the full session history in the database, not just the active time-range window.</p>
+        <p>The Export tab lets you download sessions as a JSON file. Exports respect all active filters — agent, source, time range, and text search — so what you export matches exactly what you see in the Sessions tab.</p>
         <div class="glossary">
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Full export</dt>

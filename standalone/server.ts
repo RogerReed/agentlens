@@ -94,7 +94,7 @@ function runLogScan() {
 // Debounced scan triggered by fs.watch events — fires 300 ms after the last event.
 let watchScanTimer: ReturnType<typeof setTimeout> | null = null
 function scheduleWatchScan() {
-  if (watchScanTimer) return
+  if (watchScanTimer) clearTimeout(watchScanTimer)
   watchScanTimer = setTimeout(() => { watchScanTimer = null; runLogScan() }, 300)
 }
 

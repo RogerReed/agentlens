@@ -220,9 +220,8 @@ export const filteredSessions = computed<SessionSummaryCard[]>(() => {
       case 'model':        cmp = (a.model ?? '').localeCompare(b.model ?? ''); break
       case 'source':       cmp = (a.source ?? '').localeCompare(b.source ?? ''); break
       case 'cost': {
-        const modeA = (a.source === 'copilot') ? 'token' : 'token'
-        const costA = calcSessionCost(a, modeA).totalUsd
-        const costB = calcSessionCost(b, modeA).totalUsd
+        const costA = calcSessionCost(a, 'token').totalUsd
+        const costB = calcSessionCost(b, 'token').totalUsd
         cmp = costB - costA
         break
       }

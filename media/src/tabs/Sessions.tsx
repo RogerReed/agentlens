@@ -52,9 +52,11 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
   const cacheRate = sess.inputTokens > 0 ? Math.round(sess.cacheReadTokens / sess.inputTokens * 100) : 0
   const burnRate = burnRateData.value
 
-  if (!timelines[sess.sessionId] && vscode) {
-    vscode.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
-  }
+  useEffect(() => {
+    if (!timelines[sess.sessionId] && vscode) {
+      vscode.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
+    }
+  }, [sess.sessionId])
 
   const ignored = ignoredInsightKeys.value
   const summary = buildDisplaySummary([sess])

@@ -698,7 +698,8 @@ export class LogReader {
     if (turns === 0 || sessionCreatedMs === 0) return null
 
     const startTs = new Date(sessionCreatedMs).toISOString()
-    const lastTurnMs = turnTimestamps.length > 0 ? Math.max(...turnTimestamps) : sessionCreatedMs
+    const validTs = turnTimestamps.filter((n): n is number => n !== undefined)
+    const lastTurnMs = validTs.length > 0 ? Math.max(...validTs) : sessionCreatedMs
     const endTs = new Date(lastTurnMs).toISOString()
 
     return {

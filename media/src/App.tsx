@@ -571,7 +571,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
         <button
           class="icon-btn"
           style="margin-left:2px;border-bottom:none;margin-bottom:0;border-radius:3px"
-          onClick={() => fireSearch(makeTimeRange(range.preset))}
+          onClick={() => { const r = makeTimeRange(range.preset); timeRange.value = r; fireSearch(r) }}
           title="Refresh this time range"
         ><IconRefresh /></button>
       )}
