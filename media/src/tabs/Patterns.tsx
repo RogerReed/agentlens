@@ -1,11 +1,18 @@
 import { useState, useRef } from 'preact/hooks'
-import { filteredSessions } from '../state'
+import { filteredSessions, activeTab, focusedSessionId } from '../state'
 import { getAgentSourceLabel, formatSessionTime } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
 import type { SessionSummaryCard } from '../types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+const AGENT_DOT_COLOR: Record<string, string> = {
+  claude_code: '#FFB085',
+  copilot:     '#00EAFF',
+  codex:       '#F0FF42',
+}
+function agentDotColor(source: string): string { return AGENT_DOT_COLOR[source] ?? '#888' }
 
 function sessionCost(s: SessionSummaryCard): number {
   return calcSessionCost(s, s.source === 'copilot' ? 'token' : 'token').totalUsd
@@ -25,6 +32,7 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
   const [filter, setFilter] = useState('')
   const [tooltip, setTooltip] = useState<{ x: number; y: number; s: SessionSummaryCard } | null>(null)
   const [sort, setSort] = useState<{ col: MatchSort; dir: 'asc' | 'desc' }>({ col: 'cost', dir: 'desc' })
+  const [clicked, setClicked] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
   const points = sessions
@@ -81,7 +89,7 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
           type="text"
           placeholder="Filter by prompt keyword…"
           value={filter}
-          onInput={e => setFilter((e.target as HTMLInputElement).value)}
+          onInput={e => { setFilter((e.target as HTMLInputElement).value); setClicked(null) }}
           style="flex:1;max-width:240px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
         />
         <span style="font-size:10px;color:var(--muted)">{matched.length} sessions</span>
@@ -129,8 +137,10 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
               return (
                 <circle key={i} cx={cx} cy={cy} r={filter.trim() ? 6 : 4}
                   fill={color} opacity={0.85} style="cursor:pointer"
+                  stroke={clicked === p.s.traceId ? '#fff' : 'none'} stroke-width="2"
                   onMouseEnter={() => setTooltip({ x: cx, y: cy, s: p.s })}
                   onMouseLeave={() => setTooltip(null)}
+                  onClick={() => setClicked(id => id === p.s.traceId ? null : p.s.traceId)}
                 />
               )
             })}
@@ -172,15 +182,23 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
                 </tr>
               </thead>
               <tbody>
-                {sortedMatches.map((p, i) => (
-                  <tr key={i} style="border-bottom:1px solid var(--border)">
-                    <td style="padding:4px 8px 4px 0;white-space:nowrap;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums">{formatSessionTime(p.s)}</td>
+                {sortedMatches.map((p, i) => {
+                  const isClicked = clicked === p.s.traceId
+                  return (
+                  <tr key={i} style={`border-bottom:1px solid var(--border);${isClicked ? 'background:rgba(79,195,247,0.08);box-shadow:inset 3px 0 0 var(--accent)' : ''}`}>
+                    <td style="padding:4px 8px 4px 0;white-space:nowrap;font-size:10px;font-variant-numeric:tabular-nums">
+                      <span style={`display:inline-block;width:7px;height:7px;border-radius:50%;background:${agentDotColor(p.s.source)};margin-right:5px;flex-shrink:0;vertical-align:middle`} title={getAgentSourceLabel(p.s.source)} />
+                      <span style="color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px"
+                        title="Open in Sessions tab"
+                        onClick={() => { activeTab.value = 'sessions'; focusedSessionId.value = p.s.sessionId }}
+                      >{formatSessionTime(p.s)}</span>
+                    </td>
                     <td style="padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)">{p.s.userRequest?.slice(0, 80) ?? '—'}</td>
                     <td style="padding:4px 8px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">{fmtUsd(p.cost)}</td>
                     <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">{p.turns}</td>
                     <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)">{Math.round(p.cacheHitRate * 100)}%</td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
