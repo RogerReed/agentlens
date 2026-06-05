@@ -1049,7 +1049,7 @@ Promise.all([
 }).catch(e => console.warn('[AgentLens] Auto-configure error:', e))
 
 otlpServer.listen(OTLP_PORT, BIND_HOST, () => {
-  console.log(`[AgentLens] OTLP receiver → http://${BIND_HOST}:${OTLP_PORT}`)
+  console.log(`[AgentLens] OTLP receiver → http://localhost:${OTLP_PORT}`)
 })
 
 uiServer.listen(UI_PORT, BIND_HOST, () => {

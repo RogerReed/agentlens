@@ -3539,7 +3539,7 @@ var require_schemes = __commonJS({
       urnComponent.nss = (uuidComponent.uuid || "").toLowerCase();
       return urnComponent;
     }
-    var http2 = (
+    var http3 = (
       /** @type {SchemeHandler} */
       {
         scheme: "http",
@@ -3552,7 +3552,7 @@ var require_schemes = __commonJS({
       /** @type {SchemeHandler} */
       {
         scheme: "https",
-        domainHost: http2.domainHost,
+        domainHost: http3.domainHost,
         parse: httpParse,
         serialize: httpSerialize
       }
@@ -3596,7 +3596,7 @@ var require_schemes = __commonJS({
     var SCHEMES = (
       /** @type {Record<SchemeName, SchemeHandler>} */
       {
-        http: http2,
+        http: http3,
         https,
         ws,
         wss,
@@ -6887,7 +6887,7 @@ var require_dist = __commonJS({
 });
 
 // standalone/server.ts
-var http = __toESM(require("http"));
+var http2 = __toESM(require("http"));
 var fs3 = __toESM(require("fs"));
 var path3 = __toESM(require("path"));
 var os3 = __toESM(require("os"));
@@ -8795,6 +8795,9 @@ function classifyOtlpPayload(payload) {
   }
   return "unknown";
 }
+
+// src/mcpServer.ts
+var http = __toESM(require("http"));
 
 // node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js
 var _a;
@@ -18872,7 +18875,7 @@ function createMcpServer(opts) {
         return { content: [{ type: "text", text: `Unknown tool: ${req.params.name}` }], isError: true };
     }
     return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+      content: [{ type: "text", text: JSON.stringify(result) }]
     };
   });
   return server;
@@ -18907,6 +18910,22 @@ function handleMcpRequest(server, req, res) {
       }
     });
   });
+}
+function startMcpHttpServer(opts, port, bindHost = "127.0.0.1") {
+  const server = createMcpServer(opts);
+  const httpServer = http.createServer((req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, mcp-session-id");
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    handleMcpRequest(server, req, res);
+  });
+  httpServer.listen(port, bindHost);
+  return httpServer;
 }
 
 // src/logReader.ts
@@ -19777,6 +19796,7 @@ function _parseTs(ts) {
 // standalone/server.ts
 var OTLP_PORT = parseInt(process.env.OTLP_PORT ?? "4318");
 var UI_PORT = parseInt(process.env.UI_PORT ?? "3000");
+var MCP_PORT = parseInt(process.env.MCP_PORT ?? "4316");
 var BIND_HOST = process.env.BIND_HOST ?? "127.0.0.1";
 var mediaDir = path3.join(__dirname, "..", "media");
 var DATA_DIR = process.env.DATA_DIR ?? path3.join(os3.homedir(), ".agentlens");
@@ -19810,12 +19830,12 @@ function addSpan(span) {
 }
 var logSessions = /* @__PURE__ */ new Map();
 var logReader = new LogReader();
-var mcpServer = createMcpServer({
+var mcpHttpServer = startMcpHttpServer({
   getSessions: () => {
     const summary = buildSessionSummary();
     return summary?.sessions ?? [];
   }
-});
+}, MCP_PORT, BIND_HOST);
 function runLogScan() {
   const results = logReader.scan();
   let changed = false;
@@ -20569,7 +20589,7 @@ var MIME = {
   ".png": "image/png",
   ".svg": "image/svg+xml"
 };
-var uiServer = http.createServer((req, res) => {
+var uiServer = http2.createServer((req, res) => {
   const url = (req.url ?? "/").split("?")[0];
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (url === "/events") {
@@ -20675,22 +20695,10 @@ ${entry}`;
     fs3.createReadStream(filePath).pipe(res);
     return;
   }
-  if (url === "/mcp") {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, mcp-session-id");
-    if (req.method === "OPTIONS") {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
-    handleMcpRequest(mcpServer, req, res);
-    return;
-  }
   res.writeHead(404);
   res.end("Not found");
 });
-var otlpServer = http.createServer((req, res) => {
+var otlpServer = http2.createServer((req, res) => {
   if (req.method === "GET" && req.url === "/agentlens/standalone") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ agentlens: true, kind: "standalone" }));
@@ -20758,12 +20766,12 @@ Promise.all([
   }
 }).catch((e) => console.warn("[AgentLens] Auto-configure error:", e));
 otlpServer.listen(OTLP_PORT, BIND_HOST, () => {
-  console.log(`[AgentLens] OTLP receiver \u2192 http://${BIND_HOST}:${OTLP_PORT}`);
+  console.log(`[AgentLens] OTLP receiver \u2192 http://localhost:${OTLP_PORT}`);
 });
 uiServer.listen(UI_PORT, BIND_HOST, () => {
   const url = `http://localhost:${UI_PORT}`;
   console.log(`[AgentLens] Dashboard      \u2192 ${url}`);
-  console.log(`[AgentLens] MCP server     \u2192 ${url}/mcp`);
+  console.log(`[AgentLens] MCP server     \u2192 http://localhost:${MCP_PORT}/mcp`);
   const cmd = process.platform === "darwin" ? `open "${url}"` : process.platform === "win32" ? `start "" "${url}"` : `xdg-open "${url}"`;
   (0, import_child_process.exec)(cmd, (err) => {
     if (err) console.log(`

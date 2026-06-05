@@ -5579,27 +5579,20 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
   }
   function McpSection() {
     const standalone = window.__STANDALONE__ === true;
-    const mcpUrl = standalone ? "http://localhost:3000/mcp" : "http://localhost:4316/mcp";
+    const mcpUrl = "http://localhost:4316/mcp";
     const settingsJson = JSON.stringify({ mcpServers: { agentlens: { url: mcpUrl } } }, null, 2);
     const claudeMd = `# AgentLens MCP
-Before starting any task, use the agentlens MCP server to orient yourself:
-
-- Call get_recent_sessions to see what was worked on recently and what it cost
-- Call get_workspace_patterns to surface recurring efficiency problems and known traps
-
-Only call find_relevant_context when your task keywords closely match past session
-prompts (works well for established workflows like auth, tests, or a named component;
-unreliable for new feature work \u2014 keyword overlap is weak and file suggestions will
-often be wrong).`;
+Before any task: call get_recent_sessions (recent work + cost) and get_workspace_patterns (hot files, recurring issues).
+Only use find_relevant_context if your task closely matches past prompts by keyword \u2014 skip it for novel tasks.`;
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-mcp", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.mcp.heading }),
       /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
         /* @__PURE__ */ u4("p", { children: "AgentLens runs an MCP server that gives Claude Code direct access to your session history. Instead of checking the dashboard yourself, Claude can query its own past work \u2014 loading the files it usually needs before making its first tool call, estimating what a task will cost, and flagging patterns that have caused problems before." }),
         /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Step 1 \u2014 Confirm the MCP server is running" }),
         /* @__PURE__ */ u4("p", { style: mutedP, children: standalone ? /* @__PURE__ */ u4(S, { children: [
-          "The standalone server exposes the MCP endpoint at ",
+          "The standalone server starts a dedicated MCP server on port 4316 automatically \u2014 no extra setup needed. Endpoint: ",
           /* @__PURE__ */ u4("a", { href: mcpUrl, target: "_blank", rel: "noreferrer", style: codeStyle, children: mcpUrl }),
-          " automatically \u2014 no extra setup needed."
+          "."
         ] }) : /* @__PURE__ */ u4(S, { children: [
           "The VS Code extension starts an MCP server on port 4316 by default when AgentLens activates. To disable it, set ",
           /* @__PURE__ */ u4("code", { style: codeStyle, children: "agentLens.enableMcpServer" }),
@@ -5632,7 +5625,7 @@ often be wrong).`;
         /* @__PURE__ */ u4("p", { style: mutedP, children: [
           "Add a block like this to your project's ",
           /* @__PURE__ */ u4("code", { style: codeStyle, children: "CLAUDE.md" }),
-          " so Claude automatically uses AgentLens at the start of each session:"
+          " so Claude automatically uses AgentLens at the start of each session. The block is intentionally brief \u2014 every line in CLAUDE.md is loaded into the context window on every call, so keeping it short avoids unnecessary token spend."
         ] }),
         /* @__PURE__ */ u4("pre", { style: preStyle, children: claudeMd }),
         /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Available tools" }),
@@ -6382,11 +6375,41 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
               }
             )
           ] }),
+          vscode && /* @__PURE__ */ u4(McpToggle, {}),
           /* @__PURE__ */ u4(CollapsibleSection, { title: "Alerts", children: /* @__PURE__ */ u4(Alerts, {}) }),
           /* @__PURE__ */ u4(CollapsibleSection, { title: "Automation", children: /* @__PURE__ */ u4(Automation, {}) })
         ]
       }
     );
+  }
+  function McpToggle() {
+    const initial = typeof window.__MCP_ENABLED__ === "boolean" ? window.__MCP_ENABLED__ : true;
+    const port = typeof window.__MCP_PORT__ === "number" ? window.__MCP_PORT__ : 4316;
+    const [enabled, setEnabled] = d2(initial);
+    function toggle() {
+      const next = !enabled;
+      setEnabled(next);
+      vscode?.postMessage({ type: "setVsCodeConfig", key: "enableMcpServer", value: next });
+    }
+    return /* @__PURE__ */ u4("div", { style: "padding:12px 16px;border-bottom:1px solid var(--border)", children: [
+      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px", children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:12px;font-weight:600;color:var(--fg)", children: "MCP Server" }),
+        /* @__PURE__ */ u4("label", { class: "toggle-switch", style: "margin:0", children: [
+          /* @__PURE__ */ u4("input", { type: "checkbox", checked: enabled, onChange: toggle }),
+          /* @__PURE__ */ u4("span", { class: "toggle-track", children: /* @__PURE__ */ u4("span", { class: "toggle-thumb" }) }),
+          /* @__PURE__ */ u4("span", { class: "toggle-label" + (enabled ? " on" : ""), children: enabled ? "Enabled" : "Disabled" })
+        ] })
+      ] }),
+      enabled && /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted)", children: [
+        "Listening at ",
+        /* @__PURE__ */ u4("code", { style: "font-size:10px;background:var(--card-bg);padding:1px 4px;border-radius:3px", children: [
+          "http://localhost:",
+          port,
+          "/mcp"
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-top:4px", children: "Restart VS Code to apply changes." })
+    ] });
   }
   var SEV_COLOR = {
     error: "#f44747",

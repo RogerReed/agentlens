@@ -568,18 +568,11 @@ function SettingsSection() {
 
 function McpSection() {
   const standalone = window.__STANDALONE__ === true
-  const mcpUrl = standalone ? 'http://localhost:3000/mcp' : 'http://localhost:4316/mcp'
+  const mcpUrl = 'http://localhost:4316/mcp'
   const settingsJson = JSON.stringify({ mcpServers: { agentlens: { url: mcpUrl } } }, null, 2)
   const claudeMd = `# AgentLens MCP
-Before starting any task, use the agentlens MCP server to orient yourself:
-
-- Call get_recent_sessions to see what was worked on recently and what it cost
-- Call get_workspace_patterns to surface recurring efficiency problems and known traps
-
-Only call find_relevant_context when your task keywords closely match past session
-prompts (works well for established workflows like auth, tests, or a named component;
-unreliable for new feature work — keyword overlap is weak and file suggestions will
-often be wrong).`
+Before any task: call get_recent_sessions (recent work + cost) and get_workspace_patterns (hot files, recurring issues).
+Only use find_relevant_context if your task closely matches past prompts by keyword — skip it for novel tasks.`
 
   return (
     <div class="help-section" id="help-mcp">
@@ -590,7 +583,7 @@ often be wrong).`
         <h4 style={subHeadStyle}>Step 1 — Confirm the MCP server is running</h4>
         <p style={mutedP}>
           {standalone
-            ? <>The standalone server exposes the MCP endpoint at <a href={mcpUrl} target="_blank" rel="noreferrer" style={codeStyle}>{mcpUrl}</a> automatically — no extra setup needed.</>
+            ? <>The standalone server starts a dedicated MCP server on port 4316 automatically — no extra setup needed. Endpoint: <a href={mcpUrl} target="_blank" rel="noreferrer" style={codeStyle}>{mcpUrl}</a>.</>
             : <>The VS Code extension starts an MCP server on port 4316 by default when AgentLens activates. To disable it, set <code style={codeStyle}>agentLens.enableMcpServer</code> to <code style={codeStyle}>false</code> in VS Code settings. To change the port, set <code style={codeStyle}>agentLens.mcpPort</code>.</>
           }
         </p>
@@ -602,7 +595,7 @@ often be wrong).`
         <p style={mutedP}>If you use the VS Code extension, the <code style={codeStyle}>contributes.mcpServers</code> entry in AgentLens's manifest may configure this automatically — check your Claude Code MCP settings to confirm.</p>
 
         <h4 style={subHeadStyle}>Step 3 — Add to CLAUDE.md (optional but recommended)</h4>
-        <p style={mutedP}>Add a block like this to your project's <code style={codeStyle}>CLAUDE.md</code> so Claude automatically uses AgentLens at the start of each session:</p>
+        <p style={mutedP}>Add a block like this to your project's <code style={codeStyle}>CLAUDE.md</code> so Claude automatically uses AgentLens at the start of each session. The block is intentionally brief — every line in CLAUDE.md is loaded into the context window on every call, so keeping it short avoids unnecessary token spend.</p>
         <pre style={preStyle}>{claudeMd}</pre>
 
         <h4 style={subHeadStyle}>Available tools</h4>
