@@ -1,6 +1,6 @@
 import * as preact from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { sessionSummary, displaySessions, rangedSessions, agentFilteredSessions, filteredSessions, sessionTimelines, burnRateData, focusedSessionId, CHART_MAX, COLORS, vscode, goToHelp, timeRange } from '../state'
+import { sessionSummary, displaySessions, rangedSessions, agentFilteredSessions, filteredSessions, sessionTimelines, burnRateData, focusedSessionId, activeTab, CHART_MAX, COLORS, vscode, goToHelp, timeRange } from '../state'
 import {
   getSessionGlobalNumber,
   formatMs, formatCompact, getAgentColor, getAgentSourceLabel, formatSessionTime, formatSessionTimeShort,
@@ -268,7 +268,10 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
         if (dist < bestDist) { bestDist = dist; bestId = s.sessionId }
       })
     })
-    if (bestId) focusedSessionId.value = focusedSessionId.peek() === bestId ? null : bestId
+    if (bestId) {
+      focusedSessionId.value = focusedSessionId.peek() === bestId ? null : bestId
+      if (focusedSessionId.value) activeTab.value = 'sessions'
+    }
   }
 
   const btnStyle = 'padding:2px 8px;font-size:11px;cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);line-height:1.4'
@@ -414,6 +417,7 @@ function SessionRow({ sess, idx, heat, expanded, onToggle }: {
 
 export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const sessionDataRef = useRef<Array<{ sessionId: string; startTime: string; input: number; output: number; source: string; slotX: number; slotW: number }>>([])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -426,10 +430,10 @@ export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[]
       .map(sess => {
         const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0
         return input + output > 0
-          ? { startTime: sess.startTime, input, output, source: sess.source }
+          ? { sessionId: sess.sessionId, startTime: sess.startTime, input, output, source: sess.source }
           : null
       })
-      .filter(Boolean) as Array<{ startTime: string; input: number; output: number; source: string }>
+      .filter(Boolean) as Array<{ sessionId: string; startTime: string; input: number; output: number; source: string }>
 
     if (sessionData.length === 0) { canvas.style.display = 'none'; return }
     canvas.style.display = 'block'
@@ -480,6 +484,8 @@ export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[]
     let lastDayLabelX = -Infinity
     const MIN_DAY_LABEL_GAP = 30
 
+    sessionDataRef.current = sessionData.map((s, i) => ({ ...s, slotX: pad.left + i * slotW, slotW }))
+
     sessionData.forEach((s, i) => {
       const slotX = pad.left + i * slotW
       const inH = (s.input / maxIn) * chartH
@@ -506,12 +512,21 @@ export function SessionTokenChart({ sessions }: { sessions: SessionSummaryCard[]
     })
   })
 
+  function handleTokenChartClick(e: MouseEvent) {
+    const canvas = canvasRef.current; if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const mx = e.clientX - rect.left
+    const hit = sessionDataRef.current.find(s => mx >= s.slotX && mx < s.slotX + s.slotW)
+    if (hit) { focusedSessionId.value = hit.sessionId; activeTab.value = 'sessions' }
+  }
+
   const presentSources = new Set(sessions.map(s => s.source).filter(Boolean))
   const agentSources = (['copilot', 'claude_code', 'codex'] as const).filter(src => presentSources.has(src))
 
   return (
     <>
-      <canvas ref={canvasRef} style="width:100%;height:160px;display:block" />
+      <canvas ref={canvasRef} style="width:100%;height:160px;display:block;cursor:pointer"
+        onClick={handleTokenChartClick} title="Click a bar to open that session" />
       {agentSources.length > 0 && (
         <div style="display:flex;gap:10px;justify-content:center;margin-top:4px;flex-wrap:wrap">
           {agentSources.map(src => (
