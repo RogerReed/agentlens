@@ -85,8 +85,11 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
 
     const seriesData: GrowthSeries[] = []
     sessions.forEach(sess => {
+      // Accept 'tool' entries with inputTokens too: log-sourced sessions classify
+      // tool-using turns as type:'tool' even though they represent LLM calls with tokens.
+      // OTel 'tool' entries never have inputTokens, so this doesn't double-count.
       const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? [])
-        .filter(e => e.type === 'llm' && (e.inputTokens ?? 0) > 0)
+        .filter(e => (e.type === 'llm' || e.type === 'tool') && (e.inputTokens ?? 0) > 0)
       if (llmEntries.length < 1) return
       seriesData.push({
         sessionId: sess.sessionId,
@@ -281,10 +284,11 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
       <canvas
         ref={canvasRef}
         id="context-growth-chart"
-        style="width:100%;height:200px;display:block;cursor:pointer"
+        style="width:100%;height:200px;cursor:pointer"
         onClick={handleCanvasClick}
         title="Click a line to select that session"
       />
+      {!hasData && <div class="empty-state" style="font-size:11px">No per-turn token data for these sessions. Context Growth requires sessions with per-turn input token counts — available for OTel-sourced sessions and Claude Code log sessions.</div>}
       {hasData && (
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px">
           <div style="display:flex;align-items:center;gap:6px">
