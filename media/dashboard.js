@@ -6375,7 +6375,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
               }
             )
           ] }),
-          vscode && /* @__PURE__ */ u4(McpToggle, {}),
+          /* @__PURE__ */ u4(McpToggle, {}),
           /* @__PURE__ */ u4(CollapsibleSection, { title: "Alerts", children: /* @__PURE__ */ u4(Alerts, {}) }),
           /* @__PURE__ */ u4(CollapsibleSection, { title: "Automation", children: /* @__PURE__ */ u4(Automation, {}) })
         ]
@@ -6408,7 +6408,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           "/mcp"
         ] })
       ] }),
-      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-top:4px", children: "Restart VS Code to apply changes." })
+      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-top:4px", children: vscode ? "Restart VS Code to apply changes." : "Restart the server to apply changes." })
     ] });
   }
   var SEV_COLOR = {
