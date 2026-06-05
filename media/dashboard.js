@@ -4852,6 +4852,7 @@
     ["Cache Hit Rate", "The percentage of input tokens served from a server-side prompt cache instead of being reprocessed. Higher rates reduce latency and cost."],
     ["Cache Read Tokens", "Input tokens served from the server-side prompt cache, avoiding reprocessing. Shown in efficiency metrics."],
     ["Context Bloat", "An efficiency insight triggered when input tokens grow significantly across turns within a session."],
+    ["Context Window", "The block of text sent to the language model on every LLM call. It includes your system instructions, conversation history, tool definitions, and the current prompt. Every token in the context window costs money \u2014 larger context windows mean higher cost per call. Agents that frequently read large files or accumulate long conversation histories fill the context window quickly, driving up cost per session."],
     ["Files Changed", "Unique files that were created or modified by the agent during the current data collection period."],
     ["Input Tokens", "The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt."],
     ["Loop Signal", "A behavioral signal in the Insights panel (inside the Overview sub-tab of each session) indicating the agent is stuck, oscillating, or making no forward progress. Shown with a \u21BA icon."],
@@ -5789,6 +5790,283 @@ less expensive, and which loop signals keep recurring.` })
     ] });
   }
 
+  // media/src/tabs/Patterns.tsx
+  function sessionCost(s4) {
+    return calcSessionCost(s4, s4.source === "copilot" ? "token" : "token").totalUsd;
+  }
+  function basename(p5) {
+    return p5.replace(/\\/g, "/").split("/").pop() ?? p5;
+  }
+  var sectionHead = "font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0 0 10px";
+  function EfficiencyMap({ sessions }) {
+    const [filter, setFilter] = d2("");
+    const [tooltip, setTooltip] = d2(null);
+    const [sort, setSort] = d2({ col: "cost", dir: "desc" });
+    const svgRef = A2(null);
+    const points = sessions.filter((s4) => s4.totalLlmCalls > 0).map((s4) => ({
+      s: s4,
+      cost: sessionCost(s4),
+      turns: s4.totalLlmCalls,
+      cacheHitRate: s4.cacheHitRate ?? 0,
+      matches: filter ? (s4.userRequest ?? "").toLowerCase().includes(filter.toLowerCase()) : true
+    }));
+    if (points.length === 0) return /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:20px", children: "No sessions with turn data yet." });
+    const matched = points.filter((p5) => p5.matches);
+    const axisPoints = filter.trim() && matched.length > 0 ? matched : points;
+    const W = 560, H2 = 240, PAD = { top: 12, right: 16, bottom: 32, left: 52 };
+    const cw = W - PAD.left - PAD.right;
+    const ch = H2 - PAD.top - PAD.bottom;
+    const maxCost = Math.max(...axisPoints.map((p5) => p5.cost), 0.01) * 1.15;
+    const maxTurns = Math.max(...axisPoints.map((p5) => p5.turns), 1) * 1.15;
+    const xPos = (cost) => PAD.left + cost / maxCost * cw;
+    const yPos = (turns) => PAD.top + ch - turns / maxTurns * ch;
+    const xTicks = [0, 0.25, 0.5, 0.75, 1].map((f5) => ({ v: f5 * maxCost, x: PAD.left + f5 * cw }));
+    const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f5) => ({ v: Math.round(f5 * maxTurns), y: PAD.top + ch - f5 * ch }));
+    const sortedMatches = filter.trim() ? (() => {
+      const m4 = [...matched];
+      const d5 = sort.dir === "asc" ? 1 : -1;
+      if (sort.col === "time") m4.sort((a4, b4) => d5 * (new Date(a4.s.startTime).getTime() - new Date(b4.s.startTime).getTime()));
+      if (sort.col === "prompt") m4.sort((a4, b4) => d5 * (a4.s.userRequest ?? "").localeCompare(b4.s.userRequest ?? ""));
+      if (sort.col === "cost") m4.sort((a4, b4) => d5 * (a4.cost - b4.cost));
+      if (sort.col === "turns") m4.sort((a4, b4) => d5 * (a4.turns - b4.turns));
+      if (sort.col === "cache") m4.sort((a4, b4) => d5 * (a4.cacheHitRate - b4.cacheHitRate));
+      return m4.slice(0, 10);
+    })() : [];
+    const toggleSort = (col) => setSort((s4) => s4.col === col ? { col, dir: s4.dir === "desc" ? "asc" : "desc" } : { col, dir: "desc" });
+    const topMatchIds = new Set(sortedMatches.map((p5) => p5.s.traceId));
+    return /* @__PURE__ */ u4("div", { children: [
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:8px;padding:8px 10px;font-size:11px;color:var(--muted);line-height:1.6;background:var(--card-bg);border:1px solid var(--border);border-radius:4px", children: [
+        "Each dot is one session. ",
+        /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Right" }),
+        " = more expensive. ",
+        /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Up" }),
+        " = more model calls. ",
+        /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Top-right" }),
+        " dots cost the most and required the most back-and-forth \u2014 start there. ",
+        /* @__PURE__ */ u4("strong", { style: "color:#81c784", children: "Green" }),
+        " = model reused cached context between calls (efficient). ",
+        /* @__PURE__ */ u4("strong", { style: "color:#f44747", children: "Red" }),
+        " = model reprocessed everything from scratch on every call (wasteful)."
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:8px;display:flex;align-items:center;gap:8px", children: [
+        /* @__PURE__ */ u4(
+          "input",
+          {
+            type: "text",
+            placeholder: "Filter by prompt keyword\u2026",
+            value: filter,
+            onInput: (e4) => setFilter(e4.target.value),
+            style: "flex:1;max-width:240px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+          }
+        ),
+        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted)", children: [
+          matched.length,
+          " sessions"
+        ] }),
+        /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)", children: [
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:#81c784" }),
+          " cache \u226560%",
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:#f6a623;margin-left:6px" }),
+          " 20\u201360%",
+          /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:#f44747;margin-left:6px" }),
+          " <20%"
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "position:relative", children: [
+        /* @__PURE__ */ u4("svg", { ref: svgRef, width: W, height: H2, style: "overflow:hidden;max-width:100%", children: [
+          /* @__PURE__ */ u4("defs", { children: /* @__PURE__ */ u4("clipPath", { id: "plot-area", children: /* @__PURE__ */ u4("rect", { x: PAD.left, y: PAD.top, width: cw, height: ch }) }) }),
+          yTicks.map((t4) => /* @__PURE__ */ u4("line", { x1: PAD.left, y1: t4.y, x2: PAD.left + cw, y2: t4.y, stroke: "var(--border)", "stroke-width": "1" }, t4.v)),
+          /* @__PURE__ */ u4("line", { x1: PAD.left, y1: PAD.top, x2: PAD.left, y2: PAD.top + ch, stroke: "var(--border)", "stroke-width": "1" }),
+          /* @__PURE__ */ u4("line", { x1: PAD.left, y1: PAD.top + ch, x2: PAD.left + cw, y2: PAD.top + ch, stroke: "var(--border)", "stroke-width": "1" }),
+          /* @__PURE__ */ u4("text", { x: PAD.left + cw / 2, y: H2 - 2, "text-anchor": "middle", "font-size": "10", fill: "var(--muted)", children: "Cost (USD)" }),
+          /* @__PURE__ */ u4(
+            "text",
+            {
+              x: 10,
+              y: PAD.top + ch / 2,
+              "text-anchor": "middle",
+              "font-size": "10",
+              fill: "var(--muted)",
+              transform: `rotate(-90,10,${PAD.top + ch / 2})`,
+              children: "LLM calls"
+            }
+          ),
+          xTicks.map((t4) => /* @__PURE__ */ u4("g", { children: [
+            /* @__PURE__ */ u4("line", { x1: t4.x, y1: PAD.top + ch, x2: t4.x, y2: PAD.top + ch + 4, stroke: "var(--border)" }),
+            /* @__PURE__ */ u4("text", { x: t4.x, y: PAD.top + ch + 14, "text-anchor": "middle", "font-size": "9", fill: "var(--muted)", children: t4.v < 0.01 ? "$0" : `$${t4.v.toFixed(2)}` })
+          ] }, t4.v)),
+          yTicks.map((t4) => /* @__PURE__ */ u4("g", { children: [
+            /* @__PURE__ */ u4("line", { x1: PAD.left - 4, y1: t4.y, x2: PAD.left, y2: t4.y, stroke: "var(--border)" }),
+            /* @__PURE__ */ u4("text", { x: PAD.left - 6, y: t4.y + 4, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: t4.v })
+          ] }, t4.v)),
+          /* @__PURE__ */ u4("g", { "clip-path": "url(#plot-area)", children: points.map((p5, i4) => {
+            const inTop = filter.trim() ? topMatchIds.has(p5.s.traceId) : false;
+            if (filter.trim() && !inTop) return null;
+            const cx = xPos(p5.cost), cy = yPos(p5.turns);
+            const color = p5.cacheHitRate >= 0.6 ? "#81c784" : p5.cacheHitRate >= 0.2 ? "#f6a623" : "#f44747";
+            return /* @__PURE__ */ u4(
+              "circle",
+              {
+                cx,
+                cy,
+                r: filter.trim() ? 6 : 4,
+                fill: color,
+                opacity: 0.85,
+                style: "cursor:pointer",
+                onMouseEnter: () => setTooltip({ x: cx, y: cy, s: p5.s }),
+                onMouseLeave: () => setTooltip(null)
+              },
+              i4
+            );
+          }) })
+        ] }),
+        tooltip && (() => {
+          const s4 = tooltip.s;
+          const left = tooltip.x > W * 0.6 ? tooltip.x - 220 : tooltip.x + 12;
+          const top = tooltip.y > H2 * 0.6 ? tooltip.y - 90 : tooltip.y + 8;
+          return /* @__PURE__ */ u4("div", { style: `position:absolute;left:${left}px;top:${top}px;background:var(--vscode-editorWidget-background,#252526);border:1px solid var(--border);border-radius:4px;padding:7px 10px;font-size:11px;pointer-events:none;z-index:10;max-width:210px`, children: [
+            /* @__PURE__ */ u4("div", { style: "font-weight:600;color:var(--fg);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", children: s4.userRequest ? s4.userRequest.slice(0, 60) + (s4.userRequest.length > 60 ? "\u2026" : "") : "\u2014" }),
+            /* @__PURE__ */ u4("div", { style: "color:var(--muted);font-size:10px;line-height:1.6", children: [
+              /* @__PURE__ */ u4("div", { children: [
+                getAgentSourceLabel(s4.source),
+                " \xB7 ",
+                s4.model?.split("-").slice(-2).join("-")
+              ] }),
+              /* @__PURE__ */ u4("div", { children: [
+                s4.startTime.slice(0, 10),
+                " \xB7 ",
+                fmtUsd2(sessionCost(s4)),
+                " \xB7 ",
+                s4.totalLlmCalls,
+                " turns"
+              ] }),
+              /* @__PURE__ */ u4("div", { children: [
+                "cache hit rate: ",
+                Math.round((s4.cacheHitRate ?? 0) * 100),
+                "%"
+              ] })
+            ] })
+          ] });
+        })()
+      ] }),
+      sortedMatches.length > 0 && (() => {
+        const thStyle = (col) => `padding:4px 8px 4px 0;color:${sort.col === col ? "var(--fg)" : "var(--muted)"};font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;font-size:11px`;
+        const arrow = (col) => sort.col === col ? sort.dir === "desc" ? " \u2193" : " \u2191" : "";
+        return /* @__PURE__ */ u4("div", { style: "margin-top:12px;overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
+          /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+            /* @__PURE__ */ u4("th", { style: thStyle("time"), onClick: () => toggleSort("time"), children: [
+              "Time",
+              arrow("time")
+            ] }),
+            /* @__PURE__ */ u4("th", { style: thStyle("prompt"), onClick: () => toggleSort("prompt"), children: [
+              "Prompt",
+              arrow("prompt")
+            ] }),
+            /* @__PURE__ */ u4("th", { style: `${thStyle("cost")};text-align:right`, onClick: () => toggleSort("cost"), children: [
+              "Cost",
+              arrow("cost")
+            ] }),
+            /* @__PURE__ */ u4("th", { style: `${thStyle("turns")};text-align:right`, onClick: () => toggleSort("turns"), children: [
+              "Turns",
+              arrow("turns")
+            ] }),
+            /* @__PURE__ */ u4("th", { style: `${thStyle("cache")};text-align:right`, onClick: () => toggleSort("cache"), children: [
+              "Cache hit",
+              arrow("cache")
+            ] })
+          ] }) }),
+          /* @__PURE__ */ u4("tbody", { children: sortedMatches.map((p5, i4) => /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 0;white-space:nowrap;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums", children: formatSessionTime(p5.s) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)", children: p5.s.userRequest?.slice(0, 80) ?? "\u2014" }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums", children: fmtUsd2(p5.cost) }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums", children: p5.turns }),
+            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)", children: [
+              Math.round(p5.cacheHitRate * 100),
+              "%"
+            ] })
+          ] }, i4)) })
+        ] }) });
+      })()
+    ] });
+  }
+  function HotFiles({ sessions }) {
+    const [mode, setMode] = d2("read");
+    const fileMap = /* @__PURE__ */ new Map();
+    for (const s4 of sessions) {
+      const seen = /* @__PURE__ */ new Set();
+      const files = mode === "read" ? s4.filesRead ?? [] : mode === "changed" ? s4.filesChanged ?? [] : [...s4.filesRead ?? [], ...s4.filesChanged ?? []];
+      for (const f5 of files) {
+        if (!seen.has(f5)) {
+          seen.add(f5);
+          const e4 = fileMap.get(f5) ?? { read: 0, changed: 0, sessionCount: 0, lastSeen: "" };
+          e4.sessionCount++;
+          if (s4.filesRead?.includes(f5)) e4.read++;
+          if (s4.filesChanged?.includes(f5)) e4.changed++;
+          if (!e4.lastSeen || s4.startTime > e4.lastSeen) e4.lastSeen = s4.startTime;
+          fileMap.set(f5, e4);
+        }
+      }
+    }
+    const rows = [...fileMap.entries()].map(([file, v4]) => ({ file, ...v4 })).sort((a4, b4) => b4.sessionCount - a4.sessionCount).slice(0, 10);
+    if (rows.length === 0) return /* @__PURE__ */ u4("div", { class: "empty-state", children: "No file access data yet." });
+    const tip = mode === "read" ? /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Read-heavy files" }),
+      " are loaded into the agent's context window every session \u2014 the context window is the block of text sent to the model on each call, and every token in it costs money. Files read frequently mean the agent is spending tokens re-loading content it already needed last time. Documenting their purpose in your instructions file lets the agent orient itself without reading the whole file. Large files are especially costly \u2014 splitting them into smaller focused modules reduces how much fills the context window per session."
+    ] }) : mode === "changed" ? /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Frequently changed files" }),
+      " are your highest-churn surface area \u2014 the agent reads them into its context window, edits them, then often re-reads them to verify. Add guidance in your instructions file: what conventions to follow, what tests to run after edits, and what parts should not be modified without a specific reason. Clear constraints reduce back-and-forth and prevent the agent from undoing its own prior work."
+    ] }) : /* @__PURE__ */ u4(S, { children: [
+      /* @__PURE__ */ u4("strong", { style: "color:var(--fg)", children: "Hot files" }),
+      " are loaded into the agent's context window most often across sessions \u2014 every read costs tokens. Files with high Read counts are candidates for documentation in your instructions file so the agent doesn't need to re-read them raw. Files with high Changed counts are high-churn; add constraints and testing requirements. Large files that appear here are strong candidates for splitting into smaller focused modules to keep context window usage lean."
+    ] });
+    return /* @__PURE__ */ u4("div", { children: [
+      /* @__PURE__ */ u4("div", { style: "margin-bottom:10px;padding:8px 10px;font-size:11px;color:var(--muted);line-height:1.6;background:var(--card-bg);border:1px solid var(--border);border-radius:4px", children: tip }),
+      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:8px;margin-bottom:10px", children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:11px;color:var(--muted)", children: "Show:" }),
+        /* @__PURE__ */ u4("button", { class: "tab-mini" + (mode === "read" ? " active" : ""), onClick: () => setMode("read"), children: "Read" }),
+        /* @__PURE__ */ u4("button", { class: "tab-mini" + (mode === "changed" ? " active" : ""), onClick: () => setMode("changed"), children: "Changed" }),
+        /* @__PURE__ */ u4("button", { class: "tab-mini" + (mode === "both" ? " active" : ""), onClick: () => setMode("both"), children: "Both" })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
+        /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+          /* @__PURE__ */ u4("th", { style: "text-align:left;padding:4px 8px 4px 0;color:var(--muted);font-weight:500", children: "File" }),
+          /* @__PURE__ */ u4("th", { style: "text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap", children: "Sessions" }),
+          /* @__PURE__ */ u4("th", { style: "text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap", title: "Sessions where the agent read this file", children: "Read" }),
+          /* @__PURE__ */ u4("th", { style: "text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap", title: "Sessions where the agent modified this file", children: "Changed" }),
+          /* @__PURE__ */ u4("th", { style: "text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap", children: "Last seen" })
+        ] }) }),
+        /* @__PURE__ */ u4("tbody", { children: rows.map((r5, i4) => /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
+          /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", title: r5.file, children: [
+            /* @__PURE__ */ u4("span", { style: "color:var(--muted);font-size:10px", children: r5.file.replace(basename(r5.file), "") }),
+            /* @__PURE__ */ u4("span", { style: "color:var(--fg)", children: basename(r5.file) })
+          ] }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums", children: r5.sessionCount }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: r5.read || "\u2014" }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums", children: r5.changed || "\u2014" }),
+          /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;color:var(--muted);white-space:nowrap;font-size:10px", children: r5.lastSeen ? r5.lastSeen.slice(0, 10) : "\u2014" })
+        ] }, r5.file)) })
+      ] }) })
+    ] });
+  }
+  function Patterns() {
+    const sessions = filteredSessions.value;
+    if (sessions.length === 0) {
+      return /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions recorded yet \u2014 patterns will appear once you have session history." });
+    }
+    const divider = /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border);margin:4px 0" });
+    return /* @__PURE__ */ u4("div", { id: "patterns-content", style: "display:flex;flex-direction:column;gap:20px", children: [
+      /* @__PURE__ */ u4("section", { children: [
+        /* @__PURE__ */ u4("h3", { style: sectionHead, children: "Efficiency Map" }),
+        /* @__PURE__ */ u4(EfficiencyMap, { sessions })
+      ] }),
+      divider,
+      /* @__PURE__ */ u4("section", { children: [
+        /* @__PURE__ */ u4("h3", { style: sectionHead, children: "Hot Files" }),
+        /* @__PURE__ */ u4(HotFiles, { sessions })
+      ] })
+    ] });
+  }
+
   // media/src/tabs/Automation.tsx
   var HARD_STOP_IDENTICAL_TOOL_REPEATS = 8;
   var HARD_STOP_CONSECUTIVE_ERRORS = 8;
@@ -6315,6 +6593,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
   var TABS = [
     { id: "sessions", label: "Sessions", title: "Session list with expand-in-place detail \u2014 trace, files, cost, and flagged issues for each session." },
     { id: "analytics", label: "Analytics", title: "Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights." },
+    { id: "patterns", label: "Patterns", title: "Cross-session behavioral patterns: hot files, prompt efficiency map, CLAUDE.md recommendations, and cost trend." },
     { id: "export", label: "Export", title: "Export raw or redacted OTEL span data as JSON files." }
   ];
   function ActivePanel() {
@@ -6324,6 +6603,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
         return /* @__PURE__ */ u4(Sessions, {});
       case "analytics":
         return /* @__PURE__ */ u4(Analytics, {});
+      case "patterns":
+        return /* @__PURE__ */ u4(Patterns, {});
       case "export":
         return /* @__PURE__ */ u4(Export, {});
       case "help":
@@ -6646,7 +6927,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       return () => window.removeEventListener("message", handler);
     }, []);
     const tab = normalizeTabId(activeTab.value);
-    const showFilterBars = tab !== "export" && tab !== "help";
+    const showFilterBars = tab !== "export" && tab !== "help" && tab !== "patterns";
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("div", { class: "tabs", children: [
         /* @__PURE__ */ u4(

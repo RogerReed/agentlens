@@ -16,6 +16,7 @@ import { runRetention } from './database/retention'
 import { SessionRepository } from './sessionRepository'
 import { summarizeSpans } from './spanSummarizer'
 import { LogReader } from './logReader'
+import { detectLoopSignals } from './loopDetector'
 import { startMcpHttpServer } from './mcpServer'
 
 let collector: OtlpCollector | undefined
@@ -218,7 +219,10 @@ export async function activate(context: vscode.ExtensionContext) {
       const results = lr.scan()
       if (results.length === 0) return
       const ws = fallbackWorkspace()
-      for (const { card, workspace } of results) writer!.enqueue(card, workspace || ws)
+      for (const { card, workspace } of results) {
+        card.loopSignals = detectLoopSignals(card)
+        writer!.enqueue(card, workspace || ws)
+      }
       void writer!.drain().then(() => {
         agentLensDb?.save()
         provider.refresh()
@@ -269,6 +273,7 @@ export async function activate(context: vscode.ExtensionContext) {
             try {
               const result = lr.parseFile(files[i].filePath, files[i].agentKey)
               if (result) {
+                result.card.loopSignals = detectLoopSignals(result.card)
                 writer!.enqueue(result.card, result.workspace || ws)
                 const dk = files[i].agentKey === 'copilot_vscode_json' ? 'copilot_vscode' : files[i].agentKey
                 countByKey.set(dk, (countByKey.get(dk) ?? 0) + 1)
