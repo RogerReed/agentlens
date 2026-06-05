@@ -22,7 +22,7 @@ function basename(p: string): string {
   return p.replace(/\\/g, '/').split('/').pop() ?? p
 }
 
-const sectionHead = 'font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0 0 10px'
+const sectionHead = 'font-size:12px;color:var(--muted);margin:16px 0 6px'
 
 // ── Efficiency Map ────────────────────────────────────────────────────────────
 
