@@ -296,8 +296,6 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
                 title={`${s}× speed`}
               >{s === 0.5 ? '½×' : `${s}×`}</button>
             ))}
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
             <button style={btnStyle} onClick={stepPrev} title="Previous session">◀</button>
             <button style={btnStyle} onClick={stepNext} title="Next session">▶</button>
           </div>
