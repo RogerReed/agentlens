@@ -29,7 +29,7 @@ export function Export() {
   }
 
   return (
-    <div id="export-content">
+    <div id="export-content" style="padding-top:8px">
 
       <div class="export-cards">
 
