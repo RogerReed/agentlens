@@ -250,12 +250,14 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
 
   function stepPrev() {
     clearTimer(); pausedRef.current = true; setPaused(true)
+    focusedSessionId.value = null
     activeIdxRef.current = Math.max(0, activeIdxRef.current - 1)
     drawFnRef.current?.(activeIdxRef.current)
   }
 
   function stepNext() {
     clearTimer(); pausedRef.current = true; setPaused(true)
+    focusedSessionId.value = null
     activeIdxRef.current = Math.min(seriesCountRef.current - 1, activeIdxRef.current + 1)
     drawFnRef.current?.(activeIdxRef.current)
   }
