@@ -97,6 +97,8 @@ export class DashboardPanel {
         vscode.commands.executeCommand('workbench.view.extension.agent-lens')
       } else if (msg.type === 'closeSidebar') {
         vscode.commands.executeCommand('workbench.action.closeSidebar')
+      } else if (msg.type === 'setVsCodeConfig' && typeof msg.key === 'string') {
+        void vscode.workspace.getConfiguration('agentLens').update(msg.key as string, msg.value, vscode.ConfigurationTarget.Global)
       }
     }, null, this.disposables)
 
@@ -173,7 +175,12 @@ export class DashboardPanel {
         filesChanged:     s.filesChanged,
         loopSignals:      s.loopSignals,
       }
-      if (redact) return base
+      if (redact) return {
+        ...base,
+        userRequest:  '[redacted]',
+        filesRead:    (s.filesRead    ?? []).map(() => '[redacted]'),
+        filesChanged: (s.filesChanged ?? []).map(() => '[redacted]'),
+      }
       return { ...base, userRequest: s.userRequest }
     })
 
@@ -218,10 +225,15 @@ export class DashboardPanel {
       ? { sessions, backgroundSpans: [], efficiency: buildEfficiency(sessions) }
       : null
 
+    const mcpEnabled = vscode.workspace.getConfiguration('agentLens').get<boolean>('enableMcpServer', true)
+    const mcpPort    = vscode.workspace.getConfiguration('agentLens').get<number>('mcpPort', 4316)
+
     const initialData = `<script nonce="${nonce}">
         window.__INITIAL_TOOL_CALLS__ = ${safeJsonForScript(summary.toolCalls)};
         window.__INITIAL_SESSION_SUMMARY__ = ${safeJsonForScript(sessionSummary)};
         window.__MASCOT_URI__ = ${safeJsonForScript(mascotUri.toString())};
+        window.__MCP_ENABLED__ = ${mcpEnabled};
+        window.__MCP_PORT__ = ${mcpPort};
       </script>`
 
     return `<!DOCTYPE html>

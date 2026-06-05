@@ -1,9 +1,10 @@
 /**
  * AgentLens standalone server — runs the dashboard outside VS Code.
  *
- * Two HTTP servers:
+ * Three HTTP servers:
  *   OTLP_PORT (default 4318) — receives OTLP traces/logs from agents
- *   UI_PORT   (default 3000) — serves the dashboard and SSE update stream
+ *   UI_PORT   (default 3000) — serves the dashboard and SSE
+ *   MCP_PORT  (default 4316) — MCP endpoint for Claude Code and other agents
  */
 
 import * as http from 'http'
@@ -15,12 +16,14 @@ import { summarizeSpans } from '../src/spanSummarizer'
 import { calcTokenCostUsd } from '../src/pricing'
 import { autoConfigureClaudeCode, autoConfigureCodex, autoConfigureCopilotStandalone } from '../src/autoConfigNode'
 import { classifyOtlpPayload } from '../src/otlpParser'
+import { startMcpHttpServer } from '../src/mcpServer'
 import { LogReader } from '../src/logReader'
 import type { Span } from '../src/types'
 import type { SessionSummaryCard } from '../src/summarizers/summarizerTypes'
 
 const OTLP_PORT  = parseInt(process.env.OTLP_PORT  ?? '4318')
 const UI_PORT    = parseInt(process.env.UI_PORT    ?? '3000')
+const MCP_PORT   = parseInt(process.env.MCP_PORT   ?? '4316')
 const BIND_HOST  = process.env.BIND_HOST ?? '127.0.0.1'
 
 const mediaDir  = path.join(__dirname, '..', 'media')
@@ -68,6 +71,16 @@ let logSessions: Map<string, SessionSummaryCard> = new Map()
 
 const logReader = new LogReader()
 
+// ── MCP server ────────────────────────────────────────────────────────────────
+
+// Dedicated server on MCP_PORT (default 4316) — same port as the VS Code extension.
+const mcpHttpServer = startMcpHttpServer({
+  getSessions: () => {
+    const summary = buildSessionSummary()
+    return summary?.sessions ?? []
+  },
+}, MCP_PORT, BIND_HOST)
+
 function runLogScan() {
   const results = logReader.scan()
   let changed = false
@@ -105,16 +118,52 @@ function startLogIngestion() {
   try { files = logReader.collectFileMeta() } catch { return }
   if (files.length === 0) return
 
+  const AGENT_KEY_LABEL: Record<string, string> = {
+    claude:               'Claude Code',
+    codex:                'Codex',
+    copilot:              'Copilot CLI',
+    copilot_vscode:       'Copilot (VS Code)',
+    copilot_vscode_json:  'Copilot (VS Code)',
+  }
+  const AGENT_KEY_DIR: Record<string, string> = {
+    claude:               '~/.claude/projects/',
+    codex:                '~/.codex/sessions/',
+    copilot:              '~/.copilot/session-state/',
+    copilot_vscode:       '~/Library/…/workspaceStorage/',
+    copilot_vscode_json:  '~/Library/…/workspaceStorage/',
+  }
+
   // Run the initial batch synchronously so logSessions is populated before the
   // browser's first HTTP request. The setImmediate approach deferred this past
   // the first page load, causing a blank screen on startup.
+  const countByKey = new Map<string, number>()
   for (const file of files) {
     try {
       const result = logReader.parseFile(file.filePath, file.agentKey)
-      if (result) logSessions.set(result.card.sessionId, result.card)
+      if (result) {
+        logSessions.set(result.card.sessionId, result.card)
+        countByKey.set(file.agentKey, (countByKey.get(file.agentKey) ?? 0) + 1)
+      }
     } catch { /* skip bad file */ }
   }
-  console.log(`[AgentLens] Loaded ${logSessions.size} sessions from local logs`)
+
+  // Merge copilot_vscode and copilot_vscode_json into one display row
+  const displayCounts = new Map<string, { label: string; dir: string; count: number }>()
+  for (const [key, count] of countByKey) {
+    const displayKey = key === 'copilot_vscode_json' ? 'copilot_vscode' : key
+    const existing = displayCounts.get(displayKey)
+    if (existing) { existing.count += count } else {
+      displayCounts.set(displayKey, { label: AGENT_KEY_LABEL[key] ?? key, dir: AGENT_KEY_DIR[key] ?? key, count })
+    }
+  }
+
+  const total = [...displayCounts.values()].reduce((s, v) => s + v.count, 0)
+  if (total === 0) return
+  const lines = [...displayCounts.values()]
+    .sort((a, b) => b.count - a.count)
+    .map(v => `  ${v.label.padEnd(20)} ${String(v.count).padStart(4)}  (${v.dir})`)
+    .join('\n')
+  console.log(`[AgentLens] Loaded ${total} sessions from local logs:\n${lines}`)
 }
 
 // ── OTLP parsing ──────────────────────────────────────────────────────────────
@@ -183,17 +232,26 @@ function mergeAttrs(...lists: RawAttr[][]): RawAttr[] {
   return out
 }
 
-function processTraces(payload: unknown, collectorPath = '/v1/traces'): number {
+function agentLabelFromSpanName(name: string): string {
+  if (name.startsWith('claude_code.')) return 'Claude Code'
+  if (name.startsWith('codex.'))       return 'Codex'
+  if (name === 'invoke_agent' || name.startsWith('copilot.')) return 'Copilot'
+  return 'unknown'
+}
+
+function processTraces(payload: unknown, collectorPath = '/v1/traces'): { count: number; agent: string } {
   const p = payload as { resourceSpans?: Array<{ scopeSpans?: Array<{ spans?: unknown[] }> }> }
   const rawSpans = p?.resourceSpans?.flatMap(rs =>
     rs.scopeSpans?.flatMap(ss => ss.spans ?? []) ?? []
   ) ?? []
-  let n = 0
+  let count = 0
+  let agent = 'unknown'
   for (const raw of rawSpans) {
     const s = raw as Record<string, unknown>
     if (typeof s.traceId !== 'string' || typeof s.spanId !== 'string' || typeof s.name !== 'string') continue
     let attrs = toAttrs(s.attributes)
     if (isCodexWebsocketTraceSpan(s.name, attrs)) continue
+    if (agent === 'unknown') agent = agentLabelFromSpanName(s.name)
     attrs = [...attrs, { key: '_agentlens.collector_path', value: { stringValue: collectorPath } }]
     addSpan({
       traceId: s.traceId,
@@ -205,9 +263,9 @@ function processTraces(payload: unknown, collectorPath = '/v1/traces'): number {
       attributes: attrs,
       status: s.status as { code: number; message?: string } | undefined,
     })
-    n++
+    count++
   }
-  return n
+  return { count, agent }
 }
 
 function processLogs(payload: unknown, collectorPath = '/v1/logs'): number {
@@ -682,7 +740,42 @@ function getHtml(): string {
               showToast('Could not copy — check browser clipboard permissions');
             });
           } else if (msg.type === 'exportSessionData' || msg.type === 'exportSessionDataRedacted') {
-            window.dispatchEvent(new MessageEvent('message', { data: { type: msg.type } }));
+            var redact = msg.type === 'exportSessionDataRedacted';
+            var exportable = (__latestSessions__ || []).map(function(s) {
+              return {
+                sessionId:         s.sessionId,
+                traceId:           s.traceId,
+                source:            s.source,
+                model:             s.model,
+                startTime:         s.startTime,
+                durationMs:        s.durationMs,
+                turns:             s.totalLlmCalls,
+                totalToolCalls:    s.totalToolCalls,
+                inputTokens:       s.inputTokens,
+                outputTokens:      s.outputTokens,
+                cacheReadTokens:   s.cacheReadTokens,
+                cacheCreateTokens: s.cacheCreateTokens,
+                cacheHitRate:      s.cacheHitRate,
+                errors:            s.errors,
+                outcome:           s.outcome,
+                toolCounts:        s.toolCounts,
+                filesRead:    redact ? (s.filesRead    || []).map(function() { return '[redacted]'; }) : s.filesRead,
+                filesChanged: redact ? (s.filesChanged || []).map(function() { return '[redacted]'; }) : s.filesChanged,
+                loopSignals:  s.loopSignals,
+                userRequest:  redact ? '[redacted]' : (s.userRequest || null),
+              };
+            });
+            var now = new Date();
+            var pad = function(n) { return String(n).padStart(2, '0'); };
+            var ts = '' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) +
+                     '_' + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+            var filename = (redact ? 'export_redacted' : 'export') + '_sessions_' + ts + '.json';
+            var blob = new Blob([JSON.stringify(exportable, null, 2)], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
+            showToast('Downloaded ' + filename);
           } else if (msg.type === 'openSidebar' || msg.type === 'closeSidebar') {
             window.dispatchEvent(new CustomEvent('agentlens:sidebar', { detail: { open: msg.type === 'openSidebar' } }));
           } else if (msg.type === 'searchSessions' && msg.query) {
@@ -980,8 +1073,8 @@ const otlpServer = http.createServer((req, res) => {
       const payload = JSON.parse(Buffer.concat(chunks).toString('utf-8'))
       const kind = classifyOtlpPayload(payload)
       if (req.url === '/v1/traces' || kind === 'traces') {
-        const n = processTraces(payload, req.url ?? '/v1/traces')
-        if (n > 0) console.log(`[AgentLens] ${n} span${n !== 1 ? 's' : ''} ingested (${spans.length} total)`)
+        const { count, agent } = processTraces(payload, req.url ?? '/v1/traces')
+        if (count > 0) console.log(`[AgentLens] Ingested ${count} span${count !== 1 ? 's' : ''} (${agent})`)
       } else if (req.url === '/v1/logs' || kind === 'logs') {
         const n = processLogs(payload, req.url ?? '/v1/logs')
         if (n > 0) console.log(`[AgentLens] ${n} log event${n !== 1 ? 's' : ''} ingested`)
@@ -1036,12 +1129,13 @@ Promise.all([
 }).catch(e => console.warn('[AgentLens] Auto-configure error:', e))
 
 otlpServer.listen(OTLP_PORT, BIND_HOST, () => {
-  console.log(`[AgentLens] OTLP receiver → http://${BIND_HOST}:${OTLP_PORT}`)
+  console.log(`[AgentLens] OTLP receiver → http://localhost:${OTLP_PORT}`)
 })
 
 uiServer.listen(UI_PORT, BIND_HOST, () => {
   const url = `http://localhost:${UI_PORT}`
   console.log(`[AgentLens] Dashboard      → ${url}`)
+  console.log(`[AgentLens] MCP server     → http://localhost:${MCP_PORT}/mcp`)
 
   // Auto-open browser
   const cmd = process.platform === 'darwin' ? `open "${url}"`

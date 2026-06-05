@@ -92,12 +92,45 @@ function ConfigPanel() {
           title="Close (Esc)"
         >×</button>
       </div>
+      <McpToggle />
       <CollapsibleSection title="Alerts">
         <Alerts />
       </CollapsibleSection>
       <CollapsibleSection title="Automation">
         <Automation />
       </CollapsibleSection>
+    </div>
+  )
+}
+
+function McpToggle() {
+  const w = window as unknown as Record<string, unknown>
+  const initial = typeof w.__MCP_ENABLED__ === 'boolean' ? w.__MCP_ENABLED__ as boolean : true
+  const port    = typeof w.__MCP_PORT__    === 'number'  ? w.__MCP_PORT__    as number  : 4316
+  const [enabled, setEnabled] = useState(initial)
+
+  function toggle() {
+    const next = !enabled
+    setEnabled(next)
+    vscode?.postMessage({ type: 'setVsCodeConfig', key: 'enableMcpServer', value: next })
+  }
+
+  return (
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600;color:var(--fg)">MCP Server</span>
+        <label class="toggle-switch" style="margin:0">
+          <input type="checkbox" checked={enabled} onChange={toggle} />
+          <span class="toggle-track"><span class="toggle-thumb" /></span>
+          <span class={'toggle-label' + (enabled ? ' on' : '')}>{enabled ? 'Enabled' : 'Disabled'}</span>
+        </label>
+      </div>
+      {enabled && (
+        <div style="font-size:11px;color:var(--muted)">
+          Listening at <code style="font-size:10px;background:var(--card-bg);padding:1px 4px;border-radius:3px">http://localhost:{port}/mcp</code>
+        </div>
+      )}
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">{vscode ? 'Restart VS Code to apply changes.' : 'Restart the server to apply changes.'}</div>
     </div>
   )
 }

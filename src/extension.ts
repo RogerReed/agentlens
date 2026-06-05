@@ -17,6 +17,7 @@ import { SessionRepository } from './sessionRepository'
 import { summarizeSpans } from './spanSummarizer'
 import { LogReader } from './logReader'
 import { detectLoopSignals } from './loopDetector'
+import { startMcpHttpServer } from './mcpServer'
 
 let collector: OtlpCollector | undefined
 let store: SessionStore | undefined
@@ -250,6 +251,15 @@ export async function activate(context: vscode.ExtensionContext) {
       }
       if (allFiles.length === 0) { onAllDone?.(); return }
 
+      const AGENT_KEY_LABEL: Record<string, string> = {
+        claude:              'Claude Code',
+        codex:               'Codex',
+        copilot:             'Copilot CLI',
+        copilot_vscode:      'Copilot (VS Code)',
+        copilot_vscode_json: 'Copilot (VS Code)',
+      }
+      const countByKey = new Map<string, number>()
+
       const processGroup = (
         files: typeof allFiles,
         batchSize: number,
@@ -265,6 +275,8 @@ export async function activate(context: vscode.ExtensionContext) {
               if (result) {
                 result.card.loopSignals = detectLoopSignals(result.card)
                 writer!.enqueue(result.card, result.workspace || ws)
+                const dk = files[i].agentKey === 'copilot_vscode_json' ? 'copilot_vscode' : files[i].agentKey
+                countByKey.set(dk, (countByKey.get(dk) ?? 0) + 1)
                 written++
               }
             } catch { /* skip bad file */ }
@@ -294,6 +306,14 @@ export async function activate(context: vscode.ExtensionContext) {
         // Slow-pass: legacy .json snapshots loaded at low priority after fast pass completes.
         processGroup(slowFiles, 2, 50, () => {
           writeLastWriteSignal(context.globalStorageUri)
+          const total = [...countByKey.values()].reduce((s, n) => s + n, 0)
+          if (total > 0) {
+            const breakdown = [...countByKey.entries()]
+              .sort((a, b) => b[1] - a[1])
+              .map(([k, n]) => `${AGENT_KEY_LABEL[k] ?? k}: ${n}`)
+              .join(', ')
+            outputChannel!.appendLine(`[AgentLens] Loaded ${total} sessions from local logs (${breakdown})`)
+          }
           onAllDone?.()
         })
       })
@@ -457,6 +477,19 @@ export async function activate(context: vscode.ExtensionContext) {
       writeLastWriteSignal(context.globalStorageUri)
     })
   )
+
+  // ── MCP server ───────────────────────────────────────────────────────────────
+  const enableMcp = vscode.workspace.getConfiguration('agentLens').get<boolean>('enableMcpServer', true)
+  if (enableMcp) {
+    const mcpPort = vscode.workspace.getConfiguration('agentLens').get<number>('mcpPort', 4316)
+    const mcpServer = startMcpHttpServer(
+      { getSessions: () => repository?.listSessions() ?? [],
+        getTimeline: (id) => repository?.loadSessionTimeline(id) ?? [] },
+      mcpPort,
+    )
+    context.subscriptions.push({ dispose: () => mcpServer.close() })
+    outputChannel.appendLine(`AgentLens MCP server → http://127.0.0.1:${mcpPort}/mcp`)
+  }
 
   // ── Status bar ───────────────────────────────────────────────────────────────
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100)
