@@ -140,7 +140,11 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
                   stroke={clicked === p.s.traceId ? '#fff' : 'none'} stroke-width="2"
                   onMouseEnter={() => setTooltip({ x: cx, y: cy, s: p.s })}
                   onMouseLeave={() => setTooltip(null)}
-                  onClick={() => setClicked(id => id === p.s.traceId ? null : p.s.traceId)}
+                  onClick={() => {
+                    const next = clicked === p.s.traceId ? null : p.s.traceId
+                    setClicked(next)
+                    if (next) { focusedSessionId.value = p.s.sessionId; activeTab.value = 'sessions' }
+                  }}
                 />
               )
             })}
