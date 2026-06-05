@@ -1760,13 +1760,14 @@
   }
   function CostBarChart({ sessions, mode }) {
     const canvasRef = A2(null);
+    const barDataRef = A2([]);
     y2(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const data = sessions.map((sess) => {
+      const data = sessions.slice().reverse().map((sess) => {
         const cost = calcSessionCost(sess, sessionCostMode(sess, mode));
-        return { cost: cost.totalUsd, unknown: cost.modelUnknown, startTime: sess.startTime, source: sess.source };
-      }).reverse();
+        return { sessionId: sess.sessionId, cost: cost.totalUsd, unknown: cost.modelUnknown, startTime: sess.startTime, source: sess.source };
+      });
       const dayKey = (t4) => t4 ? new Date(t4).toISOString().slice(0, 10) : "none";
       const dayTotals = /* @__PURE__ */ new Map();
       data.forEach((d5) => {
@@ -1819,6 +1820,7 @@
       const barPad = n3 > 100 ? 0 : n3 > 50 ? 0.3 : n3 > 20 ? 0.7 : 1.2;
       const barW = Math.max(0.5, slotW - barPad * 2);
       const offsetX = pad.left;
+      barDataRef.current = data.map((d5, i4) => ({ sessionId: d5.sessionId, slotX: offsetX + i4 * slotW, slotW }));
       data.forEach((d5, i4) => {
         const x4 = offsetX + i4 * slotW + barPad;
         const barH = d5.cost / maxCost * chartH;
@@ -1905,7 +1907,26 @@
         });
       }
     });
-    return /* @__PURE__ */ u4("div", { style: "margin-bottom:16px", children: /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:230px;display:block" }) });
+    function handleClick(e4) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e4.clientX - rect.left;
+      const hit = barDataRef.current.find((b4) => mx >= b4.slotX && mx < b4.slotX + b4.slotW);
+      if (hit) {
+        focusedSessionId.value = hit.sessionId;
+        activeTab.value = "sessions";
+      }
+    }
+    return /* @__PURE__ */ u4("div", { style: "margin-bottom:16px", children: /* @__PURE__ */ u4(
+      "canvas",
+      {
+        ref: canvasRef,
+        style: "width:100%;height:230px;display:block;cursor:pointer",
+        onClick: handleClick,
+        title: "Click a bar to open that session"
+      }
+    ) });
   }
 
   // node_modules/.pnpm/clsx@2.1.1/node_modules/clsx/dist/clsx.mjs
@@ -3390,9 +3411,16 @@
   function SessionRow({ sess }) {
     const [expanded, setExpanded] = d2(false);
     const isFocused = focusedSessionId.value === sess.sessionId;
+    const rowRef = A2(null);
     const cost = calcSessionCost(sess, "token");
     const color = getAgentColor(sess.source);
     const prompt = sess.userRequest ?? "";
+    y2(() => {
+      if (focusedSessionId.value === sess.sessionId) {
+        setExpanded(true);
+        rowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, [focusedSessionId.value]);
     function toggle() {
       const next = !expanded;
       setExpanded(next);
@@ -3403,6 +3431,7 @@
       /* @__PURE__ */ u4(
         "tr",
         {
+          ref: rowRef,
           onClick: toggle,
           style: `cursor:pointer;background:${rowBg};border-bottom:1px solid var(--vscode-panel-border)`,
           children: [
@@ -3450,7 +3479,7 @@
     const thBase = "padding:3px 6px;font-size:10px;font-weight:600;white-space:nowrap;user-select:none";
     const thSort = thBase + ";cursor:pointer;color:var(--fg)";
     const thMuted = thBase + ";color:var(--muted);font-weight:500";
-    return /* @__PURE__ */ u4("div", { id: "sessions-content", children: [
+    return /* @__PURE__ */ u4("div", { id: "sessions-content", style: "padding-top:8px", children: [
       /* @__PURE__ */ u4("div", { style: "overflow-x:auto", children: /* @__PURE__ */ u4("table", { style: "width:100%;border-collapse:collapse;font-size:11px", children: [
         /* @__PURE__ */ u4("thead", { children: /* @__PURE__ */ u4("tr", { style: "border-bottom:2px solid var(--vscode-panel-border)", children: [
           /* @__PURE__ */ u4("th", { style: "width:16px;padding:3px 4px 3px 8px" }),
@@ -3517,6 +3546,7 @@
     focusedIdRef.current = focusedId;
     const [paused, setPaused] = d2(false);
     const [hasData, setHasData] = d2(false);
+    const [seriesCount, setSeriesCount] = d2(0);
     const [speed, setSpeed] = d2(1);
     const pausedRef = A2(false);
     const speedRef = A2(1);
@@ -3549,7 +3579,7 @@
       if (!canvas) return;
       const seriesData = [];
       sessions.forEach((sess) => {
-        const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => e4.type === "llm" && (e4.inputTokens ?? 0) > 0);
+        const llmEntries = (timelines[sess.sessionId] ?? sess.timeline ?? []).filter((e4) => (e4.type === "llm" || e4.type === "tool") && (e4.inputTokens ?? 0) > 0);
         if (llmEntries.length < 1) return;
         seriesData.push({
           sessionId: sess.sessionId,
@@ -3568,6 +3598,7 @@
       }
       canvas.style.display = "block";
       setHasData(true);
+      setSeriesCount(seriesData.length);
       seriesCountRef.current = seriesData.length;
       const maxTurns = Math.max(...seriesData.map((s4) => s4.points.length), 2);
       const allTokens = seriesData.flatMap((s4) => s4.points.map((p5) => p5.tokens));
@@ -3698,6 +3729,7 @@
       clearTimer();
       pausedRef.current = true;
       setPaused(true);
+      focusedSessionId.value = null;
       activeIdxRef.current = Math.max(0, activeIdxRef.current - 1);
       drawFnRef.current?.(activeIdxRef.current);
     }
@@ -3705,6 +3737,7 @@
       clearTimer();
       pausedRef.current = true;
       setPaused(true);
+      focusedSessionId.value = null;
       activeIdxRef.current = Math.min(seriesCountRef.current - 1, activeIdxRef.current + 1);
       drawFnRef.current?.(activeIdxRef.current);
     }
@@ -3726,7 +3759,10 @@
           }
         });
       });
-      if (bestId) focusedSessionId.value = focusedSessionId.peek() === bestId ? null : bestId;
+      if (bestId) {
+        focusedSessionId.value = focusedSessionId.peek() === bestId ? null : bestId;
+        if (focusedSessionId.value) activeTab.value = "sessions";
+      }
     }
     const btnStyle = "padding:2px 8px;font-size:11px;cursor:pointer;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--muted);line-height:1.4";
     return /* @__PURE__ */ u4(S, { children: [
@@ -3735,11 +3771,12 @@
         {
           ref: canvasRef,
           id: "context-growth-chart",
-          style: "width:100%;height:200px;display:block;cursor:pointer",
+          style: "width:100%;height:200px;cursor:pointer",
           onClick: handleCanvasClick,
           title: "Click a line to select that session"
         }
       ),
+      !hasData && /* @__PURE__ */ u4("div", { class: "empty-state", style: "font-size:11px", children: "No per-turn token data for these sessions. Context Growth requires sessions with per-turn input token counts \u2014 available for OTel-sourced sessions and Claude Code log sessions." }),
       hasData && /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;margin-top:5px", children: [
         /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px", children: [
           /* @__PURE__ */ u4("button", { style: btnStyle, onClick: togglePause, title: paused ? "Play" : "Pause", children: paused ? "\u25B6" : "\u23F8" }),
@@ -3752,11 +3789,17 @@
               children: s4 === 0.5 ? "\xBD\xD7" : `${s4}\xD7`
             },
             s4
-          ))
-        ] }),
-        /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px", children: [
+          )),
           /* @__PURE__ */ u4("button", { style: btnStyle, onClick: stepPrev, title: "Previous session", children: "\u25C0" }),
           /* @__PURE__ */ u4("button", { style: btnStyle, onClick: stepNext, title: "Next session", children: "\u25B6" })
+        ] }),
+        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted)", children: [
+          "most recent ",
+          seriesCount,
+          " of ",
+          sessions.length,
+          " session",
+          sessions.length !== 1 ? "s" : ""
         ] })
       ] }),
       /* @__PURE__ */ u4("div", { style: "text-align:center;font-size:9px;color:var(--muted);margin-top:4px", children: /* @__PURE__ */ u4(TurnsLink, {}) })
@@ -3764,6 +3807,7 @@
   }
   function SessionTokenChart({ sessions }) {
     const canvasRef = A2(null);
+    const sessionDataRef = A2([]);
     y2(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
@@ -3771,7 +3815,7 @@
       if (rect.width === 0 || rect.height === 0) return;
       const sessionData = [...sessions].reverse().map((sess) => {
         const input = sess.inputTokens ?? 0, output = sess.outputTokens ?? 0;
-        return input + output > 0 ? { startTime: sess.startTime, input, output, source: sess.source } : null;
+        return input + output > 0 ? { sessionId: sess.sessionId, startTime: sess.startTime, input, output, source: sess.source } : null;
       }).filter(Boolean);
       if (sessionData.length === 0) {
         canvas.style.display = "none";
@@ -3824,6 +3868,7 @@
       const textColor = cs.getPropertyValue("--vscode-descriptionForeground").trim() || "#888";
       let lastDayLabelX = -Infinity;
       const MIN_DAY_LABEL_GAP = 30;
+      sessionDataRef.current = sessionData.map((s4, i4) => ({ ...s4, slotX: pad.left + i4 * slotW, slotW }));
       sessionData.forEach((s4, i4) => {
         const slotX = pad.left + i4 * slotW;
         const inH = s4.input / maxIn * chartH;
@@ -3855,10 +3900,29 @@
         }
       });
     });
+    function handleTokenChartClick(e4) {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e4.clientX - rect.left;
+      const hit = sessionDataRef.current.find((s4) => mx >= s4.slotX && mx < s4.slotX + s4.slotW);
+      if (hit) {
+        focusedSessionId.value = hit.sessionId;
+        activeTab.value = "sessions";
+      }
+    }
     const presentSources = new Set(sessions.map((s4) => s4.source).filter(Boolean));
     const agentSources = ["copilot", "claude_code", "codex"].filter((src) => presentSources.has(src));
     return /* @__PURE__ */ u4(S, { children: [
-      /* @__PURE__ */ u4("canvas", { ref: canvasRef, style: "width:100%;height:160px;display:block" }),
+      /* @__PURE__ */ u4(
+        "canvas",
+        {
+          ref: canvasRef,
+          style: "width:100%;height:160px;display:block;cursor:pointer",
+          onClick: handleTokenChartClick,
+          title: "Click a bar to open that session"
+        }
+      ),
       agentSources.length > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;gap:10px;justify-content:center;margin-top:4px;flex-wrap:wrap", children: agentSources.map((src) => /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)", children: [
         /* @__PURE__ */ u4("span", { style: `display:inline-block;width:7px;height:7px;border-radius:50%;background:${getAgentColor(src)}` }),
         getAgentSourceLabel(src)
@@ -3903,12 +3967,12 @@
   }
 
   // media/src/tabs/Analytics.tsx
-  function SectionHead({ title, tip }) {
+  function SectionHead({ title, tip, first }) {
     return /* @__PURE__ */ u4(
       "h3",
       {
         class: tip ? "has-metric-tip" : void 0,
-        style: "margin:16px 0 6px;font-size:12px;color:var(--muted)",
+        style: `margin:${first ? "8px" : "16px"} 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px`,
         "data-tip": tip,
         children: title
       }
@@ -3998,8 +4062,8 @@
     const codexSess = sessions.filter((s4) => s4.source === "codex");
     const timeOrdered = rangedSessions.value;
     const pricedChartSess = timeOrdered.filter((s4) => s4.source === "copilot" || s4.source === "codex" || s4.source === "claude_code");
-    const chartSessions = timeOrdered.slice().reverse();
-    chartSessions.slice(0, CHART_MAX).forEach((sess) => {
+    const chartSessions = timeOrdered.slice(0, CHART_MAX).reverse();
+    chartSessions.forEach((sess) => {
       if (!sessionTimelines.value[sess.sessionId] && vscode) {
         vscode.postMessage({ type: "loadSessionDetail", sessionId: sess.sessionId });
       }
@@ -4061,7 +4125,7 @@
     };
     return /* @__PURE__ */ u4("div", { id: "analytics-content", children: [
       pricedSess.length > 0 && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4(SectionHead, { title: "ESTIMATED COST" }),
+        /* @__PURE__ */ u4(SectionHead, { title: "ESTIMATED COST", first: true }),
         disclaimer,
         copilotSess.length > 0 && /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px", children: [
           /* @__PURE__ */ u4("span", { style: "display:inline-block;width:6px;height:6px;border-radius:50%;background:" + getAgentColor("copilot") }),
@@ -4202,8 +4266,8 @@
           codexSess.length > 0 && /* @__PURE__ */ u4(AgentCard, { source: "codex", sessions: codexSess })
         ] })
       ] }),
-      /* @__PURE__ */ u4(SectionHead, { title: "CONTEXT GROWTH" }),
-      /* @__PURE__ */ u4(ContextGrowthChart, { sessions: chartSessions.slice(0, CHART_MAX), timelines }),
+      /* @__PURE__ */ u4(SectionHead, { title: "CONTEXT GROWTH", first: pricedSess.length === 0 }),
+      /* @__PURE__ */ u4(ContextGrowthChart, { sessions: chartSessions, timelines }),
       /* @__PURE__ */ u4(SectionHead, { title: "TOKEN USAGE PER SESSION" }),
       /* @__PURE__ */ u4("div", { style: "display:flex;gap:12px;margin-bottom:6px;font-size:10px;color:var(--muted)", children: [
         /* @__PURE__ */ u4("span", { children: [
@@ -4742,37 +4806,29 @@
   }
 
   // media/src/tabs/Export.tsx
-  function send(type) {
+  function send(type, sessionIds) {
     if (vscode) {
-      vscode.postMessage({ type });
+      vscode.postMessage({ type, sessionIds });
     } else {
-      window.dispatchEvent(new MessageEvent("message", { data: { type } }));
+      window.dispatchEvent(new MessageEvent("message", { data: { type, sessionIds } }));
     }
   }
   function Export() {
     const [rawDone, setRawDone] = d2(false);
     const [redactedDone, setRedactedDone] = d2(false);
-    const standalone = !!window.__STANDALONE__;
-    const sessionCount = sessionSummary.value?.sessions?.length ?? 0;
+    const sessions = filteredSessions.value;
+    const empty = sessions.length === 0;
     const doExport = () => {
-      send("exportSessionData");
+      send("exportSessionData", sessions.map((s4) => s4.sessionId));
       setRawDone(true);
       setTimeout(() => setRawDone(false), 3e3);
     };
     const doRedacted = () => {
-      send("exportSessionDataRedacted");
+      send("exportSessionDataRedacted", sessions.map((s4) => s4.sessionId));
       setRedactedDone(true);
       setTimeout(() => setRedactedDone(false), 3e3);
     };
-    const empty = sessionCount === 0;
-    return /* @__PURE__ */ u4("div", { id: "export-content", children: [
-      /* @__PURE__ */ u4("div", { class: "export-meta", children: [
-        sessionCount,
-        " session",
-        sessionCount !== 1 ? "s" : "",
-        standalone && /* @__PURE__ */ u4("span", { class: "export-meta-mode", children: " \xB7 browser download" }),
-        !standalone && /* @__PURE__ */ u4("span", { class: "export-meta-mode", children: " \xB7 written to workspace root" })
-      ] }),
+    return /* @__PURE__ */ u4("div", { id: "export-content", style: "padding-top:8px", children: [
       /* @__PURE__ */ u4("div", { class: "export-cards", children: [
         /* @__PURE__ */ u4("div", { class: "export-card", children: [
           /* @__PURE__ */ u4("div", { class: "export-card-header", children: [
@@ -4851,8 +4907,9 @@
     ["Cache Create Tokens", "Tokens written into the prompt cache on the server during this request. These tokens become available for cache hits on subsequent requests."],
     ["Cache Hit Rate", "The percentage of input tokens served from a server-side prompt cache instead of being reprocessed. Higher rates reduce latency and cost."],
     ["Cache Read Tokens", "Input tokens served from the server-side prompt cache, avoiding reprocessing. Shown in efficiency metrics."],
+    ["Context", "The content sent to the model on a given LLM call: system instructions, conversation history, tool definitions, and the current prompt. Must fit within the context window. Every token costs money \u2014 agents that read large files or accumulate long conversation histories use more context per call, driving up cost."],
     ["Context Bloat", "An efficiency insight triggered when input tokens grow significantly across turns within a session."],
-    ["Context Window", "The block of text sent to the language model on every LLM call. It includes your system instructions, conversation history, tool definitions, and the current prompt. Every token in the context window costs money \u2014 larger context windows mean higher cost per call. Agents that frequently read large files or accumulate long conversation histories fill the context window quickly, driving up cost per session."],
+    ["Context Window", "The maximum number of tokens an LLM can process in a single request, counting both input and output tokens combined. For example, Claude Sonnet has a 200K token context window. This is a hard per-call limit set by the model architecture \u2014 not the same as context, which is what actually fills that window on a given call."],
     ["Files Changed", "Unique files that were created or modified by the agent during the current data collection period."],
     ["Input Tokens", "The number of tokens sent to the language model in a request, including system instructions, conversation history, tool definitions, and the user prompt."],
     ["Loop Signal", "A behavioral signal in the Insights panel (inside the Overview sub-tab of each session) indicating the agent is stuck, oscillating, or making no forward progress. Shown with a \u21BA icon."],
@@ -4883,6 +4940,7 @@
     otel: { href: "#help-otel", heading: "OTEL Data" },
     sessions: { href: "#help-sessions", heading: "Sessions" },
     analytics: { href: "#help-analytics", heading: "Analytics" },
+    patterns: { href: "#help-patterns", heading: "Patterns" },
     settings: { href: "#help-settings", heading: "Settings" },
     mcp: { href: "#help-mcp", heading: "Agent Integration" },
     export: { href: "#help-export", heading: "Export" },
@@ -5498,6 +5556,24 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       ] })
     ] });
   }
+  function PatternsSection() {
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-patterns", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.patterns.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("p", { children: "The Patterns tab shows behavioral trends across sessions \u2014 not individual session detail, but what happens repeatedly. All panels respect the shared filter bar (agent, source, time range, text search)." }),
+        /* @__PURE__ */ u4("div", { class: "glossary", children: [
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Efficiency Map" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "A scatter plot where each dot is one session. Right = more expensive. Up = more LLM calls. Color = cache hit rate (green \u226560%, orange 20\u201360%, red <20%). Click a dot to navigate to that session. The table below shows the top 10 sessions sorted by the active column \u2014 click any column header to re-sort. Click a session's timestamp to open it in the Sessions tab." })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:4px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: "Hot Files" }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Files the agent accessed most frequently across sessions, ranked by session count. Switch between Read, Changed, and Both modes to understand whether the agent is mainly reading or modifying each file. Use this to decide which files to document in your instructions file \u2014 frequently read files cost tokens every session; frequently changed files benefit from explicit constraints." })
+          ] })
+        ] })
+      ] })
+    ] });
+  }
   function SettingsSection() {
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-settings", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.settings.heading }),
@@ -5778,6 +5854,7 @@ less expensive, and which loop signals keep recurring.` })
       /* @__PURE__ */ u4(AgentOtelSection, {}),
       /* @__PURE__ */ u4(SessionsSection, {}),
       /* @__PURE__ */ u4(AnalyticsSection, {}),
+      /* @__PURE__ */ u4(PatternsSection, {}),
       /* @__PURE__ */ u4(SettingsSection, {}),
       /* @__PURE__ */ u4(McpSection, {}),
       /* @__PURE__ */ u4(ExportSection, {}),
@@ -5791,28 +5868,35 @@ less expensive, and which loop signals keep recurring.` })
   }
 
   // media/src/tabs/Patterns.tsx
+  var AGENT_DOT_COLOR = {
+    claude_code: "#FFB085",
+    copilot: "#00EAFF",
+    codex: "#F0FF42"
+  };
+  function agentDotColor(source) {
+    return AGENT_DOT_COLOR[source] ?? "#888";
+  }
   function sessionCost(s4) {
     return calcSessionCost(s4, s4.source === "copilot" ? "token" : "token").totalUsd;
   }
   function basename(p5) {
     return p5.replace(/\\/g, "/").split("/").pop() ?? p5;
   }
-  var sectionHead = "font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0 0 10px";
+  var sectionHead = "font-size:12px;color:var(--muted);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.3px";
   function EfficiencyMap({ sessions }) {
-    const [filter, setFilter] = d2("");
+    const filter = sessionTextFilter.value;
     const [tooltip, setTooltip] = d2(null);
     const [sort, setSort] = d2({ col: "cost", dir: "desc" });
+    const [clicked, setClicked] = d2(null);
     const svgRef = A2(null);
     const points = sessions.filter((s4) => s4.totalLlmCalls > 0).map((s4) => ({
       s: s4,
       cost: sessionCost(s4),
       turns: s4.totalLlmCalls,
-      cacheHitRate: s4.cacheHitRate ?? 0,
-      matches: filter ? (s4.userRequest ?? "").toLowerCase().includes(filter.toLowerCase()) : true
+      cacheHitRate: s4.cacheHitRate ?? 0
     }));
     if (points.length === 0) return /* @__PURE__ */ u4("div", { class: "empty-state", style: "padding:20px", children: "No sessions with turn data yet." });
-    const matched = points.filter((p5) => p5.matches);
-    const axisPoints = filter.trim() && matched.length > 0 ? matched : points;
+    const axisPoints = points;
     const W = 560, H2 = 240, PAD = { top: 12, right: 16, bottom: 32, left: 52 };
     const cw = W - PAD.left - PAD.right;
     const ch = H2 - PAD.top - PAD.bottom;
@@ -5822,8 +5906,8 @@ less expensive, and which loop signals keep recurring.` })
     const yPos = (turns) => PAD.top + ch - turns / maxTurns * ch;
     const xTicks = [0, 0.25, 0.5, 0.75, 1].map((f5) => ({ v: f5 * maxCost, x: PAD.left + f5 * cw }));
     const yTicks = [0, 0.25, 0.5, 0.75, 1].map((f5) => ({ v: Math.round(f5 * maxTurns), y: PAD.top + ch - f5 * ch }));
-    const sortedMatches = filter.trim() ? (() => {
-      const m4 = [...matched];
+    const sortedMatches = (() => {
+      const m4 = [...points];
       const d5 = sort.dir === "asc" ? 1 : -1;
       if (sort.col === "time") m4.sort((a4, b4) => d5 * (new Date(a4.s.startTime).getTime() - new Date(b4.s.startTime).getTime()));
       if (sort.col === "prompt") m4.sort((a4, b4) => d5 * (a4.s.userRequest ?? "").localeCompare(b4.s.userRequest ?? ""));
@@ -5831,7 +5915,7 @@ less expensive, and which loop signals keep recurring.` })
       if (sort.col === "turns") m4.sort((a4, b4) => d5 * (a4.turns - b4.turns));
       if (sort.col === "cache") m4.sort((a4, b4) => d5 * (a4.cacheHitRate - b4.cacheHitRate));
       return m4.slice(0, 10);
-    })() : [];
+    })();
     const toggleSort = (col) => setSort((s4) => s4.col === col ? { col, dir: s4.dir === "desc" ? "asc" : "desc" } : { col, dir: "desc" });
     const topMatchIds = new Set(sortedMatches.map((p5) => p5.s.traceId));
     return /* @__PURE__ */ u4("div", { children: [
@@ -5849,19 +5933,11 @@ less expensive, and which loop signals keep recurring.` })
         " = model reprocessed everything from scratch on every call (wasteful)."
       ] }),
       /* @__PURE__ */ u4("div", { style: "margin-bottom:8px;display:flex;align-items:center;gap:8px", children: [
-        /* @__PURE__ */ u4(
-          "input",
-          {
-            type: "text",
-            placeholder: "Filter by prompt keyword\u2026",
-            value: filter,
-            onInput: (e4) => setFilter(e4.target.value),
-            style: "flex:1;max-width:240px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-          }
-        ),
         /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted)", children: [
-          matched.length,
-          " sessions"
+          points.length,
+          " session",
+          points.length !== 1 ? "s" : "",
+          filter.trim() ? " matching filter" : ""
         ] }),
         /* @__PURE__ */ u4("span", { style: "display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)", children: [
           /* @__PURE__ */ u4("span", { style: "display:inline-block;width:8px;height:8px;border-radius:50%;background:#81c784" }),
@@ -5900,8 +5976,7 @@ less expensive, and which loop signals keep recurring.` })
             /* @__PURE__ */ u4("text", { x: PAD.left - 6, y: t4.y + 4, "text-anchor": "end", "font-size": "9", fill: "var(--muted)", children: t4.v })
           ] }, t4.v)),
           /* @__PURE__ */ u4("g", { "clip-path": "url(#plot-area)", children: points.map((p5, i4) => {
-            const inTop = filter.trim() ? topMatchIds.has(p5.s.traceId) : false;
-            if (filter.trim() && !inTop) return null;
+            const inTop = topMatchIds.has(p5.s.traceId);
             const cx = xPos(p5.cost), cy = yPos(p5.turns);
             const color = p5.cacheHitRate >= 0.6 ? "#81c784" : p5.cacheHitRate >= 0.2 ? "#f6a623" : "#f44747";
             return /* @__PURE__ */ u4(
@@ -5909,12 +5984,22 @@ less expensive, and which loop signals keep recurring.` })
               {
                 cx,
                 cy,
-                r: filter.trim() ? 6 : 4,
+                r: inTop ? 5 : 4,
                 fill: color,
-                opacity: 0.85,
+                opacity: inTop ? 1 : 0.6,
                 style: "cursor:pointer",
+                stroke: clicked === p5.s.traceId ? "#fff" : "none",
+                "stroke-width": "2",
                 onMouseEnter: () => setTooltip({ x: cx, y: cy, s: p5.s }),
-                onMouseLeave: () => setTooltip(null)
+                onMouseLeave: () => setTooltip(null),
+                onClick: () => {
+                  const next = clicked === p5.s.traceId ? null : p5.s.traceId;
+                  setClicked(next);
+                  if (next) {
+                    focusedSessionId.value = p5.s.sessionId;
+                    activeTab.value = "sessions";
+                  }
+                }
               },
               i4
             );
@@ -5949,6 +6034,11 @@ less expensive, and which loop signals keep recurring.` })
           ] });
         })()
       ] }),
+      sortedMatches.length > 0 && /* @__PURE__ */ u4("div", { style: "margin-top:8px;font-size:10px;color:var(--muted)", children: [
+        "Top ",
+        sortedMatches.length,
+        " sessions"
+      ] }),
       sortedMatches.length > 0 && (() => {
         const thStyle = (col) => `padding:4px 8px 4px 0;color:${sort.col === col ? "var(--fg)" : "var(--muted)"};font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;font-size:11px`;
         const arrow = (col) => sort.col === col ? sort.dir === "desc" ? " \u2193" : " \u2191" : "";
@@ -5975,16 +6065,33 @@ less expensive, and which loop signals keep recurring.` })
               arrow("cache")
             ] })
           ] }) }),
-          /* @__PURE__ */ u4("tbody", { children: sortedMatches.map((p5, i4) => /* @__PURE__ */ u4("tr", { style: "border-bottom:1px solid var(--border)", children: [
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 0;white-space:nowrap;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums", children: formatSessionTime(p5.s) }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)", children: p5.s.userRequest?.slice(0, 80) ?? "\u2014" }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums", children: fmtUsd2(p5.cost) }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums", children: p5.turns }),
-            /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)", children: [
-              Math.round(p5.cacheHitRate * 100),
-              "%"
-            ] })
-          ] }, i4)) })
+          /* @__PURE__ */ u4("tbody", { children: sortedMatches.map((p5, i4) => {
+            const isClicked = clicked === p5.s.traceId;
+            return /* @__PURE__ */ u4("tr", { style: `border-bottom:1px solid var(--border);${isClicked ? "background:rgba(79,195,247,0.08);box-shadow:inset 3px 0 0 var(--accent)" : ""}`, children: [
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 0;white-space:nowrap;font-size:10px;font-variant-numeric:tabular-nums", children: [
+                /* @__PURE__ */ u4("span", { style: `display:inline-block;width:7px;height:7px;border-radius:50%;background:${agentDotColor(p5.s.source)};margin-right:5px;flex-shrink:0;vertical-align:middle`, title: getAgentSourceLabel(p5.s.source) }),
+                /* @__PURE__ */ u4(
+                  "span",
+                  {
+                    style: "color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px",
+                    title: "Open in Sessions tab",
+                    onClick: () => {
+                      activeTab.value = "sessions";
+                      focusedSessionId.value = p5.s.sessionId;
+                    },
+                    children: formatSessionTime(p5.s)
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)", children: p5.s.userRequest?.slice(0, 80) ?? "\u2014" }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums", children: fmtUsd2(p5.cost) }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums", children: p5.turns }),
+              /* @__PURE__ */ u4("td", { style: "padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)", children: [
+                Math.round(p5.cacheHitRate * 100),
+                "%"
+              ] })
+            ] }, i4);
+          }) })
         ] }) });
       })()
     ] });
@@ -6054,9 +6161,9 @@ less expensive, and which loop signals keep recurring.` })
       return /* @__PURE__ */ u4("div", { class: "empty-state", children: "No sessions recorded yet \u2014 patterns will appear once you have session history." });
     }
     const divider = /* @__PURE__ */ u4("div", { style: "border-top:1px solid var(--border);margin:4px 0" });
-    return /* @__PURE__ */ u4("div", { id: "patterns-content", style: "display:flex;flex-direction:column;gap:20px", children: [
+    return /* @__PURE__ */ u4("div", { id: "patterns-content", style: "display:flex;flex-direction:column;gap:20px;padding-top:8px", children: [
       /* @__PURE__ */ u4("section", { children: [
-        /* @__PURE__ */ u4("h3", { style: sectionHead, children: "Efficiency Map" }),
+        /* @__PURE__ */ u4("h3", { style: sectionHead + ";margin-top:0", children: "Efficiency Map" }),
         /* @__PURE__ */ u4(EfficiencyMap, { sessions })
       ] }),
       divider,
@@ -6668,8 +6775,9 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     );
   }
   function McpToggle() {
-    const initial = typeof window.__MCP_ENABLED__ === "boolean" ? window.__MCP_ENABLED__ : true;
-    const port = typeof window.__MCP_PORT__ === "number" ? window.__MCP_PORT__ : 4316;
+    const w5 = window;
+    const initial = typeof w5.__MCP_ENABLED__ === "boolean" ? w5.__MCP_ENABLED__ : true;
+    const port = typeof w5.__MCP_PORT__ === "number" ? w5.__MCP_PORT__ : 4316;
     const [enabled, setEnabled] = d2(initial);
     function toggle() {
       const next = !enabled;
@@ -6893,7 +7001,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           }
         } else if (msg.type === "switchTab" && msg.tab) {
           const tab2 = normalizeTabId(msg.tab);
-          if (tab2 === "alerts" || tab2 === "automation") {
+          if (tab2 === "alerts" || tab2 === "automation" || tab2 === "settings-automation") {
             configOpen.value = true;
           } else {
             activeTab.value = tab2;
@@ -6927,7 +7035,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
       return () => window.removeEventListener("message", handler);
     }, []);
     const tab = normalizeTabId(activeTab.value);
-    const showFilterBars = tab !== "export" && tab !== "help" && tab !== "patterns";
+    const showFilterBars = tab !== "help";
     return /* @__PURE__ */ u4(S, { children: [
       /* @__PURE__ */ u4("div", { class: "tabs", children: [
         /* @__PURE__ */ u4(
@@ -6973,7 +7081,7 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     const debounce = A2(null);
     const [loading, setLoading] = d2(false);
     const tab = normalizeTabId(activeTab.value);
-    const showReset = tab === "sessions" || tab === "analytics";
+    const showReset = tab !== "help";
     const isFiltered = sessionTextFilter.value !== "" || selectedAgentFilter.value !== "all" || initiatorFilter.value !== "all" || dataSourceFilter.value !== "all" || sessionLimit.value !== 25 || timeRange.value.preset !== "all" || sessionSortKey.value !== "start_time" || sessionSortDir.value !== "desc";
     function resetFilters() {
       sessionTextFilter.value = "";
@@ -7113,11 +7221,8 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
     const text = sessionTextFilter.value;
     const iFilter = initiatorFilter.value;
     const dsFilter = dataSourceFilter.value;
-    const tab = normalizeTabId(activeTab.value);
-    const isSessionsTab = tab === "sessions";
-    const isAnalyticsTab = tab === "analytics";
     return /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap", children: [
-      isSessionsTab && /* @__PURE__ */ u4(
+      /* @__PURE__ */ u4(
         "input",
         {
           type: "text",
@@ -7129,32 +7234,28 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
           style: "flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
         }
       ),
-      isSessionsTab && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "From" }),
-        /* @__PURE__ */ u4(
-          FilterPills,
-          {
-            options: INITIATOR_FILTER_OPTIONS.map((o4) => ({ ...o4, title: o4.value === "all" ? "Show all sessions" : o4.value === "user" ? "Human-typed prompts only" : o4.value === "agent" ? "Agent-spawned sub-tasks only" : "Non-interactive claude -p calls only" })),
-            value: iFilter,
-            onChange: (v4) => {
-              initiatorFilter.value = v4;
-            }
+      /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "From" }),
+      /* @__PURE__ */ u4(
+        FilterPills,
+        {
+          options: INITIATOR_FILTER_OPTIONS.map((o4) => ({ ...o4, title: o4.value === "all" ? "Show all sessions" : o4.value === "user" ? "Human-typed prompts only" : o4.value === "agent" ? "Agent-spawned sub-tasks only" : "Non-interactive claude -p calls only" })),
+          value: iFilter,
+          onChange: (v4) => {
+            initiatorFilter.value = v4;
           }
-        )
-      ] }),
-      (isSessionsTab || isAnalyticsTab) && /* @__PURE__ */ u4(S, { children: [
-        /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "Source" }),
-        /* @__PURE__ */ u4(
-          FilterPills,
-          {
-            options: DATA_SOURCE_FILTER_OPTIONS.map((o4) => ({ ...o4, title: o4.value === "all" ? "Show all data sources" : o4.value === "otel" ? "OpenTelemetry sessions only" : "Log-file sessions only" })),
-            value: dsFilter,
-            onChange: (v4) => {
-              dataSourceFilter.value = v4;
-            }
+        }
+      ),
+      /* @__PURE__ */ u4("span", { style: "font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px", children: "Source" }),
+      /* @__PURE__ */ u4(
+        FilterPills,
+        {
+          options: DATA_SOURCE_FILTER_OPTIONS.map((o4) => ({ ...o4, title: o4.value === "all" ? "Show all data sources" : o4.value === "otel" ? "OpenTelemetry sessions only" : "Log-file sessions only" })),
+          value: dsFilter,
+          onChange: (v4) => {
+            dataSourceFilter.value = v4;
           }
-        )
-      ] }),
+        }
+      ),
       /* @__PURE__ */ u4("span", { style: "margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px", children: [
         filteredSessions.value.length,
         " sessions"
