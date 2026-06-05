@@ -10,8 +10,9 @@ import {
   vscode, displaySessions, rangedSessions,
   sessionTextFilter, filteredSessions,
   sessionSortKey, sessionSortDir, type SortKey,
+  workspaceFilter, availableWorkspaces, shortWorkspaceName,
 } from './state'
-import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
+import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, WorkspaceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
 
 // Tab components
 import { Sessions } from './tabs/Sessions'
@@ -454,6 +455,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
     selectedAgentFilter.value !== 'all' ||
     initiatorFilter.value !== 'all' ||
     dataSourceFilter.value !== 'all' ||
+    workspaceFilter.value !== 'all' ||
     sessionLimit.value !== 25 ||
     timeRange.value.preset !== 'all' ||
     sessionSortKey.value !== 'start_time' ||
@@ -464,6 +466,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
     selectedAgentFilter.value = 'all'
     initiatorFilter.value = 'all'
     dataSourceFilter.value = 'all'
+    workspaceFilter.value = 'all'
     sessionLimit.value = 25
     timeRange.value = { preset: 'all' }
     sessionSortKey.value = 'start_time'
@@ -621,6 +624,48 @@ function FilterPills<T extends string>({ options, value, onChange }: {
   )
 }
 
+function WorkspaceDropdown() {
+  const current = workspaceFilter.value
+  const workspaces = availableWorkspaces.value
+  if (workspaces.length <= 1) return null
+
+  // Compute display labels — disambiguate if two workspaces share the same 2-component name
+  const labels = workspaces.map(ws => shortWorkspaceName(ws))
+  const labelCounts = new Map<string, number>()
+  for (const l of labels) labelCounts.set(l, (labelCounts.get(l) ?? 0) + 1)
+  const displayLabel = (ws: string, idx: number): string => {
+    const short = labels[idx]
+    if ((labelCounts.get(short) ?? 0) > 1) {
+      const parts = ws.replace(/\\/g, '/').split('/').filter(Boolean)
+      return parts.length >= 3 ? parts.slice(-3).join('/') : ws
+    }
+    return short
+  }
+
+  const active = current !== 'all'
+  return (
+    <select
+      value={current}
+      onChange={e => { workspaceFilter.value = (e.target as HTMLSelectElement).value as WorkspaceFilter }}
+      title={current !== 'all' ? current : 'Filter by project'}
+      style={[
+        'padding:2px 5px;font-size:11px;cursor:pointer;border-radius:3px;max-width:160px;',
+        'background:var(--vscode-input-background,#3c3c3c);',
+        'border:1px solid ' + (active ? 'var(--accent,#4fc3f7)' : 'var(--vscode-input-border,#555)') + ';',
+        'color:' + (active ? 'var(--accent,#4fc3f7)' : 'var(--muted)') + ';',
+        'outline:none',
+      ].join('')}
+    >
+      <option value="all">All projects</option>
+      {workspaces.map((ws, i) => (
+        <option key={ws} value={ws} title={ws}>
+          {displayLabel(ws, i) || 'Unknown project'}
+        </option>
+      ))}
+    </select>
+  )
+}
+
 function SearchFilterBar() {
   const text = sessionTextFilter.value
   const iFilter = initiatorFilter.value
@@ -635,6 +680,7 @@ function SearchFilterBar() {
         onInput={e => { sessionTextFilter.value = (e.target as HTMLInputElement).value }}
         style="flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
       />
+      <WorkspaceDropdown />
       <span style="font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">From</span>
       <FilterPills
         options={INITIATOR_FILTER_OPTIONS.map(o => ({ ...o, title: o.value === 'all' ? 'Show all sessions' : o.value === 'user' ? 'Human-typed prompts only' : o.value === 'agent' ? 'Agent-spawned sub-tasks only' : 'Non-interactive claude -p calls only' }))}

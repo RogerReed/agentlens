@@ -335,7 +335,7 @@ export class LogReader {
     }
 
     if (!firstTimestamp) return null
-    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: new Set(), userRequest, timeline, initiator }) }
+    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: new Set(), userRequest, timeline, initiator }, workspace) }
   }
 
   // ── Codex ───────────────────────────────────────────────────────────────────
@@ -402,7 +402,7 @@ export class LogReader {
     if (!firstTimestamp) return null
     return {
       workspace,
-      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }),
+      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }, workspace),
     }
   }
 
@@ -529,7 +529,7 @@ export class LogReader {
         userRequest: userRequest.slice(0, 500),
         timeline: [],
         initiator: 'user',
-      }),
+      }, workspace),
     }
   }
 
@@ -718,7 +718,7 @@ export class LogReader {
         userRequest: userRequest.slice(0, 500),
         timeline: [],
         initiator: 'user',
-      }),
+      }, workspace),
     }
   }
 
@@ -815,7 +815,7 @@ export class LogReader {
         filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(),
         userRequest: userRequest.slice(0, 500),
         timeline: [], initiator: 'user',
-      }),
+      }, workspace),
     }
   }
 
@@ -910,6 +910,7 @@ function _buildCard(
   firstTimestamp: string,
   lastTimestamp: string,
   acc: CardAccum,
+  workspace = '',
 ): SessionSummaryCard {
   const startMs  = _parseTs(firstTimestamp)
   const endMs    = _parseTs(lastTimestamp)
@@ -926,6 +927,7 @@ function _buildCard(
     source,
     dataSource: 'log',
     initiator: acc.initiator,
+    workspace,
     userRequest: acc.userRequest.slice(0, 500),
     model,
     turns: acc.turns,

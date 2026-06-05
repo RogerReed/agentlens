@@ -20,6 +20,7 @@ function makeSession(overrides: Partial<SessionSummaryCard> = {}): SessionSummar
     traceId: 'trace-1',
     source: 'claude_code',
     dataSource: 'otel',
+    workspace: '',
     userRequest: 'fix the bug',
     model: 'claude-3-5-sonnet',
     turns: 3,

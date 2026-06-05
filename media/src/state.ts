@@ -2,7 +2,7 @@ import { signal, computed } from '@preact/signals'
 import { calcSessionCost } from './sessionMetrics'
 import type {
   FullSummary, SessionSummaryCard, TimelineEntry,
-  AgentFilter, InitiatorFilter, DataSourceFilter, InsightFilter, VsCodeApi,
+  AgentFilter, InitiatorFilter, DataSourceFilter, InsightFilter, WorkspaceFilter, VsCodeApi,
   DailyStatRow, LifetimeStats, BurnRate, Projection,
 } from './types'
 
@@ -105,6 +105,7 @@ export const selectedAgentFilter = signal<AgentFilter>('all')
 export const initiatorFilter = signal<InitiatorFilter>('all')
 export const dataSourceFilter = signal<DataSourceFilter>('all')
 export const insightFilter = signal<InsightFilter>('all')
+export const workspaceFilter = signal<WorkspaceFilter>('all')
 export const activeTab = signal('sessions')
 
 // ── Session retention signals ─────────────────────────────────────────────────
@@ -140,7 +141,23 @@ export const COLORS = [
   '#fff176', '#a1887f', '#90a4ae', '#f06292', '#aed581', '#7986cb',
 ]
 
+// ── Workspace helpers ─────────────────────────────────────────────────────────
+
+export function shortWorkspaceName(ws: string): string {
+  if (!ws) return 'Unknown project'
+  const parts = ws.replace(/\\/g, '/').split('/').filter(Boolean)
+  if (parts.length === 0) return ws
+  if (parts.length === 1) return parts[0]
+  return parts.slice(-2).join('/')
+}
+
 // ── Derived (computed) signals ─────────────────────────────────────────────────
+
+export const availableWorkspaces = computed<string[]>(() => {
+  const all = sessionSummary.value?.sessions ?? []
+  const paths = new Set(all.map(s => s.workspace ?? ''))
+  return [...paths].sort()
+})
 
 export const agentFilteredSessions = computed<SessionSummaryCard[]>(() => {
   let all = sessionSummary.value?.sessions ?? []
@@ -148,6 +165,8 @@ export const agentFilteredSessions = computed<SessionSummaryCard[]>(() => {
   if (filter !== 'all') all = all.filter(s => s.source === filter)
   const dsFilter = dataSourceFilter.value
   if (dsFilter !== 'all') all = all.filter(s => (s.dataSource ?? 'otel') === dsFilter)
+  const wsFilter = workspaceFilter.value
+  if (wsFilter !== 'all') all = all.filter(s => (s.workspace ?? '') === wsFilter)
   return all
 })
 

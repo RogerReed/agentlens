@@ -304,6 +304,7 @@ export function buildClaudeSessions(
       source: 'claude_code' as const,
       dataSource: 'otel' as const,
       initiator: (interaction.parentSpanId || getAttrStr(interaction, 'is_sidechain') === 'true') ? 'agent' as const : 'user' as const,
+      workspace: '',
       userRequest,
       model,
       turns: totalLlmCalls,

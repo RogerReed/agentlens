@@ -54,6 +54,8 @@ export interface SessionSummaryCard {
   dataSource: 'otel' | 'log'
   initiator?: 'user' | 'agent' | 'api'
   conversationId?: string
+  workspace: string
+  projectPath?: string
   userRequest: string
   model: string
   turns: number
@@ -183,6 +185,7 @@ export type AgentFilter = 'all' | 'copilot' | 'claude_code' | 'codex'
 export type InitiatorFilter = 'all' | 'user' | 'agent' | 'api'
 export type DataSourceFilter = 'all' | 'otel' | 'log'
 export type InsightFilter = 'all' | 'loop' | 'efficiency'
+export type WorkspaceFilter = 'all' | string
 
 export interface VsCodeApi {
   postMessage(message: unknown): void

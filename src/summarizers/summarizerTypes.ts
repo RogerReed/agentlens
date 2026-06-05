@@ -7,6 +7,8 @@ export interface SessionSummaryCard {
   dataSource: 'otel' | 'log'
   initiator?: 'user' | 'agent' | 'api'
   conversationId?: string
+  workspace: string
+  projectPath?: string
   userRequest: string
   model: string
   turns: number

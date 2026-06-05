@@ -34,6 +34,7 @@ export class DatabaseWriter {
         if (rows[0]?.values[0]?.[0] === 'otel') return
       } catch { /* non-fatal — proceed to enqueue */ }
     }
+    card.workspace = workspace
     this.pending.set(card.sessionId, { card, workspace })
     if (!this.writing) {
       this.drainPromise = this._drain()

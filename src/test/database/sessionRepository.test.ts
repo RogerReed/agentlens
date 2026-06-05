@@ -4,7 +4,7 @@ import type { SessionSummaryCard } from '../../summarizers/summarizerTypes'
 
 function makeCard(id: string, startTime: string, overrides: Partial<SessionSummaryCard> = {}): SessionSummaryCard {
   return {
-    sessionId: id, traceId: 'trace-' + id, source: 'copilot', dataSource: 'otel',
+    sessionId: id, traceId: 'trace-' + id, source: 'copilot', dataSource: 'otel', workspace: 'ws',
     userRequest: 'test', model: 'gpt-4o', turns: 1,
     inputTokens: 100, outputTokens: 20, cacheReadTokens: 0, cacheCreateTokens: 0,
     cacheHitRate: 0, durationMs: 1000, startTime,

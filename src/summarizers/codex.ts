@@ -251,6 +251,7 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
       source: 'codex' as const,
       dataSource: 'otel' as const,
       conversationId: conversationId || undefined,
+      workspace: '',
       userRequest,
       model,
       turns: totalLlmCalls,
