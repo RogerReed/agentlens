@@ -719,6 +719,12 @@ function getHtml(): string {
             var autoFull = '[' + (msg.label || 'Automation') + ']\\n\\n' + sessionLine + msg.prompt;
             var autoPreview = msg.prompt.length > 160 ? msg.prompt.slice(0, 160) + '…' : msg.prompt;
             var autoLabel = 'Automation: ' + (msg.label || 'Automation');
+            var viewAutomations = {
+              label: 'View Automations',
+              onClick: function() {
+                window.dispatchEvent(new MessageEvent('message', { data: { type: 'switchTab', tab: 'settings-automation' } }));
+              }
+            };
             if (msg.writePromptsFile) {
               fetch('/api/write-prompts-file', {
                 method: 'POST',
@@ -728,10 +734,10 @@ function getHtml(): string {
                 var slug = msg.agent === 'claude_code' ? 'claude' : msg.agent === 'codex' ? 'codex' : 'copilot';
                 showToast('Prompt written to agentlens-prompts-' + slug + '.md');
               }).catch(function() {
-                showActionNotification(autoLabel, autoFull, '#f6a623', autoPreview);
+                showActionNotification(autoLabel, autoFull, '#f6a623', autoPreview, viewAutomations, 30000);
               });
             } else {
-              showActionNotification(autoLabel, autoFull, '#f6a623', autoPreview);
+              showActionNotification(autoLabel, autoFull, '#f6a623', autoPreview, viewAutomations, 30000);
             }
           } else if (msg.type === 'askAI' && msg.prompt) {
             navigator.clipboard.writeText(msg.prompt).then(function() {
@@ -741,7 +747,11 @@ function getHtml(): string {
             });
           } else if (msg.type === 'exportSessionData' || msg.type === 'exportSessionDataRedacted') {
             var redact = msg.type === 'exportSessionDataRedacted';
-            var exportable = (__latestSessions__ || []).map(function(s) {
+            var exportIds = Array.isArray(msg.sessionIds) ? new Set(msg.sessionIds) : null;
+            var exportSessions = exportIds
+              ? (__latestSessions__ || []).filter(function(s) { return exportIds.has(s.sessionId); })
+              : (__latestSessions__ || []);
+            var exportable = exportSessions.map(function(s) {
               return {
                 sessionId:         s.sessionId,
                 traceId:           s.traceId,

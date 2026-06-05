@@ -360,7 +360,7 @@ export function App() {
         }
       } else if (msg.type === 'switchTab' && msg.tab) {
         const tab = normalizeTabId(msg.tab)
-        if (tab === 'alerts' || tab === 'automation') {
+        if (tab === 'alerts' || tab === 'automation' || tab === 'settings-automation') {
           configOpen.value = true
         } else {
           activeTab.value = tab
@@ -395,7 +395,7 @@ export function App() {
   }, [])
 
   const tab = normalizeTabId(activeTab.value)
-  const showFilterBars = tab !== 'export' && tab !== 'help' && tab !== 'patterns'
+  const showFilterBars = tab !== 'help'
 
   return (
     <>
@@ -448,7 +448,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [loading, setLoading] = useState(false)
   const tab = normalizeTabId(activeTab.value)
-  const showReset = tab === 'sessions' || tab === 'analytics'
+  const showReset = tab !== 'help'
 
   const isFiltered = sessionTextFilter.value !== '' ||
     selectedAgentFilter.value !== 'all' ||
@@ -625,41 +625,28 @@ function SearchFilterBar() {
   const text = sessionTextFilter.value
   const iFilter = initiatorFilter.value
   const dsFilter = dataSourceFilter.value
-  const tab = normalizeTabId(activeTab.value)
-  const isSessionsTab = tab === 'sessions'
-  const isAnalyticsTab = tab === 'analytics'
 
   return (
     <div style="display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap">
-      {isSessionsTab && (
-        <input
-          type="text"
-          placeholder="Filter sessions…"
-          value={text}
-          onInput={e => { sessionTextFilter.value = (e.target as HTMLInputElement).value }}
-          style="flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-        />
-      )}
-      {isSessionsTab && (
-        <>
-          <span style="font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">From</span>
-          <FilterPills
-            options={INITIATOR_FILTER_OPTIONS.map(o => ({ ...o, title: o.value === 'all' ? 'Show all sessions' : o.value === 'user' ? 'Human-typed prompts only' : o.value === 'agent' ? 'Agent-spawned sub-tasks only' : 'Non-interactive claude -p calls only' }))}
-            value={iFilter}
-            onChange={v => { initiatorFilter.value = v }}
-          />
-        </>
-      )}
-      {(isSessionsTab || isAnalyticsTab) && (
-        <>
-          <span style="font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">Source</span>
-          <FilterPills
-            options={DATA_SOURCE_FILTER_OPTIONS.map(o => ({ ...o, title: o.value === 'all' ? 'Show all data sources' : o.value === 'otel' ? 'OpenTelemetry sessions only' : 'Log-file sessions only' }))}
-            value={dsFilter}
-            onChange={v => { dataSourceFilter.value = v }}
-          />
-        </>
-      )}
+      <input
+        type="text"
+        placeholder="Filter sessions…"
+        value={text}
+        onInput={e => { sessionTextFilter.value = (e.target as HTMLInputElement).value }}
+        style="flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
+      />
+      <span style="font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">From</span>
+      <FilterPills
+        options={INITIATOR_FILTER_OPTIONS.map(o => ({ ...o, title: o.value === 'all' ? 'Show all sessions' : o.value === 'user' ? 'Human-typed prompts only' : o.value === 'agent' ? 'Agent-spawned sub-tasks only' : 'Non-interactive claude -p calls only' }))}
+        value={iFilter}
+        onChange={v => { initiatorFilter.value = v }}
+      />
+      <span style="font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">Source</span>
+      <FilterPills
+        options={DATA_SOURCE_FILTER_OPTIONS.map(o => ({ ...o, title: o.value === 'all' ? 'Show all data sources' : o.value === 'otel' ? 'OpenTelemetry sessions only' : 'Log-file sessions only' }))}
+        value={dsFilter}
+        onChange={v => { dataSourceFilter.value = v }}
+      />
       <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
     </div>
   )

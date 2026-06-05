@@ -45,6 +45,7 @@ const HELP_SECTIONS = {
   otel:       { href: '#help-otel',       heading: 'OTEL Data' },
   sessions:   { href: '#help-sessions',   heading: 'Sessions' },
   analytics:  { href: '#help-analytics',  heading: 'Analytics' },
+  patterns:   { href: '#help-patterns',   heading: 'Patterns' },
   settings:   { href: '#help-settings',   heading: 'Settings' },
   mcp:        { href: '#help-mcp',        heading: 'Agent Integration' },
   export:     { href: '#help-export',     heading: 'Export' },
@@ -505,6 +506,27 @@ function AnalyticsSection() {
   )
 }
 
+function PatternsSection() {
+  return (
+    <div class="help-section" id="help-patterns">
+      <h3 class="help-heading">{HELP_SECTIONS.patterns.heading}</h3>
+      <div class="help-overview-body">
+        <p>The Patterns tab shows behavioral trends across sessions — not individual session detail, but what happens repeatedly. All panels respect the shared filter bar (agent, source, time range, text search).</p>
+        <div class="glossary">
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Efficiency Map</dt>
+            <dd class="glossary-def" style="display:block">A scatter plot where each dot is one session. Right = more expensive. Up = more LLM calls. Color = cache hit rate (green ≥60%, orange 20–60%, red &lt;20%). Click a dot to navigate to that session. The table below shows the top 10 sessions sorted by the active column — click any column header to re-sort. Click a session's timestamp to open it in the Sessions tab.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Hot Files</dt>
+            <dd class="glossary-def" style="display:block">Files the agent accessed most frequently across sessions, ranked by session count. Switch between Read, Changed, and Both modes to understand whether the agent is mainly reading or modifying each file. Use this to decide which files to document in your instructions file — frequently read files cost tokens every session; frequently changed files benefit from explicit constraints.</dd>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SettingsSection() {
   return (
     <div class="help-section" id="help-settings">
@@ -741,6 +763,7 @@ export function Help() {
       <AgentOtelSection />
       <SessionsSection />
       <AnalyticsSection />
+      <PatternsSection />
       <SettingsSection />
       <McpSection />
       <ExportSection />

@@ -16,11 +16,11 @@ import { computeStats } from './Agents'
 
 // ── Section heading helper ────────────────────────────────────────────────────
 
-function SectionHead({ title, tip }: { title: string; tip?: string }) {
+function SectionHead({ title, tip, first }: { title: string; tip?: string; first?: boolean }) {
   return (
     <h3
       class={tip ? 'has-metric-tip' : undefined}
-      style="margin:16px 0 6px;font-size:12px;color:var(--muted)"
+      style={`margin:${first ? '8px' : '16px'} 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px`}
       data-tip={tip}
     >{title}</h3>
   )
@@ -93,11 +93,11 @@ export function Analytics() {
   const timeOrdered = rangedSessions.value
   const pricedChartSess = timeOrdered.filter(s => s.source === 'copilot' || s.source === 'codex' || s.source === 'claude_code')
 
-  // rangedSessions: time-range + agent filtered, with correct in-memory fallback while DB results load
-  const chartSessions = timeOrdered.slice().reverse()
+  // Most recent CHART_MAX sessions (newest-first slice, then reversed to oldest-first for charts)
+  const chartSessions = timeOrdered.slice(0, CHART_MAX).reverse()
 
   // Load timelines for context growth chart
-  chartSessions.slice(0, CHART_MAX).forEach(sess => {
+  chartSessions.forEach(sess => {
     if (!sessionTimelines.value[sess.sessionId] && vscode) {
       vscode.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
     }
@@ -166,7 +166,7 @@ export function Analytics() {
       {/* Estimated cost */}
       {pricedSess.length > 0 && (
         <>
-          <SectionHead title="ESTIMATED COST" />
+          <SectionHead title="ESTIMATED COST" first />
           {disclaimer}
 
           {copilotSess.length > 0 && (
@@ -322,8 +322,8 @@ export function Analytics() {
       )}
 
       {/* Context growth */}
-      <SectionHead title="CONTEXT GROWTH" />
-      <ContextGrowthChart sessions={chartSessions.slice(0, CHART_MAX)} timelines={timelines} />
+      <SectionHead title="CONTEXT GROWTH" first={pricedSess.length === 0} />
+      <ContextGrowthChart sessions={chartSessions} timelines={timelines} />
 
       {/* Token usage per session */}
       <SectionHead title="TOKEN USAGE PER SESSION" />

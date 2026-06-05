@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import { useEffect, useRef } from 'preact/hooks'
-import { sessionSummary, displaySessions, filteredSessions, dailyStats, lifetimeStats, selectedAgentFilter, timeRange, makeTimeRange } from '../state'
+import { sessionSummary, displaySessions, filteredSessions, dailyStats, lifetimeStats, selectedAgentFilter, timeRange, makeTimeRange, focusedSessionId, activeTab } from '../state'
 import type { TimePreset } from '../state'
 import { getAgentColor, getSessionGlobalNumber, formatCompact, getAgentSourceLabel, formatSessionTime } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
@@ -229,15 +229,16 @@ export function HistoryChart({ rows }: { rows: DailyStatRow[] }) {
 
 export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[]; mode: PricingMode }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const barDataRef = useRef<Array<{ sessionId: string; slotX: number; slotW: number }>>([])
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const data = sessions.map(sess => {
+    const data = sessions.slice().reverse().map(sess => {  // oldest → newest left → right
       const cost = calcSessionCost(sess, sessionCostMode(sess, mode))
-      return { cost: cost.totalUsd, unknown: cost.modelUnknown, startTime: sess.startTime, source: sess.source }
-    }).reverse()  // oldest → newest left → right
+      return { sessionId: sess.sessionId, cost: cost.totalUsd, unknown: cost.modelUnknown, startTime: sess.startTime, source: sess.source }
+    })
 
     // Daily totals for the step-function line overlay
     const dayKey = (t: string) => t ? new Date(t).toISOString().slice(0, 10) : 'none'
@@ -290,6 +291,8 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
     const barPad = n > 100 ? 0 : n > 50 ? 0.3 : n > 20 ? 0.7 : 1.2
     const barW = Math.max(0.5, slotW - barPad * 2)
     const offsetX = pad.left
+
+    barDataRef.current = data.map((d, i) => ({ sessionId: d.sessionId, slotX: offsetX + i * slotW, slotW }))
 
     // Draw bars
     data.forEach((d, i) => {
@@ -381,9 +384,18 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
 
   })
 
+  function handleClick(e: MouseEvent) {
+    const canvas = canvasRef.current; if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const mx = e.clientX - rect.left
+    const hit = barDataRef.current.find(b => mx >= b.slotX && mx < b.slotX + b.slotW)
+    if (hit) { focusedSessionId.value = hit.sessionId; activeTab.value = 'sessions' }
+  }
+
   return (
     <div style="margin-bottom:16px">
-      <canvas ref={canvasRef} style="width:100%;height:230px;display:block" />
+      <canvas ref={canvasRef} style="width:100%;height:230px;display:block;cursor:pointer"
+        onClick={handleClick} title="Click a bar to open that session" />
     </div>
   )
 }

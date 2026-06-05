@@ -1,11 +1,18 @@
 import { useState, useRef } from 'preact/hooks'
-import { filteredSessions } from '../state'
+import { filteredSessions, activeTab, focusedSessionId, sessionTextFilter } from '../state'
 import { getAgentSourceLabel, formatSessionTime } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
 import type { SessionSummaryCard } from '../types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+const AGENT_DOT_COLOR: Record<string, string> = {
+  claude_code: '#FFB085',
+  copilot:     '#00EAFF',
+  codex:       '#F0FF42',
+}
+function agentDotColor(source: string): string { return AGENT_DOT_COLOR[source] ?? '#888' }
 
 function sessionCost(s: SessionSummaryCard): number {
   return calcSessionCost(s, s.source === 'copilot' ? 'token' : 'token').totalUsd
@@ -15,16 +22,17 @@ function basename(p: string): string {
   return p.replace(/\\/g, '/').split('/').pop() ?? p
 }
 
-const sectionHead = 'font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:0 0 10px'
+const sectionHead = 'font-size:12px;color:var(--muted);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.3px'
 
 // ── Efficiency Map ────────────────────────────────────────────────────────────
 
 type MatchSort = 'time' | 'prompt' | 'cost' | 'turns' | 'cache'
 
 function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
-  const [filter, setFilter] = useState('')
+  const filter = sessionTextFilter.value
   const [tooltip, setTooltip] = useState<{ x: number; y: number; s: SessionSummaryCard } | null>(null)
   const [sort, setSort] = useState<{ col: MatchSort; dir: 'asc' | 'desc' }>({ col: 'cost', dir: 'desc' })
+  const [clicked, setClicked] = useState<string | null>(null)
   const svgRef = useRef<SVGSVGElement>(null)
 
   const points = sessions
@@ -34,13 +42,11 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
       cost: sessionCost(s),
       turns: s.totalLlmCalls,
       cacheHitRate: s.cacheHitRate ?? 0,
-      matches: filter ? (s.userRequest ?? '').toLowerCase().includes(filter.toLowerCase()) : true,
     }))
 
   if (points.length === 0) return <div class="empty-state" style="padding:20px">No sessions with turn data yet.</div>
 
-  const matched = points.filter(p => p.matches)
-  const axisPoints = filter.trim() && matched.length > 0 ? matched : points
+  const axisPoints = points
 
   const W = 560, H = 240, PAD = { top: 12, right: 16, bottom: 32, left: 52 }
   const cw = W - PAD.left - PAD.right
@@ -55,8 +61,8 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
   const xTicks = [0, 0.25, 0.5, 0.75, 1].map(f => ({ v: f * maxCost, x: PAD.left + f * cw }))
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => ({ v: Math.round(f * maxTurns), y: PAD.top + ch - f * ch }))
 
-  const sortedMatches = filter.trim() ? (() => {
-    const m = [...matched]
+  const sortedMatches = (() => {
+    const m = [...points]
     const d = sort.dir === 'asc' ? 1 : -1
     if (sort.col === 'time')   m.sort((a, b) => d * (new Date(a.s.startTime).getTime() - new Date(b.s.startTime).getTime()))
     if (sort.col === 'prompt') m.sort((a, b) => d * (a.s.userRequest ?? '').localeCompare(b.s.userRequest ?? ''))
@@ -64,7 +70,7 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
     if (sort.col === 'turns')  m.sort((a, b) => d * (a.turns - b.turns))
     if (sort.col === 'cache')  m.sort((a, b) => d * (a.cacheHitRate - b.cacheHitRate))
     return m.slice(0, 10)
-  })() : []
+  })()
 
   const toggleSort = (col: MatchSort) =>
     setSort(s => s.col === col ? { col, dir: s.dir === 'desc' ? 'asc' : 'desc' } : { col, dir: 'desc' })
@@ -77,14 +83,7 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
         Each dot is one session. <strong style="color:var(--fg)">Right</strong> = more expensive. <strong style="color:var(--fg)">Up</strong> = more model calls. <strong style="color:var(--fg)">Top-right</strong> dots cost the most and required the most back-and-forth — start there. <strong style="color:#81c784">Green</strong> = model reused cached context between calls (efficient). <strong style="color:#f44747">Red</strong> = model reprocessed everything from scratch on every call (wasteful).
       </div>
       <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
-        <input
-          type="text"
-          placeholder="Filter by prompt keyword…"
-          value={filter}
-          onInput={e => setFilter((e.target as HTMLInputElement).value)}
-          style="flex:1;max-width:240px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-        />
-        <span style="font-size:10px;color:var(--muted)">{matched.length} sessions</span>
+        <span style="font-size:10px;color:var(--muted)">{points.length} session{points.length !== 1 ? 's' : ''}{filter.trim() ? ' matching filter' : ''}</span>
         <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)">
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#81c784" /> cache ≥60%
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f6a623;margin-left:6px" /> 20–60%
@@ -122,15 +121,20 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
           ))}
           <g clip-path="url(#plot-area)">
             {points.map((p, i) => {
-              const inTop = filter.trim() ? topMatchIds.has(p.s.traceId) : false
-              if (filter.trim() && !inTop) return null
+              const inTop = topMatchIds.has(p.s.traceId)
               const cx = xPos(p.cost), cy = yPos(p.turns)
               const color = p.cacheHitRate >= 0.6 ? '#81c784' : p.cacheHitRate >= 0.2 ? '#f6a623' : '#f44747'
               return (
-                <circle key={i} cx={cx} cy={cy} r={filter.trim() ? 6 : 4}
-                  fill={color} opacity={0.85} style="cursor:pointer"
+                <circle key={i} cx={cx} cy={cy} r={inTop ? 5 : 4}
+                  fill={color} opacity={inTop ? 1 : 0.6} style="cursor:pointer"
+                  stroke={clicked === p.s.traceId ? '#fff' : 'none'} stroke-width="2"
                   onMouseEnter={() => setTooltip({ x: cx, y: cy, s: p.s })}
                   onMouseLeave={() => setTooltip(null)}
+                  onClick={() => {
+                    const next = clicked === p.s.traceId ? null : p.s.traceId
+                    setClicked(next)
+                    if (next) { focusedSessionId.value = p.s.sessionId; activeTab.value = 'sessions' }
+                  }}
                 />
               )
             })}
@@ -155,6 +159,7 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
         })()}
       </div>
 
+      {sortedMatches.length > 0 && <div style="margin-top:8px;font-size:10px;color:var(--muted)">Top {sortedMatches.length} sessions</div>}
       {sortedMatches.length > 0 && (() => {
         const thStyle = (col: MatchSort) =>
           `padding:4px 8px 4px 0;color:${sort.col === col ? 'var(--fg)' : 'var(--muted)'};font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;font-size:11px`
@@ -172,15 +177,23 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
                 </tr>
               </thead>
               <tbody>
-                {sortedMatches.map((p, i) => (
-                  <tr key={i} style="border-bottom:1px solid var(--border)">
-                    <td style="padding:4px 8px 4px 0;white-space:nowrap;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums">{formatSessionTime(p.s)}</td>
+                {sortedMatches.map((p, i) => {
+                  const isClicked = clicked === p.s.traceId
+                  return (
+                  <tr key={i} style={`border-bottom:1px solid var(--border);${isClicked ? 'background:rgba(79,195,247,0.08);box-shadow:inset 3px 0 0 var(--accent)' : ''}`}>
+                    <td style="padding:4px 8px 4px 0;white-space:nowrap;font-size:10px;font-variant-numeric:tabular-nums">
+                      <span style={`display:inline-block;width:7px;height:7px;border-radius:50%;background:${agentDotColor(p.s.source)};margin-right:5px;flex-shrink:0;vertical-align:middle`} title={getAgentSourceLabel(p.s.source)} />
+                      <span style="color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:2px"
+                        title="Open in Sessions tab"
+                        onClick={() => { activeTab.value = 'sessions'; focusedSessionId.value = p.s.sessionId }}
+                      >{formatSessionTime(p.s)}</span>
+                    </td>
                     <td style="padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg)">{p.s.userRequest?.slice(0, 80) ?? '—'}</td>
                     <td style="padding:4px 8px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums">{fmtUsd(p.cost)}</td>
                     <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">{p.turns}</td>
                     <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)">{Math.round(p.cacheHitRate * 100)}%</td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
@@ -414,9 +427,9 @@ export function Patterns() {
   const divider = <div style="border-top:1px solid var(--border);margin:4px 0" />
 
   return (
-    <div id="patterns-content" style="display:flex;flex-direction:column;gap:20px">
+    <div id="patterns-content" style="display:flex;flex-direction:column;gap:20px;padding-top:8px">
       <section>
-        <h3 style={sectionHead}>Efficiency Map</h3>
+        <h3 style={sectionHead + ';margin-top:0'}>Efficiency Map</h3>
         <EfficiencyMap sessions={sessions} />
       </section>
 
