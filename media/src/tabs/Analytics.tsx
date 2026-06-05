@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import {
-  filteredSessions, sessionSummary, agentFilteredSessions, rangedSessions,
+  filteredSessions, sessionSummary, agentFilteredSessions,
   sessionTimelines,
   CHART_MAX, vscode,
 } from '../state'
@@ -88,9 +88,12 @@ export function Analytics() {
   const claudeSess  = sessions.filter(s => s.source === 'claude_code')
   const codexSess   = sessions.filter(s => s.source === 'codex')
 
-  // Charts always use time-ordered (newest-first) sessions so internal .reverse() gives oldest-first.
-  // filteredSessions may be sorted by cost/model/etc — that's only for the Sessions table.
-  const timeOrdered = rangedSessions.value
+  // Charts need time-ordered sessions and must respect all active filters (text, initiator, source).
+  // filteredSessions applies all filters but may be sorted by cost/model for the Sessions table,
+  // so re-sort by time here. rangedSessions skips text + initiator — don't use it for charts.
+  const timeOrdered = [...filteredSessions.value].sort((a, b) =>
+    Date.parse(b.startTime || '0') - Date.parse(a.startTime || '0')
+  )
   const pricedChartSess = timeOrdered.filter(s => s.source === 'copilot' || s.source === 'codex' || s.source === 'claude_code')
 
   // Most recent CHART_MAX sessions (newest-first slice, then reversed to oldest-first for charts)
