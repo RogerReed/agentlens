@@ -1,6 +1,7 @@
 import * as path from 'path'
 import * as os from 'os'
 import * as fs from 'fs/promises'
+import { VSCODE_FAMILY_IDE_NAMES } from './vscodeFamilyIdes'
 
 export interface ConfigResult {
   changed: boolean
@@ -148,9 +149,6 @@ export async function autoConfigureClaudeCode(port: number): Promise<ConfigResul
   }
 }
 
-// VS Code variants to check, in preference order
-const VS_CODE_VARIANTS = ['Code', 'Code - Insiders', 'Cursor', 'Windsurf']
-
 function vscodeUserSettingsPaths(): string[] {
   const home = os.homedir()
   let base: string
@@ -161,7 +159,7 @@ function vscodeUserSettingsPaths(): string[] {
   } else {
     base = process.env.APPDATA ?? path.join(home, 'AppData', 'Roaming')
   }
-  return VS_CODE_VARIANTS.map(v => path.join(base, v, 'User', 'settings.json'))
+  return VSCODE_FAMILY_IDE_NAMES.map(v => path.join(base, v, 'User', 'settings.json'))
 }
 
 export async function autoConfigureCopilotStandalone(port: number): Promise<ConfigResult[]> {

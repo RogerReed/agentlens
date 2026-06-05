@@ -36,8 +36,8 @@ graph TB
         CL_LOGS["~/.claude/projects/**/*.jsonl"]
         CX_LOGS["~/.codex/sessions/**/*.jsonl"]
         CP_LOGS["~/.copilot/session-state/**/*.jsonl"]
-        CP_VS["workspaceStorage/<hash>/chatSessions/<uuid>.jsonl<br/>(delta log — newer VS Code Copilot Chat)"]
-        CP_JSON["workspaceStorage/<hash>/chatSessions/<uuid>.json<br/>(snapshot — older VS Code Copilot Chat)"]
+        CP_VS["workspaceStorage/{hash}/chatSessions/{uuid}.jsonl<br/>(delta log — newer VS Code-family Copilot Chat)"]
+        CP_JSON["workspaceStorage/{hash}/chatSessions/{uuid}.json<br/>(snapshot — older VS Code-family Copilot Chat)"]
     end
 
     subgraph VSCode Extension
@@ -201,10 +201,10 @@ A parallel, network-free ingestion path that reads session files written to disk
 | Claude Code | JSONL (append log) | `~/.claude/projects/<project>/<uuid>.jsonl` | `CLAUDE_CONFIG_DIR` (comma-separated config dirs) |
 | Codex | JSONL (append log) | `~/.codex/sessions/<project>/<uuid>.jsonl` | `CODEX_HOME` (comma-separated home dirs) |
 | Copilot CLI | JSONL (event log) | `~/.copilot/session-state/<uuid>/events.jsonl` | — (written automatically) |
-| Copilot Chat (VS Code, newer) | JSONL (delta log) | `workspaceStorage/<hash>/chatSessions/<uuid>.jsonl` | — |
-| Copilot Chat (VS Code, older) | JSON (snapshot) | `workspaceStorage/<hash>/chatSessions/<uuid>.json` | — |
+| Copilot Chat (VS Code-family, newer) | JSONL (delta log) | `workspaceStorage/<hash>/chatSessions/<uuid>.jsonl` | — |
+| Copilot Chat (VS Code-family, older) | JSON (snapshot) | `workspaceStorage/<hash>/chatSessions/<uuid>.json` | — |
 
-`workspaceStorage` is at `~/Library/Application Support/Code/User/workspaceStorage` (macOS), `%APPDATA%\Code\User\workspaceStorage` (Windows), or `~/.config/Code/User/workspaceStorage` (Linux). VS Code Insiders uses "Code - Insiders". Windows: Claude Code also checks `%APPDATA%\Claude\projects`. Linux/Mac: `XDG_CONFIG_HOME` is also checked for Claude.
+`workspaceStorage` is at `~/Library/Application Support/<IDE>/User/workspaceStorage` (macOS), `%APPDATA%\<IDE>\User\workspaceStorage` (Windows), or `$XDG_CONFIG_HOME/<IDE>/User/workspaceStorage` (Linux), where `<IDE>` is any VS Code-family IDE. AgentLens scans all known VS Code-family IDEs automatically — VS Code, VS Code Insiders, Cursor, Windsurf, VSCodium, Trae, and Kiro — via `VSCODE_FAMILY_IDE_NAMES` in `src/vscodeFamilyIdes.ts`. Standalone auto-config writes Copilot settings into every installed IDE's `settings.json`. Windows: Claude Code also checks `%APPDATA%\Claude\projects`. Linux/Mac: `XDG_CONFIG_HOME` is also checked for Claude.
 
 ### Copilot Chat — delta log format (`.jsonl`)
 

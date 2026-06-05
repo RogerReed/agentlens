@@ -13,10 +13,10 @@
  *
  *   Copilot CLI  ~/.copilot/session-state/<uuid>/events.jsonl
  *
- *   Copilot Chat ~/Library/Application Support/Code/User/workspaceStorage/<hash>/chatSessions/<uuid>.jsonl
- *   (VS Code)    %APPDATA%\Code\User\workspaceStorage\<hash>\chatSessions\<uuid>.jsonl
- *                ~/.config/Code/User/workspaceStorage/<hash>/chatSessions/<uuid>.jsonl
- *                (VS Code Insiders: "Code - Insiders" in place of "Code")
+ *   Copilot Chat ~/Library/Application Support/<IDE>/User/workspaceStorage/<hash>/chatSessions/<uuid>.jsonl
+ *   (VS Code-   %APPDATA%\<IDE>\User\workspaceStorage\<hash>\chatSessions\<uuid>.jsonl
+ *   family IDE) ~/.config/<IDE>/User/workspaceStorage/<hash>/chatSessions/<uuid>.jsonl
+ *               where <IDE> is any VS Code-family IDE (see VSCODE_FAMILY_IDE_NAMES)
  *
  * Data available from logs (vs OTEL):
  *   Claude / Codex: session ID, workspace, model, timestamps, full token counts
@@ -31,6 +31,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import type { SessionSummaryCard, TimelineEntry } from './summarizers/summarizerTypes'
+import { VSCODE_FAMILY_IDE_NAMES } from './vscodeFamilyIdes'
 
 // ── Cross-platform home resolution ────────────────────────────────────────────
 
@@ -79,33 +80,29 @@ function copilotSessionStateDir(): string | null {
   return fs.existsSync(dir) ? dir : null
 }
 
-function copilotVSCodeChatRoots(): string[] {
-  // VS Code Copilot Chat writes one JSONL per session into:
-  //   macOS:   ~/Library/Application Support/Code/User/workspaceStorage/<hash>/chatSessions/
-  //   Windows: %APPDATA%\Code\User\workspaceStorage\<hash>\chatSessions\
-  //   Linux:   ~/.config/Code/User/workspaceStorage/<hash>/chatSessions/
-  // VS Code Insiders uses "Code - Insiders" in place of "Code".
+function vscodeFamilyWorkspaceStorageRoots(): string[] {
+  // Returns all existing workspaceStorage directories across every known
+  // VS Code-family IDE (see VSCODE_FAMILY_IDE_NAMES). Copilot Chat and other
+  // VS Code extensions always write chatSessions under the host IDE's directory,
+  // so scanning all of them covers Cursor, Windsurf, VSCodium, Trae, Kiro, etc.
   const home = homeDir()
   const candidates: string[] = []
 
-  switch (process.platform) {
-    case 'win32': {
-      const appData = process.env['APPDATA']
-      if (appData) {
-        candidates.push(path.join(appData, 'Code', 'User', 'workspaceStorage'))
-        candidates.push(path.join(appData, 'Code - Insiders', 'User', 'workspaceStorage'))
+  for (const name of VSCODE_FAMILY_IDE_NAMES) {
+    switch (process.platform) {
+      case 'win32': {
+        const appData = process.env['APPDATA']
+        if (appData) candidates.push(path.join(appData, name, 'User', 'workspaceStorage'))
+        break
       }
-      break
-    }
-    case 'darwin':
-      candidates.push(path.join(home, 'Library', 'Application Support', 'Code', 'User', 'workspaceStorage'))
-      candidates.push(path.join(home, 'Library', 'Application Support', 'Code - Insiders', 'User', 'workspaceStorage'))
-      break
-    default: {
-      const xdg = process.env['XDG_CONFIG_HOME'] ?? path.join(home, '.config')
-      candidates.push(path.join(xdg, 'Code', 'User', 'workspaceStorage'))
-      candidates.push(path.join(xdg, 'Code - Insiders', 'User', 'workspaceStorage'))
-      break
+      case 'darwin':
+        candidates.push(path.join(home, 'Library', 'Application Support', name, 'User', 'workspaceStorage'))
+        break
+      default: {
+        const xdg = process.env['XDG_CONFIG_HOME'] ?? path.join(home, '.config')
+        candidates.push(path.join(xdg, name, 'User', 'workspaceStorage'))
+        break
+      }
     }
   }
 
@@ -179,7 +176,7 @@ export class LogReader {
     // Two file formats exist: <uuid>.jsonl (delta log, newer) and <uuid>.json (full snapshot, older).
     // Prefer .jsonl; skip a .json file when a .jsonl sibling exists for the same session UUID.
     // Build a Set from the directory listing to avoid per-file fs.existsSync calls.
-    for (const root of copilotVSCodeChatRoots()) {
+    for (const root of vscodeFamilyWorkspaceStorageRoots()) {
       try {
         for (const hashDir of fs.readdirSync(root)) {
           const chatDir = path.join(root, hashDir, 'chatSessions')
@@ -231,7 +228,7 @@ export class LogReader {
       ...claudeProjectsDirs(),
       ...codexSessionsDirs(),
       ...((() => { const d = copilotSessionStateDir(); return d ? [d] : [] })()),
-      ...copilotVSCodeChatRoots(),
+      ...vscodeFamilyWorkspaceStorageRoots(),
     ]
   }
 
@@ -551,7 +548,7 @@ export class LogReader {
 
   private _scanCopilotVSCode(): LogSessionResult[] {
     const results: LogSessionResult[] = []
-    for (const root of copilotVSCodeChatRoots()) {
+    for (const root of vscodeFamilyWorkspaceStorageRoots()) {
       try {
         for (const hashDir of fs.readdirSync(root)) {
           const chatDir = path.join(root, hashDir, 'chatSessions')
