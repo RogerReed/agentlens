@@ -46,6 +46,7 @@ const HELP_SECTIONS = {
   sessions:   { href: '#help-sessions',   heading: 'Sessions' },
   analytics:  { href: '#help-analytics',  heading: 'Analytics' },
   patterns:   { href: '#help-patterns',   heading: 'Patterns' },
+  costs:      { href: '#help-costs',      heading: 'Costs' },
   settings:   { href: '#help-settings',   heading: 'Settings' },
   mcp:        { href: '#help-mcp',        heading: 'Agent Integration' },
   export:     { href: '#help-export',     heading: 'Export' },
@@ -527,6 +528,82 @@ function PatternsSection() {
   )
 }
 
+function CostSection() {
+  const tblStyle = 'width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px'
+  const thStyle = 'text-align:left;padding:5px 10px 5px 0;border-bottom:2px solid var(--border);color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:600'
+  const tdStyle = 'padding:5px 10px 5px 0;border-bottom:1px solid var(--border);vertical-align:top'
+  const tdBold  = tdStyle + ';font-weight:600;color:var(--fg);white-space:nowrap'
+  return (
+    <div class="help-section" id="help-costs">
+      <h3 class="help-heading">{HELP_SECTIONS.costs.heading}</h3>
+      <div class="help-overview-body">
+
+        <h4 style={subHeadStyle}>Why AgentLens costs look higher than your subscription</h4>
+        <p>AgentLens calculates every session's cost using the published <strong>API metered rates</strong> — the per-token prices a developer pays when calling the Anthropic, OpenAI, or GitHub Copilot APIs directly. These are real public rates, not estimates.</p>
+        <p>If you use Claude Code on a <strong>Claude Pro or Max plan</strong>, or Copilot on a subscription plan, the cost AgentLens shows is the <em>API-equivalent value</em> of the compute you consumed — not what appears on your credit card. Subscription plans bundle a large monthly compute allowance at a flat rate that works out to roughly <strong>15–30× cheaper per token</strong> than paying metered API rates with the same dollar amount.</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:0">Think of it like a cell plan: you pay $50/month for unlimited data, but if you counted each byte at the retail pay-as-you-go rate, the number would look enormous. AgentLens shows you the pay-as-you-go equivalent — which tells you how much compute you're consuming and which sessions are expensive, even when you're not paying per token.</p>
+
+        <h4 style={subHeadStyle}>What the cost number is still useful for on a subscription</h4>
+        <ul style="font-size:12px;color:var(--muted);padding-left:18px;line-height:1.8;margin-bottom:0">
+          <li><strong style="color:var(--fg)">Relative cost</strong> — session A used 10× more compute than session B, regardless of billing model</li>
+          <li><strong style="color:var(--fg)">Budget draw-down</strong> — identify which sessions eat through your monthly allowance fastest</li>
+          <li><strong style="color:var(--fg)">Model comparison</strong> — see whether a cheaper model would give equivalent results for your typical session shape</li>
+          <li><strong style="color:var(--fg)">Overage warning</strong> — once you hit your included limit, additional usage is billed at metered rates; the AgentLens number tells you what that would cost</li>
+          <li><strong style="color:var(--fg)">Prompt efficiency</strong> — context bloat and repeated reads show up as real cost differences even when you aren't paying per token</li>
+        </ul>
+
+        <h4 style={subHeadStyle}>Claude Code — Pro and Max plans</h4>
+        <table style={tblStyle}>
+          <thead><tr>
+            <th style={thStyle}>Plan</th>
+            <th style={thStyle}>Price</th>
+            <th style={thStyle}>What's included</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style={tdBold}>Claude Pro</td><td style={tdStyle}>$20/month</td><td style={tdStyle}>Large bundled compute allowance shared between claude.ai and Claude Code CLI; resets on a rolling cycle</td></tr>
+            <tr><td style={tdBold}>Claude Max 5×</td><td style={tdStyle}>$100/month</td><td style={tdStyle}>~5× the Pro allowance</td></tr>
+            <tr><td style={tdBold}>Claude Max 20×</td><td style={tdStyle}>$200/month</td><td style={tdStyle}>~20× the Pro allowance</td></tr>
+            <tr><td style={tdBold}>API (no plan)</td><td style={tdStyle}>Pay-per-token</td><td style={tdStyle}>Billed exactly at published Anthropic rates — AgentLens cost = your actual charge</td></tr>
+          </tbody>
+        </table>
+        <p style={mutedP}>Claude Code CLI draws from the same compute pool as claude.ai. At published rates (e.g. claude-sonnet-4-6: $3.00 input / $15.00 output per million tokens), $20/month buys roughly 6–7M input tokens — but a Pro subscriber can typically use far more than that within the plan. When you exhaust your monthly allowance, additional usage is billed at standard API rates. Subscribers billed via the Anthropic API directly (not a claude.ai plan) see costs that match AgentLens exactly.</p>
+
+        <h4 style={subHeadStyle}>GitHub Copilot — AI Credits model (from June 2026)</h4>
+        <table style={tblStyle}>
+          <thead><tr>
+            <th style={thStyle}>Plan</th>
+            <th style={thStyle}>Price</th>
+            <th style={thStyle}>Monthly AI Credits</th>
+            <th style={thStyle}>Overage rate</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style={tdBold}>Copilot Pro</td><td style={tdStyle}>~$10/month</td><td style={tdStyle}>1,500 credits</td><td style={tdStyle}>$0.01/credit</td></tr>
+            <tr><td style={tdBold}>Copilot Pro+</td><td style={tdStyle}>~$39/month</td><td style={tdStyle}>7,000 credits</td><td style={tdStyle}>$0.01/credit</td></tr>
+            <tr><td style={tdBold}>Copilot Max</td><td style={tdStyle}>Enterprise</td><td style={tdStyle}>20,000 credits</td><td style={tdStyle}>$0.01/credit</td></tr>
+          </tbody>
+        </table>
+        <p style={mutedP}>1 AI Credit = $0.01. Some models are <strong>included</strong> (zero credits — they show as $0.00 in AgentLens). Premium models consume credits from your monthly allowance; usage above the allowance is charged at the overage rate. Code completions and Next Edit Suggestions are free and not tracked by AgentLens. The AgentLens cost for a Copilot session divided by $0.01 gives the credit count consumed. Copilot switched from a request-multiplier model to token-based AI Credits in June 2026; AgentLens auto-detects which billing model applies based on the session date.</p>
+
+        <h4 style={subHeadStyle}>Codex CLI — API billing only</h4>
+        <p style={mutedP}>Codex CLI is billed entirely through the OpenAI API at metered token rates. <strong>ChatGPT Plus and ChatGPT Pro are separate products</strong> covering the web app only — they do not reduce or offset Codex CLI API costs. The AgentLens cost shown for Codex sessions is exactly what OpenAI charges, making it the most directly actionable of the three: there is no subscription discount to account for.</p>
+        <table style={tblStyle}>
+          <thead><tr>
+            <th style={thStyle}>Model</th>
+            <th style={thStyle}>Input per MTok</th>
+            <th style={thStyle}>Cached input</th>
+            <th style={thStyle}>Output per MTok</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style={tdBold}>gpt-5.3-codex</td><td style={tdStyle}>$1.75</td><td style={tdStyle}>$0.175</td><td style={tdStyle}>$14.00</td></tr>
+            <tr><td style={tdBold}>gpt-5.5</td><td style={tdStyle}>$5.00</td><td style={tdStyle}>$0.50</td><td style={tdStyle}>$30.00</td></tr>
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+  )
+}
+
 function SettingsSection() {
   return (
     <div class="help-section" id="help-settings">
@@ -764,6 +841,7 @@ export function Help() {
       <SessionsSection />
       <AnalyticsSection />
       <PatternsSection />
+      <CostSection />
       <SettingsSection />
       <McpSection />
       <ExportSection />
