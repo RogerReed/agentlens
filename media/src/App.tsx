@@ -395,7 +395,7 @@ export function App() {
   }, [])
 
   const tab = normalizeTabId(activeTab.value)
-  const showFilterBars = tab !== 'export' && tab !== 'help' && tab !== 'patterns'
+  const showFilterBars = tab !== 'help'
 
   return (
     <>
