@@ -360,7 +360,7 @@ export function App() {
         }
       } else if (msg.type === 'switchTab' && msg.tab) {
         const tab = normalizeTabId(msg.tab)
-        if (tab === 'alerts' || tab === 'automation') {
+        if (tab === 'alerts' || tab === 'automation' || tab === 'settings-automation') {
           configOpen.value = true
         } else {
           activeTab.value = tab
