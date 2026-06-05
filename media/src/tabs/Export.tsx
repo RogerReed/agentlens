@@ -1,42 +1,35 @@
 import { useState } from 'preact/hooks'
-import { sessionSummary, vscode } from '../state'
+import { filteredSessions, vscode } from '../state'
 
-function send(type: string) {
+function send(type: string, sessionIds: string[]) {
   if (vscode) {
-    vscode.postMessage({ type })
+    vscode.postMessage({ type, sessionIds })
   } else {
-    window.dispatchEvent(new MessageEvent('message', { data: { type } }))
+    window.dispatchEvent(new MessageEvent('message', { data: { type, sessionIds } }))
   }
 }
 
 export function Export() {
   const [rawDone, setRawDone] = useState(false)
   const [redactedDone, setRedactedDone] = useState(false)
-  const standalone = !!(window as { __STANDALONE__?: boolean }).__STANDALONE__
 
-  const sessionCount = sessionSummary.value?.sessions?.length ?? 0
+  const sessions = filteredSessions.value
+  const empty = sessions.length === 0
 
   const doExport = () => {
-    send('exportSessionData')
+    send('exportSessionData', sessions.map(s => s.sessionId))
     setRawDone(true)
     setTimeout(() => setRawDone(false), 3000)
   }
 
   const doRedacted = () => {
-    send('exportSessionDataRedacted')
+    send('exportSessionDataRedacted', sessions.map(s => s.sessionId))
     setRedactedDone(true)
     setTimeout(() => setRedactedDone(false), 3000)
   }
 
-  const empty = sessionCount === 0
-
   return (
     <div id="export-content">
-      <div class="export-meta">
-        {sessionCount} session{sessionCount !== 1 ? 's' : ''}
-        {standalone && null}
-        {!standalone && <span class="export-meta-mode"> · written to workspace root</span>}
-      </div>
 
       <div class="export-cards">
 

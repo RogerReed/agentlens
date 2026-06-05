@@ -92,7 +92,8 @@ export class DashboardPanel {
         })
       } else if (msg.type === 'exportSessionData' || msg.type === 'exportSessionDataRedacted') {
         const redact = msg.type === 'exportSessionDataRedacted'
-        void this.exportSessions(redact)
+        const ids = Array.isArray(msg.sessionIds) ? new Set(msg.sessionIds as string[]) : null
+        void this.exportSessions(redact, ids)
       } else if (msg.type === 'openSidebar') {
         vscode.commands.executeCommand('workbench.view.extension.agent-lens')
       } else if (msg.type === 'closeSidebar') {
@@ -146,8 +147,9 @@ export class DashboardPanel {
     })
   }
 
-  private async exportSessions(redact: boolean): Promise<void> {
-    const sessions = this.repo.listSessions()
+  private async exportSessions(redact: boolean, ids: Set<string> | null = null): Promise<void> {
+    const all = this.repo.listSessions()
+    const sessions = ids ? all.filter(s => ids.has(s.sessionId)) : all
     if (sessions.length === 0) {
       vscode.window.showInformationMessage('AgentLens: No session data to export')
       return

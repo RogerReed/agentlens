@@ -747,7 +747,11 @@ function getHtml(): string {
             });
           } else if (msg.type === 'exportSessionData' || msg.type === 'exportSessionDataRedacted') {
             var redact = msg.type === 'exportSessionDataRedacted';
-            var exportable = (__latestSessions__ || []).map(function(s) {
+            var exportIds = Array.isArray(msg.sessionIds) ? new Set(msg.sessionIds) : null;
+            var exportSessions = exportIds
+              ? (__latestSessions__ || []).filter(function(s) { return exportIds.has(s.sessionId); })
+              : (__latestSessions__ || []);
+            var exportable = exportSessions.map(function(s) {
               return {
                 sessionId:         s.sessionId,
                 traceId:           s.traceId,
