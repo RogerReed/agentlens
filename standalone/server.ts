@@ -118,16 +118,52 @@ function startLogIngestion() {
   try { files = logReader.collectFileMeta() } catch { return }
   if (files.length === 0) return
 
+  const AGENT_KEY_LABEL: Record<string, string> = {
+    claude:               'Claude Code',
+    codex:                'Codex',
+    copilot:              'Copilot CLI',
+    copilot_vscode:       'Copilot (VS Code)',
+    copilot_vscode_json:  'Copilot (VS Code)',
+  }
+  const AGENT_KEY_DIR: Record<string, string> = {
+    claude:               '~/.claude/projects/',
+    codex:                '~/.codex/sessions/',
+    copilot:              '~/.copilot/session-state/',
+    copilot_vscode:       '~/Library/…/workspaceStorage/',
+    copilot_vscode_json:  '~/Library/…/workspaceStorage/',
+  }
+
   // Run the initial batch synchronously so logSessions is populated before the
   // browser's first HTTP request. The setImmediate approach deferred this past
   // the first page load, causing a blank screen on startup.
+  const countByKey = new Map<string, number>()
   for (const file of files) {
     try {
       const result = logReader.parseFile(file.filePath, file.agentKey)
-      if (result) logSessions.set(result.card.sessionId, result.card)
+      if (result) {
+        logSessions.set(result.card.sessionId, result.card)
+        countByKey.set(file.agentKey, (countByKey.get(file.agentKey) ?? 0) + 1)
+      }
     } catch { /* skip bad file */ }
   }
-  console.log(`[AgentLens] Loaded ${logSessions.size} sessions from local logs`)
+
+  // Merge copilot_vscode and copilot_vscode_json into one display row
+  const displayCounts = new Map<string, { label: string; dir: string; count: number }>()
+  for (const [key, count] of countByKey) {
+    const displayKey = key === 'copilot_vscode_json' ? 'copilot_vscode' : key
+    const existing = displayCounts.get(displayKey)
+    if (existing) { existing.count += count } else {
+      displayCounts.set(displayKey, { label: AGENT_KEY_LABEL[key] ?? key, dir: AGENT_KEY_DIR[key] ?? key, count })
+    }
+  }
+
+  const total = [...displayCounts.values()].reduce((s, v) => s + v.count, 0)
+  if (total === 0) return
+  const lines = [...displayCounts.values()]
+    .sort((a, b) => b.count - a.count)
+    .map(v => `  ${v.label.padEnd(20)} ${String(v.count).padStart(4)}  (${v.dir})`)
+    .join('\n')
+  console.log(`[AgentLens] Loaded ${total} sessions from local logs:\n${lines}`)
 }
 
 // ── OTLP parsing ──────────────────────────────────────────────────────────────
@@ -196,17 +232,26 @@ function mergeAttrs(...lists: RawAttr[][]): RawAttr[] {
   return out
 }
 
-function processTraces(payload: unknown, collectorPath = '/v1/traces'): number {
+function agentLabelFromSpanName(name: string): string {
+  if (name.startsWith('claude_code.')) return 'Claude Code'
+  if (name.startsWith('codex.'))       return 'Codex'
+  if (name === 'invoke_agent' || name.startsWith('copilot.')) return 'Copilot'
+  return 'unknown'
+}
+
+function processTraces(payload: unknown, collectorPath = '/v1/traces'): { count: number; agent: string } {
   const p = payload as { resourceSpans?: Array<{ scopeSpans?: Array<{ spans?: unknown[] }> }> }
   const rawSpans = p?.resourceSpans?.flatMap(rs =>
     rs.scopeSpans?.flatMap(ss => ss.spans ?? []) ?? []
   ) ?? []
-  let n = 0
+  let count = 0
+  let agent = 'unknown'
   for (const raw of rawSpans) {
     const s = raw as Record<string, unknown>
     if (typeof s.traceId !== 'string' || typeof s.spanId !== 'string' || typeof s.name !== 'string') continue
     let attrs = toAttrs(s.attributes)
     if (isCodexWebsocketTraceSpan(s.name, attrs)) continue
+    if (agent === 'unknown') agent = agentLabelFromSpanName(s.name)
     attrs = [...attrs, { key: '_agentlens.collector_path', value: { stringValue: collectorPath } }]
     addSpan({
       traceId: s.traceId,
@@ -218,9 +263,9 @@ function processTraces(payload: unknown, collectorPath = '/v1/traces'): number {
       attributes: attrs,
       status: s.status as { code: number; message?: string } | undefined,
     })
-    n++
+    count++
   }
-  return n
+  return { count, agent }
 }
 
 function processLogs(payload: unknown, collectorPath = '/v1/logs'): number {
@@ -993,8 +1038,8 @@ const otlpServer = http.createServer((req, res) => {
       const payload = JSON.parse(Buffer.concat(chunks).toString('utf-8'))
       const kind = classifyOtlpPayload(payload)
       if (req.url === '/v1/traces' || kind === 'traces') {
-        const n = processTraces(payload, req.url ?? '/v1/traces')
-        if (n > 0) console.log(`[AgentLens] ${n} span${n !== 1 ? 's' : ''} ingested (${spans.length} total)`)
+        const { count, agent } = processTraces(payload, req.url ?? '/v1/traces')
+        if (count > 0) console.log(`[AgentLens] Ingested ${count} span${count !== 1 ? 's' : ''} (${agent})`)
       } else if (req.url === '/v1/logs' || kind === 'logs') {
         const n = processLogs(payload, req.url ?? '/v1/logs')
         if (n > 0) console.log(`[AgentLens] ${n} log event${n !== 1 ? 's' : ''} ingested`)
