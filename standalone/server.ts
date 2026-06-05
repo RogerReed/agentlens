@@ -740,7 +740,42 @@ function getHtml(): string {
               showToast('Could not copy — check browser clipboard permissions');
             });
           } else if (msg.type === 'exportSessionData' || msg.type === 'exportSessionDataRedacted') {
-            window.dispatchEvent(new MessageEvent('message', { data: { type: msg.type } }));
+            var redact = msg.type === 'exportSessionDataRedacted';
+            var exportable = (__latestSessions__ || []).map(function(s) {
+              return {
+                sessionId:         s.sessionId,
+                traceId:           s.traceId,
+                source:            s.source,
+                model:             s.model,
+                startTime:         s.startTime,
+                durationMs:        s.durationMs,
+                turns:             s.totalLlmCalls,
+                totalToolCalls:    s.totalToolCalls,
+                inputTokens:       s.inputTokens,
+                outputTokens:      s.outputTokens,
+                cacheReadTokens:   s.cacheReadTokens,
+                cacheCreateTokens: s.cacheCreateTokens,
+                cacheHitRate:      s.cacheHitRate,
+                errors:            s.errors,
+                outcome:           s.outcome,
+                toolCounts:        s.toolCounts,
+                filesRead:    redact ? (s.filesRead    || []).map(function() { return '[redacted]'; }) : s.filesRead,
+                filesChanged: redact ? (s.filesChanged || []).map(function() { return '[redacted]'; }) : s.filesChanged,
+                loopSignals:  s.loopSignals,
+                userRequest:  redact ? '[redacted]' : (s.userRequest || null),
+              };
+            });
+            var now = new Date();
+            var pad = function(n) { return String(n).padStart(2, '0'); };
+            var ts = '' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) +
+                     '_' + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
+            var filename = (redact ? 'export_redacted' : 'export') + '_sessions_' + ts + '.json';
+            var blob = new Blob([JSON.stringify(exportable, null, 2)], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
+            showToast('Downloaded ' + filename);
           } else if (msg.type === 'openSidebar' || msg.type === 'closeSidebar') {
             window.dispatchEvent(new CustomEvent('agentlens:sidebar', { detail: { open: msg.type === 'openSidebar' } }));
           } else if (msg.type === 'searchSessions' && msg.query) {
