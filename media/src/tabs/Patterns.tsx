@@ -429,7 +429,7 @@ export function Patterns() {
   return (
     <div id="patterns-content" style="display:flex;flex-direction:column;gap:20px;padding-top:8px">
       <section>
-        <h3 style={sectionHead}>Efficiency Map</h3>
+        <h3 style={sectionHead + ';margin-top:0'}>Efficiency Map</h3>
         <EfficiencyMap sessions={sessions} />
       </section>
 
