@@ -4879,6 +4879,7 @@
     sessions: { href: "#help-sessions", heading: "Sessions" },
     analytics: { href: "#help-analytics", heading: "Analytics" },
     settings: { href: "#help-settings", heading: "Settings" },
+    mcp: { href: "#help-mcp", heading: "Agent Integration" },
     export: { href: "#help-export", heading: "Export" },
     badges: { href: "#help-badges", heading: "Badges" },
     glossary: { href: "#help-glossary", heading: "Glossary" }
@@ -5576,6 +5577,118 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       ] })
     ] });
   }
+  function McpSection() {
+    const standalone = window.__STANDALONE__ === true;
+    const mcpUrl = "http://localhost:4316/mcp";
+    const settingsJson = JSON.stringify({ mcpServers: { agentlens: { url: mcpUrl } } }, null, 2);
+    const claudeMd = `# AgentLens MCP
+Before any task: call get_recent_sessions (recent work + cost) and get_workspace_patterns (hot files, recurring issues).
+Only use find_relevant_context if your task closely matches past prompts by keyword \u2014 skip it for novel tasks.`;
+    return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-mcp", children: [
+      /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.mcp.heading }),
+      /* @__PURE__ */ u4("div", { class: "help-overview-body", children: [
+        /* @__PURE__ */ u4("p", { children: "AgentLens runs an MCP server that gives Claude Code direct access to your session history. Instead of checking the dashboard yourself, Claude can query its own past work \u2014 loading the files it usually needs before making its first tool call, estimating what a task will cost, and flagging patterns that have caused problems before." }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Step 1 \u2014 Confirm the MCP server is running" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: standalone ? /* @__PURE__ */ u4(S, { children: [
+          "The standalone server starts a dedicated MCP server on port 4316 automatically \u2014 no extra setup needed. Endpoint: ",
+          /* @__PURE__ */ u4("a", { href: mcpUrl, target: "_blank", rel: "noreferrer", style: codeStyle, children: mcpUrl }),
+          "."
+        ] }) : /* @__PURE__ */ u4(S, { children: [
+          "The VS Code extension starts an MCP server on port 4316 by default when AgentLens activates. To disable it, set ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "agentLens.enableMcpServer" }),
+          " to ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "false" }),
+          " in VS Code settings. To change the port, set ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "agentLens.mcpPort" }),
+          "."
+        ] }) }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: [
+          "Verify it's up by opening ",
+          /* @__PURE__ */ u4("a", { href: mcpUrl, target: "_blank", rel: "noreferrer", style: codeStyle, children: mcpUrl }),
+          " in a browser \u2014 you should see ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: `{"status":"ok","server":"agentlens-mcp",...}` }),
+          ". If the page doesn't load, the server isn't running."
+        ] }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Step 2 \u2014 Configure Claude Code" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: [
+          "Add the following to ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "~/.claude/settings.json" }),
+          " (create the file if it doesn't exist):"
+        ] }),
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: settingsJson }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: [
+          "If you use the VS Code extension, the ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "contributes.mcpServers" }),
+          " entry in AgentLens's manifest may configure this automatically \u2014 check your Claude Code MCP settings to confirm."
+        ] }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Step 3 \u2014 Add to CLAUDE.md (optional but recommended)" }),
+        /* @__PURE__ */ u4("p", { style: mutedP, children: [
+          "Add a block like this to your project's ",
+          /* @__PURE__ */ u4("code", { style: codeStyle, children: "CLAUDE.md" }),
+          " so Claude automatically uses AgentLens at the start of each session. The block is intentionally brief \u2014 every line in CLAUDE.md is loaded into the context window on every call, so keeping it short avoids unnecessary token spend."
+        ] }),
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: claudeMd }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Available tools" }),
+        /* @__PURE__ */ u4("div", { class: "glossary", children: [
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: /* @__PURE__ */ u4("code", { style: codeStyle, children: "get_recent_sessions" }) }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
+              "Returns recent session summaries sorted newest-first: cost, turn count, model, prompt excerpt, top tools used, and any loop signals triggered. Optional filters: ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "limit" }),
+              " (default 10), ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "agent" }),
+              " (copilot | claude_code | codex)."
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: /* @__PURE__ */ u4("code", { style: codeStyle, children: "get_workspace_patterns" }) }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
+              "Aggregate patterns across all sessions: the files accessed most often (ranked by % of sessions), average cost and turn count, top tools, and recurring loop signal types. Optional filter: ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "days" }),
+              " to limit to recent sessions."
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: /* @__PURE__ */ u4("code", { style: codeStyle, children: "find_relevant_context" }) }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
+              "Given a ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "task" }),
+              " description, keyword-matches against past session prompts and returns: files accessed in similar sessions (with frequency %), estimated cost and turn count range, and known traps (loop signals that appeared in similar sessions). ",
+              /* @__PURE__ */ u4("strong", { children: "Important:" }),
+              ' matching is keyword-based, not semantic \u2014 results are reliable for well-established task types (e.g. "add auth", "fix sidebar tests") but often pull in unrelated sessions for novel or cross-cutting work. Treat file suggestions as a sanity check, not a reading list.'
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: /* @__PURE__ */ u4("code", { style: codeStyle, children: "get_session_detail" }) }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: [
+              "Returns the full timeline for one session by ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "sessionId" }),
+              " \u2014 every LLM call and tool call with timing, errors, and file edits. Use ",
+              /* @__PURE__ */ u4("code", { style: codeStyle, children: "get_recent_sessions" }),
+              " first to get a session ID."
+            ] })
+          ] }),
+          /* @__PURE__ */ u4("div", { class: "glossary-item", style: "flex-direction:column;gap:2px", children: [
+            /* @__PURE__ */ u4("dt", { class: "glossary-term", children: /* @__PURE__ */ u4("code", { style: codeStyle, children: "get_efficiency_report" }) }),
+            /* @__PURE__ */ u4("dd", { class: "glossary-def", style: "display:block", children: "Trend analysis over the last N days (default 30): cost trend (increasing/stable/decreasing), average cost and turns, error rate, agent/model ranking by cost efficiency, and most frequent loop signals with their occurrence rate." })
+          ] })
+        ] }),
+        /* @__PURE__ */ u4("h4", { style: subHeadStyle, children: "Example prompts" }),
+        /* @__PURE__ */ u4("pre", { style: preStyle, children: `# Always useful \u2014 run these before any task:
+Use agentlens get_recent_sessions to see what was worked on recently.
+Use agentlens get_workspace_patterns to see recurring problems and known traps.
+
+# Worth running when task keywords match established workflows:
+Use agentlens find_relevant_context with task="add OAuth to the auth module"
+to see what files similar sessions touched and what they typically cost.
+(Skip this for new feature work \u2014 keyword matching won't find good matches.)
+
+# To check efficiency trends over time:
+Use agentlens get_efficiency_report to see if sessions are getting more or
+less expensive, and which loop signals keep recurring.` })
+      ] })
+    ] });
+  }
   function ExportSection() {
     return /* @__PURE__ */ u4("div", { class: "help-section", id: "help-export", children: [
       /* @__PURE__ */ u4("h3", { class: "help-heading", children: HELP_SECTIONS.export.heading }),
@@ -5661,6 +5774,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
       /* @__PURE__ */ u4(SessionsSection, {}),
       /* @__PURE__ */ u4(AnalyticsSection, {}),
       /* @__PURE__ */ u4(SettingsSection, {}),
+      /* @__PURE__ */ u4(McpSection, {}),
       /* @__PURE__ */ u4(ExportSection, {}),
       /* @__PURE__ */ u4(BadgesSection, {}),
       /* @__PURE__ */ u4(GlossarySection, {}),
@@ -6261,11 +6375,41 @@ Aim to reach a clear stopping point or completion within the next 2-3 steps.`;
               }
             )
           ] }),
+          vscode && /* @__PURE__ */ u4(McpToggle, {}),
           /* @__PURE__ */ u4(CollapsibleSection, { title: "Alerts", children: /* @__PURE__ */ u4(Alerts, {}) }),
           /* @__PURE__ */ u4(CollapsibleSection, { title: "Automation", children: /* @__PURE__ */ u4(Automation, {}) })
         ]
       }
     );
+  }
+  function McpToggle() {
+    const initial = typeof window.__MCP_ENABLED__ === "boolean" ? window.__MCP_ENABLED__ : true;
+    const port = typeof window.__MCP_PORT__ === "number" ? window.__MCP_PORT__ : 4316;
+    const [enabled, setEnabled] = d2(initial);
+    function toggle() {
+      const next = !enabled;
+      setEnabled(next);
+      vscode?.postMessage({ type: "setVsCodeConfig", key: "enableMcpServer", value: next });
+    }
+    return /* @__PURE__ */ u4("div", { style: "padding:12px 16px;border-bottom:1px solid var(--border)", children: [
+      /* @__PURE__ */ u4("div", { style: "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px", children: [
+        /* @__PURE__ */ u4("span", { style: "font-size:12px;font-weight:600;color:var(--fg)", children: "MCP Server" }),
+        /* @__PURE__ */ u4("label", { class: "toggle-switch", style: "margin:0", children: [
+          /* @__PURE__ */ u4("input", { type: "checkbox", checked: enabled, onChange: toggle }),
+          /* @__PURE__ */ u4("span", { class: "toggle-track", children: /* @__PURE__ */ u4("span", { class: "toggle-thumb" }) }),
+          /* @__PURE__ */ u4("span", { class: "toggle-label" + (enabled ? " on" : ""), children: enabled ? "Enabled" : "Disabled" })
+        ] })
+      ] }),
+      enabled && /* @__PURE__ */ u4("div", { style: "font-size:11px;color:var(--muted)", children: [
+        "Listening at ",
+        /* @__PURE__ */ u4("code", { style: "font-size:10px;background:var(--card-bg);padding:1px 4px;border-radius:3px", children: [
+          "http://localhost:",
+          port,
+          "/mcp"
+        ] })
+      ] }),
+      /* @__PURE__ */ u4("div", { style: "font-size:10px;color:var(--muted);margin-top:4px", children: "Restart VS Code to apply changes." })
+    ] });
   }
   var SEV_COLOR = {
     error: "#f44747",

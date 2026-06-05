@@ -44,6 +44,7 @@ const HELP_SECTIONS = {
   sessions:   { href: '#help-sessions',   heading: 'Sessions' },
   analytics:  { href: '#help-analytics',  heading: 'Analytics' },
   settings:   { href: '#help-settings',   heading: 'Settings' },
+  mcp:        { href: '#help-mcp',        heading: 'Agent Integration' },
   export:     { href: '#help-export',     heading: 'Export' },
   badges:     { href: '#help-badges',     heading: 'Badges' },
   glossary:   { href: '#help-glossary',   heading: 'Glossary' },
@@ -565,6 +566,81 @@ function SettingsSection() {
   )
 }
 
+function McpSection() {
+  const standalone = window.__STANDALONE__ === true
+  const mcpUrl = 'http://localhost:4316/mcp'
+  const settingsJson = JSON.stringify({ mcpServers: { agentlens: { url: mcpUrl } } }, null, 2)
+  const claudeMd = `# AgentLens MCP
+Before any task: call get_recent_sessions (recent work + cost) and get_workspace_patterns (hot files, recurring issues).
+Only use find_relevant_context if your task closely matches past prompts by keyword — skip it for novel tasks.`
+
+  return (
+    <div class="help-section" id="help-mcp">
+      <h3 class="help-heading">{HELP_SECTIONS.mcp.heading}</h3>
+      <div class="help-overview-body">
+        <p>AgentLens runs an MCP server that gives Claude Code direct access to your session history. Instead of checking the dashboard yourself, Claude can query its own past work — loading the files it usually needs before making its first tool call, estimating what a task will cost, and flagging patterns that have caused problems before.</p>
+
+        <h4 style={subHeadStyle}>Step 1 — Confirm the MCP server is running</h4>
+        <p style={mutedP}>
+          {standalone
+            ? <>The standalone server starts a dedicated MCP server on port 4316 automatically — no extra setup needed. Endpoint: <a href={mcpUrl} target="_blank" rel="noreferrer" style={codeStyle}>{mcpUrl}</a>.</>
+            : <>The VS Code extension starts an MCP server on port 4316 by default when AgentLens activates. To disable it, set <code style={codeStyle}>agentLens.enableMcpServer</code> to <code style={codeStyle}>false</code> in VS Code settings. To change the port, set <code style={codeStyle}>agentLens.mcpPort</code>.</>
+          }
+        </p>
+        <p style={mutedP}>Verify it's up by opening <a href={mcpUrl} target="_blank" rel="noreferrer" style={codeStyle}>{mcpUrl}</a> in a browser — you should see <code style={codeStyle}>{`{"status":"ok","server":"agentlens-mcp",...}`}</code>. If the page doesn't load, the server isn't running.</p>
+
+        <h4 style={subHeadStyle}>Step 2 — Configure Claude Code</h4>
+        <p style={mutedP}>Add the following to <code style={codeStyle}>~/.claude/settings.json</code> (create the file if it doesn't exist):</p>
+        <pre style={preStyle}>{settingsJson}</pre>
+        <p style={mutedP}>If you use the VS Code extension, the <code style={codeStyle}>contributes.mcpServers</code> entry in AgentLens's manifest may configure this automatically — check your Claude Code MCP settings to confirm.</p>
+
+        <h4 style={subHeadStyle}>Step 3 — Add to CLAUDE.md (optional but recommended)</h4>
+        <p style={mutedP}>Add a block like this to your project's <code style={codeStyle}>CLAUDE.md</code> so Claude automatically uses AgentLens at the start of each session. The block is intentionally brief — every line in CLAUDE.md is loaded into the context window on every call, so keeping it short avoids unnecessary token spend.</p>
+        <pre style={preStyle}>{claudeMd}</pre>
+
+        <h4 style={subHeadStyle}>Available tools</h4>
+        <div class="glossary">
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term"><code style={codeStyle}>get_recent_sessions</code></dt>
+            <dd class="glossary-def" style="display:block">Returns recent session summaries sorted newest-first: cost, turn count, model, prompt excerpt, top tools used, and any loop signals triggered. Optional filters: <code style={codeStyle}>limit</code> (default 10), <code style={codeStyle}>agent</code> (copilot | claude_code | codex).</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term"><code style={codeStyle}>get_workspace_patterns</code></dt>
+            <dd class="glossary-def" style="display:block">Aggregate patterns across all sessions: the files accessed most often (ranked by % of sessions), average cost and turn count, top tools, and recurring loop signal types. Optional filter: <code style={codeStyle}>days</code> to limit to recent sessions.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term"><code style={codeStyle}>find_relevant_context</code></dt>
+            <dd class="glossary-def" style="display:block">Given a <code style={codeStyle}>task</code> description, keyword-matches against past session prompts and returns: files accessed in similar sessions (with frequency %), estimated cost and turn count range, and known traps (loop signals that appeared in similar sessions). <strong>Important:</strong> matching is keyword-based, not semantic — results are reliable for well-established task types (e.g. "add auth", "fix sidebar tests") but often pull in unrelated sessions for novel or cross-cutting work. Treat file suggestions as a sanity check, not a reading list.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term"><code style={codeStyle}>get_session_detail</code></dt>
+            <dd class="glossary-def" style="display:block">Returns the full timeline for one session by <code style={codeStyle}>sessionId</code> — every LLM call and tool call with timing, errors, and file edits. Use <code style={codeStyle}>get_recent_sessions</code> first to get a session ID.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term"><code style={codeStyle}>get_efficiency_report</code></dt>
+            <dd class="glossary-def" style="display:block">Trend analysis over the last N days (default 30): cost trend (increasing/stable/decreasing), average cost and turns, error rate, agent/model ranking by cost efficiency, and most frequent loop signals with their occurrence rate.</dd>
+          </div>
+        </div>
+
+        <h4 style={subHeadStyle}>Example prompts</h4>
+        <pre style={preStyle}>{`# Always useful — run these before any task:
+Use agentlens get_recent_sessions to see what was worked on recently.
+Use agentlens get_workspace_patterns to see recurring problems and known traps.
+
+# Worth running when task keywords match established workflows:
+Use agentlens find_relevant_context with task="add OAuth to the auth module"
+to see what files similar sessions touched and what they typically cost.
+(Skip this for new feature work — keyword matching won't find good matches.)
+
+# To check efficiency trends over time:
+Use agentlens get_efficiency_report to see if sessions are getting more or
+less expensive, and which loop signals keep recurring.`}</pre>
+
+      </div>
+    </div>
+  )
+}
+
 function ExportSection() {
   return (
     <div class="help-section" id="help-export">
@@ -664,6 +740,7 @@ export function Help() {
       <SessionsSection />
       <AnalyticsSection />
       <SettingsSection />
+      <McpSection />
       <ExportSection />
       <BadgesSection />
       <GlossarySection />
