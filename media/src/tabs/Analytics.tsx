@@ -20,7 +20,7 @@ function SectionHead({ title, tip, first }: { title: string; tip?: string; first
   return (
     <h3
       class={tip ? 'has-metric-tip' : undefined}
-      style={`margin:${first ? '0' : '16px'} 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px`}
+      style={`margin:${first ? '8px' : '16px'} 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px`}
       data-tip={tip}
     >{title}</h3>
   )
