@@ -247,6 +247,15 @@ export async function activate(context: vscode.ExtensionContext) {
       }
       if (allFiles.length === 0) { onAllDone?.(); return }
 
+      const AGENT_KEY_LABEL: Record<string, string> = {
+        claude:              'Claude Code',
+        codex:               'Codex',
+        copilot:             'Copilot CLI',
+        copilot_vscode:      'Copilot (VS Code)',
+        copilot_vscode_json: 'Copilot (VS Code)',
+      }
+      const countByKey = new Map<string, number>()
+
       const processGroup = (
         files: typeof allFiles,
         batchSize: number,
@@ -259,7 +268,12 @@ export async function activate(context: vscode.ExtensionContext) {
           for (let i = idx; i < Math.min(idx + batchSize, files.length); i++) {
             try {
               const result = lr.parseFile(files[i].filePath, files[i].agentKey)
-              if (result) { writer!.enqueue(result.card, result.workspace || ws); written++ }
+              if (result) {
+                writer!.enqueue(result.card, result.workspace || ws)
+                const dk = files[i].agentKey === 'copilot_vscode_json' ? 'copilot_vscode' : files[i].agentKey
+                countByKey.set(dk, (countByKey.get(dk) ?? 0) + 1)
+                written++
+              }
             } catch { /* skip bad file */ }
           }
           if (written > 0) {
@@ -287,6 +301,14 @@ export async function activate(context: vscode.ExtensionContext) {
         // Slow-pass: legacy .json snapshots loaded at low priority after fast pass completes.
         processGroup(slowFiles, 2, 50, () => {
           writeLastWriteSignal(context.globalStorageUri)
+          const total = [...countByKey.values()].reduce((s, n) => s + n, 0)
+          if (total > 0) {
+            const breakdown = [...countByKey.entries()]
+              .sort((a, b) => b[1] - a[1])
+              .map(([k, n]) => `${AGENT_KEY_LABEL[k] ?? k}: ${n}`)
+              .join(', ')
+            outputChannel!.appendLine(`[AgentLens] Loaded ${total} sessions from local logs (${breakdown})`)
+          }
           onAllDone?.()
         })
       })
