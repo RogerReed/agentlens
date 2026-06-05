@@ -6,9 +6,12 @@ node_modules
 *.vsix
 standalone/server.js
 standalone/server.js.map
+standalone/cli.js
 standalone/cli.js.map
+media/dashboard.js
 media/dashboard.js.map
 media/dashboard.css.map
+media/sidebar.js
 media/sidebar.js.map
 # Captured fixture files contain real telemetry — opt-in to commit specific ones
 demo/fixtures/*.json
