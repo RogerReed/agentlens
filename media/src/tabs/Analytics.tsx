@@ -93,11 +93,11 @@ export function Analytics() {
   const timeOrdered = rangedSessions.value
   const pricedChartSess = timeOrdered.filter(s => s.source === 'copilot' || s.source === 'codex' || s.source === 'claude_code')
 
-  // rangedSessions: time-range + agent filtered, with correct in-memory fallback while DB results load
-  const chartSessions = timeOrdered.slice().reverse()
+  // Most recent CHART_MAX sessions (newest-first slice, then reversed to oldest-first for charts)
+  const chartSessions = timeOrdered.slice(0, CHART_MAX).reverse()
 
   // Load timelines for context growth chart
-  chartSessions.slice(0, CHART_MAX).forEach(sess => {
+  chartSessions.forEach(sess => {
     if (!sessionTimelines.value[sess.sessionId] && vscode) {
       vscode.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
     }
@@ -323,7 +323,7 @@ export function Analytics() {
 
       {/* Context growth */}
       <SectionHead title="CONTEXT GROWTH" />
-      <ContextGrowthChart sessions={chartSessions.slice(0, CHART_MAX)} timelines={timelines} />
+      <ContextGrowthChart sessions={chartSessions} timelines={timelines} />
 
       {/* Token usage per session */}
       <SectionHead title="TOKEN USAGE PER SESSION" />

@@ -308,7 +308,7 @@ export function ContextGrowthChart({ sessions, timelines }: { sessions: SessionS
             <button style={btnStyle} onClick={stepPrev} title="Previous session">◀</button>
             <button style={btnStyle} onClick={stepNext} title="Next session">▶</button>
           </div>
-          <span style="font-size:10px;color:var(--muted)">{seriesCount} of {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
+          <span style="font-size:10px;color:var(--muted)">most recent {seriesCount} of {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
         </div>
       )}
       <div style="text-align:center;font-size:9px;color:var(--muted);margin-top:4px">
