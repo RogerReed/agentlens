@@ -367,7 +367,7 @@ export function Sessions() {
   const thMuted = thBase + ';color:var(--muted);font-weight:500'
 
   return (
-    <div id="sessions-content">
+    <div id="sessions-content" style="padding-top:8px">
       <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:11px">
         <thead>

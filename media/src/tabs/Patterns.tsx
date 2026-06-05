@@ -427,7 +427,7 @@ export function Patterns() {
   const divider = <div style="border-top:1px solid var(--border);margin:4px 0" />
 
   return (
-    <div id="patterns-content" style="display:flex;flex-direction:column;gap:20px">
+    <div id="patterns-content" style="display:flex;flex-direction:column;gap:20px;padding-top:8px">
       <section>
         <h3 style={sectionHead}>Efficiency Map</h3>
         <EfficiencyMap sessions={sessions} />

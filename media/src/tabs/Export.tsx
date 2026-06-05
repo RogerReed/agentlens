@@ -34,7 +34,7 @@ export function Export() {
     <div id="export-content">
       <div class="export-meta">
         {sessionCount} session{sessionCount !== 1 ? 's' : ''}
-        {standalone && <span class="export-meta-mode"> · browser download</span>}
+        {standalone && null}
         {!standalone && <span class="export-meta-mode"> · written to workspace root</span>}
       </div>
 
