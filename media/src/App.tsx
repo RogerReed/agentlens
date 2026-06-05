@@ -101,12 +101,9 @@ function ConfigPanel() {
 }
 
 function McpToggle() {
-  const initial = typeof (window as Record<string, unknown>).__MCP_ENABLED__ === 'boolean'
-    ? (window as Record<string, unknown>).__MCP_ENABLED__ as boolean
-    : true
-  const port = typeof (window as Record<string, unknown>).__MCP_PORT__ === 'number'
-    ? (window as Record<string, unknown>).__MCP_PORT__ as number
-    : 4316
+  const w = window as unknown as Record<string, unknown>
+  const initial = typeof w.__MCP_ENABLED__ === 'boolean' ? w.__MCP_ENABLED__ as boolean : true
+  const port    = typeof w.__MCP_PORT__    === 'number'  ? w.__MCP_PORT__    as number  : 4316
   const [enabled, setEnabled] = useState(initial)
 
   function toggle() {
