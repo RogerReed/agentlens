@@ -127,7 +127,7 @@ function handleGetRecentSessions(
 ) {
   let filtered = sessions
   if (args.agent)     filtered = filtered.filter(s => s.source === args.agent)
-  if (args.workspace) filtered = filtered.filter(s => s.userRequest?.includes(args.workspace!) || true)
+  if (args.workspace) filtered = filtered.filter(s => s.sessionId.includes(args.workspace!) || (s.userRequest ?? '').includes(args.workspace!))
   const limit = Math.min(args.limit ?? 10, 50)
   const top = filtered.slice(0, limit)
   return top.map(s => ({
