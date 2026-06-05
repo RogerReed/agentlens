@@ -89,7 +89,7 @@ function ConfigPanel() {
           title="Close (Esc)"
         >×</button>
       </div>
-      {vscode && <McpToggle />}
+      <McpToggle />
       <CollapsibleSection title="Alerts">
         <Alerts />
       </CollapsibleSection>
@@ -130,7 +130,7 @@ function McpToggle() {
           Listening at <code style="font-size:10px;background:var(--card-bg);padding:1px 4px;border-radius:3px">http://localhost:{port}/mcp</code>
         </div>
       )}
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">Restart VS Code to apply changes.</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">{vscode ? 'Restart VS Code to apply changes.' : 'Restart the server to apply changes.'}</div>
     </div>
   )
 }
