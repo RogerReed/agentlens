@@ -214,6 +214,10 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
       .map(s => getFirstAttr(s, ['conversation.id', 'conversation_id', 'codex.conversation.id']))
       .find(v => v && v.length > 10)
 
+    const workspace = traceSpans
+      .map(s => getFirstAttr(s, ['cwd']))
+      .find(v => v && v.startsWith('/')) || ''
+
     const startMs = rootSpan
       ? (nanoToMs(rootSpan.startTime) || rootSpan.receivedAt || 0)
       : (traceSpans[0]?.receivedAt ?? 0)
@@ -251,7 +255,7 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
       source: 'codex' as const,
       dataSource: 'otel' as const,
       conversationId: conversationId || undefined,
-      workspace: '',
+      workspace,
       userRequest,
       model,
       turns: totalLlmCalls,
