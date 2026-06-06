@@ -447,7 +447,9 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   const range = timeRange.value
   const agent = selectedAgentFilter.value
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const responseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [loading, setLoading] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
   const tab = normalizeTabId(activeTab.value)
   const showReset = tab !== 'help'
 
@@ -477,16 +479,30 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
     if (r.preset === 'all') {
       rangedSearchResults.value = null
       setLoading(false)
+      setSearchError(null)
+      if (responseTimeout.current) clearTimeout(responseTimeout.current)
+      return
+    }
+    const ext = vscode
+    if (!ext) {
+      setSearchError('Extension offline — time range filtering unavailable')
+      setLoading(false)
       return
     }
     setLoading(true)
+    setSearchError(null)
     if (debounce.current) clearTimeout(debounce.current)
+    if (responseTimeout.current) clearTimeout(responseTimeout.current)
     debounce.current = setTimeout(() => {
-      vscode?.postMessage({
+      ext.postMessage({
         type: 'searchSessions',
         query: { since: r.since, until: r.until, limit: CHART_MAX, orderBy: 'start_time', orderDir: 'DESC' },
         context: 'timeRange',
       })
+      responseTimeout.current = setTimeout(() => {
+        setLoading(false)
+        setSearchError('No response from extension')
+      }, 5000)
     }, 120)
   }
 
@@ -496,9 +512,13 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
     fireSearch(r)
   }
 
-  // Clear loading indicator when results arrive
+  // Clear loading indicator and timeout when results arrive
   useEffect(() => {
-    if (rangedSearchResults.value !== null) setLoading(false)
+    if (rangedSearchResults.value !== null) {
+      setLoading(false)
+      setSearchError(null)
+      if (responseTimeout.current) { clearTimeout(responseTimeout.current); responseTimeout.current = null }
+    }
   }, [rangedSearchResults.value])
 
   const count = rangedSessions.value.length
@@ -566,8 +586,9 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
         </>
       )}
 
-      {/* Loading indicator */}
-      {loading && <span style="margin-left:8px;font-size:10px;color:var(--muted);opacity:0.6">loading…</span>}
+      {/* Loading / error indicator */}
+      {loading && !searchError && <span style="margin-left:8px;font-size:10px;color:var(--muted);opacity:0.6">loading…</span>}
+      {searchError && <span style="margin-left:8px;font-size:10px;color:var(--vscode-errorForeground,#f48771)" title={searchError}>⚠ {searchError}</span>}
 
       {/* Refresh button for non-live ranges */}
       {isActive && !loading && (
