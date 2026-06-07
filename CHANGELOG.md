@@ -2,6 +2,27 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.6.1] — 2026-06-06
+
+### Added
+
+- **Workspace filter** — a project dropdown in the filter bar lets you scope every tab (Sessions, Analytics, Patterns, Cost) to a single workspace; selecting a project filters `agentFilteredSessions` → `rangedSessions` → `filteredSessions` so all charts and tables update together
+- **Project path on session rows** — each row in the Sessions tab shows the last two path components of the workspace (e.g. `dev/agentlens`), muted with a full-path tooltip; hidden when all visible sessions already belong to one project
+- **Cross-source workspace resolution** — OTEL sessions with no workspace borrow the workspace from a same-source log session that started within the same minute (±1 bucket), so Claude Code OTEL sessions get a project path even before they are persisted
+- **Codex workspace from `session_meta.cwd`** — Codex log sessions now read the workspace from the `session_meta.cwd` field rather than the date-named directory, matching what other sources report
+
+### Fixed
+
+- **Workspace filter in bounded time ranges** — `rangedSessions` was applying the workspace filter only to in-memory sessions; DB search results were passed through unfiltered, so Analytics charts showed sessions from all projects even when one was selected
+- **Live session workspace** — OTEL sessions in the live span window now carry a `workspace` field so the workspace dropdown and row label work for in-progress sessions, not just historical ones
+- **Time range offline error** — the time range picker immediately shows an error when the extension is not present (webview opened standalone), and falls back to an error after 5 s if the extension goes dark mid-session
+
+### Docs
+
+- **ARCHITECTURE.md** — workspace field flow section; updated signal graph and computed signal semantics for `workspaceFilter`, `availableWorkspaces`, and the workspace path in `SessionSummaryCard`
+
+---
+
 ## [0.6.0] — 2026-06-05
 
 ### Added
