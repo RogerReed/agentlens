@@ -3,6 +3,7 @@ import { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizerTypes
 import {
   getAttrStr, getAttrInt, nanoToMs, CLAUDE_WRITE_TOOLS,
   extractResponseText, extractTokenCounts, normalizeUserRequest, getGenAiModel,
+  commonPathPrefix,
 } from './helpers'
 
 function strOrUndef(v: unknown): string | undefined {
@@ -38,6 +39,7 @@ export function buildClaudeSessions(
     const filesRead = new Set<string>()
     const filesSearched = new Set<string>()
     const filesChanged = new Set<string>()
+    const allAbsFilePaths = new Set<string>()
     let missingChangedFilePathCalls = 0
 
     const timeline: TimelineEntry[] = topSpans.flatMap(child => {
@@ -161,6 +163,7 @@ export function buildClaudeSessions(
             const fp = args.file_path || args.filePath
             if (fp) {
               const fpStr = String(fp)
+              if (fpStr.startsWith('/')) { allAbsFilePaths.add(fpStr) }
               if (CLAUDE_WRITE_TOOLS.has(toolName)) {
                 filesChanged.add(fpStr)
                 foundChangedPath = true
@@ -180,7 +183,9 @@ export function buildClaudeSessions(
               for (const e of args.edits as Array<Record<string, unknown>>) {
                 const efp = e.file_path || e.filePath
                 if (efp) {
-                  filesChanged.add(String(efp))
+                  const efpStr = String(efp)
+                  if (efpStr.startsWith('/')) { allAbsFilePaths.add(efpStr) }
+                  filesChanged.add(efpStr)
                   foundChangedPath = true
                   toolEditDetails.push({
                     filePath: String(efp),
@@ -197,6 +202,7 @@ export function buildClaudeSessions(
         if (!foundChangedPath) {
           const directFp = getAttrStr(child, 'file_path')
           if (directFp) {
+            if (directFp.startsWith('/')) { allAbsFilePaths.add(directFp) }
             if (CLAUDE_WRITE_TOOLS.has(toolName)) {
               filesChanged.add(directFp)
               foundChangedPath = true
@@ -266,15 +272,22 @@ export function buildClaudeSessions(
         fp = trArgsStr.trim()
       }
       if (fp) {
+        if (fp.startsWith('/')) { allAbsFilePaths.add(fp) }
         if (CLAUDE_WRITE_TOOLS.has(trToolName)) { filesChanged.add(fp) }
         else if (trToolName === 'Read') { filesRead.add(fp.split('/').pop() || fp) }
         else if (trToolName === 'Glob' || trToolName === 'Grep') { filesSearched.add(fp) }
       }
       for (const e of multiEdits) {
         const efp = e.file_path || e.filePath
-        if (efp) { filesChanged.add(String(efp)) }
+        if (efp) {
+          const efpStr = String(efp)
+          if (efpStr.startsWith('/')) { allAbsFilePaths.add(efpStr) }
+          filesChanged.add(efpStr)
+        }
       }
     }
+
+    const workspace = commonPathPrefix([...allAbsFilePaths])
 
     const startMs = nanoToMs(interaction.startTime)
     const totalInput = inputTokens + cacheReadTokens + cacheCreateTokens
@@ -304,6 +317,7 @@ export function buildClaudeSessions(
       source: 'claude_code' as const,
       dataSource: 'otel' as const,
       initiator: (interaction.parentSpanId || getAttrStr(interaction, 'is_sidechain') === 'true') ? 'agent' as const : 'user' as const,
+      workspace,
       userRequest,
       model,
       turns: totalLlmCalls,

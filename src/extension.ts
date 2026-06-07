@@ -134,7 +134,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const { sessions } = summarizeSpans(store!.getSpans())
         const card = sessions.find(s => s.traceId === traceId)
         if (card && !card.sessionId.startsWith('synth-')) {
-          const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.toString() ?? ''
+          const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? ''
           writer.deleteSynthSession(card.traceId)
           writer.enqueue(card, workspace)
           // After drain, save DB to disk and write the cross-window signal.

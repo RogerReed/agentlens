@@ -381,7 +381,7 @@ graph TB
         CX_PROMPT --> CX_TOOL
     end
 
-    CP_ROOT & CC_ROOT & CX_PROMPT --> CARD["SessionSummaryCard<br/>source · model · turns<br/>tokens · cacheHitRate<br/>timeline: TimelineEntry[]<br/>filesRead/Changed/Searched<br/>toolCounts · errors · outcome"]
+    CP_ROOT & CC_ROOT & CX_PROMPT --> CARD["SessionSummaryCard<br/>source · model · turns<br/>workspace · projectPath?<br/>tokens · cacheHitRate<br/>timeline: TimelineEntry[]<br/>filesRead/Changed/Searched<br/>toolCounts · errors · outcome"]
 ```
 
 ---
@@ -399,6 +399,7 @@ erDiagram
         TEXT trace_id
         TEXT source
         TEXT workspace
+        TEXT project_path
         TEXT model
         INTEGER start_time
         INTEGER duration_ms
@@ -566,6 +567,8 @@ classDiagram
         +source: copilot, claude_code, codex
         +dataSource: otel, log
         +conversationId?: string
+        +workspace: string
+        +projectPath?: string
         +userRequest: string
         +model: string
         +turns: number
@@ -669,6 +672,7 @@ graph TD
     subgraph uicontrols["UI controls"]
         SIG_LIM[sessionLimit<br/>number, default 10]
         SIG_AGT[selectedAgentFilter<br/>AgentFilter, default all]
+        SIG_WS[workspaceFilter<br/>WorkspaceFilter, default all]
         SIG_TAB[activeTab<br/>string, default sessions]
         SIG_TF[sessionTextFilter<br/>string]
         SIG_SK[sessionSortKey<br/>start_time · total_tokens · duration_ms<br/>errors · prompt · model · source · cost]
@@ -679,7 +683,8 @@ graph TD
     end
 
     subgraph Computed
-        COMP_AF[agentFilteredSessions<br/>computed — filter by source]
+        COMP_AF[agentFilteredSessions<br/>computed — filter by source + workspace]
+        COMP_AWS[availableWorkspaces<br/>computed — unique workspace paths]
         COMP_DISP[displaySessions<br/>computed — last N sessions]
         COMP_RS[rangedSessions<br/>computed — time range + DB merge]
         COMP_FS[filteredSessions<br/>computed — text filter + sort]
@@ -688,6 +693,8 @@ graph TD
 
     SIG_SUM --> COMP_AF
     SIG_AGT --> COMP_AF
+    SIG_WS --> COMP_AF
+    SIG_SUM --> COMP_AWS
     COMP_AF --> COMP_DISP
     SIG_LIM --> COMP_DISP
     COMP_AF --> COMP_RS
@@ -712,10 +719,13 @@ graph TD
 
 **Key computed signal semantics:**
 
-- `agentFilteredSessions` — all in-memory sessions filtered by the selected agent pill. No limit applied.
+- `agentFilteredSessions` — all in-memory sessions filtered by agent pill, data source, and workspace dropdown. No limit applied. This is the root filter — all downstream computeds derive from it, so the workspace filter automatically scopes every tab.
+- `availableWorkspaces` — sorted list of unique workspace paths from all loaded sessions. Drives the workspace dropdown options.
 - `displaySessions` — `agentFilteredSessions` sliced to `sessionLimit` (most recent N). Used for the Sessions table.
 - `rangedSessions` — for bounded presets (7d/30d/…): merges `rangedSearchResults` (DB) with in-memory sessions that fall in the window. For "All": returns `agentFilteredSessions` directly.
 - `filteredSessions` — `rangedSessions` with text filter and sort applied. Used by Sessions table, Insights, and Efficiency charts within Analytics. Analytics charts that must stay time-ordered (ESTIMATED COST, TOKEN USAGE PER SESSION, CONTEXT GROWTH) source from `rangedSessions` directly.
+
+**Workspace field flow:** `workspace` is stored in the `sessions` SQLite table (always present, `NOT NULL`). `project_path` is an optional secondary path some OTEL exporters populate. Both are mapped by `DatabaseReader.listSessions` into `SessionSummaryCard`. For OTEL-sourced sessions, `workspace` is stamped onto the card by `DatabaseWriter.enqueue` (the summarizers produce `workspace: ''` as a placeholder). For log-sourced sessions, `_buildCard` receives and records the workspace at parse time.
 
 ### Tab component overview
 

@@ -9,6 +9,40 @@ import type { SessionSummaryCard, TimelineEntry } from './summarizers/summarizer
 export type { DailyStatRow, LifetimeStats, SearchQuery, BurnRate, Projection }
 
 /**
+ * For OTEL sessions missing workspace: look for a log session of the same source
+ * that started within the same minute and borrow its workspace. Uses 1-minute
+ * buckets keyed by source+bucket; if two log sessions in the same bucket have
+ * different workspaces the entry is marked ambiguous and skipped.
+ */
+export function resolveWorkspacesFromLogs(sessions: SessionSummaryCard[]): void {
+  // null sentinel = ambiguous (two different workspaces in the same bucket)
+  const wsMap = new Map<string, string | null>()
+  for (const s of sessions) {
+    if (!s.workspace || s.dataSource !== 'log') { continue }
+    const t = Date.parse(s.startTime)
+    if (!t) { continue }
+    const bucket = Math.floor(t / 60000)
+    for (const b of [bucket - 1, bucket, bucket + 1]) {
+      const key = `${s.source}:${b}`
+      const existing = wsMap.get(key)
+      if (existing === undefined) {
+        wsMap.set(key, s.workspace)
+      } else if (existing !== s.workspace) {
+        wsMap.set(key, null)
+      }
+    }
+  }
+  for (const s of sessions) {
+    if (s.workspace || s.dataSource !== 'otel') { continue }
+    const t = Date.parse(s.startTime)
+    if (!t) { continue }
+    const bucket = Math.floor(t / 60000)
+    const ws = wsMap.get(`${s.source}:${bucket}`)
+    if (ws) { s.workspace = ws }
+  }
+}
+
+/**
  * Merges historical sessions from SQLite with live sessions from the in-memory
  * span window. Live sessions always win on conflict (same sessionId) — they are
  * fresher. Result is sorted by startTime DESC.
@@ -45,6 +79,7 @@ export class SessionRepository {
     const liveSpans = this.store.getSpans()
     const liveSessions = liveSpans.length > 0 ? summarizeSpans(liveSpans).sessions : []
     const merged = mergeSessions(dbSessions, liveSessions)
+    resolveWorkspacesFromLogs(merged)
     if (filter?.limit != null && merged.length > filter.limit) {
       return merged.slice(0, filter.limit)
     }

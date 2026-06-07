@@ -10,8 +10,9 @@ import {
   vscode, displaySessions, rangedSessions,
   sessionTextFilter, filteredSessions,
   sessionSortKey, sessionSortDir, type SortKey,
+  workspaceFilter, availableWorkspaces, shortWorkspaceName,
 } from './state'
-import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
+import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, WorkspaceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
 
 // Tab components
 import { Sessions } from './tabs/Sessions'
@@ -446,7 +447,9 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   const range = timeRange.value
   const agent = selectedAgentFilter.value
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const responseTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [loading, setLoading] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
   const tab = normalizeTabId(activeTab.value)
   const showReset = tab !== 'help'
 
@@ -454,6 +457,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
     selectedAgentFilter.value !== 'all' ||
     initiatorFilter.value !== 'all' ||
     dataSourceFilter.value !== 'all' ||
+    workspaceFilter.value !== 'all' ||
     sessionLimit.value !== 25 ||
     timeRange.value.preset !== 'all' ||
     sessionSortKey.value !== 'start_time' ||
@@ -464,6 +468,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
     selectedAgentFilter.value = 'all'
     initiatorFilter.value = 'all'
     dataSourceFilter.value = 'all'
+    workspaceFilter.value = 'all'
     sessionLimit.value = 25
     timeRange.value = { preset: 'all' }
     sessionSortKey.value = 'start_time'
@@ -474,16 +479,30 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
     if (r.preset === 'all') {
       rangedSearchResults.value = null
       setLoading(false)
+      setSearchError(null)
+      if (responseTimeout.current) clearTimeout(responseTimeout.current)
+      return
+    }
+    const ext = vscode
+    if (!ext) {
+      setSearchError('Extension offline — time range filtering unavailable')
+      setLoading(false)
       return
     }
     setLoading(true)
+    setSearchError(null)
     if (debounce.current) clearTimeout(debounce.current)
+    if (responseTimeout.current) clearTimeout(responseTimeout.current)
     debounce.current = setTimeout(() => {
-      vscode?.postMessage({
+      ext.postMessage({
         type: 'searchSessions',
         query: { since: r.since, until: r.until, limit: CHART_MAX, orderBy: 'start_time', orderDir: 'DESC' },
         context: 'timeRange',
       })
+      responseTimeout.current = setTimeout(() => {
+        setLoading(false)
+        setSearchError('No response from extension')
+      }, 5000)
     }, 120)
   }
 
@@ -493,9 +512,13 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
     fireSearch(r)
   }
 
-  // Clear loading indicator when results arrive
+  // Clear loading indicator and timeout when results arrive
   useEffect(() => {
-    if (rangedSearchResults.value !== null) setLoading(false)
+    if (rangedSearchResults.value !== null) {
+      setLoading(false)
+      setSearchError(null)
+      if (responseTimeout.current) { clearTimeout(responseTimeout.current); responseTimeout.current = null }
+    }
   }, [rangedSearchResults.value])
 
   const count = rangedSessions.value.length
@@ -563,8 +586,9 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
         </>
       )}
 
-      {/* Loading indicator */}
-      {loading && <span style="margin-left:8px;font-size:10px;color:var(--muted);opacity:0.6">loading…</span>}
+      {/* Loading / error indicator */}
+      {loading && !searchError && <span style="margin-left:8px;font-size:10px;color:var(--muted);opacity:0.6">loading…</span>}
+      {searchError && <span style="margin-left:8px;font-size:10px;color:var(--vscode-errorForeground,#f48771)" title={searchError}>⚠ {searchError}</span>}
 
       {/* Refresh button for non-live ranges */}
       {isActive && !loading && (
@@ -621,6 +645,48 @@ function FilterPills<T extends string>({ options, value, onChange }: {
   )
 }
 
+function WorkspaceDropdown() {
+  const current = workspaceFilter.value
+  const workspaces = availableWorkspaces.value
+  if (workspaces.length <= 1) return null
+
+  // Compute display labels — disambiguate if two workspaces share the same 2-component name
+  const labels = workspaces.map(ws => shortWorkspaceName(ws))
+  const labelCounts = new Map<string, number>()
+  for (const l of labels) labelCounts.set(l, (labelCounts.get(l) ?? 0) + 1)
+  const displayLabel = (ws: string, idx: number): string => {
+    const short = labels[idx]
+    if ((labelCounts.get(short) ?? 0) > 1) {
+      const parts = ws.replace(/\\/g, '/').split('/').filter(Boolean)
+      return parts.length >= 3 ? parts.slice(-3).join('/') : ws
+    }
+    return short
+  }
+
+  const active = current !== 'all'
+  return (
+    <select
+      value={current}
+      onChange={e => { workspaceFilter.value = (e.target as HTMLSelectElement).value as WorkspaceFilter }}
+      title={current !== 'all' ? current : 'Filter by project'}
+      style={[
+        'padding:2px 5px;font-size:11px;cursor:pointer;border-radius:3px;max-width:160px;',
+        'background:var(--vscode-input-background,#3c3c3c);',
+        'border:1px solid ' + (active ? 'var(--accent,#4fc3f7)' : 'var(--vscode-input-border,#555)') + ';',
+        'color:' + (active ? 'var(--accent,#4fc3f7)' : 'var(--muted)') + ';',
+        'outline:none',
+      ].join('')}
+    >
+      <option value="all">All projects</option>
+      {workspaces.map((ws, i) => (
+        <option key={ws} value={ws} title={ws}>
+          {displayLabel(ws, i) || 'Unknown project'}
+        </option>
+      ))}
+    </select>
+  )
+}
+
 function SearchFilterBar() {
   const text = sessionTextFilter.value
   const iFilter = initiatorFilter.value
@@ -635,6 +701,7 @@ function SearchFilterBar() {
         onInput={e => { sessionTextFilter.value = (e.target as HTMLInputElement).value }}
         style="flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
       />
+      <WorkspaceDropdown />
       <span style="font-size:10px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">From</span>
       <FilterPills
         options={INITIATOR_FILTER_OPTIONS.map(o => ({ ...o, title: o.value === 'all' ? 'Show all sessions' : o.value === 'user' ? 'Human-typed prompts only' : o.value === 'agent' ? 'Agent-spawned sub-tasks only' : 'Non-interactive claude -p calls only' }))}

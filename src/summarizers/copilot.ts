@@ -164,6 +164,7 @@ export function buildCopilotSessions(
       dataSource: 'otel' as const,
       initiator: 'agent' as const,
       conversationId: conversationId || undefined,
+      workspace: '',
       userRequest: userReq,
       model,
       turns,

@@ -3,6 +3,7 @@ import {
   filteredSessions, sessionSummary, sessionTimelines, burnRateData,
   focusedSessionId, vscode, ignoredInsightKeys,
   sessionSortKey, sessionSortDir, type SortKey,
+  workspaceFilter, shortWorkspaceName,
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
@@ -239,7 +240,7 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
 
 // ── Table row ─────────────────────────────────────────────────────────────────
 
-function SessionRow({ sess }: { sess: SessionSummaryCard }) {
+function SessionRow({ sess, showWorkspace }: { sess: SessionSummaryCard; showWorkspace: boolean }) {
   const [expanded, setExpanded] = useState(false)
   const isFocused = focusedSessionId.value === sess.sessionId
   const rowRef = useRef<HTMLTableRowElement>(null)
@@ -281,9 +282,17 @@ function SessionRow({ sess }: { sess: SessionSummaryCard }) {
           <span dangerouslySetInnerHTML={{ __html: getInitiatorBadgeHtml(sess.initiator) }} />
         </td>
 
-        {/* Timestamp */}
+        {/* Timestamp + optional workspace label */}
         <td style="padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums">
           {formatSessionTime(sess)}
+          {showWorkspace && sess.workspace && (
+            <span
+              title={sess.workspace}
+              style="margin-left:5px;color:var(--muted);opacity:0.55;font-size:9px;overflow:hidden;text-overflow:ellipsis;max-width:110px;display:inline-block;vertical-align:middle"
+            >
+              {shortWorkspaceName(sess.workspace)}
+            </span>
+          )}
         </td>
 
         {/* Prompt */}
@@ -338,6 +347,9 @@ function SessionRow({ sess }: { sess: SessionSummaryCard }) {
 export function Sessions() {
   const sessions = filteredSessions.value
   const hasAny = (sessionSummary.value?.sessions?.length ?? 0) > 0
+  const wsFilter = workspaceFilter.value
+  const uniqueWorkspaces = new Set(sessions.map(s => s.workspace ?? ''))
+  const showWorkspace = wsFilter === 'all' && uniqueWorkspaces.size > 1
 
   if (sessions.length === 0) {
     return (
@@ -386,7 +398,7 @@ export function Sessions() {
         </thead>
         <tbody>
           {sessions.map(sess => (
-            <SessionRow key={sess.sessionId} sess={sess} />
+            <SessionRow key={sess.sessionId} sess={sess} showWorkspace={showWorkspace} />
           ))}
         </tbody>
       </table>

@@ -2,6 +2,23 @@ import { Span } from '../types'
 
 export const CLAUDE_WRITE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
 
+/** Returns the longest common directory prefix of a set of absolute file paths. */
+export function commonPathPrefix(paths: string[]): string {
+  const absPaths = paths.filter(p => p.startsWith('/'))
+  if (absPaths.length === 0) { return '' }
+  const split = absPaths.map(p => p.split('/').filter(Boolean))
+  const first = split[0]
+  let common = 0
+  for (let i = 0; i < first.length; i++) {
+    if (split.every(parts => parts[i] === first[i])) { common = i + 1 } else { break }
+  }
+  if (common === 0) { return '' }
+  // Don't return the full path if it points to a file (last segment has a dot)
+  const prefix = first.slice(0, common)
+  if (prefix[prefix.length - 1]?.includes('.')) { prefix.pop() }
+  return prefix.length > 0 ? '/' + prefix.join('/') : ''
+}
+
 export function getAttrStr(span: Span, key: string): string {
   const attr = span.attributes?.find(a => a.key === key)
   if (!attr) { return '' }
