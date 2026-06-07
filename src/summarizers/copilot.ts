@@ -178,6 +178,7 @@ export function buildCopilotSessions(
       filesRead: Array.from(filesRead),
       filesSearched: Array.from(filesSearched),
       filesChanged: Array.from(filesChanged),
+      filesWritten: [],
       toolCounts,
       totalToolCalls,
       totalLlmCalls,

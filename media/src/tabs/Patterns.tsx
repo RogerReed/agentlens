@@ -338,22 +338,24 @@ function CostTrend({ sessions }: { sessions: SessionSummaryCard[] }) {
 // ── Hot Files ─────────────────────────────────────────────────────────────────
 
 function HotFiles({ sessions }: { sessions: SessionSummaryCard[] }) {
-  const [mode, setMode] = useState<'read' | 'changed' | 'both'>('read')
+  const [mode, setMode] = useState<'read' | 'changed' | 'written' | 'both'>('read')
 
-  const fileMap = new Map<string, { read: number; changed: number; sessionCount: number; lastSeen: string }>()
+  const fileMap = new Map<string, { read: number; changed: number; written: number; sessionCount: number; lastSeen: string }>()
   for (const s of sessions) {
     const seen = new Set<string>()
     const files = mode === 'read'    ? (s.filesRead ?? [])
                 : mode === 'changed' ? (s.filesChanged ?? [])
+                : mode === 'written' ? (s.filesWritten ?? [])
                 : [...(s.filesRead ?? []), ...(s.filesChanged ?? [])]
     for (const f of files) {
       if (!seen.has(f)) {
         seen.add(f)
-        const e = fileMap.get(f) ?? { read: 0, changed: 0, sessionCount: 0, lastSeen: '' }
+        const e = fileMap.get(f) ?? { read: 0, changed: 0, written: 0, sessionCount: 0, lastSeen: '' }
         e.sessionCount++
-        // Always track read/changed counts regardless of mode so both columns are meaningful
+        // Always track all counts regardless of mode so columns stay meaningful across modes
         if (s.filesRead?.includes(f)) e.read++
         if (s.filesChanged?.includes(f)) e.changed++
+        if (s.filesWritten?.includes(f)) e.written++
         if (!e.lastSeen || s.startTime > e.lastSeen) e.lastSeen = s.startTime
         fileMap.set(f, e)
       }
@@ -371,6 +373,8 @@ function HotFiles({ sessions }: { sessions: SessionSummaryCard[] }) {
     ? <><strong style="color:var(--fg)">Read-heavy files</strong> are loaded into the agent's context window every session — the context window is the block of text sent to the model on each call, and every token in it costs money. Files read frequently mean the agent is spending tokens re-loading content it already needed last time. Documenting their purpose in your instructions file lets the agent orient itself without reading the whole file. Large files are especially costly — splitting them into smaller focused modules reduces how much fills the context window per session.</>
     : mode === 'changed'
     ? <><strong style="color:var(--fg)">Frequently changed files</strong> are your highest-churn surface area — the agent reads them into its context window, edits them, then often re-reads them to verify. Add guidance in your instructions file: what conventions to follow, what tests to run after edits, and what parts should not be modified without a specific reason. Clear constraints reduce back-and-forth and prevent the agent from undoing its own prior work.</>
+    : mode === 'written'
+    ? <><strong style="color:var(--fg)">Written files</strong> are those the agent replaced wholesale — using the Write or create_file tool rather than an incremental edit. High session counts here mean the agent repeatedly regenerated the same file from scratch. If a file appears in Written across many sessions, consider whether its structure is stable enough to edit incrementally, or whether its repeated re-creation signals unclear or conflicting instructions.</>
     : <><strong style="color:var(--fg)">Hot files</strong> are loaded into the agent's context window most often across sessions — every read costs tokens. Files with high Read counts are candidates for documentation in your instructions file so the agent doesn't need to re-read them raw. Files with high Changed counts are high-churn; add constraints and testing requirements. Large files that appear here are strong candidates for splitting into smaller focused modules to keep context window usage lean.</>
 
   return (
@@ -382,6 +386,7 @@ function HotFiles({ sessions }: { sessions: SessionSummaryCard[] }) {
         <span style="font-size:11px;color:var(--muted)">Show:</span>
         <button class={'tab-mini' + (mode === 'read'    ? ' active' : '')} onClick={() => setMode('read')}>Read</button>
         <button class={'tab-mini' + (mode === 'changed' ? ' active' : '')} onClick={() => setMode('changed')}>Changed</button>
+        <button class={'tab-mini' + (mode === 'written' ? ' active' : '')} onClick={() => setMode('written')}>Written</button>
         <button class={'tab-mini' + (mode === 'both'    ? ' active' : '')} onClick={() => setMode('both')}>Both</button>
       </div>
       <div style="overflow-x:auto">
@@ -392,11 +397,12 @@ function HotFiles({ sessions }: { sessions: SessionSummaryCard[] }) {
               <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap">Sessions</th>
               <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap" title="Sessions where the agent read this file">Read</th>
               <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap" title="Sessions where the agent modified this file">Changed</th>
+              <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap" title="Sessions where the agent fully wrote or created this file">Written</th>
               <th style="text-align:right;padding:4px 8px;color:var(--muted);font-weight:500;white-space:nowrap">Last seen</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
+            {rows.map((r) => (
               <tr key={r.file} style="border-bottom:1px solid var(--border)">
                 <td style="padding:4px 8px 4px 0;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title={r.file}>
                   <span style="color:var(--muted);font-size:10px">{r.file.replace(basename(r.file), '')}</span>
@@ -405,6 +411,7 @@ function HotFiles({ sessions }: { sessions: SessionSummaryCard[] }) {
                 <td style="padding:4px 8px;text-align:right;font-variant-numeric:tabular-nums">{r.sessionCount}</td>
                 <td style="padding:4px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">{r.read || '—'}</td>
                 <td style="padding:4px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">{r.changed || '—'}</td>
+                <td style="padding:4px 8px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums">{r.written || '—'}</td>
                 <td style="padding:4px 8px;text-align:right;color:var(--muted);white-space:nowrap;font-size:10px">{r.lastSeen ? r.lastSeen.slice(0, 10) : '—'}</td>
               </tr>
             ))}

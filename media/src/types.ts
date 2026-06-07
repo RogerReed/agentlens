@@ -78,6 +78,7 @@ export interface SessionSummaryCard {
   timeline: TimelineEntry[]
   backgroundSpans: BackgroundSpanSummary[]
   loopSignals: LoopSignal[]
+  filesWritten: string[]
 }
 
 export interface TimelineEntry {

@@ -1,7 +1,7 @@
 import { Span } from '../types'
 import { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizerTypes'
 import {
-  getAttrStr, getAttrInt, nanoToMs, CLAUDE_WRITE_TOOLS,
+  getAttrStr, getAttrInt, nanoToMs, CLAUDE_WRITE_TOOLS, FULL_WRITE_TOOLS,
   extractResponseText, extractTokenCounts, normalizeUserRequest, getGenAiModel,
   commonPathPrefix,
 } from './helpers'
@@ -39,6 +39,7 @@ export function buildClaudeSessions(
     const filesRead = new Set<string>()
     const filesSearched = new Set<string>()
     const filesChanged = new Set<string>()
+    const filesWritten = new Set<string>()
     const allAbsFilePaths = new Set<string>()
     let missingChangedFilePathCalls = 0
 
@@ -89,6 +90,7 @@ export function buildClaudeSessions(
                   if (fp) {
                     if (CLAUDE_WRITE_TOOLS.has(toolN)) {
                       filesChanged.add(fp)
+                      if (FULL_WRITE_TOOLS.has(toolN)) filesWritten.add(fp)
                       foundChangedPath = true
                       llmEditDetails.push({
                         filePath: fp,
@@ -166,6 +168,7 @@ export function buildClaudeSessions(
               if (fpStr.startsWith('/')) { allAbsFilePaths.add(fpStr) }
               if (CLAUDE_WRITE_TOOLS.has(toolName)) {
                 filesChanged.add(fpStr)
+                if (FULL_WRITE_TOOLS.has(toolName)) filesWritten.add(fpStr)
                 foundChangedPath = true
                 toolEditDetails.push({
                   filePath: fpStr,
@@ -205,6 +208,7 @@ export function buildClaudeSessions(
             if (directFp.startsWith('/')) { allAbsFilePaths.add(directFp) }
             if (CLAUDE_WRITE_TOOLS.has(toolName)) {
               filesChanged.add(directFp)
+              if (FULL_WRITE_TOOLS.has(toolName)) filesWritten.add(directFp)
               foundChangedPath = true
             } else if (toolName === 'Read') {
               filesRead.add(directFp.split('/').pop() || directFp)
@@ -273,8 +277,10 @@ export function buildClaudeSessions(
       }
       if (fp) {
         if (fp.startsWith('/')) { allAbsFilePaths.add(fp) }
-        if (CLAUDE_WRITE_TOOLS.has(trToolName)) { filesChanged.add(fp) }
-        else if (trToolName === 'Read') { filesRead.add(fp.split('/').pop() || fp) }
+        if (CLAUDE_WRITE_TOOLS.has(trToolName)) {
+          filesChanged.add(fp)
+          if (FULL_WRITE_TOOLS.has(trToolName)) filesWritten.add(fp)
+        } else if (trToolName === 'Read') { filesRead.add(fp.split('/').pop() || fp) }
         else if (trToolName === 'Glob' || trToolName === 'Grep') { filesSearched.add(fp) }
       }
       for (const e of multiEdits) {
@@ -331,6 +337,7 @@ export function buildClaudeSessions(
       filesRead: Array.from(filesRead),
       filesSearched: Array.from(filesSearched),
       filesChanged: Array.from(filesChanged),
+      filesWritten: Array.from(filesWritten),
       filesChangedNote,
       toolCounts,
       totalToolCalls,

@@ -272,6 +272,7 @@ export class LogReader {
     let totalInput = 0, totalOutput = 0, totalCacheRead = 0, totalCacheCreate = 0
     let turns = 0, totalToolCalls = 0
     const filesChanged = new Set<string>()
+    const filesWritten = new Set<string>()
     const filesRead    = new Set<string>()
     const toolCounts: Record<string, number> = {}
     const timeline: TimelineEntry[] = []
@@ -324,7 +325,8 @@ export class LogReader {
             const fp  = String(inp['file_path'] ?? inp['filePath'] ?? inp['path'] ?? '')
             if (fp) {
               if (name === 'Read' || name === 'read_file') filesRead.add(fp)
-              else if (['Edit','Write','MultiEdit','replace_string_in_file','create_file'].includes(name)) filesChanged.add(fp)
+              else if (['Edit','MultiEdit','replace_string_in_file','NotebookEdit'].includes(name)) filesChanged.add(fp)
+              else if (name === 'Write' || name === 'create_file') { filesChanged.add(fp); filesWritten.add(fp) }
             }
           }
         }
@@ -335,7 +337,7 @@ export class LogReader {
     }
 
     if (!firstTimestamp) return null
-    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesSearched: new Set(), userRequest, timeline, initiator }, workspace) }
+    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesWritten, filesSearched: new Set(), userRequest, timeline, initiator }, workspace) }
   }
 
   // ── Codex ───────────────────────────────────────────────────────────────────
@@ -407,7 +409,7 @@ export class LogReader {
     if (!firstTimestamp) return null
     return {
       workspace,
-      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }, workspace),
+      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesWritten: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }, workspace),
     }
   }
 
@@ -530,6 +532,7 @@ export class LogReader {
         toolCounts,
         filesRead: new Set(),
         filesChanged,
+        filesWritten: new Set(),
         filesSearched: new Set(),
         userRequest: userRequest.slice(0, 500),
         timeline: [],
@@ -719,6 +722,7 @@ export class LogReader {
         toolCounts: {},
         filesRead: new Set(),
         filesChanged: new Set(),
+        filesWritten: new Set(),
         filesSearched: new Set(),
         userRequest: userRequest.slice(0, 500),
         timeline: [],
@@ -817,7 +821,7 @@ export class LogReader {
         turns: (requests as unknown[]).length,
         totalToolCalls,
         toolCounts,
-        filesRead: new Set(), filesChanged: new Set(), filesSearched: new Set(),
+        filesRead: new Set(), filesChanged: new Set(), filesWritten: new Set(), filesSearched: new Set(),
         userRequest: userRequest.slice(0, 500),
         timeline: [], initiator: 'user',
       }, workspace),
@@ -902,6 +906,7 @@ interface CardAccum {
   toolCounts: Record<string, number>
   filesRead: Set<string>
   filesChanged: Set<string>
+  filesWritten: Set<string>
   filesSearched: Set<string>
   userRequest: string
   timeline: TimelineEntry[]
@@ -946,6 +951,7 @@ function _buildCard(
     filesRead:     Array.from(acc.filesRead),
     filesSearched: Array.from(acc.filesSearched),
     filesChanged:  Array.from(acc.filesChanged),
+    filesWritten:  Array.from(acc.filesWritten),
     toolCounts: acc.toolCounts,
     totalToolCalls: acc.totalToolCalls,
     totalLlmCalls: acc.turns,

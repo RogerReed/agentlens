@@ -139,9 +139,9 @@ export class DatabaseWriter {
         cache_read_tokens, cache_create_tokens, cache_hit_rate,
         total_tool_calls, total_llm_calls, errors, outcome,
         is_sidechain, speed, user_request, tool_counts, loop_signals,
-        files_read, files_changed, files_searched, files_changed_note, cost_usd,
+        files_read, files_changed, files_written, files_searched, files_changed_note, cost_usd,
         data_source
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         card.sessionId,
         card.traceId,
@@ -168,6 +168,7 @@ export class DatabaseWriter {
         JSON.stringify(card.loopSignals),
         JSON.stringify(card.filesRead),
         JSON.stringify(card.filesChanged),
+        JSON.stringify((card.filesWritten ?? []).slice(0, 50)),
         JSON.stringify(card.filesSearched),
         card.filesChangedNote ?? null,
         costUsd,
