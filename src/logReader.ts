@@ -372,7 +372,10 @@ export class LogReader {
       try { entry = JSON.parse(line) as Record<string, unknown> } catch { continue }
 
       const ts = entry['timestamp'] as string | undefined
-      if (ts) { if (!firstTimestamp) firstTimestamp = ts; lastTimestamp = ts }
+      if (ts) {
+        if (!firstTimestamp) firstTimestamp = ts
+        if (entry['type'] === 'event_msg') lastTimestamp = ts
+      }
 
       // session_meta carries the actual project working directory
       if (entry['type'] === 'session_meta' && !workspace) {
@@ -464,7 +467,11 @@ export class LogReader {
       try { event = JSON.parse(line) as Record<string, unknown> } catch { continue }
 
       const ts = event['timestamp'] as string | undefined
-      if (ts) { if (!firstTimestamp) firstTimestamp = ts; lastTimestamp = ts }
+      if (ts) {
+        if (!firstTimestamp) firstTimestamp = ts
+        const type = event['type'] as string | undefined
+        if (type === 'user.message' || type === 'assistant.message' || type === 'session.shutdown') lastTimestamp = ts
+      }
 
       const type = event['type'] as string | undefined
       const data = event['data'] as Record<string, unknown> | undefined
