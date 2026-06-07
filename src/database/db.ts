@@ -86,6 +86,9 @@ function applyMigrations(db: SqlDatabase): void {
   if (!colNames.includes('data_source')) {
     db.run("ALTER TABLE sessions ADD COLUMN data_source TEXT NOT NULL DEFAULT 'otel'")
   }
+  if (!colNames.includes('files_written')) {
+    db.run("ALTER TABLE sessions ADD COLUMN files_written TEXT NOT NULL DEFAULT '[]'")
+  }
 }
 
 function ensureBlobsDir(storagePath: string): void {

@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   loop_signals        TEXT    NOT NULL DEFAULT '[]',
   files_read          TEXT    NOT NULL DEFAULT '[]',
   files_changed       TEXT    NOT NULL DEFAULT '[]',
+  files_written       TEXT    NOT NULL DEFAULT '[]',
   files_searched      TEXT    NOT NULL DEFAULT '[]',
   files_changed_note  TEXT,
   cost_usd            REAL    NOT NULL DEFAULT 0,

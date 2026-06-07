@@ -37,7 +37,7 @@ function makeCard(id: string, startIso: string): SessionSummaryCard {
     model: 'gpt-4o', turns: 1, inputTokens: 100, outputTokens: 20,
     cacheReadTokens: 0, cacheCreateTokens: 0, cacheHitRate: 0,
     durationMs: 1000, startTime: startIso,
-    filesRead: [], filesSearched: [], filesChanged: [],
+    filesRead: [], filesSearched: [], filesChanged: [], filesWritten: [],
     toolCounts: {}, totalToolCalls: 0, totalLlmCalls: 1, errors: 0,
     outcome: 'text_response', timeline: [], backgroundSpans: [], loopSignals: [],
   }

@@ -34,6 +34,7 @@ function makeSession(overrides: Partial<SessionSummaryCard> = {}): SessionSummar
     filesRead: [],
     filesSearched: [],
     filesChanged: [],
+    filesWritten: [],
     toolCounts: {},
     totalToolCalls: 5,
     totalLlmCalls: 3,

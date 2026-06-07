@@ -49,6 +49,7 @@ function makeCard(overrides: Partial<SessionSummaryCard> = {}): SessionSummaryCa
     filesRead: ['a.ts', 'b.ts'],
     filesSearched: ['src/'],
     filesChanged: ['c.ts'],
+    filesWritten: [],
     filesChangedNote: undefined,
     toolCounts: { Read: 5, Edit: 2 },
     totalToolCalls: 7,

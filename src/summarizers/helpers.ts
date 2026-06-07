@@ -1,6 +1,7 @@
 import { Span } from '../types'
 
 export const CLAUDE_WRITE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
+export const FULL_WRITE_TOOLS   = new Set(['Write', 'create_file'])  // whole-file replacement
 
 /** Returns the longest common directory prefix of a set of absolute file paths. */
 export function commonPathPrefix(paths: string[]): string {

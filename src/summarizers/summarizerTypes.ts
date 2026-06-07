@@ -31,6 +31,7 @@ export interface SessionSummaryCard {
   timeline: TimelineEntry[]
   backgroundSpans: BackgroundSpanSummary[]
   loopSignals: LoopSignal[]
+  filesWritten: string[]        // files fully written (Write / create_file tools); subset of filesChanged
 }
 
 export interface TimelineEntry {
