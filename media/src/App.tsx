@@ -22,6 +22,7 @@ import { Export } from './tabs/Export'
 import { Help } from './tabs/Help'
 import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
+import { Instructions, instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instructions'
 
 
 const sidebarOpen = signal(true)
@@ -29,10 +30,11 @@ const configOpen = signal(false)
 const bellOpen = signal(false)
 
 const TABS = [
-  { id: 'sessions',  label: 'Sessions',  title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
-  { id: 'analytics', label: 'Analytics', title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
-  { id: 'patterns',  label: 'Patterns',  title: 'Cross-session behavioral patterns: hot files, prompt efficiency map, CLAUDE.md recommendations, and cost trend.' },
-  { id: 'export',    label: 'Export',    title: 'Export raw or redacted OTEL span data as JSON files.' },
+  { id: 'sessions',      label: 'Sessions',      title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
+  { id: 'analytics',     label: 'Analytics',     title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
+  { id: 'patterns',      label: 'Patterns',       title: 'Cross-session behavioral patterns: hot files, prompt efficiency map, CLAUDE.md recommendations, and cost trend.' },
+  { id: 'instructions',  label: 'Instructions',  title: 'Project-scoped suggestions for improving your agent instruction files. Requires a workspace to be selected.' },
+  { id: 'export',        label: 'Export',         title: 'Export raw or redacted OTEL span data as JSON files.' },
 ]
 
 function ActivePanel() {
@@ -40,8 +42,9 @@ function ActivePanel() {
   switch (tab) {
     case 'sessions':  return <Sessions />
     case 'analytics': return <Analytics />
-    case 'patterns':  return <Patterns />
-    case 'export':    return <Export />
+    case 'patterns':      return <Patterns />
+    case 'instructions':  return <Instructions />
+    case 'export':        return <Export />
     case 'help':      return <Help />
     default:          return null
   }
@@ -378,6 +381,14 @@ export function App() {
           const sel = document.getElementById('session-limit') as HTMLSelectElement
           if (sel) sel.value = String(limit)
         }
+      } else if (msg.type === 'instructionFiles' && Array.isArray((msg as unknown as {files?: unknown}).files)) {
+        instructionFiles.value = (msg as unknown as {files: typeof instructionFiles.value}).files
+      } else if (msg.type === 'appliedSuggestions' && Array.isArray((msg as unknown as {records?: unknown}).records)) {
+        appliedSuggestions.value = (msg as unknown as {records: typeof appliedSuggestions.value}).records
+      } else if (msg.type === 'dismissedSuggestions' && Array.isArray((msg as unknown as {ids?: unknown}).ids)) {
+        dismissedIds.value = new Set((msg as unknown as {ids: string[]}).ids)
+      } else if (msg.type === 'instructionApplied') {
+        // Re-request applied list after successful apply — handled by appliedSuggestions message
       } else if (msg.type === 'searchResults' && msg.sessions != null) {
         const data = {
           sessions: msg.sessions,

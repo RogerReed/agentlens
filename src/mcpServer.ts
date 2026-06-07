@@ -22,6 +22,9 @@ import {
 } from '@modelcontextprotocol/sdk/types.js'
 import { calcTokenCostUsd } from './pricing'
 import type { SessionSummaryCard } from './summarizers/summarizerTypes'
+import { generateSuggestions } from './instructionAdvisor'
+import { analyzePrompt } from './promptAnalyzer'
+import { readAllInstructionContent } from './instructionFiles'
 
 // ── Session accessor ──────────────────────────────────────────────────────────
 
@@ -114,6 +117,37 @@ const TOOLS = [
       properties: {
         workspace: { type: 'string', description: 'Filter by workspace path prefix' },
         days:      { type: 'number', description: 'Analyse sessions from last N days (default 30)' },
+      },
+    },
+  },
+  {
+    name: 'get_instruction_suggestions',
+    description:
+      'Returns pending suggestions for improving the agent instruction file (CLAUDE.md, AGENTS.md, etc.) ' +
+      'for the specified workspace. Suggestions are derived from patterns in past sessions and include ' +
+      'ready-to-paste text. Use this at the start of a session to check for improvements before beginning work. ' +
+      'workspace is REQUIRED — cross-workspace suggestions are not meaningful.',
+    inputSchema: {
+      type: 'object' as const,
+      required: ['workspace'],
+      properties: {
+        workspace: { type: 'string', description: 'Absolute path of the workspace root (required)' },
+      },
+    },
+  },
+  {
+    name: 'analyze_prompt',
+    description:
+      'Analyzes a prompt before sending it, using past sessions in the specified workspace to predict ' +
+      'cost, turns, and flag scope risks. Returns predicted cost range, likely files to touch, and ' +
+      'specific suggestions to improve the prompt. workspace is REQUIRED — predictions from mixed ' +
+      'workspaces are not meaningful.',
+    inputSchema: {
+      type: 'object' as const,
+      required: ['prompt', 'workspace'],
+      properties: {
+        prompt:    { type: 'string', description: 'The prompt you are about to send' },
+        workspace: { type: 'string', description: 'Absolute path of the workspace root (required)' },
       },
     },
   },
@@ -376,6 +410,71 @@ function handleGetEfficiencyReport(
   }
 }
 
+function handleGetInstructionSuggestions(
+  sessions: SessionSummaryCard[],
+  args: { workspace?: string },
+) {
+  const workspace = args.workspace?.trim()
+  if (!workspace) {
+    return { error: 'workspace is required — instruction suggestions are project-scoped.' }
+  }
+  const filtered = sessions.filter(s => (s.workspace ?? '') === workspace || s.workspace?.startsWith(workspace))
+  if (filtered.length < 5) {
+    return { message: `Not enough history for workspace "${workspace}" (${filtered.length} sessions, need 5).`, suggestions: [] }
+  }
+  const existingText = readAllInstructionContent(workspace)
+  const suggestions = generateSuggestions(filtered, existingText)
+  return suggestions.map(s => ({
+    id:            s.id,
+    category:      s.category,
+    title:         s.title,
+    evidence:      s.evidence,
+    suggestedText: s.suggestedText,
+    targetAgents:  s.targetAgents,
+    priority:      s.priority,
+  }))
+}
+
+function handleAnalyzePrompt(
+  sessions: SessionSummaryCard[],
+  args: { prompt?: string; workspace?: string },
+) {
+  const workspace = args.workspace?.trim()
+  const prompt = args.prompt?.trim()
+  if (!workspace) return { error: 'workspace is required — predictions are project-scoped.' }
+  if (!prompt)    return { error: 'prompt is required.' }
+
+  const filtered = sessions.filter(s => (s.workspace ?? '') === workspace || s.workspace?.startsWith(workspace))
+  if (filtered.length < 5) {
+    return { message: `Not enough history for workspace "${workspace}" (${filtered.length} sessions, need 5).` }
+  }
+
+  const result = analyzePrompt(prompt, filtered)
+  const fmtUsd = (v: number) => v < 0.001 ? '<$0.001' : v < 1 ? '$' + v.toFixed(3) : '$' + v.toFixed(2)
+
+  return {
+    workspace,
+    basedOnSessions: result.sessionCount,
+    similarSessions: result.similarSessions.length,
+    costRange: result.similarSessions.length > 0
+      ? `${fmtUsd(result.costRangeLow)}–${fmtUsd(result.costRangeHigh)}`
+      : 'no similar sessions',
+    turnsRange: result.similarSessions.length > 0
+      ? `${result.turnsRangeLow}–${result.turnsRangeHigh}`
+      : 'unknown',
+    highVariance: result.highVariance,
+    predictedFiles: result.predictedFiles.map(f => ({
+      file: f.file,
+      pct: Math.round(f.frequency * 100),
+      sessionCount: f.sessionCount,
+    })),
+    scopeRisks: result.scopeRisks.map(r => ({
+      label: r.label,
+      suggestion: r.suggestion,
+    })),
+  }
+}
+
 // ── MCP Server factory ────────────────────────────────────────────────────────
 
 export interface McpServerOptions {
@@ -413,6 +512,12 @@ export function createMcpServer(opts: McpServerOptions): Server {
         break
       case 'get_efficiency_report':
         result = handleGetEfficiencyReport(sessions, args as { workspace?: string; days?: number })
+        break
+      case 'get_instruction_suggestions':
+        result = handleGetInstructionSuggestions(sessions, args as { workspace?: string })
+        break
+      case 'analyze_prompt':
+        result = handleAnalyzePrompt(sessions, args as { prompt?: string; workspace?: string })
         break
       default:
         return { content: [{ type: 'text', text: `Unknown tool: ${req.params.name}` }], isError: true }

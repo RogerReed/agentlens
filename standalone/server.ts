@@ -18,6 +18,9 @@ import { autoConfigureClaudeCode, autoConfigureCodex, autoConfigureCopilotStanda
 import { classifyOtlpPayload } from '../src/otlpParser'
 import { startMcpHttpServer } from '../src/mcpServer'
 import { LogReader } from '../src/logReader'
+import { generateSuggestions } from '../src/instructionAdvisor'
+import { analyzePrompt } from '../src/promptAnalyzer'
+import { detectInstructionFiles, appendSuggestion } from '../src/instructionFiles'
 import type { Span } from '../src/types'
 import type { SessionSummaryCard } from '../src/summarizers/summarizerTypes'
 
@@ -1028,6 +1031,103 @@ const uiServer = http.createServer((req, res) => {
         console.warn('[AgentLens] write-prompts-file error:', e)
       }
       res.writeHead(200); res.end()
+    })
+    return
+  }
+
+  if (req.method === 'GET' && url?.startsWith('/api/instruction-suggestions')) {
+    const parsed = new URL(url, 'http://localhost')
+    const workspace = parsed.searchParams.get('workspace')?.trim()
+    if (!workspace) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'workspace query param is required' }))
+      return
+    }
+    const sessions = (buildSessionSummary()?.sessions ?? [])
+      .filter(s => (s.workspace ?? '') === workspace || s.workspace?.startsWith(workspace))
+    const { readAllInstructionContent } = require('../src/instructionFiles') as typeof import('../src/instructionFiles')
+    const existingText = readAllInstructionContent(workspace)
+    const suggestions = generateSuggestions(sessions, existingText)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(suggestions))
+    return
+  }
+
+  if (req.method === 'GET' && url?.startsWith('/api/instruction-files')) {
+    const parsed = new URL(url, 'http://localhost')
+    const workspace = parsed.searchParams.get('workspace')?.trim()
+    if (!workspace) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'workspace query param is required' }))
+      return
+    }
+    const files = detectInstructionFiles(workspace)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(files))
+    return
+  }
+
+  if (req.method === 'POST' && url === '/api/instructions/apply') {
+    const chunks: Buffer[] = []
+    req.on('data', (c: Buffer) => chunks.push(c))
+    req.on('end', () => {
+      try {
+        const { workspace, targetFile, appliedText, id } = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as {
+          workspace: string; targetFile: string; appliedText: string; id: string
+        }
+        if (!workspace || !targetFile || !appliedText || !id) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'workspace, targetFile, appliedText, and id are required' }))
+          return
+        }
+        const absPath = path.join(workspace, targetFile)
+        appendSuggestion(absPath, appliedText, id)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true }))
+      } catch (e) {
+        console.warn('[AgentLens] /api/instructions/apply error:', e)
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: String(e) }))
+      }
+    })
+    return
+  }
+
+  if (req.method === 'POST' && url === '/api/analyze-prompt') {
+    const chunks: Buffer[] = []
+    req.on('data', (c: Buffer) => chunks.push(c))
+    req.on('end', () => {
+      try {
+        const { prompt, workspace } = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as { prompt?: string; workspace?: string }
+        if (!workspace) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'workspace is required' }))
+          return
+        }
+        if (!prompt) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'prompt is required' }))
+          return
+        }
+        const sessions = (buildSessionSummary()?.sessions ?? [])
+          .filter(s => (s.workspace ?? '') === workspace || s.workspace?.startsWith(workspace))
+        const result = analyzePrompt(prompt, sessions)
+        const fmtUsd = (v: number) => v < 0.001 ? '<$0.001' : v < 1 ? '$' + v.toFixed(3) : '$' + v.toFixed(2)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({
+          workspace,
+          similarSessions: result.similarSessions.length,
+          costRange: result.similarSessions.length > 0 ? `${fmtUsd(result.costRangeLow)}–${fmtUsd(result.costRangeHigh)}` : 'unknown',
+          turnsRange: result.similarSessions.length > 0 ? `${result.turnsRangeLow}–${result.turnsRangeHigh}` : 'unknown',
+          highVariance: result.highVariance,
+          predictedFiles: result.predictedFiles,
+          scopeRisks: result.scopeRisks,
+        }))
+      } catch (e) {
+        console.warn('[AgentLens] /api/analyze-prompt error:', e)
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: String(e) }))
+      }
     })
     return
   }

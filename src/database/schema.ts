@@ -72,4 +72,31 @@ CREATE TABLE IF NOT EXISTS edit_details (
 );
 
 CREATE INDEX IF NOT EXISTS idx_edit_details_entry ON edit_details (timeline_entry_id);
+
+CREATE TABLE IF NOT EXISTS instruction_applied (
+  id                     TEXT PRIMARY KEY,
+  workspace              TEXT NOT NULL,
+  category               TEXT NOT NULL,
+  title                  TEXT NOT NULL,
+  suggested_text         TEXT NOT NULL DEFAULT '',
+  applied_to             TEXT NOT NULL DEFAULT '',
+  applied_text           TEXT NOT NULL DEFAULT '',
+  applied_at             TEXT NOT NULL,
+  baseline_cost_avg      REAL NOT NULL DEFAULT 0,
+  baseline_turns_avg     REAL NOT NULL DEFAULT 0,
+  baseline_error_rate    REAL NOT NULL DEFAULT 0,
+  baseline_loop_rate     REAL NOT NULL DEFAULT 0,
+  baseline_insufficient  INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_instruction_applied_workspace ON instruction_applied (workspace);
+
+CREATE TABLE IF NOT EXISTS instruction_dismissed (
+  id           TEXT NOT NULL,
+  workspace    TEXT NOT NULL,
+  dismissed_at TEXT NOT NULL,
+  PRIMARY KEY (id, workspace)
+);
+
+CREATE INDEX IF NOT EXISTS idx_instruction_dismissed_workspace ON instruction_dismissed (workspace);
 `
