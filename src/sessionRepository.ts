@@ -14,7 +14,7 @@ export type { DailyStatRow, LifetimeStats, SearchQuery, BurnRate, Projection }
  * buckets keyed by source+bucket; if two log sessions in the same bucket have
  * different workspaces the entry is marked ambiguous and skipped.
  */
-function resolveWorkspacesFromLogs(sessions: SessionSummaryCard[]): void {
+export function resolveWorkspacesFromLogs(sessions: SessionSummaryCard[]): void {
   // null sentinel = ambiguous (two different workspaces in the same bucket)
   const wsMap = new Map<string, string | null>()
   for (const s of sessions) {

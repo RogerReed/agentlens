@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { mergeSessions } from '../../sessionRepository'
+import { mergeSessions, resolveWorkspacesFromLogs } from '../../sessionRepository'
 import type { SessionSummaryCard } from '../../summarizers/summarizerTypes'
 
 function makeCard(id: string, startTime: string, overrides: Partial<SessionSummaryCard> = {}): SessionSummaryCard {
@@ -57,5 +57,61 @@ suite('mergeSessions', () => {
     const result = mergeSessions(db, [])
     assert.strictEqual(result[0].sessionId, 'y')
     assert.strictEqual(result[1].sessionId, 'x')
+  })
+})
+
+suite('resolveWorkspacesFromLogs', () => {
+  const T = '2024-06-01T12:00:00.000Z'  // base time (within same minute = same bucket)
+
+  test('borrows workspace from log session of same source in same minute', () => {
+    const sessions = [
+      makeCard('log1', T, { dataSource: 'log', source: 'claude_code', workspace: '/home/alice/myapp' }),
+      makeCard('otel1', T, { dataSource: 'otel', source: 'claude_code', workspace: '' }),
+    ]
+    resolveWorkspacesFromLogs(sessions)
+    assert.strictEqual(sessions[1].workspace, '/home/alice/myapp')
+  })
+
+  test('does not borrow across different sources', () => {
+    const sessions = [
+      makeCard('log1', T, { dataSource: 'log', source: 'copilot', workspace: '/home/alice/myapp' }),
+      makeCard('otel1', T, { dataSource: 'otel', source: 'claude_code', workspace: '' }),
+    ]
+    resolveWorkspacesFromLogs(sessions)
+    assert.strictEqual(sessions[1].workspace, '')
+  })
+
+  test('marks bucket as ambiguous when two log sessions have different workspaces', () => {
+    const sessions = [
+      makeCard('log1', T, { dataSource: 'log', source: 'claude_code', workspace: '/home/alice/proj-a' }),
+      makeCard('log2', T, { dataSource: 'log', source: 'claude_code', workspace: '/home/alice/proj-b' }),
+      makeCard('otel1', T, { dataSource: 'otel', source: 'claude_code', workspace: '' }),
+    ]
+    resolveWorkspacesFromLogs(sessions)
+    assert.strictEqual(sessions[2].workspace, '')
+  })
+
+  test('does not overwrite an OTEL session that already has a workspace', () => {
+    const sessions = [
+      makeCard('log1', T, { dataSource: 'log', source: 'claude_code', workspace: '/home/alice/myapp' }),
+      makeCard('otel1', T, { dataSource: 'otel', source: 'claude_code', workspace: '/home/alice/existing' }),
+    ]
+    resolveWorkspacesFromLogs(sessions)
+    assert.strictEqual(sessions[1].workspace, '/home/alice/existing')
+  })
+
+  test('borrows from adjacent-minute buckets (±1 minute tolerance)', () => {
+    const base = new Date('2024-06-01T12:00:30.000Z').getTime()
+    const slightly_before = new Date(base - 90_000).toISOString()  // 90s earlier = prev minute bucket
+    const sessions = [
+      makeCard('log1', slightly_before, { dataSource: 'log', source: 'claude_code', workspace: '/home/alice/myapp' }),
+      makeCard('otel1', T, { dataSource: 'otel', source: 'claude_code', workspace: '' }),
+    ]
+    resolveWorkspacesFromLogs(sessions)
+    assert.strictEqual(sessions[1].workspace, '/home/alice/myapp')
+  })
+
+  test('no-op when session list is empty', () => {
+    assert.doesNotThrow(() => resolveWorkspacesFromLogs([]))
   })
 })

@@ -211,8 +211,11 @@ export const rangedSessions = computed<SessionSummaryCard[]>(() => {
   ]
   merged.sort((a, b) => Date.parse(b.startTime || '0') - Date.parse(a.startTime || '0'))
 
-  if (agent === 'all') return merged
-  return merged.filter(s => s.source === agent)
+  const wsFilter = workspaceFilter.value
+  const scoped = wsFilter === 'all' ? merged : merged.filter(s => (s.workspace ?? '') === wsFilter)
+
+  if (agent === 'all') return scoped
+  return scoped.filter(s => s.source === agent)
 })
 
 // Text-filtered + sorted view of rangedSessions — used by Efficiency, Cost, Traces, Search, Insights
