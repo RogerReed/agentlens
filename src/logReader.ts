@@ -270,6 +270,7 @@ export class LogReader {
     let lastTimestamp = ''
     let userRequest = ''
     let totalInput = 0, totalOutput = 0, totalCacheRead = 0, totalCacheCreate = 0
+    let peakContextPerTurn = 0
     let turns = 0, totalToolCalls = 0
     const filesChanged = new Set<string>()
     const filesWritten = new Set<string>()
@@ -308,10 +309,15 @@ export class LogReader {
         if (msg?.['model']) model = msg['model'] as string
         const usage = msg?.['usage'] as Record<string, number> | undefined
         if (usage) {
-          totalInput       += usage['input_tokens']              ?? 0
-          totalOutput      += usage['output_tokens']             ?? 0
-          totalCacheRead   += usage['cache_read_input_tokens']   ?? 0
-          totalCacheCreate += usage['cache_creation_input_tokens'] ?? 0
+          const inp  = usage['input_tokens']                ?? 0
+          const cr   = usage['cache_read_input_tokens']     ?? 0
+          const cc   = usage['cache_creation_input_tokens'] ?? 0
+          totalInput       += inp
+          totalOutput      += usage['output_tokens'] ?? 0
+          totalCacheRead   += cr
+          totalCacheCreate += cc
+          const turnContext = inp + cr + cc
+          if (turnContext > peakContextPerTurn) peakContextPerTurn = turnContext
           turns++
         }
         const content = (msg?.['content'] as Array<Record<string, unknown>>) ?? []
@@ -337,7 +343,7 @@ export class LogReader {
     }
 
     if (!firstTimestamp) return null
-    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesWritten, filesSearched: new Set(), userRequest, timeline, initiator }, workspace) }
+    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, peakContextPerTurn, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesWritten, filesSearched: new Set(), userRequest, timeline, initiator }, workspace) }
   }
 
   // ── Codex ───────────────────────────────────────────────────────────────────
@@ -372,7 +378,10 @@ export class LogReader {
       try { entry = JSON.parse(line) as Record<string, unknown> } catch { continue }
 
       const ts = entry['timestamp'] as string | undefined
-      if (ts) { if (!firstTimestamp) firstTimestamp = ts; lastTimestamp = ts }
+      if (ts) {
+        if (!firstTimestamp) firstTimestamp = ts
+        if (entry['type'] === 'event_msg') lastTimestamp = ts
+      }
 
       // session_meta carries the actual project working directory
       if (entry['type'] === 'session_meta' && !workspace) {
@@ -409,7 +418,7 @@ export class LogReader {
     if (!firstTimestamp) return null
     return {
       workspace,
-      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesWritten: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }, workspace),
+      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, peakContextPerTurn: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesWritten: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }, workspace),
     }
   }
 
@@ -464,7 +473,11 @@ export class LogReader {
       try { event = JSON.parse(line) as Record<string, unknown> } catch { continue }
 
       const ts = event['timestamp'] as string | undefined
-      if (ts) { if (!firstTimestamp) firstTimestamp = ts; lastTimestamp = ts }
+      if (ts) {
+        if (!firstTimestamp) firstTimestamp = ts
+        const type = event['type'] as string | undefined
+        if (type === 'user.message' || type === 'assistant.message' || type === 'session.shutdown') lastTimestamp = ts
+      }
 
       const type = event['type'] as string | undefined
       const data = event['data'] as Record<string, unknown> | undefined
@@ -527,6 +540,7 @@ export class LogReader {
         totalOutput,
         totalCacheRead,
         totalCacheCreate,
+        peakContextPerTurn: 0,
         turns,
         totalToolCalls,
         toolCounts,
@@ -717,6 +731,7 @@ export class LogReader {
         totalOutput,
         totalCacheRead: 0,
         totalCacheCreate: 0,
+        peakContextPerTurn: 0,
         turns,
         totalToolCalls: 0,
         toolCounts: {},
@@ -818,6 +833,7 @@ export class LogReader {
       workspace,
       card: _buildCard(sid, 'copilot', model || 'copilot', startTs, endTs, {
         totalInput: 0, totalOutput: 0, totalCacheRead: 0, totalCacheCreate: 0,
+        peakContextPerTurn: 0,
         turns: (requests as unknown[]).length,
         totalToolCalls,
         toolCounts,
@@ -901,6 +917,7 @@ interface CardAccum {
   totalOutput: number
   totalCacheRead: number
   totalCacheCreate: number
+  peakContextPerTurn: number
   turns: number
   totalToolCalls: number
   toolCounts: Record<string, number>
@@ -960,6 +977,7 @@ function _buildCard(
     timeline: acc.timeline,
     backgroundSpans: [],
     loopSignals: [],
+    peakContextPerTurn: acc.turns > 1 ? acc.peakContextPerTurn : undefined,
   }
 }
 

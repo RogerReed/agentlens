@@ -31,6 +31,7 @@ export interface SessionSummaryCard {
   timeline: TimelineEntry[]
   backgroundSpans: BackgroundSpanSummary[]
   loopSignals: LoopSignal[]
+  peakContextPerTurn?: number   // max single-turn (input + cacheRead + cacheCreate); undefined for single-turn sessions
   filesWritten: string[]        // files fully written (Write / create_file tools); subset of filesChanged
 }
 
