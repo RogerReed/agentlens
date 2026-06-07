@@ -78,6 +78,7 @@ export interface SessionSummaryCard {
   timeline: TimelineEntry[]
   backgroundSpans: BackgroundSpanSummary[]
   loopSignals: LoopSignal[]
+  peakContextPerTurn?: number
   filesWritten: string[]
 }
 
