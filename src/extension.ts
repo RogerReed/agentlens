@@ -18,6 +18,7 @@ import { summarizeSpans } from './spanSummarizer'
 import { LogReader } from './logReader'
 import { detectLoopSignals } from './loopDetector'
 import { startMcpHttpServer } from './mcpServer'
+import { InstructionRepository } from './database/instructionRepository'
 
 let collector: OtlpCollector | undefined
 let store: SessionStore | undefined
@@ -381,10 +382,12 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   )
 
+  const instructionRepo = agentLensDb ? new InstructionRepository(agentLensDb.raw) : undefined
+
   context.subscriptions.push(
     vscode.commands.registerCommand('agentLens.openDashboard', () => {
       vscode.commands.executeCommand('workbench.view.extension.agent-lens')
-      DashboardPanel.show(context, repo, provider)
+      DashboardPanel.show(context, repo, provider, instructionRepo)
     })
   )
 

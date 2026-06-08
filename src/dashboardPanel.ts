@@ -1,6 +1,9 @@
 import * as vscode from 'vscode'
 import { SidebarPanel } from './sidebarPanel'
 import { SessionRepository } from './sessionRepository'
+import { InstructionRepository } from './database/instructionRepository'
+import { detectInstructionFiles, appendSuggestion, removeSuggestion } from './instructionFiles'
+import { computeBaseline } from './instructionEffectiveness'
 
 export class DashboardPanel {
   public static currentPanel: DashboardPanel | undefined
@@ -8,7 +11,7 @@ export class DashboardPanel {
   private disposables: vscode.Disposable[] = []
   private pendingUpdate: ReturnType<typeof setTimeout> | undefined
 
-  static show(context: vscode.ExtensionContext, repo: SessionRepository, sidebarProvider?: SidebarPanel) {
+  static show(context: vscode.ExtensionContext, repo: SessionRepository, sidebarProvider?: SidebarPanel, instructionRepo?: InstructionRepository) {
     if (DashboardPanel.currentPanel) {
       DashboardPanel.currentPanel.panel.reveal()
       DashboardPanel.currentPanel.update()
@@ -24,7 +27,7 @@ export class DashboardPanel {
         localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
       }
     )
-    DashboardPanel.currentPanel = new DashboardPanel(panel, context, repo, sidebarProvider)
+    DashboardPanel.currentPanel = new DashboardPanel(panel, context, repo, sidebarProvider, instructionRepo)
   }
 
   static setRepository(repo: SessionRepository) {
@@ -50,7 +53,8 @@ export class DashboardPanel {
     panel: vscode.WebviewPanel,
     private context: vscode.ExtensionContext,
     private repo: SessionRepository,
-    private sidebarProvider?: SidebarPanel
+    private sidebarProvider?: SidebarPanel,
+    private instructionRepo?: InstructionRepository,
   ) {
     this.panel = panel
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables)
@@ -100,6 +104,58 @@ export class DashboardPanel {
         vscode.commands.executeCommand('workbench.action.closeSidebar')
       } else if (msg.type === 'setVsCodeConfig' && typeof msg.key === 'string') {
         void vscode.workspace.getConfiguration('agentLens').update(msg.key as string, msg.value, vscode.ConfigurationTarget.Global)
+      } else if (msg.type === 'getInstructionFiles' && msg.workspace) {
+        const wsFolders = vscode.workspace.workspaceFolders
+        const wsRoot = (wsFolders?.[0]?.uri.fsPath) ?? (msg.workspace as string)
+        const files = detectInstructionFiles(wsRoot)
+        this.panel.webview.postMessage({ type: 'instructionFiles', files })
+      } else if (msg.type === 'getAppliedSuggestions' && msg.workspace && this.instructionRepo) {
+        const records = this.instructionRepo.getApplied(msg.workspace as string)
+        this.panel.webview.postMessage({ type: 'appliedSuggestions', records })
+      } else if (msg.type === 'getDismissedSuggestions' && msg.workspace && this.instructionRepo) {
+        const ids = this.instructionRepo.getDismissedIds(msg.workspace as string)
+        this.panel.webview.postMessage({ type: 'dismissedSuggestions', ids })
+      } else if (msg.type === 'applyInstructionSuggestion' && msg.id && msg.workspace && this.instructionRepo) {
+        const { id, workspace, targetFile, appliedText, category, title, suggestedText } = msg as {
+          id: string; workspace: string; targetFile: string; appliedText: string
+          category: string; title: string; suggestedText: string
+        }
+        const wsFolders = vscode.workspace.workspaceFolders
+        const wsRoot = wsFolders?.[0]?.uri.fsPath ?? workspace
+        const absPath = require('path').join(wsRoot, targetFile)
+        try {
+          appendSuggestion(absPath, appliedText, id)
+          const sessions = this.repo.listSessions().filter(s => (s.workspace ?? '') === workspace)
+          const baseline = computeBaseline(sessions, Date.now())
+          this.instructionRepo.recordApplied({
+            id, workspace, category, title, suggestedText,
+            appliedTo: targetFile, appliedText,
+            baselineCostAvg: baseline.costAvg,
+            baselineTurnsAvg: baseline.turnsAvg,
+            baselineErrorRate: baseline.errorRate,
+            baselineLoopRate: baseline.loopRate,
+            baselineInsufficient: baseline.insufficient,
+          })
+          const records = this.instructionRepo.getApplied(workspace)
+          this.panel.webview.postMessage({ type: 'appliedSuggestions', records })
+          this.panel.webview.postMessage({ type: 'instructionApplied', id })
+        } catch (err) {
+          vscode.window.showErrorMessage(`AgentLens: Failed to apply suggestion — ${err}`)
+        }
+      } else if (msg.type === 'dismissInstructionSuggestion' && msg.id && msg.workspace && this.instructionRepo) {
+        this.instructionRepo.recordDismissed(msg.id as string, msg.workspace as string)
+      } else if (msg.type === 'removeInstructionSuggestion' && msg.id && msg.workspace && this.instructionRepo) {
+        const { id, workspace } = msg as { id: string; workspace: string }
+        const applied = this.instructionRepo.getApplied(workspace).find(a => a.id === id)
+        if (applied) {
+          const wsFolders = vscode.workspace.workspaceFolders
+          const wsRoot = wsFolders?.[0]?.uri.fsPath ?? workspace
+          const absPath = require('path').join(wsRoot, applied.appliedTo)
+          removeSuggestion(absPath, id)
+          this.instructionRepo.removeApplied(id)
+          const records = this.instructionRepo.getApplied(workspace)
+          this.panel.webview.postMessage({ type: 'appliedSuggestions', records })
+        }
       }
     }, null, this.disposables)
 

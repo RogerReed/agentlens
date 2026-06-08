@@ -1,5 +1,6 @@
 import { useState, useRef } from 'preact/hooks'
 import { filteredSessions, activeTab, focusedSessionId, sessionTextFilter } from '../state'
+import { Instructions } from './Instructions'
 import { getAgentSourceLabel, formatSessionTime } from '../utils'
 import { calcSessionCost } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
@@ -22,7 +23,7 @@ function basename(p: string): string {
   return p.replace(/\\/g, '/').split('/').pop() ?? p
 }
 
-const sectionHead = 'font-size:12px;color:var(--muted);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.3px'
+const sectionHead = 'font-size:12px;color:var(--muted);margin:0 0 6px;text-transform:uppercase;letter-spacing:.3px'
 
 // ── Efficiency Map ────────────────────────────────────────────────────────────
 
@@ -431,12 +432,19 @@ export function Patterns() {
     return <div class="empty-state">No sessions recorded yet — patterns will appear once you have session history.</div>
   }
 
-  const divider = <div style="border-top:1px solid var(--border);margin:4px 0" />
+  const divider = <div style="border-top:1px solid var(--border);margin:16px 0 8px" />
 
   return (
-    <div id="patterns-content" style="display:flex;flex-direction:column;gap:20px;padding-top:8px">
+    <div id="patterns-content" style="padding-top:8px">
       <section>
-        <h3 style={sectionHead + ';margin-top:0'}>Efficiency Map</h3>
+        <h3 style={sectionHead}>Instructions File</h3>
+        <Instructions />
+      </section>
+
+      {divider}
+
+      <section>
+        <h3 style={sectionHead}>Efficiency Map</h3>
         <EfficiencyMap sessions={sessions} />
       </section>
 

@@ -66,6 +66,9 @@ export const sessionTextFilter = signal('')
 export const sessionSortKey = signal<SortKey>('start_time')
 export const sessionSortDir = signal<'asc' | 'desc'>('desc')
 
+// When set, Sessions tab shows only these session IDs (used by Instructions "View sessions" button).
+export const evidenceSessionIds = signal<Set<string> | null>(null)
+
 // ── Set signal helper ─────────────────────────────────────────────────────────
 
 function makeSetSignal<T>() {
@@ -156,7 +159,9 @@ export function shortWorkspaceName(ws: string): string {
 export const availableWorkspaces = computed<string[]>(() => {
   const all = sessionSummary.value?.sessions ?? []
   const paths = new Set(all.map(s => s.workspace ?? ''))
-  return [...paths].sort()
+  return [...paths].sort((a, b) =>
+    shortWorkspaceName(a).localeCompare(shortWorkspaceName(b), undefined, { sensitivity: 'base' })
+  )
 })
 
 export const agentFilteredSessions = computed<SessionSummaryCard[]>(() => {
@@ -221,9 +226,14 @@ export const rangedSessions = computed<SessionSummaryCard[]>(() => {
 // Text-filtered + sorted view of rangedSessions — used by Efficiency, Cost, Traces, Search, Insights
 export const filteredSessions = computed<SessionSummaryCard[]>(() => {
   let sessions = rangedSessions.value
-  const text = sessionTextFilter.value.toLowerCase().trim()
-  if (text) {
-    sessions = sessions.filter(s => (s.userRequest ?? '').toLowerCase().includes(text))
+  const evIds = evidenceSessionIds.value
+  if (evIds !== null) {
+    sessions = sessions.filter(s => evIds.has(s.sessionId))
+  } else {
+    const text = sessionTextFilter.value.toLowerCase().trim()
+    if (text) {
+      sessions = sessions.filter(s => (s.userRequest ?? '').toLowerCase().includes(text))
+    }
   }
   const iFilter = initiatorFilter.value
   if (iFilter !== 'all') {

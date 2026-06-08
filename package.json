@@ -129,7 +129,7 @@
           {
             "id": "agentlens.loopDetection",
             "title": "Detect Loops and Inefficiencies",
-            "description": "The Recommendations tab scans every session for five failure patterns — deadlocks, error spirals, context accumulation, and more — and tells you exactly what to do about them.",
+            "description": "The Sessions tab surfaces five failure patterns per session — deadlocks, error spirals, context accumulation, and more. The Advisor tab analyzes patterns across sessions to generate specific suggestions for improving your agent instruction file.",
             "media": {
               "markdown": "walkthrough/loops.md"
             }

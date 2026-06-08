@@ -89,6 +89,39 @@ function applyMigrations(db: SqlDatabase): void {
   if (!colNames.includes('files_written')) {
     db.run("ALTER TABLE sessions ADD COLUMN files_written TEXT NOT NULL DEFAULT '[]'")
   }
+
+  // instruction_applied table (feat-instruction-advisor)
+  const appliedCols = db.exec('PRAGMA table_info(instruction_applied)')
+  if (!appliedCols[0]) {
+    db.run(`CREATE TABLE IF NOT EXISTS instruction_applied (
+      id                     TEXT PRIMARY KEY,
+      workspace              TEXT NOT NULL,
+      category               TEXT NOT NULL,
+      title                  TEXT NOT NULL,
+      suggested_text         TEXT NOT NULL DEFAULT '',
+      applied_to             TEXT NOT NULL DEFAULT '',
+      applied_text           TEXT NOT NULL DEFAULT '',
+      applied_at             TEXT NOT NULL,
+      baseline_cost_avg      REAL NOT NULL DEFAULT 0,
+      baseline_turns_avg     REAL NOT NULL DEFAULT 0,
+      baseline_error_rate    REAL NOT NULL DEFAULT 0,
+      baseline_loop_rate     REAL NOT NULL DEFAULT 0,
+      baseline_insufficient  INTEGER NOT NULL DEFAULT 0
+    )`)
+    db.run('CREATE INDEX IF NOT EXISTS idx_instruction_applied_workspace ON instruction_applied (workspace)')
+  }
+
+  // instruction_dismissed table (feat-instruction-advisor)
+  const dismissedCols = db.exec('PRAGMA table_info(instruction_dismissed)')
+  if (!dismissedCols[0]) {
+    db.run(`CREATE TABLE IF NOT EXISTS instruction_dismissed (
+      id           TEXT NOT NULL,
+      workspace    TEXT NOT NULL,
+      dismissed_at TEXT NOT NULL,
+      PRIMARY KEY (id, workspace)
+    )`)
+    db.run('CREATE INDEX IF NOT EXISTS idx_instruction_dismissed_workspace ON instruction_dismissed (workspace)')
+  }
 }
 
 function ensureBlobsDir(storagePath: string): void {

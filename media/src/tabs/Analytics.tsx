@@ -18,7 +18,9 @@ import { computeStats } from './Agents'
 
 function SectionHead({ title, tip, first, helpAnchor }: { title: string; tip?: string; first?: boolean; helpAnchor?: string }) {
   return (
-    <div style={`display:flex;align-items:center;gap:7px;margin:${first ? '8px' : '16px'} 0 6px`}>
+    <>
+      {!first && <div style="border-top:1px solid var(--border);margin:16px 0 8px" />}
+    <div style={`display:flex;align-items:center;gap:7px;margin:${first ? '8px' : '0'} 0 6px`}>
       <h3
         class={tip ? 'has-metric-tip' : undefined}
         style="font-size:12px;color:var(--muted);margin:0"
@@ -32,6 +34,7 @@ function SectionHead({ title, tip, first, helpAnchor }: { title: string; tip?: s
         >?</button>
       )}
     </div>
+    </>
   )
 }
 
