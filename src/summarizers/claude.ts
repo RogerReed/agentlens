@@ -3,7 +3,7 @@ import { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizerTypes
 import {
   getAttrStr, getAttrInt, nanoToMs, CLAUDE_WRITE_TOOLS, FULL_WRITE_TOOLS,
   extractResponseText, extractTokenCounts, normalizeUserRequest, getGenAiModel,
-  commonPathPrefix,
+  commonPathPrefix, findProjectRoot,
 } from './helpers'
 
 function strOrUndef(v: unknown): string | undefined {
@@ -293,7 +293,7 @@ export function buildClaudeSessions(
       }
     }
 
-    const workspace = commonPathPrefix([...allAbsFilePaths])
+    const workspace = findProjectRoot(commonPathPrefix([...allAbsFilePaths]))
 
     const startMs = nanoToMs(interaction.startTime)
     const totalInput = inputTokens + cacheReadTokens + cacheCreateTokens

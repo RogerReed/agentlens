@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 import { signal } from '@preact/signals'
 import {
   workspaceFilter, filteredSessions, activeTab, evidenceSessionIds, vscode,
@@ -404,18 +404,6 @@ function changePctColor(pct: number | null): string {
 
 // ── Components ────────────────────────────────────────────────────────────────
 
-function WorkspaceGate() {
-  return (
-    <div style="padding:40px 24px;max-width:480px;margin:0 auto;text-align:center">
-      <div style="font-size:32px;margin-bottom:12px;opacity:0.4">⚙</div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--fg)">Select a workspace</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5">
-        Use the project filter above to select a workspace. Instruction suggestions and prompt predictions
-        are project-specific — cross-workspace patterns aren't meaningful.
-      </div>
-    </div>
-  )
-}
 
 function InsufficientDataState({ workspace, count }: { workspace: string; count: number }) {
   return (
