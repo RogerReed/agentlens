@@ -8,7 +8,7 @@ import {
   dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults,
   focusedSessionId, timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
   vscode, displaySessions, rangedSessions,
-  sessionTextFilter, filteredSessions,
+  sessionTextFilter, filteredSessions, evidenceSessionIds,
   sessionSortKey, sessionSortDir, type SortKey,
   workspaceFilter, availableWorkspaces, shortWorkspaceName,
 } from './state'
@@ -22,7 +22,7 @@ import { Export } from './tabs/Export'
 import { Help } from './tabs/Help'
 import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
-import { Instructions, instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instructions'
+import { instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instructions'
 
 
 const sidebarOpen = signal(true)
@@ -30,11 +30,10 @@ const configOpen = signal(false)
 const bellOpen = signal(false)
 
 const TABS = [
-  { id: 'sessions',      label: 'Sessions',      title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
-  { id: 'analytics',     label: 'Analytics',     title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
-  { id: 'patterns',      label: 'Patterns',       title: 'Cross-session behavioral patterns: hot files, prompt efficiency map, CLAUDE.md recommendations, and cost trend.' },
-  { id: 'instructions',  label: 'Instructions',  title: 'Project-scoped suggestions for improving your agent instruction files. Requires a workspace to be selected.' },
-  { id: 'export',        label: 'Export',         title: 'Export raw or redacted OTEL span data as JSON files.' },
+  { id: 'sessions',   label: 'Sessions',   title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
+  { id: 'analytics',  label: 'Analytics',  title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
+  { id: 'patterns',   label: 'Advisor',    title: 'Cross-session behavioral patterns, efficiency map, hot files, and instruction file recommendations.' },
+  { id: 'export',     label: 'Export',     title: 'Export raw or redacted OTEL span data as JSON files.' },
 ]
 
 function ActivePanel() {
@@ -42,9 +41,8 @@ function ActivePanel() {
   switch (tab) {
     case 'sessions':  return <Sessions />
     case 'analytics': return <Analytics />
-    case 'patterns':      return <Patterns />
-    case 'instructions':  return <Instructions />
-    case 'export':        return <Export />
+    case 'patterns':  return <Patterns />
+    case 'export':    return <Export />
     case 'help':      return <Help />
     default:          return null
   }
@@ -465,6 +463,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   const showReset = tab !== 'help'
 
   const isFiltered = sessionTextFilter.value !== '' ||
+    evidenceSessionIds.value !== null ||
     selectedAgentFilter.value !== 'all' ||
     initiatorFilter.value !== 'all' ||
     dataSourceFilter.value !== 'all' ||
@@ -476,6 +475,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
 
   function resetFilters() {
     sessionTextFilter.value = ''
+    evidenceSessionIds.value = null
     selectedAgentFilter.value = 'all'
     initiatorFilter.value = 'all'
     dataSourceFilter.value = 'all'
@@ -702,14 +702,26 @@ function SearchFilterBar() {
   const text = sessionTextFilter.value
   const iFilter = initiatorFilter.value
   const dsFilter = dataSourceFilter.value
+  const evIds = evidenceSessionIds.value
 
   return (
-    <div style="display:flex;align-items:center;gap:5px;padding:4px 8px 6px;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0;flex-wrap:wrap">
+    <div style="display:flex;flex-direction:column;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0">
+      {evIds !== null && (
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#4fc3f711;border-bottom:1px solid #4fc3f733">
+          <span style="font-size:10px;color:#4fc3f7">Showing {evIds.size} session{evIds.size !== 1 ? 's' : ''} from instruction suggestion</span>
+          <button
+            onClick={() => { evidenceSessionIds.value = null }}
+            style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px;line-height:1"
+            title="Clear suggestion filter"
+          >×</button>
+        </div>
+      )}
+      <div style="display:flex;align-items:center;gap:5px;padding:4px 8px 6px;flex-wrap:wrap">
       <input
         type="text"
         placeholder="Filter sessions…"
         value={text}
-        onInput={e => { sessionTextFilter.value = (e.target as HTMLInputElement).value }}
+        onInput={e => { evidenceSessionIds.value = null; sessionTextFilter.value = (e.target as HTMLInputElement).value }}
         style="flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
       />
       <WorkspaceDropdown />
@@ -726,6 +738,7 @@ function SearchFilterBar() {
         onChange={v => { dataSourceFilter.value = v }}
       />
       <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
+      </div>
     </div>
   )
 }

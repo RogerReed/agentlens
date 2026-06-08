@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'preact/hooks'
 import { signal } from '@preact/signals'
 import {
-  workspaceFilter, filteredSessions, activeTab, sessionTextFilter, vscode,
+  workspaceFilter, filteredSessions, activeTab, evidenceSessionIds, vscode,
 } from '../state'
 import { calcSessionCost } from '../sessionMetrics'
 import type { SessionSummaryCard } from '../types'
@@ -17,6 +17,7 @@ interface SuggestionCard {
   title: string
   evidence: string
   suggestedText: string
+  inquiryText: string
   targetAgents: TargetAgent[]
   priority: 'high' | 'medium' | 'low'
   evidenceSessions: string[]
@@ -77,8 +78,15 @@ function pct(n: number, total: number): number { return Math.round((n / total) *
 
 // ── Suggestion generation (pure frontend) ────────────────────────────────────
 
+const INQUIRY_PREAMBLE = 'This is a question about my agent instruction file — please do not make any code changes, just advise on what text to add.\n\n'
+
+function alreadyPresent(existingText: string, ...keyPhrases: string[]): boolean {
+  const lower = existingText.toLowerCase()
+  return keyPhrases.some(p => lower.includes(p.toLowerCase()))
+}
+
 function getHotFileSuggestions(sessions: SessionSummaryCard[], existingText: string): SuggestionCard[] {
-  if (sessions.length < 5) return []
+  if (sessions.length < 3) return []
   const fileFreq = new Map<string, string[]>()
   for (const s of sessions) {
     const seen = new Set<string>()
@@ -92,9 +100,9 @@ function getHotFileSuggestions(sessions: SessionSummaryCard[], existingText: str
   }
   const results: SuggestionCard[] = []
   for (const [file, ids] of fileFreq) {
-    if (ids.length / sessions.length < 0.4) continue
+    if (ids.length / sessions.length < 0.2) continue
     const basename = file.replace(/\\/g, '/').split('/').pop() ?? file
-    if (existingText.toLowerCase().includes(basename.toLowerCase())) continue
+    if (alreadyPresent(existingText, basename)) continue
     if (basename.length < 4) continue
     const parts = file.replace(/\\/g, '/').split('/')
     const subsystem = parts.length >= 2 ? parts[parts.length - 2] : 'this area'
@@ -102,14 +110,53 @@ function getHotFileSuggestions(sessions: SessionSummaryCard[], existingText: str
       id: makeId('hot_file', file),
       category: 'context',
       title: `Add ${basename} to instruction file`,
-      evidence: `Read in ${ids.length} of ${sessions.length} sessions (${pct(ids.length, sessions.length)}%). Each agent discovery adds ~2–3 turns.`,
+      evidence: `Touched in ${ids.length} of ${sessions.length} sessions (${pct(ids.length, sessions.length)}%). Each agent discovery adds ~2–3 turns.`,
       suggestedText: `Always read \`${file}\` before editing ${subsystem} — it is frequently needed context.`,
+      inquiryText: INQUIRY_PREAMBLE + `I've noticed that \`${basename}\` appears in ${pct(ids.length, sessions.length)}% of my agent sessions, but the agent discovers it from scratch each time rather than reading it proactively. What would you recommend I add to my instruction file to ensure it's loaded at the start of relevant tasks?`,
       targetAgents: ['claude_code', 'codex'],
-      priority: ids.length / sessions.length >= 0.6 ? 'high' : 'medium',
+      priority: ids.length / sessions.length >= 0.4 ? 'high' : 'medium',
       evidenceSessions: ids,
     })
   }
   return results.sort((a, b) => b.evidenceSessions.length - a.evidenceSessions.length).slice(0, 6)
+}
+
+function getFrontLoadedDiscoverySuggestions(sessions: SessionSummaryCard[], existingText: string): SuggestionCard[] {
+  if (sessions.length < 8) return []
+  // Files that appear in filesRead but NEVER in filesChanged — pure read-only orientation files
+  const changedEver = new Set<string>()
+  for (const s of sessions) { for (const f of s.filesChanged ?? []) changedEver.add(f) }
+
+  const readFreq = new Map<string, string[]>()
+  for (const s of sessions) {
+    const seen = new Set<string>()
+    for (const f of s.filesRead ?? []) {
+      if (seen.has(f) || changedEver.has(f)) continue
+      seen.add(f)
+      if (!readFreq.has(f)) readFreq.set(f, [])
+      readFreq.get(f)!.push(s.sessionId)
+    }
+  }
+
+  const results: SuggestionCard[] = []
+  for (const [file, ids] of readFreq) {
+    if (ids.length / sessions.length < 0.5) continue
+    const basename = file.replace(/\\/g, '/').split('/').pop() ?? file
+    if (alreadyPresent(existingText, basename)) continue
+    if (basename.length < 4) continue
+    results.push({
+      id: makeId('discovery', file),
+      category: 'context',
+      title: `Load ${basename} before starting`,
+      evidence: `Read without modification in ${ids.length} of ${sessions.length} sessions (${pct(ids.length, sessions.length)}%). Mentioning it upfront eliminates agent discovery turns.`,
+      suggestedText: `Before starting any task, read \`${file}\` — it is consistently needed as reference and is never modified directly.`,
+      inquiryText: INQUIRY_PREAMBLE + `I've noticed that \`${basename}\` is read in ${pct(ids.length, sessions.length)}% of sessions as reference material and is never directly modified — the agent rediscovers it from scratch each time. What would you recommend I add to my instruction file to ensure it's loaded before starting any task?`,
+      targetAgents: ['claude_code', 'codex'],
+      priority: 'high',
+      evidenceSessions: ids,
+    })
+  }
+  return results.sort((a, b) => b.evidenceSessions.length - a.evidenceSessions.length).slice(0, 3)
 }
 
 const LOOP_TEXT: Record<string, string> = {
@@ -125,7 +172,20 @@ const LOOP_TEXT: Record<string, string> = {
     'If input context exceeds 80K tokens without producing a final result, stop and summarize what you have tried so the user can redirect you.',
 }
 
-function getLoopSuggestions(sessions: SessionSummaryCard[]): SuggestionCard[] {
+const LOOP_INQUIRY: Record<string, (count: number, total: number) => string> = {
+  exact_tool_repeat: (count, total) =>
+    `I've noticed that in ${count} of ${total} sessions you re-read files you had already read without modifying them, triggering repeat tool calls. What instruction would you recommend I add to your instruction file to prevent unnecessary re-reads?`,
+  edit_revert_cycle: (count, total) =>
+    `I've noticed that in ${count} of ${total} sessions you made an edit and then reverted it — oscillating between states. What instruction would you recommend I add to your instruction file to prevent this kind of back-and-forth?`,
+  error_recurrence: (count, total) =>
+    `I've noticed that in ${count} of ${total} sessions you retried the same failing operation multiple times without verifying the root cause first. What instruction would you recommend I add to your instruction file to make you pause and verify before a third attempt?`,
+  runaway_steps: (count, total) =>
+    `I've noticed that in ${count} of ${total} sessions tasks ran for many steps without a clear stopping condition. What instruction would you recommend I add to your instruction file to keep tasks bounded and prevent runaway execution?`,
+  token_runaway: (count, total) =>
+    `I've noticed that in ${count} of ${total} sessions context grew very large without producing a final result. What instruction would you recommend I add to your instruction file to prompt you to stop and summarize when context becomes unwieldy?`,
+}
+
+function getLoopSuggestions(sessions: SessionSummaryCard[], existingText: string): SuggestionCard[] {
   if (sessions.length < 5) return []
   const signalMap = new Map<string, string[]>()
   for (const s of sessions) {
@@ -139,12 +199,16 @@ function getLoopSuggestions(sessions: SessionSummaryCard[]): SuggestionCard[] {
     if (ids.length / sessions.length < 0.2) continue
     const text = LOOP_TEXT[type]
     if (!text) continue
+    // Suppress if a key phrase from the suggestion is already in the instruction file
+    const keyPhrase = text.split('.')[0].slice(0, 40)
+    if (alreadyPresent(existingText, keyPhrase)) continue
     results.push({
       id: makeId('loop', type),
       category: 'behavior',
       title: `Prevent ${type.replace(/_/g, ' ')} loops`,
       evidence: `Signal "${type}" detected in ${ids.length} of ${sessions.length} sessions (${pct(ids.length, sessions.length)}%).`,
       suggestedText: text,
+      inquiryText: INQUIRY_PREAMBLE + (LOOP_INQUIRY[type]?.(ids.length, sessions.length) ?? `I've noticed "${type.replace(/_/g, ' ')}" signals in ${ids.length} of ${sessions.length} sessions. What instruction would you recommend I add to my instruction file to prevent this pattern?`),
       targetAgents: ['claude_code', 'codex'],
       priority: ids.length / sessions.length >= 0.4 ? 'high' : 'medium',
       evidenceSessions: ids,
@@ -160,148 +224,170 @@ const SCOPE_PATTERNS = [
   /;\s*also\b|\band then\b|\bfinally\b/i,
 ]
 
-function getScopeSuggestions(sessions: SessionSummaryCard[]): SuggestionCard[] {
-  if (sessions.length < 8) return []
-  const avgCost = sessions.reduce((s, sess) => s + sessionCostUsd(sess), 0) / sessions.length
-  if (avgCost === 0) return []
+function getScopeSuggestions(sessions: SessionSummaryCard[], existingText: string): SuggestionCard[] {
+  if (alreadyPresent(existingText, 'Prompting guidance', 'name the specific file', 'one task at a time')) return []
+  if (sessions.length < 5) return []
   const matching = sessions.filter(s => SCOPE_PATTERNS.some(re => re.test(s.userRequest ?? '')))
-  if (matching.length < 3) return []
-  const matchAvg = matching.reduce((s, sess) => s + sessionCostUsd(sess), 0) / matching.length
-  if (matchAvg < avgCost * 1.8) return []
+  if (matching.length < 2) return []
+
+  // Use cost only if the matching sessions themselves have cost data; fall back to turns otherwise
+  const matchHasCost = matching.some(s => sessionCostUsd(s) > 0)
+  const avgCost = sessions.reduce((s, sess) => s + sessionCostUsd(sess), 0) / sessions.length
+  const avgTurns = sessions.filter(s => s.totalLlmCalls > 0).reduce((a, s) => a + s.totalLlmCalls, 0) /
+    Math.max(1, sessions.filter(s => s.totalLlmCalls > 0).length)
+  const useCost = matchHasCost && avgCost > 0
+  const useTurns = !useCost && avgTurns > 0
+  if (!useCost && !useTurns) return []
+
+  const metric = (s: SessionSummaryCard) => useCost ? sessionCostUsd(s) : s.totalLlmCalls
+  const baseline = useCost ? avgCost : avgTurns
+  const matchAvg = matching.reduce((a, s) => a + metric(s), 0) / matching.length
+  if (matchAvg < baseline * 1.4) return []
+
+  const unit = useCost ? 'cost' : 'turns'
+  const ratio = (matchAvg / baseline).toFixed(1)
   return [{
     id: 'prompting:scope',
     category: 'prompting',
     title: 'Add scope prompting guidance',
-    evidence: `Sessions with open-ended language cost ${(matchAvg / avgCost).toFixed(1)}× average (${matching.length} of ${sessions.length} sessions).`,
+    evidence: `Sessions with open-ended language run ${ratio}× avg ${unit} (${matching.length} of ${sessions.length} sessions).`,
     suggestedText: [
       'Prompting guidance:',
       '- Always name the specific file and function. Don\'t say "refactor" — say "refactor [function] in [file]".',
       '- State the exact error message when reporting a bug, not just that something is broken.',
       '- One task at a time. Multi-part prompts ("fix X, then also do Y") should be split into separate sessions.',
     ].join('\n'),
+    inquiryText: INQUIRY_PREAMBLE + `I've noticed that prompts using open-ended language like "refactor" or "fix the bug" run at ${ratio}× the average ${unit} compared to more scoped prompts — across ${matching.length} of ${sessions.length} sessions. What guidance would you recommend I add to my instruction file to encourage more targeted, scoped prompts from users?`,
     targetAgents: ['claude_code', 'copilot', 'codex'],
     priority: 'medium',
     evidenceSessions: matching.map(s => s.sessionId),
   }]
 }
 
-function getToolDisciplineSuggestions(sessions: SessionSummaryCard[]): SuggestionCard[] {
-  if (sessions.length < 8) return []
+function getHighTurnSuggestions(sessions: SessionSummaryCard[], existingText: string): SuggestionCard[] {
+  if (alreadyPresent(existingText, 'Before starting a task', 'what you want done', 'upfront')) return []
+  if (sessions.length < 5) return []
+  const withTurns = sessions.filter(s => s.totalLlmCalls > 0)
+  if (withTurns.length < 5) return []
+  const avg = withTurns.reduce((a, s) => a + s.totalLlmCalls, 0) / withTurns.length
+  if (avg < 8) return []
+  const high = withTurns.filter(s => s.totalLlmCalls > avg * 1.5)
+  if (high.length / withTurns.length < 0.15) return []
+  return [{
+    id: 'behavior:high_turns',
+    category: 'behavior',
+    title: 'Reduce back-and-forth with clearer upfront context',
+    evidence: `${high.length} of ${withTurns.length} sessions (${pct(high.length, withTurns.length)}%) exceed 1.5× avg turn count (avg: ${avg.toFixed(0)} turns). High turn counts often indicate missing context or ambiguous scope.`,
+    suggestedText: [
+      'Before starting a task:',
+      '- State what you want done, what files are involved, and what "done" looks like.',
+      '- Include any constraints upfront (libraries to use, patterns to follow, things to avoid).',
+      '- Paste relevant error messages or code snippets rather than describing them.',
+    ].join('\n'),
+    inquiryText: INQUIRY_PREAMBLE + `I've noticed that ${high.length} of ${withTurns.length} sessions have turn counts more than 1.5× the average of ${avg.toFixed(0)} turns. This often signals that context or scope wasn't established clearly at the start. What would you recommend I add to my instruction file to prompt users to provide clearer upfront information before starting a task?`,
+    targetAgents: ['claude_code', 'copilot', 'codex'],
+    priority: 'medium',
+    evidenceSessions: high.map(s => s.sessionId),
+  }]
+}
+
+// Tool name aliases across agents
+const BASH_TOOLS = new Set(['Bash', 'run_in_terminal', 'execute_command'])
+const READ_TOOLS  = new Set(['Read', 'read_file', 'view_file'])
+
+function getToolDisciplineSuggestions(sessions: SessionSummaryCard[], existingText: string): SuggestionCard[] {
+  if (alreadyPresent(existingText, 'file-read tool', 'Read tool', 'cat, head, or tail')) return []
+  if (sessions.length < 5) return []
   const heavy = sessions.filter(s => {
-    const bash = s.toolCounts?.['Bash'] ?? 0
-    const read = s.toolCounts?.['Read'] ?? 0
+    const tc = s.toolCounts ?? {}
+    const bash = Object.entries(tc).filter(([k]) => BASH_TOOLS.has(k)).reduce((a, [,v]) => a + v, 0)
+    const read = Object.entries(tc).filter(([k]) => READ_TOOLS.has(k)).reduce((a, [,v]) => a + v, 0)
     return bash > 0 && read > 0 && bash > read * 3
   })
-  if (heavy.length < 8) return []
+  if (heavy.length < 3) return []
   return [{
     id: 'behavior:tool_discipline',
     category: 'behavior',
-    title: 'Prefer Read tool over Bash for file inspection',
-    evidence: `Bash calls exceed Read 3× in ${heavy.length} of ${sessions.length} sessions (${pct(heavy.length, sessions.length)}%).`,
-    suggestedText: 'Prefer the Read tool over Bash for file inspection. Use Bash only for shell operations that cannot be done with a dedicated tool. Do not use cat, head, or tail to read file contents.',
-    targetAgents: ['claude_code', 'codex'],
+    title: 'Prefer file-read tool over terminal for inspection',
+    evidence: `Terminal calls exceed file-read 3× in ${heavy.length} of ${sessions.length} sessions (${pct(heavy.length, sessions.length)}%).`,
+    suggestedText: 'Prefer the dedicated file-read tool over running shell commands to inspect files. Use the terminal only for operations that cannot be done with a dedicated tool. Do not use cat, head, or tail to read file contents.',
+    inquiryText: INQUIRY_PREAMBLE + `I've noticed that in ${heavy.length} of ${sessions.length} sessions, Bash/terminal commands are used more than 3× as often as the file-reading tool to inspect file contents — cat, head, and similar shell commands instead of reading files directly. What instruction would you recommend I add to my instruction file to prevent this?`,
+    targetAgents: ['claude_code', 'copilot', 'codex'],
     priority: 'low',
     evidenceSessions: heavy.map(s => s.sessionId),
   }]
 }
 
 function generateSuggestions(sessions: SessionSummaryCard[], existingText: string): SuggestionCard[] {
-  if (sessions.length < 5) return []
+  if (sessions.length < 3) return []
   return [
     ...getHotFileSuggestions(sessions, existingText),
-    ...getLoopSuggestions(sessions),
-    ...getScopeSuggestions(sessions),
-    ...getToolDisciplineSuggestions(sessions),
+    ...getFrontLoadedDiscoverySuggestions(sessions, existingText),
+    ...getLoopSuggestions(sessions, existingText),
+    ...getScopeSuggestions(sessions, existingText),
+    ...getHighTurnSuggestions(sessions, existingText),
+    ...getToolDisciplineSuggestions(sessions, existingText),
   ]
 }
 
-// ── Prompt Analyzer logic ─────────────────────────────────────────────────────
-
-const STOPWORDS = new Set(['the','and','for','are','but','not','you','all','any','can','had','her',
-  'was','one','our','out','day','get','has','him','his','how','its','may','new','now','old','see',
-  'two','who','did','let','put','say','she','too','use','with','this','that','from','have','been',
-  'will','your','they','what','when','make','like','into','time','then','than','some','just','also',
-  'need','want','add','file','code','work','would','could','should','there'])
-
-function tokenize(text: string): string[] {
-  return text.toLowerCase().replace(/[^\w\s/.]/g, ' ').split(/\s+/)
-    .filter(t => t.length >= 3 && !STOPWORDS.has(t))
+interface Diagnostics {
+  sessionCount: number
+  withFiles: number
+  withCost: number
+  withToolCounts: number
+  topFile: { name: string; count: number } | null
+  loopSignalTypes: number
+  bashHeavy: number
+  scopeMatches: number
+  scopeRatio: number | null
+  scopeRatioUnit: 'cost' | 'turns' | null
+  avgTurns: number
+  highTurnCount: number
+  sources: Record<string, number>
 }
 
-function jaccard(a: string[], b: string[]): number {
-  const setA = new Set(a); const setB = new Set(b)
-  if (setA.size === 0 && setB.size === 0) return 0
-  let i = 0; for (const t of setA) { if (setB.has(t)) i++ }
-  const union = setA.size + setB.size - i
-  return union === 0 ? 0 : i / union
-}
-
-const PA_RISK_PATTERNS = [
-  { re: /\brefactor\b|\bclean[- ]up\b|\bimprove\b|\boptimize\b/i, label: 'Open-ended refactor', suggestion: 'Name the specific function and file instead of saying "refactor the code".' },
-  { re: /;\s*also\b|\band then\b|\bfinally\b/i, label: 'Multi-part task', suggestion: 'Split this into separate sessions — multi-part prompts have higher cost variance.' },
-  { re: /\bfix the bug\b|\bmake it work\b|\bit'?s broken\b/i, label: 'Fix without specifics', suggestion: 'Include the exact error message and the file where it occurs.' },
-  { re: /\bfind all\b|\blook through\b|\bcheck everywhere\b/i, label: 'Discovery task', suggestion: 'Specify what you\'re looking for and where — broad discovery tasks cost 3× average.' },
-]
-
-interface AnalysisResult {
-  costLow: number; costHigh: number; turnsLow: number; turnsHigh: number
-  highVariance: boolean
-  predictedFiles: Array<{file: string; count: number; pct: number}>
-  risks: Array<{label: string; suggestion: string}>
-  similarCount: number
-}
-
-function analyzePrompt(prompt: string, sessions: SessionSummaryCard[]): AnalysisResult {
-  const tokens = tokenize(prompt)
-  const now = Date.now()
-  const scored = sessions.map(s => {
-    const sim = tokens.length > 0 ? jaccard(tokens, tokenize(s.userRequest ?? '')) : 0
-    const ageSec = Math.max(1, (now - Date.parse(s.startTime || '0')) / 1000)
-    return { s, score: sim * (1 + (1 / Math.log10(ageSec + 10)) * 0.2) }
-  }).filter(x => x.score >= 0.1).sort((a, b) => b.score - a.score).slice(0, 10)
-
-  const similar = scored.map(x => x.s)
-  const costs = similar.map(s => sessionCostUsd(s)).filter(c => c > 0)
-  const turns = similar.map(s => s.totalLlmCalls).filter(t => t > 0)
-
-  const fileCount = new Map<string, number>()
-  for (const s of similar) {
+function getDiagnostics(sessions: SessionSummaryCard[]): Diagnostics {
+  const fileFreq = new Map<string, number>()
+  let withFiles = 0; let withCost = 0; let withToolCounts = 0
+  const sources: Record<string, number> = {}
+  for (const s of sessions) {
+    const files = [...(s.filesRead ?? []), ...(s.filesChanged ?? [])]
+    if (files.length > 0) withFiles++
+    if (sessionCostUsd(s) > 0) withCost++
+    if (Object.keys(s.toolCounts ?? {}).length > 0) withToolCounts++
+    sources[s.source ?? 'unknown'] = (sources[s.source ?? 'unknown'] ?? 0) + 1
     const seen = new Set<string>()
-    for (const f of [...(s.filesChanged ?? []), ...(s.filesRead ?? [])]) {
-      if (!seen.has(f)) { seen.add(f); fileCount.set(f, (fileCount.get(f) ?? 0) + 1) }
+    for (const f of files) {
+      if (!seen.has(f)) { seen.add(f); fileFreq.set(f, (fileFreq.get(f) ?? 0) + 1) }
     }
   }
-
-  const avgCost = sessions.length > 0
-    ? sessions.reduce((s, sess) => s + sessionCostUsd(sess), 0) / sessions.length : 0
-
-  const risks = PA_RISK_PATTERNS
-    .filter(p => p.re.test(prompt))
-    .map(p => ({ label: p.label, suggestion: p.suggestion }))
-
-  const costLow = costs.length ? Math.min(...costs) : 0
-  const costHigh = costs.length ? Math.max(...costs) : 0
-
+  const topEntry = [...fileFreq.entries()].sort((a, b) => b[1] - a[1])[0]
+  const loopTypes = new Set<string>()
+  for (const s of sessions) { for (const sig of s.loopSignals ?? []) loopTypes.add(sig.type) }
+  const bashHeavy = sessions.filter(s => {
+    const bash = s.toolCounts?.['Bash'] ?? 0; const read = s.toolCounts?.['Read'] ?? 0
+    return bash > 0 && read > 0 && bash > read * 3
+  }).length
+  const withTurns = sessions.filter(s => s.totalLlmCalls > 0)
+  const avgTurns = withTurns.length ? withTurns.reduce((a, s) => a + s.totalLlmCalls, 0) / withTurns.length : 0
+  const highTurnCount = withTurns.filter(s => s.totalLlmCalls > avgTurns * 1.5).length
+  const scopeMatching = sessions.filter(s => SCOPE_PATTERNS.some(re => re.test(s.userRequest ?? '')))
+  const scopeMatches = scopeMatching.length
+  const avgCost = sessions.length ? sessions.reduce((a, s) => a + sessionCostUsd(s), 0) / sessions.length : 0
+  const useCost = avgCost > 0
+  const baseline = useCost ? avgCost : avgTurns
+  const matchAvg = scopeMatches ? scopeMatching.reduce((a, s) => a + (useCost ? sessionCostUsd(s) : s.totalLlmCalls), 0) / scopeMatches : 0
   return {
-    costLow, costHigh,
-    turnsLow: turns.length ? Math.min(...turns) : 0,
-    turnsHigh: turns.length ? Math.max(...turns) : 0,
-    highVariance: costHigh > 0 && costHigh > costLow * 2,
-    predictedFiles: [...fileCount.entries()]
-      .sort((a, b) => b[1] - a[1]).slice(0, 5)
-      .map(([f, n]) => ({ file: f, count: n, pct: Math.round((n / Math.max(similar.length, 1)) * 100) })),
-    risks,
-    similarCount: similar.length,
+    sessionCount: sessions.length, withFiles, withCost, withToolCounts,
+    topFile: topEntry ? { name: topEntry[0].replace(/\\/g, '/').split('/').pop() ?? topEntry[0], count: topEntry[1] } : null,
+    loopSignalTypes: loopTypes.size, bashHeavy, scopeMatches,
+    scopeRatio: baseline > 0 && scopeMatches > 0 ? matchAvg / baseline : null,
+    scopeRatioUnit: useCost ? 'cost' : avgTurns > 0 ? 'turns' : null,
+    avgTurns, highTurnCount, sources,
   }
 }
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
-
-function fmtUsdRange(low: number, high: number): string {
-  const fmt = (v: number) => v < 0.001 ? '<$0.001' : v < 1 ? '$' + v.toFixed(3) : '$' + v.toFixed(2)
-  if (low === high) return fmt(low)
-  return `${fmt(low)}–${fmt(high)}`
-}
 
 function changePctLabel(pct: number | null): string | null {
   if (pct === null) return null
@@ -335,9 +421,9 @@ function InsufficientDataState({ workspace, count }: { workspace: string; count:
   return (
     <div style="padding:32px 24px;max-width:480px;margin:0 auto;text-align:center">
       <div style="font-size:12px;color:var(--muted);line-height:1.5">
-        Not enough history yet — AgentLens needs at least 5 sessions in
-        <strong style="color:var(--fg);margin:0 4px">{workspace}</strong>
-        to detect patterns.<br />
+        Not enough history yet — AgentLens needs at least 3 sessions
+        {workspace !== 'all' && <><span> in </span><strong style="color:var(--fg)">{workspace}</strong></>}
+        {' '}to detect patterns.<br />
         Current: {count} session{count !== 1 ? 's' : ''}.
       </div>
     </div>
@@ -361,8 +447,30 @@ function FileStatusBar({ files }: { files: InstructionFile[] }) {
   )
 }
 
+function TextBlock({ label, text }: { label: string; text: string }) {
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+  return (
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:11px;color:var(--muted)">{label}</span>
+        <button
+          onClick={copy}
+          style="padding:2px 8px;font-size:10px;border-radius:3px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap"
+        >{copied ? '✓ Copied' : 'Copy'}</button>
+      </div>
+      <pre style="margin:0;padding:8px;font-size:11px;font-family:monospace;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;white-space:pre-wrap;word-break:break-word;line-height:1.5">{text}</pre>
+    </div>
+  )
+}
+
 function SuggestionCardView({
-  card, dismissed, applied, files, onApply, onDismiss,
+  card, dismissed, applied, onDismiss,
 }: {
   card: SuggestionCard
   dismissed: boolean
@@ -371,18 +479,13 @@ function SuggestionCardView({
   onApply: (id: string, targetFile: string, text: string) => void
   onDismiss: (id: string) => void
 }) {
-  const [editedText, setEditedText] = useState(card.suggestedText)
-  const [targetFile, setTargetFile] = useState(files[0]?.relativePath ?? '')
-  const [expanded, setExpanded] = useState(false)
-
   if (dismissed || applied) return null
 
   const catColor = CAT_COLOR[card.category]
-  const availableFiles = files.filter(f => f.exists || true)  // show all for create affordance
 
   return (
     <div style="border:1px solid var(--border);border-radius:6px;margin-bottom:10px;overflow:hidden">
-      <div style="padding:10px 12px;display:flex;align-items:flex-start;gap:8px;cursor:pointer" onClick={() => setExpanded(e => !e)}>
+      <div style="padding:10px 12px;display:flex;align-items:flex-start;gap:8px">
         <span style={`font-size:9px;padding:2px 6px;border-radius:8px;background:${catColor}22;color:${catColor};text-transform:uppercase;letter-spacing:.3px;flex-shrink:0;margin-top:1px`}>
           {card.category}
         </span>
@@ -397,67 +500,46 @@ function SuggestionCardView({
             ))}
           </div>
         </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <button
-            onClick={e => { e.stopPropagation(); onDismiss(card.id) }}
-            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1"
-            title="Dismiss"
-          >×</button>
-          <span style={`font-size:10px;color:var(--muted);transition:transform 0.15s;display:inline-block;transform:rotate(${expanded ? 180 : 0}deg)`}>▾</span>
-        </div>
+        <button
+          onClick={() => onDismiss(card.id)}
+          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;flex-shrink:0"
+          title="Dismiss"
+        >×</button>
       </div>
 
-      {expanded && (
-        <div style="padding:10px 12px;border-top:1px solid var(--border);background:var(--card-bg)">
-          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Suggested text (edit before applying):</div>
-          <textarea
-            value={editedText}
-            onInput={e => setEditedText((e.target as HTMLTextAreaElement).value)}
-            style="width:100%;box-sizing:border-box;min-height:80px;padding:6px 8px;font-size:11px;font-family:monospace;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;resize:vertical;outline:none"
-          />
-          <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
-            <span style="font-size:11px;color:var(--muted);white-space:nowrap">Add to:</span>
-            {availableFiles.length > 0 ? (
-              <select
-                value={targetFile}
-                onChange={e => setTargetFile((e.target as HTMLSelectElement).value)}
-                style="flex:1;padding:3px 6px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-              >
-                {availableFiles.map(f => (
-                  <option key={f.relativePath} value={f.relativePath}>
-                    {f.relativePath}{f.exists ? '' : ' (create)'}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                placeholder="e.g. CLAUDE.md"
-                value={targetFile}
-                onInput={e => setTargetFile((e.target as HTMLInputElement).value)}
-                style="flex:1;padding:3px 6px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
-              />
-            )}
-            <button
-              onClick={() => { if (targetFile && editedText) onApply(card.id, targetFile, editedText) }}
-              disabled={!targetFile || !editedText}
-              style="padding:3px 12px;font-size:11px;border-radius:4px;cursor:pointer;border:none;background:var(--accent,#4fc3f7);color:#000;font-weight:600;white-space:nowrap"
-            >
-              Apply
-            </button>
-            <button
-              onClick={() => {
-                activeTab.value = 'sessions'
-                sessionTextFilter.value = card.evidenceSessions[0] ?? ''
-              }}
-              style="padding:3px 8px;font-size:11px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap"
-              title="View the sessions that triggered this suggestion"
-            >
-              View sessions ↗
-            </button>
-          </div>
+      <div style="padding:10px 12px;border-top:1px solid var(--border);background:var(--card-bg);display:flex;flex-direction:column;gap:10px">
+        <TextBlock label="Recommended addition:" text={card.suggestedText} />
+        <TextBlock label="Ask your agent:" text={card.inquiryText} />
+        <div>
+          <button
+            onClick={() => {
+              evidenceSessionIds.value = new Set(card.evidenceSessions)
+              activeTab.value = 'sessions'
+            }}
+            style="padding:2px 8px;font-size:10px;border-radius:3px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap"
+            title="View the sessions that triggered this suggestion"
+          >View sessions ↗</button>
         </div>
-      )}
+      </div>
+    </div>
+  )
+}
+
+function ConfidenceBar({ postCount }: { postCount: number }) {
+  const filled = postCount < 3 ? 0 : postCount < 8 ? 1 : postCount < 15 ? 2 : 3
+  const label = postCount < 3 ? 'Collecting data…'
+    : postCount < 8  ? 'Low confidence'
+    : postCount < 15 ? 'Medium confidence'
+    : 'High confidence'
+  const segs = [0, 1, 2]
+  return (
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+      <div style="display:flex;gap:2px">
+        {segs.map(i => (
+          <div key={i} style={`width:14px;height:4px;border-radius:2px;background:${i < filled ? '#4fc3f7' : 'var(--border)'}`} />
+        ))}
+      </div>
+      <span style="font-size:10px;color:var(--muted)">{label} ({postCount} post sessions)</span>
     </div>
   )
 }
@@ -466,35 +548,51 @@ function AppliedCard({
   record,
   sessions,
   onRemove,
+  onViewBefore,
+  onViewAfter,
 }: {
   record: AppliedRecord
   sessions: SessionSummaryCard[]
   onRemove: (id: string) => void
+  onViewBefore: (ids: Set<string>) => void
+  onViewAfter: (ids: Set<string>) => void
 }) {
   const catColor = CAT_COLOR[(record.category as SuggestionCategory)] ?? '#888'
   const appliedAtMs = record.appliedAtMs
 
-  // Compute post metrics from sessions after appliedAt
-  const after = sessions.filter(s => s.startTime && Date.parse(s.startTime) >= appliedAtMs)
-  const before = sessions.filter(s => s.startTime && Date.parse(s.startTime) < appliedAtMs).slice(0, 20)
+  const afterSessions  = sessions.filter(s => s.startTime && Date.parse(s.startTime) >= appliedAtMs)
+  const beforeSessions = sessions.filter(s => s.startTime && Date.parse(s.startTime) < appliedAtMs).slice(0, 20)
 
-  const avgCost = (arr: SessionSummaryCard[]) =>
-    arr.length === 0 ? null : arr.reduce((s, sess) => s + sessionCostUsd(sess), 0) / arr.length
-  const avgTurns = (arr: SessionSummaryCard[]) =>
-    arr.length === 0 ? null : arr.reduce((s, sess) => s + sess.totalLlmCalls, 0) / arr.length
+  const avgOf = (arr: SessionSummaryCard[], fn: (s: SessionSummaryCard) => number) =>
+    arr.length === 0 ? null : arr.reduce((a, s) => a + fn(s), 0) / arr.length
 
-  const beforeCost  = record.baselineInsufficient ? null : avgCost(before)
-  const afterCost   = after.length >= 3 ? avgCost(after) : null
-  const beforeTurns = record.baselineInsufficient ? null : avgTurns(before)
-  const afterTurns  = after.length >= 3 ? avgTurns(after) : null
+  const hasBefore = !record.baselineInsufficient && beforeSessions.length > 0
+  const hasAfter  = afterSessions.length >= 3
 
-  const costPct  = beforeCost && afterCost  ? ((afterCost  - beforeCost)  / beforeCost)  * 100 : null
-  const turnsPct = beforeTurns && afterTurns ? ((afterTurns - beforeTurns) / beforeTurns) * 100 : null
+  const beforeCost   = hasBefore ? avgOf(beforeSessions, sessionCostUsd) : null
+  const afterCost    = hasAfter  ? avgOf(afterSessions,  sessionCostUsd) : null
+  const beforeTurns  = hasBefore ? avgOf(beforeSessions, s => s.totalLlmCalls) : null
+  const afterTurns   = hasAfter  ? avgOf(afterSessions,  s => s.totalLlmCalls) : null
+  const beforeErrors = hasBefore ? avgOf(beforeSessions, s => s.errors) : null
+  const afterErrors  = hasAfter  ? avgOf(afterSessions,  s => s.errors) : null
+  const beforeLoops  = hasBefore ? avgOf(beforeSessions, s => (s.loopSignals?.length ?? 0) > 0 ? 1 : 0) : null
+  const afterLoops   = hasAfter  ? avgOf(afterSessions,  s => (s.loopSignals?.length ?? 0) > 0 ? 1 : 0) : null
 
-  const confidence = after.length < 3 ? 'Collecting data…'
-    : after.length < 8  ? 'Low confidence'
-    : after.length < 15 ? 'Medium confidence'
-    : 'High confidence'
+  const diffPct = (b: number | null, a: number | null) =>
+    b && a ? ((a - b) / b) * 100 : null
+
+  const MetricRow = ({ label, before, after, pct, fmt = (v: number) => v.toFixed(2) }: {
+    label: string; before: number | null; after: number | null; pct: number | null
+    fmt?: (v: number) => string
+  }) => before === null || after === null ? null : (
+    <div style="font-size:11px;display:flex;gap:4px;align-items:center">
+      <span style="color:var(--muted);min-width:52px">{label}</span>
+      <span>{fmt(before)}</span>
+      <span style="color:var(--muted)">→</span>
+      <span>{fmt(after)}</span>
+      {pct !== null && <span style={`color:${changePctColor(pct)};font-weight:600`}>{changePctLabel(pct)}</span>}
+    </div>
+  )
 
   return (
     <div style="border:1px solid var(--border);border-radius:6px;margin-bottom:8px;overflow:hidden">
@@ -509,34 +607,34 @@ function AppliedCard({
             {record.appliedText}
           </div>
 
-          {(beforeCost !== null || afterCost !== null) && (
-            <div style="margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">
-              {beforeCost !== null && afterCost !== null && (
-                <>
-                  <div style="font-size:11px">
-                    <span style="color:var(--muted)">Cost: </span>
-                    <span>${beforeCost.toFixed(3)}</span>
-                    <span style="color:var(--muted)"> → </span>
-                    <span>${afterCost.toFixed(3)}</span>
-                    {costPct !== null && <span style={`margin-left:4px;color:${changePctColor(costPct)};font-weight:600`}>{changePctLabel(costPct)}</span>}
-                  </div>
-                  {beforeTurns !== null && afterTurns !== null && (
-                    <div style="font-size:11px">
-                      <span style="color:var(--muted)">Turns: </span>
-                      <span>{beforeTurns.toFixed(1)}</span>
-                      <span style="color:var(--muted)"> → </span>
-                      <span>{afterTurns.toFixed(1)}</span>
-                      {turnsPct !== null && <span style={`margin-left:4px;color:${changePctColor(turnsPct)};font-weight:600`}>{changePctLabel(turnsPct)}</span>}
-                    </div>
-                  )}
-                </>
-              )}
-              <div style="font-size:10px;color:var(--muted)">{confidence} ({after.length} post sessions)</div>
-            </div>
-          )}
-          {beforeCost === null && (
+          {!hasAfter && (
             <div style="font-size:11px;color:var(--muted);margin-top:6px">Collecting data… (need 3 post-application sessions)</div>
           )}
+
+          {hasAfter && (
+            <div style="margin-top:8px;display:flex;flex-direction:column;gap:3px">
+              <MetricRow label="Cost" before={beforeCost} after={afterCost} pct={diffPct(beforeCost, afterCost)} fmt={v => `$${v.toFixed(3)}`} />
+              <MetricRow label="Turns" before={beforeTurns} after={afterTurns} pct={diffPct(beforeTurns, afterTurns)} fmt={v => v.toFixed(1)} />
+              <MetricRow label="Errors" before={beforeErrors} after={afterErrors} pct={diffPct(beforeErrors, afterErrors)} fmt={v => v.toFixed(2)} />
+              <MetricRow label="Loop %" before={beforeLoops} after={afterLoops} pct={diffPct(beforeLoops, afterLoops)} fmt={v => `${(v * 100).toFixed(0)}%`} />
+              <ConfidenceBar postCount={afterSessions.length} />
+            </div>
+          )}
+
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            {beforeSessions.length > 0 && (
+              <button
+                onClick={() => onViewBefore(new Set(beforeSessions.map(s => s.sessionId)))}
+                style="padding:2px 8px;font-size:10px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted)"
+              >View before ↗</button>
+            )}
+            {afterSessions.length > 0 && (
+              <button
+                onClick={() => onViewAfter(new Set(afterSessions.map(s => s.sessionId)))}
+                style="padding:2px 8px;font-size:10px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted)"
+              >View after ↗</button>
+            )}
+          </div>
         </div>
         <button
           onClick={() => onRemove(record.id)}
@@ -550,101 +648,16 @@ function AppliedCard({
 
 // ── Prompt Analyzer panel ─────────────────────────────────────────────────────
 
-function PromptAnalyzerPanel({ sessions }: { sessions: SessionSummaryCard[] }) {
-  const [prompt, setPrompt] = useState('')
-  const [result, setResult] = useState<AnalysisResult | null>(null)
-
-  function handleAnalyze() {
-    if (!prompt.trim()) return
-    setResult(analyzePrompt(prompt.trim(), sessions))
-    // Also send to extension / MCP if in VS Code
-    if (vscode) {
-      vscode.postMessage({ type: 'analyzePrompt', prompt: prompt.trim() })
-    }
-  }
-
-  return (
-    <div style="padding:16px">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px">
-        Prompt Analyzer
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.4">
-        Paste a prompt you're about to send to get a cost prediction and scope check based on your past sessions in this project.
-      </div>
-      <textarea
-        value={prompt}
-        onInput={e => setPrompt((e.target as HTMLTextAreaElement).value)}
-        placeholder="Paste your prompt here…"
-        style="width:100%;box-sizing:border-box;min-height:72px;padding:8px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;resize:vertical;outline:none"
-      />
-      <button
-        onClick={handleAnalyze}
-        disabled={!prompt.trim()}
-        style="margin-top:6px;padding:4px 14px;font-size:11px;border-radius:4px;cursor:pointer;border:none;background:var(--accent,#4fc3f7);color:#000;font-weight:600"
-      >
-        Analyze
-      </button>
-
-      {result && (
-        <div style="margin-top:14px">
-          {result.similarCount === 0 ? (
-            <div style="font-size:11px;color:var(--muted)">No similar past sessions found — prediction unavailable.</div>
-          ) : (
-            <>
-              <div style="margin-bottom:10px;padding:8px 10px;background:var(--card-bg);border-radius:4px;border:1px solid var(--border)">
-                <div style="font-size:11px;font-weight:600;margin-bottom:4px">Cost & turns prediction</div>
-                <div style="font-size:11px;color:var(--muted)">
-                  Based on {result.similarCount} similar session{result.similarCount !== 1 ? 's' : ''} in this workspace:
-                  <span style="color:var(--fg);margin:0 4px">{fmtUsdRange(result.costLow, result.costHigh)}</span>
-                  and
-                  <span style="color:var(--fg);margin:0 4px">{result.turnsLow}–{result.turnsHigh} turns</span>
-                  {result.highVariance && (
-                    <span style="color:#ffb74d;margin-left:4px">⚠ High variance — consider narrowing scope.</span>
-                  )}
-                </div>
-              </div>
-
-              {result.risks.length > 0 && (
-                <div style="margin-bottom:10px;padding:8px 10px;background:#ffb74d11;border:1px solid #ffb74d44;border-radius:4px">
-                  <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:#ffb74d">Scope risk signals</div>
-                  {result.risks.map((r, i) => (
-                    <div key={i} style="margin-bottom:6px">
-                      <div style="font-size:11px;font-weight:600">{r.label}</div>
-                      <div style="font-size:11px;color:var(--muted)">{r.suggestion}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {result.predictedFiles.length > 0 && (
-                <div style="padding:8px 10px;background:var(--card-bg);border-radius:4px;border:1px solid var(--border)">
-                  <div style="font-size:11px;font-weight:600;margin-bottom:4px">Likely files to touch</div>
-                  {result.predictedFiles.map(f => (
-                    <div key={f.file} style="display:flex;justify-content:space-between;font-size:11px;margin-top:3px">
-                      <span style="color:var(--muted);font-family:monospace">{f.file.replace(/\\/g, '/').split('/').pop()}</span>
-                      <span style="color:var(--muted)">{f.pct}% of similar sessions</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── Main tab component ────────────────────────────────────────────────────────
 
 export function Instructions() {
   const workspace = workspaceFilter.value
   const sessions = filteredSessions.value
 
-  // Workspace-scoped sessions (already filtered by agentFilteredSessions when ws is set)
+  // Workspace-scoped sessions — use all visible sessions when no workspace is selected
   const wsSessions = workspace === 'all'
-    ? []
-    : sessions.filter(s => (s.workspace ?? '') === workspace || workspace === 'all')
+    ? sessions
+    : sessions.filter(s => (s.workspace ?? '') === workspace)
 
   // Instruction files come from extension via message
   const files = instructionFiles.value
@@ -654,7 +667,7 @@ export function Instructions() {
   // Generate suggestions from session data + existing instruction file content
   const existingText = files.map(f => f.content).join('\n')
   const appliedIds = new Set(applied.map(a => a.id))
-  const suggestions = workspace === 'all' ? [] : generateSuggestions(wsSessions, existingText)
+  const suggestions = generateSuggestions(wsSessions, existingText)
     .filter(s => !appliedIds.has(s.id))
 
   // Request instruction files from extension when workspace changes
@@ -700,21 +713,23 @@ export function Instructions() {
     if (vscode) vscode.postMessage({ type: 'removeInstructionSuggestion', id, workspace })
   }
 
-  if (workspace === 'all') {
-    return <WorkspaceGate />
-  }
-
-  if (wsSessions.length < 5) {
+  if (wsSessions.length < 3) {
     return <InsufficientDataState workspace={workspace} count={wsSessions.length} />
   }
 
   const pendingSuggestions = suggestions.filter(s => !dismissed.has(s.id))
+  const diag = pendingSuggestions.length === 0 && applied.length === 0 ? getDiagnostics(wsSessions) : null
 
   return (
-    <div style="display:flex;flex-direction:column;height:100%;overflow-y:auto">
+    <div>
       <FileStatusBar files={files} />
 
-      <div style="flex:1;overflow-y:auto;padding:12px 16px">
+      <div style="padding:12px 16px">
+        {workspace === 'all' && (
+          <div style="margin-bottom:12px;padding:8px 12px;font-size:11px;color:var(--muted);line-height:1.5;background:var(--card-bg);border:1px solid var(--border);border-radius:4px">
+            Select a project above for tailored suggestions. Across all projects, only universal patterns surface.
+          </div>
+        )}
         {/* Pending suggestions */}
         {pendingSuggestions.length > 0 && (
           <>
@@ -736,10 +751,39 @@ export function Instructions() {
           </>
         )}
 
-        {pendingSuggestions.length === 0 && applied.length === 0 && (
-          <div style="padding:20px 0;font-size:12px;color:var(--muted);text-align:center">
-            No suggestions detected for this workspace yet.<br />
-            <span style="font-size:11px">Suggestions appear when patterns emerge across 5+ sessions.</span>
+        {pendingSuggestions.length === 0 && applied.length === 0 && diag && (
+          <div style="padding:16px 0">
+            <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">
+              No patterns detected yet in <strong style="color:var(--fg)">{wsSessions.length} sessions</strong>.
+            </div>
+            <div style="border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:11px;color:var(--muted)">
+              <div style="font-weight:600;color:var(--fg);margin-bottom:6px">Data available</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px">
+                <span>Sources</span>
+                <span style="color:var(--fg)">{Object.entries(diag.sources).map(([k,v]) => `${k}: ${v}`).join(', ') || 'none'}</span>
+                <span>Sessions with file data</span>
+                <span style={`color:${diag.withFiles > 0 ? 'var(--fg)' : '#e57373'}`}>{diag.withFiles} / {diag.sessionCount}</span>
+                <span>Sessions with cost data</span>
+                <span style={`color:${diag.withCost > 0 ? 'var(--fg)' : '#e57373'}`}>{diag.withCost} / {diag.sessionCount}</span>
+                <span>Sessions with tool counts</span>
+                <span style={`color:${diag.withToolCounts > 0 ? 'var(--fg)' : '#e57373'}`}>{diag.withToolCounts} / {diag.sessionCount}</span>
+                <span>Most-touched file</span>
+                <span style="color:var(--fg)">{diag.topFile ? `${diag.topFile.name} (${diag.topFile.count} sessions, ${pct(diag.topFile.count, diag.sessionCount)}%)` : 'none'}</span>
+                <span>Loop signal types</span>
+                <span style="color:var(--fg)">{diag.loopSignalTypes}</span>
+                <span>Bash-heavy sessions</span>
+                <span style="color:var(--fg)">{diag.bashHeavy}</span>
+                <span>Avg turns per session</span>
+                <span style="color:var(--fg)">{diag.avgTurns > 0 ? diag.avgTurns.toFixed(1) : 'no data'}</span>
+                <span>High-turn sessions</span>
+                <span style="color:var(--fg)">{diag.highTurnCount} / {diag.sessionCount}{diag.avgTurns > 0 ? ` (need ≥15% and avg ≥8)` : ''}</span>
+                <span>Open-ended prompts</span>
+                <span style="color:var(--fg)">{diag.scopeMatches}{diag.scopeRatio !== null ? ` (${diag.scopeRatio.toFixed(2)}× avg ${diag.scopeRatioUnit}, need ≥1.4×)` : diag.scopeMatches > 0 ? ' (no cost or turn data)' : ''}</span>
+              </div>
+              <div style="margin-top:8px;font-size:10px;color:var(--muted)">
+                Thresholds: hot file ≥20% · loop signal ≥20% · terminal-heavy ≥3 sessions · high turns ≥15% at avg≥8 · open-ended prompts ≥2 at 1.4× avg turns
+              </div>
+            </div>
           </div>
         )}
 
@@ -750,21 +794,67 @@ export function Instructions() {
               Applied
               <span style="font-size:10px;background:var(--card-bg);border-radius:8px;padding:1px 6px;border:1px solid var(--border)">{applied.length}</span>
             </div>
+            {(() => {
+              // Aggregate impact summary
+              const measured = applied.filter(rec => {
+                const after = wsSessions.filter(s => s.startTime && Date.parse(s.startTime) >= rec.appliedAtMs)
+                return after.length >= 3 && !rec.baselineInsufficient
+              })
+              if (measured.length < 2) return null
+              const avgChange = (fn: (rec: AppliedRecord) => { before: number | null; after: number | null }) => {
+                const pairs = measured.map(fn).filter(p => p.before !== null && p.after !== null) as {before:number;after:number}[]
+                if (pairs.length === 0) return null
+                return pairs.reduce((a, p) => a + (p.after - p.before) / p.before, 0) / pairs.length * 100
+              }
+              const avgOf = (arr: SessionSummaryCard[], fn: (s: SessionSummaryCard) => number) =>
+                arr.length === 0 ? null : arr.reduce((a, s) => a + fn(s), 0) / arr.length
+              const costChange = avgChange(rec => {
+                const before = wsSessions.filter(s => s.startTime && Date.parse(s.startTime) < rec.appliedAtMs).slice(0, 20)
+                const after = wsSessions.filter(s => s.startTime && Date.parse(s.startTime) >= rec.appliedAtMs)
+                return { before: avgOf(before, sessionCostUsd), after: avgOf(after, sessionCostUsd) }
+              })
+              const turnsChange = avgChange(rec => {
+                const before = wsSessions.filter(s => s.startTime && Date.parse(s.startTime) < rec.appliedAtMs).slice(0, 20)
+                const after = wsSessions.filter(s => s.startTime && Date.parse(s.startTime) >= rec.appliedAtMs)
+                return { before: avgOf(before, s => s.totalLlmCalls), after: avgOf(after, s => s.totalLlmCalls) }
+              })
+              const improved = measured.filter(rec => {
+                const before = wsSessions.filter(s => s.startTime && Date.parse(s.startTime) < rec.appliedAtMs).slice(0, 20)
+                const after = wsSessions.filter(s => s.startTime && Date.parse(s.startTime) >= rec.appliedAtMs)
+                const b = avgOf(before, sessionCostUsd); const a = avgOf(after, sessionCostUsd)
+                if (!b || !a) return false
+                return (a - b) / b < -0.1
+              }).length
+              return (
+                <div style="border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:12px;background:var(--card-bg)">
+                  <div style="font-size:11px;font-weight:600;color:var(--fg);margin-bottom:6px">
+                    Impact summary — {applied.length} applied · {measured.length} with data
+                  </div>
+                  <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px">
+                    {costChange !== null && (
+                      <span>Avg cost <span style={`font-weight:600;color:${changePctColor(costChange)}`}>{changePctLabel(costChange)}</span></span>
+                    )}
+                    {turnsChange !== null && (
+                      <span>Avg turns <span style={`font-weight:600;color:${changePctColor(turnsChange)}`}>{changePctLabel(turnsChange)}</span></span>
+                    )}
+                    <span style="color:var(--muted)">{improved} improving · {measured.length - improved} flat/worse</span>
+                  </div>
+                </div>
+              )
+            })()}
             {applied.map(rec => (
               <AppliedCard
                 key={rec.id}
                 record={rec}
                 sessions={wsSessions}
                 onRemove={handleRemove}
+                onViewBefore={ids => { evidenceSessionIds.value = ids; activeTab.value = 'sessions' }}
+                onViewAfter={ids => { evidenceSessionIds.value = ids; activeTab.value = 'sessions' }}
               />
             ))}
           </div>
         )}
 
-        {/* Prompt Analyzer */}
-        <div style="margin-top:16px;border:1px solid var(--border);border-radius:6px;overflow:hidden">
-          <PromptAnalyzerPanel sessions={wsSessions} />
-        </div>
       </div>
     </div>
   )

@@ -437,7 +437,7 @@ export function InsightCard({ ins, isIgnored, sessions }: { ins: Insight; isIgno
           title="Copy prompt to clipboard"
           onClick={handleCopy}
           style={copied ? 'color:var(--accent)' : ''}
-        >{copied ? '✓' : '⧉'}</button>
+        >{copied ? '✓ Copied' : 'Copy'}</button>
         {isIgnored ? (
           <button class="insight-restore-btn" title="Restore" onClick={() => ignoredInsightKeys.delete(ins.title)}>Restore</button>
         ) : (

@@ -45,7 +45,7 @@ const HELP_SECTIONS = {
   otel:       { href: '#help-otel',       heading: 'OTEL Data' },
   sessions:   { href: '#help-sessions',   heading: 'Sessions' },
   analytics:  { href: '#help-analytics',  heading: 'Analytics' },
-  patterns:   { href: '#help-patterns',   heading: 'Patterns' },
+  patterns:   { href: '#help-advisor',    heading: 'Advisor' },
   costs:      { href: '#help-costs',      heading: 'Costs' },
   settings:   { href: '#help-settings',   heading: 'Settings' },
   mcp:        { href: '#help-mcp',        heading: 'Agent Integration' },
@@ -509,20 +509,42 @@ function AnalyticsSection() {
 
 function PatternsSection() {
   return (
-    <div class="help-section" id="help-patterns">
+    <div class="help-section" id="help-advisor">
       <h3 class="help-heading">{HELP_SECTIONS.patterns.heading}</h3>
       <div class="help-overview-body">
-        <p>The Patterns tab shows behavioral trends across sessions — not individual session detail, but what happens repeatedly. All panels respect the shared filter bar (agent, source, time range, text search).</p>
+        <p>The Advisor tab analyzes your session history to surface actionable improvements for your agent instruction file. All panels respect the shared filter bar — select a specific project from the workspace filter for suggestions tailored to that project's files and behavior. With no project selected, only patterns universal across all workspaces surface.</p>
+
+        <h4 style={subHeadStyle}>Instructions File</h4>
+        <p style={mutedP}>AgentLens scans session patterns and generates specific, ready-to-copy suggestions for improving your instruction file (CLAUDE.md, AGENTS.md, .github/copilot-instructions.md, or similar). Suggestions are grouped by type:</p>
         <div class="glossary">
           <div class="glossary-item" style="flex-direction:column;gap:4px">
-            <dt class="glossary-term">Efficiency Map</dt>
-            <dd class="glossary-def" style="display:block">A scatter plot where each dot is one session. Right = more expensive. Up = more LLM calls. Color = cache hit rate (green ≥60%, orange 20–60%, red &lt;20%). Click a dot to navigate to that session. The table below shows the top 10 sessions sorted by the active column — click any column header to re-sort. Click a session's timestamp to open it in the Sessions tab.</dd>
+            <dt class="glossary-term">Hot file context</dt>
+            <dd class="glossary-def" style="display:block">Files the agent rediscovers from scratch in many sessions. Adding them to your instruction file eliminates 2–3 discovery turns per session.</dd>
           </div>
           <div class="glossary-item" style="flex-direction:column;gap:4px">
-            <dt class="glossary-term">Hot Files</dt>
-            <dd class="glossary-def" style="display:block">Files the agent accessed most frequently across sessions, ranked by session count. Switch between Read, Changed, and Both modes to understand whether the agent is mainly reading or modifying each file. Use this to decide which files to document in your instructions file — frequently read files cost tokens every session; frequently changed files benefit from explicit constraints.</dd>
+            <dt class="glossary-term">Front-loaded discovery</dt>
+            <dd class="glossary-def" style="display:block">Read-only reference files (never modified) that appear in the majority of sessions. Listing them upfront means the agent reads them immediately rather than searching.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Loop prevention</dt>
+            <dd class="glossary-def" style="display:block">Behavioral loop signals (exact tool repeats, edit/revert cycles, runaway steps) detected across sessions. Each generates direct instruction text targeting the specific pattern.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Scope guidance</dt>
+            <dd class="glossary-def" style="display:block">Open-ended prompt language ("refactor", "fix the bug") that correlates with significantly higher cost or turn counts. Suggests prompting constraints to add to your instruction file.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">High turn count</dt>
+            <dd class="glossary-def" style="display:block">Triggered when a significant share of sessions exceed 1.5× the average turn count, indicating missing upfront context. Works for all agent types including Copilot.</dd>
           </div>
         </div>
+        <p style={mutedP}>Each suggestion card shows a <strong>Recommended addition</strong> — text ready to paste into your instruction file — and an <strong>Ask your agent</strong> prompt you can copy and send directly to your agent to get its own recommendation. Both have Copy buttons.</p>
+
+        <h4 style={subHeadStyle}>Efficiency Map</h4>
+        <p style={mutedP}>A scatter plot where each dot is one session. Right = more expensive. Up = more LLM calls. Color = cache hit rate (green ≥60%, orange 20–60%, red &lt;20%). Click a dot to navigate to that session. The table below shows the top 10 sessions sorted by the active column — click any column header to re-sort.</p>
+
+        <h4 style={subHeadStyle}>Hot Files</h4>
+        <p style={mutedP}>Files the agent accessed most frequently across sessions, ranked by session count. Switch between Read, Changed, Written, and Both modes. Frequently read files cost tokens every session and are strong candidates for your instruction file; frequently changed files benefit from explicit constraints.</p>
       </div>
     </div>
   )
