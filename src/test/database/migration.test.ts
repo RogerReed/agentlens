@@ -17,7 +17,6 @@ type SqlDb = {
 
 async function openDb(): Promise<SqlDb> {
   const sqlJsDir = path.dirname(require.resolve('sql.js'))
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const initSqlJs = require('sql.js') as (cfg: { locateFile: (f: string) => string }) => Promise<{ Database: new () => SqlDb }>
   const SQL = await initSqlJs({ locateFile: (f: string) => path.join(sqlJsDir, f) })
   const db = new SQL.Database()

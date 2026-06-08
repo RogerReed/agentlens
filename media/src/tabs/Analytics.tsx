@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks'
 import {
-  filteredSessions, sessionSummary, agentFilteredSessions,
+  filteredSessions, sessionSummary,
   sessionTimelines,
   CHART_MAX, vscode, goToHelp,
 } from '../state'
@@ -84,7 +84,6 @@ export function Analytics() {
   const [abbrevTokens, setAbbrevTokens] = useState(true)
   const [showZeroCost, setShowZeroCost] = useState(false)
   const sessions = filteredSessions.value
-  const allFiltered = agentFilteredSessions.value
   const timelines = sessionTimelines.value
   const hasAny = (sessionSummary.value?.sessions?.length ?? 0) > 0
 

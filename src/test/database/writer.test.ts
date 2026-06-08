@@ -17,7 +17,6 @@ type SqlDb = {
 async function openInMemoryDb(): Promise<SqlDb> {
   // Locate the sql.js WASM binary relative to the package entry point.
   const sqlJsDir = path.dirname(require.resolve('sql.js'))
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const initSqlJs = require('sql.js') as (cfg: { locateFile: (f: string) => string }) => Promise<{ Database: new () => SqlDb }>
   const SQL = await initSqlJs({ locateFile: (f: string) => path.join(sqlJsDir, f) })
   const db = new SQL.Database()

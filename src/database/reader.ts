@@ -68,14 +68,14 @@ export class DatabaseReader {
     if (filter?.source) {
       conditions.push(`source = '${filter.source}'`)
     }
-    if (filter?.since != null) {
+    if (filter?.since !== null && filter?.since !== undefined) {
       conditions.push(`start_time >= ${filter.since}`)
     }
     if (conditions.length > 0) {
       sql += ' WHERE ' + conditions.join(' AND ')
     }
     sql += ' ORDER BY start_time DESC'
-    if (filter?.limit != null) {
+    if (filter?.limit !== null && filter?.limit !== undefined) {
       sql += ` LIMIT ${filter.limit}`
     }
 
@@ -295,9 +295,9 @@ export class DatabaseReader {
     if (query.text)        conditions.push(`user_request LIKE '%${this._esc(query.text)}%'`)
     if (query.source)      conditions.push(`source = '${this._esc(query.source)}'`)
     if (query.model)       conditions.push(`model = '${this._esc(query.model)}'`)
-    if (query.since != null) conditions.push(`start_time >= ${query.since}`)
-    if (query.until != null) conditions.push(`start_time <= ${query.until}`)
-    if (query.minCostUsd != null) conditions.push(`cost_usd >= ${query.minCostUsd}`)
+    if (query.since !== null && query.since !== undefined) conditions.push(`start_time >= ${query.since}`)
+    if (query.until !== null && query.until !== undefined) conditions.push(`start_time <= ${query.until}`)
+    if (query.minCostUsd !== null && query.minCostUsd !== undefined) conditions.push(`cost_usd >= ${query.minCostUsd}`)
 
     const where = 'WHERE ' + conditions.join(' AND ')
     const allowedOrder = new Set(['start_time', 'cost_usd', 'total_tokens', 'duration_ms', 'errors'])
@@ -455,7 +455,7 @@ export function openReadonlySnapshot(
   const dbPath = path.join(storagePath, 'agentlens.db')
   try {
     // sql.js has no bundled types; require is intentional (no ESM build available)
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SQL = require('sql.js') as any
     const fileBuffer = fs.readFileSync(dbPath)
     const db = new SQL.Database(fileBuffer)

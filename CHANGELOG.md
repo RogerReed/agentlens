@@ -2,6 +2,48 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.7.0] — 2026-06-07
+
+### Added
+
+- **Advisor tab** — new tab (merged into the Patterns tab area) with three sub-panels:
+  - *Instruction Advisor* — surfaces per-workspace suggestions derived from session patterns: hot file guidance, loop prevention rules, scope discipline, tool discipline, and discovery prompts; each card shows the suggested text and an "Apply to file" button with a file-picker dropdown targeting detected instruction files (CLAUDE.md, .cursorrules, etc.)
+  - *Instruction Effectiveness* — tracks the before/after impact of applied suggestions; compares cost-per-session and turns-per-session in a 20-session window before vs. after each applied suggestion; surface area shows `baselineCostAvg`, `postCostAvg`, delta, and a trend indicator; requires at least 5 post-apply sessions to report
+  - *Prompt Analyzer* — pre-session cost prediction and context advice (foundation for issue #119)
+- **Hot Files — Written mode** — new toggle on the Patterns tab Hot Files panel; switches from "files read most" to "files fully written by the agent"; files where the agent overwrote the entire content are ranked by session count; tip box adapts to Written mode with guidance on what fully-written files indicate
+- **Instruction file apply/remove** — suggestions can be applied directly to a target file (appends a marked block `<!-- AgentLens suggestion applied -->`); remove clears the block; both VS Code extension and standalone server support apply/remove; standalone adds `POST /api/instructions/apply` and `DELETE /api/instructions/applied/:id` endpoints
+- **Effectiveness persistence** — `instruction_applied` and `instruction_dismissed` SQLite tables store applied suggestion records, baseline snapshots, and dismissed IDs per workspace; `InstructionRepository` and `InstructionEffectiveness` modules implement the full persistence and computation layer
+- **Understanding Cost Estimates** — new Help section explaining how costs are derived, why estimates differ from billing, what "accumulated" means for multi-turn cached sessions, and known gaps per agent
+
+### UX
+
+- **$0.00 row suppression** — cost table hides rows with zero estimated cost by default; "Show $0" toggle reveals them; reduces visual noise for agents that produce no billable activity in the window
+- **Cost disclaimer link** — `?` link on the "ESTIMATED COST" heading and in the disclaimer bar jumps to the Understanding Cost Estimates Help section
+- **Accumulated token display** — tooltip clarifies that token counts for cached sessions represent accumulated totals across the turn chain, not per-turn usage
+
+### Fixed
+
+- **Strict equality** — replaced all `!= null` / `== null` comparisons with `!== null` / `=== null` (eqeqeq lint rule) across App.tsx, sidebarWebview.ts, reader.ts, and sessionRepository.ts
+- **Stale instruction files on workspace switch** — switching the workspace filter to "All" now clears the `instructionFiles` signal, preventing stale file options from a previous workspace appearing in the Apply dropdown
+- **Standalone remove endpoint** — VS Code extension had `removeInstructionSuggestion` message handling but standalone had no HTTP endpoint; added `DELETE /api/instructions/applied/:id` that scans all session workspaces
+
+---
+
+## [0.6.1] — 2026-06-06
+
+### Added
+
+- **Workspace filter** — new dropdown in the filter bar surfaces the project path for each session and lets you narrow the view to a single workspace; works across Sessions, Analytics, Patterns, and Export tabs
+- **Cross-source workspace resolution** — OTEL-traced sessions (Claude Code, Codex) that lack a workspace attribute are matched to a log-ingested session from the same source that started within the same minute; the resolved workspace propagates to the OTEL session for filter purposes
+- **Codex workspace from session_meta** — Codex sessions now read `session_meta.cwd` as the workspace path instead of the date-based directory name
+
+### Fixed
+
+- **Workspace in live sessions** — OTEL span attributes (`process.cwd`, `session.workspace`) are now extracted and surfaced in live (in-memory) sessions, not just persisted ones
+- **Workspace filter applied to DB results** — `rangedSessions` was not applying the workspace filter to SQLite query results; fixed to filter in the DB layer
+
+---
+
 ## [0.6.0] — 2026-06-05
 
 ### Added

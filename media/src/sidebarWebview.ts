@@ -178,7 +178,7 @@ const state = {
 // ── Render ────────────────────────────────────────────────────────────────────
 
 function render() {
-  const { isActive, lastActivityMs, sessionCount, currentSession, burnRate, avgInputTokens, avgOutputTokens } = state
+  const { isActive, lastActivityMs, currentSession, burnRate, avgInputTokens, avgOutputTokens } = state
 
   // Status row
   const dot = document.getElementById('sb-dot')

@@ -1,15 +1,14 @@
 import { signal } from '@preact/signals'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import {
-  sessionSummary, toolCalls, dismissedSpanIds,
-  swRetainedSessions, swLastSessionCount,
+  sessionSummary, toolCalls,
   selectedAgentFilter, initiatorFilter, dataSourceFilter, sessionLimit, activeTab,
   sessionTimelines, blobCache,
   dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults,
-  focusedSessionId, timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
+  timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
   vscode, displaySessions, rangedSessions,
   sessionTextFilter, filteredSessions, evidenceSessionIds,
-  sessionSortKey, sessionSortDir, type SortKey,
+  sessionSortKey, sessionSortDir,
   workspaceFilter, availableWorkspaces, shortWorkspaceName,
 } from './state'
 import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, WorkspaceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
@@ -532,8 +531,6 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
     }
   }, [rangedSearchResults.value])
 
-  const count = rangedSessions.value.length
-  const total = rangedSearchResults.value?.totalCount
   const isActive = range.preset !== 'all'
   // For "All" time: use full unfiltered in-memory list (no limit, no agent filter)
   // so pills reflect every agent that has ever recorded a session in memory.

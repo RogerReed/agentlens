@@ -80,7 +80,7 @@ export class SessionRepository {
     const liveSessions = liveSpans.length > 0 ? summarizeSpans(liveSpans).sessions : []
     const merged = mergeSessions(dbSessions, liveSessions)
     resolveWorkspacesFromLogs(merged)
-    if (filter?.limit != null && merged.length > filter.limit) {
+    if (filter?.limit !== null && filter?.limit !== undefined && merged.length > filter.limit) {
       return merged.slice(0, filter.limit)
     }
     return merged
