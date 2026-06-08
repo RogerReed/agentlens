@@ -380,15 +380,3 @@ document.getElementById('sb-open-btn')?.addEventListener('click', () => {
   if (vscode) vscode.postMessage({ type: 'openDashboardTab', tab: 'sessions' })
 })
 
-document.getElementById('sb-clear-btn')?.addEventListener('click', () => {
-  if (vscode) {
-    // VS Code: window.confirm() is silently blocked in webviews.
-    // Send to extension host which shows a native VS Code modal dialog.
-    vscode.postMessage({ type: 'confirmClear' })
-  } else {
-    // Standalone: native browser confirm works fine.
-    if (!confirm('Clear all AgentLens session data? This cannot be undone.')) return
-    fetch('/action', { method: 'POST', body: JSON.stringify({ type: 'clearAll' }),
-      headers: { 'Content-Type': 'application/json' } })
-  }
-})

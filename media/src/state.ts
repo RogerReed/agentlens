@@ -111,6 +111,12 @@ export const insightFilter = signal<InsightFilter>('all')
 export const workspaceFilter = signal<WorkspaceFilter>('all')
 export const activeTab = signal('sessions')
 
+// ── Ingestion settings ────────────────────────────────────────────────────────
+
+export const enableOtelIngestion = signal(true)
+export const enableLogIngestion = signal(true)
+export const otlpPort = signal(4318)
+
 // ── Session retention signals ─────────────────────────────────────────────────
 
 export const swRetainedSessions = signal<SessionSummaryCard[]>([])

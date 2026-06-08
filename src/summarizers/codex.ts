@@ -82,9 +82,10 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
         const callId = getFirstAttr(child, ['call_id'])
 
         // tool_decision represents the model choosing to call a tool — it IS an LLM turn.
-        // Harvest token counts before skipping; the timeline entry comes from tool_result.
+        // When sse_events carry tokens (hasCodexCompletionEvents), the response.completed event
+        // already accounts for every turn including tool-calling ones, so skip to avoid doubling.
         if (isCodexToolDecisionSpan(child.name)) {
-          if (inTok > 0 || outTok > 0) {
+          if (!hasCodexCompletionEvents && (inTok > 0 || outTok > 0)) {
             totalLlmCalls++
             inputTokens += inTok
             outputTokens += outTok
@@ -311,9 +312,11 @@ function extractCodexTokenCounts(span: Span): { input: number; output: number; c
 }
 
 function isDuplicateCodexTokenRecord(span: Span): boolean {
-  return span.name === 'handle_responses'
+  if (span.name === 'handle_responses'
     || span.name === 'session_task.turn'
-    || getFirstAttr(span, ['otel.name']) === 'session_task.turn'
+    || span.name === 'codex.turn') { return true }
+  const otelName = getFirstAttr(span, ['otel.name'])
+  return otelName === 'session_task.turn' || otelName === 'codex.turn'
 }
 
 function isCodexTimelineLlmSpan(span: Span, inputTokens: number, outputTokens: number): boolean {
@@ -344,6 +347,7 @@ function groupCodexSpansBySession(spans: Span[]): Record<string, Span[]> {
   const ordinalByConversation = new Map<string, number>()
   const turnSessionByRawTraceId = new Map<string, string>()
   let activePromptGroup: WorkingGroup | undefined
+  let activePromptTraceId: string = ''
   const toMs = (s: Span) => nanoToMs(s.startTime) || s.receivedAt || 0
 
   for (const span of spans) {
@@ -417,7 +421,9 @@ function groupCodexSpansBySession(spans: Span[]): Record<string, Span[]> {
       }
       group.hasPrompt = true
       if (conversationId) { currentByConversation.set(conversationId, group) }
-    } else if (activePromptGroup) {
+    } else if (activePromptGroup && span.traceId === activePromptTraceId) {
+      // Only absorb spans from the same OTEL trace as the prompt to avoid merging
+      // spans from unrelated sessions into the last-seen prompt group.
       group = activePromptGroup
       if (conversationId) { currentByConversation.set(conversationId, group) }
     } else if (turnSessionId) {
@@ -434,6 +440,7 @@ function groupCodexSpansBySession(spans: Span[]): Record<string, Span[]> {
     group.spans.push(span)
     if (isPrompt) {
       activePromptGroup = group
+      activePromptTraceId = span.traceId
     }
   }
 

@@ -96,9 +96,12 @@ export function extractUserRequest(raw: string): string {
   if (request) { return request.slice(0, 5000) }
 
   // Claude Code prepends IDE context tags before the user's typed message.
-  // Strip all <ide_*>…</ide_*> blocks (e.g. <ide_opened_file>, <ide_selection>)
+  // Strip <local-command-caveat>...</local-command-caveat> and <ide_*>...</ide_*> blocks
   // and return whatever is left — that is the actual user prompt.
-  const stripped = trimmed.replace(/<ide_[^>]*>[\s\S]*?<\/ide_[^>]*>/gi, '').trim()
+  const stripped = trimmed
+    .replace(/<local-command-caveat>[\s\S]*?<\/local-command-caveat>\s*/gi, '')
+    .replace(/<ide_[^>]*>[\s\S]*?<\/ide_[^>]*>/gi, '')
+    .trim()
   if (stripped) { return stripped.slice(0, 5000) }
 
   return trimmed.slice(0, 5000)

@@ -594,9 +594,7 @@ function getHtml(): string {
     .sb-counter-val { font-size: 16px; font-weight: 700; color: var(--vscode-textLink-foreground); }
     .sb-counter-key { font-size: 9px; color: var(--vscode-descriptionForeground); text-transform: uppercase; letter-spacing: 0.3px; }
 .sb-footer { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 8px; font-size: 11px; color: var(--vscode-descriptionForeground); border-top: 1px solid var(--vscode-panel-border); }
-    .sb-clear-btn { padding: 2px 8px; font-size: 10px; cursor: pointer; border: 1px solid var(--vscode-testing-iconFailed, #f44); border-radius: 3px; background: transparent; color: var(--vscode-testing-iconFailed, #f44); }
-    .sb-clear-btn:hover { background: rgba(255,68,68,0.08); }
-    #sa-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:8px 16px; border-radius:4px; font-size:12px; z-index:9999; opacity:0; transition:opacity 0.2s; pointer-events:none; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.4); }
+#sa-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:8px 16px; border-radius:4px; font-size:12px; z-index:9999; opacity:0; transition:opacity 0.2s; pointer-events:none; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.4); }
     #sa-toast.visible { opacity:1; }
 
     /* ── Main panel ──────────────────────────────────────────────────────── */
@@ -933,7 +931,6 @@ function getHtml(): string {
       <!-- Footer -->
       <div class="sb-footer">
         <span><span id="sb-session-count">0</span> sessions stored</span>
-        <button class="sb-clear-btn" id="sb-clear-btn">Clear All Data</button>
       </div>
     </div>
 

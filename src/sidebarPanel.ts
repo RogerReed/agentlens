@@ -319,13 +319,6 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     border-top: 1px solid var(--vscode-panel-border);
     margin-top: 4px;
   }
-  .sb-clear-btn {
-    padding: 2px 8px; font-size: 10px; cursor: pointer;
-    border: 1px solid var(--vscode-testing-iconFailed, #f44);
-    border-radius: 3px; background: transparent;
-    color: var(--vscode-testing-iconFailed, #f44);
-  }
-  .sb-clear-btn:hover { background: rgba(255,68,68,0.08); }
   .sb-error-banner {
     background: var(--vscode-inputValidation-errorBackground, #5a1d1d);
     border: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
@@ -429,7 +422,6 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
   <!-- Footer -->
   <div class="sb-footer">
     <span><span id="sb-session-count">0</span> sessions stored</span>
-    <button class="sb-clear-btn" id="sb-clear-btn">Clear All Data</button>
   </div>
 
   <script>var __SIDEBAR_INIT__ = ${initData};</script>

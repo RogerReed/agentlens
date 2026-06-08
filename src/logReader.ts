@@ -297,8 +297,13 @@ export class LogReader {
         const content = (entry['message'] as Record<string, unknown>)?.['content']
         const text = _extractTextContent(content)
         if (!userRequest && text) {
-          userRequest = text
-          if (initiator === 'user' && text.startsWith('<local-command-caveat>')) initiator = 'api'
+          if (initiator === 'user' && text.startsWith('<local-command-caveat>')) {
+            initiator = 'api'
+            const afterCaveat = text.replace(/^<local-command-caveat>[\s\S]*?<\/local-command-caveat>\s*/i, '').trim()
+            userRequest = afterCaveat || '[api session]'
+          } else {
+            userRequest = text
+          }
         }
         timeline.push({ type: 'user_input', spanId: `log-u-${idx}`, label: 'User', durationMs: 0, isError: false, timestamp: ts ?? '', responseText: text })
         idx++
@@ -370,8 +375,14 @@ export class LogReader {
     let firstTimestamp = ''
     let lastTimestamp = ''
     let userRequest = ''
-    let totalInput = 0, totalOutput = 0, totalCacheRead = 0
     let turns = 0
+    // Codex token_count events carry both per-turn (last_token_usage) and cumulative
+    // (total_token_usage) counts. We use the final total_token_usage because:
+    //   1. The sum of per-turn last_token_usage drifts from the authoritative total
+    //      (background tasks, retries, etc. can cause minor discrepancies).
+    //   2. OpenAI input_tokens includes cached_input_tokens, so we must subtract to
+    //      get the non-cached portion that _buildCard expects for correct billing.
+    let lastTotalUsage: Record<string, number> | undefined
 
     for (const line of lines) {
       let entry: Record<string, unknown>
@@ -404,18 +415,24 @@ export class LogReader {
         if (payload?.['type'] === 'token_count') {
           const info = payload['info'] as Record<string, unknown> | undefined
           if (info?.['model']) model = String(info['model'])
-          const lastUsage = info?.['last_token_usage'] as Record<string, number> | undefined
-          if (lastUsage) {
-            totalInput    += lastUsage['input_tokens']         ?? 0
-            totalOutput   += lastUsage['output_tokens']        ?? 0
-            totalCacheRead += lastUsage['cached_input_tokens'] ?? 0
-            turns++
-          }
+          const total = info?.['total_token_usage'] as Record<string, number> | undefined
+          const last  = info?.['last_token_usage']  as Record<string, number> | undefined
+          if (total) lastTotalUsage = total
+          if (last) turns++
         }
       }
     }
 
     if (!firstTimestamp) return null
+
+    // Use final total_token_usage; input_tokens includes cached, so subtract to get
+    // the raw (non-cached) portion that _buildCard will re-add alongside cacheRead.
+    const totalCacheRead  = lastTotalUsage?.['cached_input_tokens']    ?? 0
+    const totalInput      = Math.max(0, (lastTotalUsage?.['input_tokens'] ?? 0) - totalCacheRead)
+    // Include reasoning tokens in output — they're billed at the output rate for o-series.
+    const totalOutput     = (lastTotalUsage?.['output_tokens'] ?? 0)
+                          + (lastTotalUsage?.['reasoning_output_tokens'] ?? 0)
+
     return {
       workspace,
       card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, peakContextPerTurn: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesWritten: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }, workspace),
