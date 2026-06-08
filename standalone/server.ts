@@ -1092,6 +1092,30 @@ const uiServer = http.createServer((req, res) => {
     return
   }
 
+  const removeMatch = req.method === 'DELETE' && url?.match(/^\/api\/instructions\/applied\/(.+)$/)
+  if (removeMatch) {
+    const id = decodeURIComponent(removeMatch[1])
+    try {
+      const { removeSuggestion } = require('../src/instructionFiles') as typeof import('../src/instructionFiles')
+      // Best-effort file removal: workspace+targetFile not known in standalone, so scan all workspaces
+      // The client-side signal is already updated; this is for file cleanup only.
+      const sessionWorkspaces = [...new Set((buildSessionSummary()?.sessions ?? []).map(s => s.workspace ?? '').filter(Boolean))]
+      for (const ws of sessionWorkspaces) {
+        const files = detectInstructionFiles(ws)
+        for (const f of files.filter(f => f.exists)) {
+          removeSuggestion(f.filePath, id)
+        }
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true }))
+    } catch (e) {
+      console.warn('[AgentLens] DELETE /api/instructions/applied error:', e)
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: String(e) }))
+    }
+    return
+  }
+
   if (req.method === 'POST' && url === '/action') {
     const chunks: Buffer[] = []
     req.on('data', (c: Buffer) => chunks.push(c))

@@ -470,7 +470,7 @@ function TextBlock({ label, text }: { label: string; text: string }) {
 }
 
 function SuggestionCardView({
-  card, dismissed, applied, onDismiss,
+  card, dismissed, applied, files, onApply, onDismiss,
 }: {
   card: SuggestionCard
   dismissed: boolean
@@ -479,9 +479,19 @@ function SuggestionCardView({
   onApply: (id: string, targetFile: string, text: string) => void
   onDismiss: (id: string) => void
 }) {
+  const defaultFile = files.find(f => f.exists)?.relativePath ?? files[0]?.relativePath ?? ''
+  const [targetFile, setTargetFile] = useState(defaultFile)
+  const [applying, setApplying] = useState(false)
+
   if (dismissed || applied) return null
 
   const catColor = CAT_COLOR[card.category]
+
+  function handleApplyClick() {
+    setApplying(true)
+    onApply(card.id, targetFile || defaultFile, card.suggestedText)
+    setTimeout(() => setApplying(false), 1500)
+  }
 
   return (
     <div style="border:1px solid var(--border);border-radius:6px;margin-bottom:10px;overflow:hidden">
@@ -510,7 +520,7 @@ function SuggestionCardView({
       <div style="padding:10px 12px;border-top:1px solid var(--border);background:var(--card-bg);display:flex;flex-direction:column;gap:10px">
         <TextBlock label="Recommended addition:" text={card.suggestedText} />
         <TextBlock label="Ask your agent:" text={card.inquiryText} />
-        <div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <button
             onClick={() => {
               evidenceSessionIds.value = new Set(card.evidenceSessions)
@@ -519,6 +529,26 @@ function SuggestionCardView({
             style="padding:2px 8px;font-size:10px;border-radius:3px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap"
             title="View the sessions that triggered this suggestion"
           >View sessions ↗</button>
+          {files.length > 0 && (
+            <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
+              <select
+                value={targetFile}
+                onChange={e => setTargetFile((e.target as HTMLSelectElement).value)}
+                style="padding:2px 4px;font-size:10px;border-radius:3px;border:1px solid var(--border);background:var(--vscode-input-background,#3c3c3c);color:var(--muted);cursor:pointer;max-width:160px"
+              >
+                {files.map(f => (
+                  <option key={f.relativePath} value={f.relativePath}>
+                    {f.relativePath}{f.exists ? '' : ' (create)'}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleApplyClick}
+                disabled={applying}
+                style={`padding:2px 10px;font-size:10px;border-radius:3px;cursor:pointer;border:1px solid var(--accent,#4fc3f7);background:transparent;color:var(--accent,#4fc3f7);white-space:nowrap;opacity:${applying ? 0.6 : 1}`}
+              >{applying ? '✓ Applied' : 'Apply to file'}</button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -672,7 +702,11 @@ export function Instructions() {
 
   // Request instruction files from extension when workspace changes
   useEffect(() => {
-    if (workspace !== 'all' && vscode) {
+    if (workspace === 'all') {
+      instructionFiles.value = []
+      return
+    }
+    if (vscode) {
       vscode.postMessage({ type: 'getInstructionFiles', workspace })
       vscode.postMessage({ type: 'getAppliedSuggestions', workspace })
       vscode.postMessage({ type: 'getDismissedSuggestions', workspace })
@@ -682,6 +716,13 @@ export function Instructions() {
   function handleApply(id: string, targetFile: string, text: string) {
     const card = suggestions.find(s => s.id === id)
     if (!card) return
+    const nowMs = Date.now()
+    const record: AppliedRecord = {
+      id, workspace, category: card.category, title: card.title,
+      suggestedText: card.suggestedText, appliedTo: targetFile,
+      appliedText: text, appliedAt: new Date().toISOString(), appliedAtMs: nowMs,
+      baselineCostAvg: 0, baselineTurnsAvg: 0, baselineInsufficient: true,
+    }
     if (vscode) {
       vscode.postMessage({
         type: 'applyInstructionSuggestion',
@@ -689,17 +730,13 @@ export function Instructions() {
         category: card.category, title: card.title, suggestedText: card.suggestedText,
       })
     } else {
-      // Standalone: optimistically add to applied list
-      const nowMs = Date.now()
-      appliedSuggestions.value = [
-        ...appliedSuggestions.value,
-        {
-          id, workspace, category: card.category, title: card.title,
-          suggestedText: card.suggestedText, appliedTo: targetFile,
-          appliedText: text, appliedAt: new Date().toISOString(), appliedAtMs: nowMs,
-          baselineCostAvg: 0, baselineTurnsAvg: 0, baselineInsufficient: true,
-        },
-      ]
+      // Standalone: write to file via server, then optimistically update UI
+      fetch('/api/instructions/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspace, targetFile, appliedText: text, id }),
+      }).catch(() => { /* non-fatal — UI already updated */ })
+      appliedSuggestions.value = [...appliedSuggestions.value, record]
     }
   }
 
@@ -710,7 +747,12 @@ export function Instructions() {
 
   function handleRemove(id: string) {
     appliedSuggestions.value = appliedSuggestions.value.filter(a => a.id !== id)
-    if (vscode) vscode.postMessage({ type: 'removeInstructionSuggestion', id, workspace })
+    if (vscode) {
+      vscode.postMessage({ type: 'removeInstructionSuggestion', id, workspace })
+    } else {
+      fetch(`/api/instructions/applied/${encodeURIComponent(id)}`, { method: 'DELETE' })
+        .catch(() => { /* non-fatal */ })
+    }
   }
 
   if (wsSessions.length < 3) {
