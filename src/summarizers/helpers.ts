@@ -1,3 +1,5 @@
+import * as fs from 'fs'
+import * as path from 'path'
 import { Span } from '../types'
 
 export const CLAUDE_WRITE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
@@ -18,6 +20,26 @@ export function commonPathPrefix(paths: string[]): string {
   const prefix = first.slice(0, common)
   if (prefix[prefix.length - 1]?.includes('.')) { prefix.pop() }
   return prefix.length > 0 ? '/' + prefix.join('/') : ''
+}
+
+/**
+ * Walks up from startDir until it finds a directory containing a project root
+ * marker (.git or package.json). Falls back to startDir if none is found.
+ * Prevents OTEL sessions from being labelled with a deep subdirectory (e.g.
+ * src/tabs) when only files there were touched in that session.
+ */
+export function findProjectRoot(startDir: string): string {
+  if (!startDir || !startDir.startsWith('/')) { return startDir }
+  let dir = startDir
+  for (;;) {
+    if (fs.existsSync(path.join(dir, '.git')) || fs.existsSync(path.join(dir, 'package.json'))) {
+      return dir
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir) { break }
+    dir = parent
+  }
+  return startDir
 }
 
 export function getAttrStr(span: Span, key: string): string {
