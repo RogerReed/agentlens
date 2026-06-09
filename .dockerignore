@@ -16,6 +16,8 @@ media/sidebar.js.map
 # Demo / test artifacts
 demo/
 walkthrough/
+media/demo.gif
+media/help-mascot.png
 
 # Docs
 README.md
