@@ -44,4 +44,32 @@ suite('pricing', () => {
     const cost = calcTokenCostUsd(100_000, 0, 0, 10_000, 'gpt-4.1')
     assert.strictEqual(cost, 0)
   })
+
+  test('calcTokenCostUsd uses flat rate for claude-sonnet-4 under threshold', () => {
+    // 100K input + 50K output — all below 200K, so same as flat rate
+    const cost = calcTokenCostUsd(100_000, 0, 0, 50_000, 'claude-sonnet-4')
+    const expected = (100_000 / 1_000_000) * 3.00 + (50_000 / 1_000_000) * 15.00
+    assert.ok(Math.abs(cost - expected) < 0.0001, `Expected $${expected}, got $${cost}`)
+  })
+
+  test('calcTokenCostUsd applies tiered rate for claude-sonnet-4 above 200K input', () => {
+    // 300K input, 0 output: first 200K at $3, next 100K at $6
+    const cost = calcTokenCostUsd(300_000, 0, 0, 0, 'claude-sonnet-4')
+    const expected = (200_000 / 1_000_000) * 3.00 + (100_000 / 1_000_000) * 6.00
+    assert.ok(Math.abs(cost - expected) < 0.0001, `Expected $${expected}, got $${cost}`)
+  })
+
+  test('calcTokenCostUsd tiered output for claude-sonnet-4', () => {
+    // 0 input, 250K output: first 200K at $15, next 50K at $22.50
+    const cost = calcTokenCostUsd(0, 0, 0, 250_000, 'claude-sonnet-4')
+    const expected = (200_000 / 1_000_000) * 15.00 + (50_000 / 1_000_000) * 22.50
+    assert.ok(Math.abs(cost - expected) < 0.0001, `Expected $${expected}, got $${cost}`)
+  })
+
+  test('calcTokenCostUsd flat rate for claude-sonnet-4-5 (no tiered rates)', () => {
+    // claude-sonnet-4-5 has no above-200K rates; 300K input uses flat $3/MTok
+    const cost = calcTokenCostUsd(300_000, 0, 0, 0, 'claude-sonnet-4-5')
+    const expected = (300_000 / 1_000_000) * 3.00
+    assert.ok(Math.abs(cost - expected) < 0.0001, `Expected $${expected}, got $${cost}`)
+  })
 })
