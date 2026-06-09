@@ -389,9 +389,10 @@ export class DatabaseReader {
     const sessionCacheRead   = (col(lastRow, 'session_cache_read') as number) ?? 0
     const sessionCacheCreate = (col(lastRow, 'session_cache_create') as number) ?? 0
 
+    const sessionRawInput    = Math.max(0, sessionInput - sessionCacheRead - sessionCacheCreate)
     const sessionTotalTokens = sessionInput + sessionOutput
     const costPerToken = sessionTotalTokens > 0
-      ? calcTokenCostUsd(sessionInput, sessionCacheRead, sessionCacheCreate, sessionOutput, model) / sessionTotalTokens
+      ? calcTokenCostUsd(sessionRawInput, sessionCacheRead, sessionCacheCreate, sessionOutput, model) / sessionTotalTokens
       : 0
     const costPerHour = tokensPerMinute * 60 * costPerToken
 
@@ -405,11 +406,12 @@ export class DatabaseReader {
     const remainingTokens = Math.max(0, rates.contextWindowTokens - sessionTotalTokens)
     const remainingMinutes = remainingTokens / tokensPerMinute
     const projectedTotal = sessionTotalTokens + remainingTokens
+    const scale = projectedTotal / sessionTotalTokens
     const projectedCost  = calcTokenCostUsd(
-      Math.round(sessionInput  * (projectedTotal / sessionTotalTokens)),
-      Math.round(sessionCacheRead * (projectedTotal / sessionTotalTokens)),
-      Math.round(sessionCacheCreate * (projectedTotal / sessionTotalTokens)),
-      Math.round(sessionOutput * (projectedTotal / sessionTotalTokens)),
+      Math.round(sessionRawInput    * scale),
+      Math.round(sessionCacheRead   * scale),
+      Math.round(sessionCacheCreate * scale),
+      Math.round(sessionOutput      * scale),
       model,
     )
     const projection: Projection = {

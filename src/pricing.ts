@@ -81,10 +81,7 @@ export function calcTokenCostUsd(
 ): number {
   const rates = lookupRates(modelId)
   if (!rates) return 0
-  // inputTokens is the total context (includes cacheRead + cacheWrite); subtract them
-  // so they're billed at their discounted rates rather than the full input rate.
-  const rawInput = Math.max(0, inputTokens - cacheReadTokens - cacheWriteTokens)
-  return (rawInput        / 1_000_000) * rates.inputPerMTok
+  return (inputTokens     / 1_000_000) * rates.inputPerMTok
        + (cacheReadTokens / 1_000_000) * rates.cacheReadPerMTok
        + (cacheWriteTokens/ 1_000_000) * rates.cacheWritePerMTok
        + (outputTokens    / 1_000_000) * rates.outputPerMTok
