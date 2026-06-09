@@ -230,6 +230,7 @@ export async function activate(context: vscode.ExtensionContext) {
       void writer!.drain().then(() => {
         agentLensDb?.save()
         provider.refresh()
+        DashboardPanel.currentPanel?.update()
         writeLastWriteSignal(context.globalStorageUri)
       }).catch(err => outputChannel!.appendLine(`[AgentLens] log ingestion drain error: ${err}`))
     }
@@ -472,13 +473,13 @@ export async function activate(context: vscode.ExtensionContext) {
       if (repository) DashboardPanel.setRepository(repository)
       if (logReader && startBatchedLoad) {
         logReader.clearFileState()
-        // Delay so the cleared state renders before log sessions flow back in.
+        // 5 s delay so the cleared state is visible before log sessions flow back in.
         // When all files are loaded, do a final refresh so the dashboard reflects
         // the fully re-ingested state.
         setTimeout(() => startBatchedLoad!(() => {
           provider.refresh()
           if (repository) DashboardPanel.setRepository(repository)
-        }), 500)
+        }), 5000)
       }
       writeLastWriteSignal(context.globalStorageUri)
     })
