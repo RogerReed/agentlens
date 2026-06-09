@@ -120,6 +120,26 @@ suite('SpanSummarizer', () => {
       assert.strictEqual(result.sessions[0].outputTokens, 1000)
     })
 
+    test('Anthropic model: reconstructs totalInput from parts (input + cacheRead + cacheCreate)', () => {
+      const agent = makeAgentSpan({ spanId: 'a-anthropic', model: 'claude-sonnet-4-6', inputTokens: 20000 })
+      agent.attributes.push(makeAttr('gen_ai.usage.cache_read.input_tokens', 80000))
+      const result = summarizeSpans([agent])
+      const session = result.sessions[0]
+      // totalInput = 20000 + 80000 = 100000; cacheHitRate = 80000/100000 = 0.8
+      assert.strictEqual(session.inputTokens, 100000)
+      assert.ok(Math.abs(session.cacheHitRate - 0.8) < 0.001)
+    })
+
+    test('OpenAI model: does not double-count cached tokens in totalInput', () => {
+      const agent = makeAgentSpan({ spanId: 'a-openai', model: 'gpt-5.5', inputTokens: 100000 })
+      agent.attributes.push(makeAttr('gen_ai.usage.cache_read.input_tokens', 80000))
+      const result = summarizeSpans([agent])
+      const session = result.sessions[0]
+      // totalInput = 100000 (input already includes cached); cacheHitRate = 80000/100000 = 0.8
+      assert.strictEqual(session.inputTokens, 100000)
+      assert.ok(Math.abs(session.cacheHitRate - 0.8) < 0.001)
+    })
+
     test('associates child spans with parent session', () => {
       const agent = makeAgentSpan({ spanId: 'a1' })
       const child = makeChildSpan('a1', {

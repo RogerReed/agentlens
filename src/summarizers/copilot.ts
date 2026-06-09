@@ -21,7 +21,12 @@ export function buildCopilotSessions(
     const conversationId = chatSpan ? getAttrStr(chatSpan, 'gen_ai.conversation.id') : undefined
     const turns = getAttrInt(agent, 'copilot_chat.turn_count')
     const { input: inputTokens, output: outputTokens, cacheRead, cacheCreate } = extractTokenCounts(agent)
-    const totalInput = inputTokens + cacheRead + cacheCreate
+    // OpenAI convention: input_tokens = total context (cached tokens already included).
+    // Anthropic convention: input_tokens = new non-cached only; add cacheRead + cacheCreate to reconstruct total.
+    const isOpenAIModel = /^gpt-|^o\d/i.test(model ?? '')
+    const totalInput = isOpenAIModel
+      ? inputTokens
+      : inputTokens + cacheRead + cacheCreate
     const cacheHitRate = totalInput > 0 ? cacheRead / totalInput : 0
 
     const startMs = nanoToMs(agent.startTime)
