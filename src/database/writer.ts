@@ -16,12 +16,16 @@ export class DatabaseWriter {
   private drainPromise: Promise<void> = Promise.resolve()
   private writing = false
   private _generation = 0  // incremented by clearAll() to abort in-flight drains
+  private readonly vscodeFs: typeof vscode.workspace.fs
 
   constructor(
     private readonly db: WriteableDb,
     private readonly storageUri: vscode.Uri,
     private readonly log: (msg: string) => void,
-  ) {}
+    vscodeFs?: typeof vscode.workspace.fs,
+  ) {
+    this.vscodeFs = vscodeFs ?? vscode.workspace.fs
+  }
 
   enqueue(card: SessionSummaryCard, workspace: string): void {
     // OTEL always wins: if this is a log-sourced card and an OTEL record already
@@ -252,13 +256,13 @@ export class DatabaseWriter {
   private async _writeBlob(filename: string, content: string): Promise<void> {
     const fileUri = vscode.Uri.joinPath(this.storageUri, 'blobs', filename)
     try {
-      await vscode.workspace.fs.stat(fileUri)
+      await this.vscodeFs.stat(fileUri)
       return  // already exists; span content is immutable
     } catch {
       // file absent — proceed to write
     }
     try {
-      await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'))
+      await this.vscodeFs.writeFile(fileUri, Buffer.from(content, 'utf8'))
     } catch (err) {
       this.log(`DatabaseWriter: blob write failed for ${filename}: ${err}`)
     }

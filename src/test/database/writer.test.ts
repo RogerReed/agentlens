@@ -59,7 +59,8 @@ function makeCard(overrides: Partial<SessionSummaryCard> = {}): SessionSummaryCa
 }
 
 function makeStorageUri(tag = 'test'): vscode.Uri {
-  return { scheme: 'file', path: `/tmp/agentlens-${tag}`, fsPath: `/tmp/agentlens-${tag}` } as unknown as vscode.Uri
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('vscode').Uri.file(`/tmp/agentlens-${tag}`)
 }
 
 function queryInt(db: SqlDb, sql: string): number {
@@ -151,58 +152,44 @@ suite('DatabaseWriter', () => {
 
   test('blob files are written for string fields at or above the threshold', async () => {
     const written: string[] = []
-    const vscode = require('vscode')
-    const origWrite = vscode.workspace.fs.writeFile
-    const origStat  = vscode.workspace.fs.stat
-    vscode.workspace.fs.writeFile = (_uri: vscode.Uri) => { written.push(_uri.path); return Promise.resolve() }
-    vscode.workspace.fs.stat      = () => Promise.reject(new Error('not found'))
-
-    try {
-      const db = await openInMemoryDb()
-      const longText = 'x'.repeat(600)
-      const card = makeCard({
-        timeline: [{
-          type: 'llm', spanId: 'sp-blob', label: 'LLM', durationMs: 100,
-          isError: false, timestamp: '', responseText: longText,
-        }],
-      })
-      const w = new DatabaseWriter(db, makeStorageUri('blob'), () => {})
-      w.enqueue(card, 'ws')
-      await w.drain()
-      assert.ok(written.some(p => p.includes('sp-blob-response.txt')), 'response blob not written')
-      db.close()
-    } finally {
-      vscode.workspace.fs.writeFile = origWrite
-      vscode.workspace.fs.stat      = origStat
+    const fakeFs = {
+      stat:      () => Promise.reject(new Error('not found')),
+      writeFile: (_uri: vscode.Uri) => { written.push(_uri.path); return Promise.resolve() },
     }
+    const db = await openInMemoryDb()
+    const longText = 'x'.repeat(600)
+    const card = makeCard({
+      timeline: [{
+        type: 'llm', spanId: 'sp-blob', label: 'LLM', durationMs: 100,
+        isError: false, timestamp: '', responseText: longText,
+      }],
+    })
+    const w = new DatabaseWriter(db, makeStorageUri('blob'), () => {}, fakeFs as unknown as typeof import('vscode').workspace.fs)
+    w.enqueue(card, 'ws')
+    await w.drain()
+    assert.ok(written.some(p => p.includes('sp-blob-response.txt')), 'response blob not written')
+    db.close()
   })
 
   test('blob files are not re-written when they already exist', async () => {
     const writeCount = { n: 0 }
-    const vscode = require('vscode')
-    const origWrite = vscode.workspace.fs.writeFile
-    const origStat  = vscode.workspace.fs.stat
-    vscode.workspace.fs.writeFile = () => { writeCount.n++; return Promise.resolve() }
-    vscode.workspace.fs.stat      = () => Promise.resolve({})  // file exists
-
-    try {
-      const db = await openInMemoryDb()
-      const longText = 'x'.repeat(600)
-      const card = makeCard({
-        timeline: [{
-          type: 'llm', spanId: 'sp-exists', label: 'LLM', durationMs: 100,
-          isError: false, timestamp: '', responseText: longText,
-        }],
-      })
-      const w = new DatabaseWriter(db, makeStorageUri('exists'), () => {})
-      w.enqueue(card, 'ws')
-      await w.drain()
-      assert.strictEqual(writeCount.n, 0, 'should not write when file already exists')
-      db.close()
-    } finally {
-      vscode.workspace.fs.writeFile = origWrite
-      vscode.workspace.fs.stat      = origStat
+    const fakeFs = {
+      stat:      () => Promise.resolve({}),  // file exists
+      writeFile: () => { writeCount.n++; return Promise.resolve() },
     }
+    const db = await openInMemoryDb()
+    const longText = 'x'.repeat(600)
+    const card = makeCard({
+      timeline: [{
+        type: 'llm', spanId: 'sp-exists', label: 'LLM', durationMs: 100,
+        isError: false, timestamp: '', responseText: longText,
+      }],
+    })
+    const w = new DatabaseWriter(db, makeStorageUri('exists'), () => {}, fakeFs as unknown as typeof import('vscode').workspace.fs)
+    w.enqueue(card, 'ws')
+    await w.drain()
+    assert.strictEqual(writeCount.n, 0, 'should not write when file already exists')
+    db.close()
   })
 
   test('write failure is caught and does not throw from enqueue', async () => {
