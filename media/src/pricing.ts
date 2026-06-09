@@ -2,7 +2,7 @@
 // Token rates (post Jun 1, 2026):        https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
 // Request multipliers (pre Jun 1, 2026): https://docs.github.com/en/copilot/concepts/billing/copilot-requests
 // Annual-plan multipliers (post Jun 1):  https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans
-export const PRICING_LAST_UPDATED = '2026-05-28'
+export const PRICING_LAST_UPDATED = '2026-06-08'
 
 // Three billing modes:
 //   'token'          — new token-based AI Credits billing, effective Jun 1, 2026
@@ -18,6 +18,12 @@ export interface ModelRates {
   outputPerMTok: number             // USD per 1M output tokens (token mode)
   multiplier: number                // Pre-Jun 1 request multiplier × $0.04/prompt (0 = included/free)
   multiplierAnnualPostJun1: number  // Post-Jun 1 multiplier for annual plan holders staying on request billing
+  // Optional tiered rates for >200K tokens-per-call surcharge. Not applied in session-level calcTokenCost
+  // (which operates on session totals and can't reconstruct per-turn call sizes).
+  inputAbove200kPerMTok?: number
+  outputAbove200kPerMTok?: number
+  cacheReadAbove200kPerMTok?: number
+  cacheWriteAbove200kPerMTok?: number
 }
 
 // Keyed by normalized model ID (lowercase, no date suffix).
@@ -54,7 +60,8 @@ const RATES: Record<string, ModelRates> = {
   'claude-haiku-3-5':      { inputPerMTok:  0.80, cacheReadPerMTok: 0.08, cacheWritePerMTok:  1.00, outputPerMTok:  4.00, multiplier: 0, multiplierAnnualPostJun1: 0 },
   // current
   'claude-haiku-4-5':      { inputPerMTok:  1.00, cacheReadPerMTok: 0.10, cacheWritePerMTok:  1.25, outputPerMTok:  5.00, multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
-  'claude-sonnet-4':       { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 1 },
+  'claude-sonnet-4':       { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 1,
+                             inputAbove200kPerMTok: 6.00, outputAbove200kPerMTok: 22.50, cacheReadAbove200kPerMTok: 0.60, cacheWriteAbove200kPerMTok: 7.50 },
   'claude-sonnet-4-5':     { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 6 },
   'claude-sonnet-4-6':     { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 9 },
   'claude-opus-4-5':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 15 },

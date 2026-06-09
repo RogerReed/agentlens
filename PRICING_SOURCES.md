@@ -77,7 +77,7 @@ Claude Code CLI uses Anthropic API token-based pricing only — no request-multi
 
 **Who it applies to:** All Claude Code CLI users billed through the Anthropic API.
 
-**Source:** <https://www.anthropic.com/pricing> (verified 2026-05-28)
+**Source:** <https://platform.claude.com/docs/en/about-claude/pricing> (verified 2026-06-08)
 
 **Formula:**
 
@@ -106,7 +106,7 @@ On `claude_code.llm_request` spans (per-API-call):
 - `ttft_ms` — time to first token in ms
 - `stop_reason` — e.g. `tool_use`, `end_turn`
 
-**Rates (USD per 1M tokens, verified 2026-05-28):**
+**Rates (USD per 1M tokens, verified 2026-06-08):**
 
 | Model                          | Input   | Cache Write (5m) | Cache Write (1h) | Cache Read | Output   |
 | ------------------------------ | ------- | ---------------- | ---------------- | ---------- | -------- |
@@ -121,6 +121,19 @@ On `claude_code.llm_request` spans (per-API-call):
 | `claude-opus-4-8` (fast, 2x)   | $10.00  | $12.50           | $20.00           | $1.00      | $50.00   |
 | `claude-opus-4-7` (fast, 6x)   | $30.00  | $37.50           | $60.00           | $3.00      | $150.00  |
 | `claude-opus-4-6` (fast, 6x)   | $30.00  | $37.50           | $60.00           | $3.00      | $150.00  |
+
+**Tiered pricing — `claude-sonnet-4` only:**
+
+`claude-sonnet-4` has a two-tier rate structure where per-token rates increase once a single API call exceeds 200K tokens for a given token category. The tier is applied per-category (input, output, cache read, cache write each evaluated against the 200K threshold independently):
+
+| Token category | ≤200K rate | >200K rate |
+| -------------- | ---------- | ---------- |
+| Input          | $3.00/MTok | $6.00/MTok |
+| Output         | $15.00/MTok| $22.50/MTok|
+| Cache write    | $3.75/MTok | $7.50/MTok |
+| Cache read     | $0.30/MTok | $0.60/MTok |
+
+The threshold applies per API call, not cumulatively across a session. `calcTokenCostUsd` in `src/pricing.ts` applies this tiered rate per turn (which corresponds to one API call). The session-level `calcTokenCost` in `media/src/pricing.ts` uses flat rates as an approximation because it operates on session totals rather than per-call counts.
 
 **Deprecated models (for historical sessions):**
 

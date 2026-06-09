@@ -1,6 +1,6 @@
 // Pricing data for extension-host cost computation (cost_usd stored in sessions table).
 // Rate table is kept in sync with media/src/pricing.ts — update both when rates change.
-// PRICING_LAST_UPDATED: 2026-05-28
+// PRICING_LAST_UPDATED: 2026-06-08
 
 export interface ModelRates {
   inputPerMTok: number
@@ -8,6 +8,11 @@ export interface ModelRates {
   cacheWritePerMTok: number
   outputPerMTok: number
   contextWindowTokens: number   // max context window for Projection estimates; 0 = unknown
+  // Optional tiered rates for the >200K tokens-per-call surcharge. When absent, flat rates apply.
+  inputAbove200kPerMTok?: number
+  outputAbove200kPerMTok?: number
+  cacheReadAbove200kPerMTok?: number
+  cacheWriteAbove200kPerMTok?: number
 }
 
 const RATES: Record<string, ModelRates> = {
@@ -35,7 +40,8 @@ const RATES: Record<string, ModelRates> = {
   'claude-opus-4-1':    { inputPerMTok: 15.00, cacheReadPerMTok: 1.50,  cacheWritePerMTok: 18.75, outputPerMTok: 75.00, contextWindowTokens: 200_000 },
   'claude-haiku-3-5':   { inputPerMTok:  0.80, cacheReadPerMTok: 0.08,  cacheWritePerMTok:  1.00, outputPerMTok:  4.00, contextWindowTokens: 200_000 },
   'claude-haiku-4-5':   { inputPerMTok:  1.00, cacheReadPerMTok: 0.10,  cacheWritePerMTok:  1.25, outputPerMTok:  5.00, contextWindowTokens: 200_000 },
-  'claude-sonnet-4':    { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 200_000 },
+  'claude-sonnet-4':    { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 200_000,
+                          inputAbove200kPerMTok: 6.00, outputAbove200kPerMTok: 22.50, cacheReadAbove200kPerMTok: 0.60, cacheWriteAbove200kPerMTok: 7.50 },
   'claude-sonnet-4-5':  { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 200_000 },
   'claude-sonnet-4-6':  { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 200_000 },
   'claude-opus-4-5':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 200_000 },
@@ -74,6 +80,14 @@ export function lookupRates(modelId: string): ModelRates | null {
   return null
 }
 
+// Applies two-tier pricing: tokens up to the threshold at baseRate, remainder at aboveRate.
+function tieredCost(tokens: number, baseRatePerMTok: number, aboveRatePerMTok: number): number {
+  const THRESHOLD = 200_000
+  if (tokens <= THRESHOLD) return (tokens / 1_000_000) * baseRatePerMTok
+  return (THRESHOLD / 1_000_000) * baseRatePerMTok
+       + ((tokens - THRESHOLD) / 1_000_000) * aboveRatePerMTok
+}
+
 export function calcTokenCostUsd(
   inputTokens: number,
   cacheReadTokens: number,
@@ -83,6 +97,12 @@ export function calcTokenCostUsd(
 ): number {
   const rates = lookupRates(modelId)
   if (!rates) return 0
+  if (rates.inputAbove200kPerMTok !== undefined) {
+    return tieredCost(inputTokens,     rates.inputPerMTok,      rates.inputAbove200kPerMTok)
+         + tieredCost(cacheReadTokens,  rates.cacheReadPerMTok,  rates.cacheReadAbove200kPerMTok!)
+         + tieredCost(cacheWriteTokens, rates.cacheWritePerMTok, rates.cacheWriteAbove200kPerMTok!)
+         + tieredCost(outputTokens,     rates.outputPerMTok,     rates.outputAbove200kPerMTok!)
+  }
   return (inputTokens     / 1_000_000) * rates.inputPerMTok
        + (cacheReadTokens / 1_000_000) * rates.cacheReadPerMTok
        + (cacheWriteTokens/ 1_000_000) * rates.cacheWritePerMTok
