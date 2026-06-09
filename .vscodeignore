@@ -16,3 +16,5 @@ pnpm-lock.yaml
 **/*.map
 **/*.ts
 **/.vscode-test.*
+media/demo.gif
+media/help-mascot.png
