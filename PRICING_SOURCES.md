@@ -110,6 +110,7 @@ On `claude_code.llm_request` spans (per-API-call):
 
 | Model                          | Input   | Cache Write (5m) | Cache Write (1h) | Cache Read | Output   |
 | ------------------------------ | ------- | ---------------- | ---------------- | ---------- | -------- |
+| `claude-opus-4-8`              | $5.00   | $6.25            | $10.00           | $0.50      | $25.00   |
 | `claude-opus-4-7`              | $5.00   | $6.25            | $10.00           | $0.50      | $25.00   |
 | `claude-opus-4-6`              | $5.00   | $6.25            | $10.00           | $0.50      | $25.00   |
 | `claude-opus-4-5`              | $5.00   | $6.25            | $10.00           | $0.50      | $25.00   |
@@ -117,8 +118,9 @@ On `claude_code.llm_request` spans (per-API-call):
 | `claude-sonnet-4-5`            | $3.00   | $3.75            | $6.00            | $0.30      | $15.00   |
 | `claude-sonnet-4`              | $3.00   | $3.75            | $6.00            | $0.30      | $15.00   |
 | `claude-haiku-4-5`             | $1.00   | $1.25            | $2.00            | $0.10      | $5.00    |
-| `claude-opus-4-7` (fast mode)  | $30.00  | $37.50           | $60.00           | $3.00      | $150.00  |
-| `claude-opus-4-6` (fast mode)  | $30.00  | $37.50           | $60.00           | $3.00      | $150.00  |
+| `claude-opus-4-8` (fast, 2x)   | $10.00  | $12.50           | $20.00           | $1.00      | $50.00   |
+| `claude-opus-4-7` (fast, 6x)   | $30.00  | $37.50           | $60.00           | $3.00      | $150.00  |
+| `claude-opus-4-6` (fast, 6x)   | $30.00  | $37.50           | $60.00           | $3.00      | $150.00  |
 
 **Deprecated models (for historical sessions):**
 
@@ -134,7 +136,7 @@ A new tokenizer was deployed for claude-opus-4-7 on April 16, 2026 that generate
 **Known gaps:**
 
 - **Cache write TTL**: Anthropic supports 5-minute and 1-hour cache TTLs at different rates. The `cache_creation_tokens` field in telemetry does not distinguish between them. Claude Code CLI uses 5-minute caches by default, so the 5-minute rate is used. If 1-hour caches are in use, cost will be underestimated by ~37%.
-- **Fast mode (`/fast`)**: When Claude Code's fast mode is active, Opus requests are billed at $30 input / $150 output per MTok — 6× the standard Opus rate. The model ID in telemetry does not carry a `-fast` suffix, so fast-mode sessions are costed at the standard Opus rate and will be significantly underestimated.
+- **Fast mode (`/fast`)**: When fast mode is active, `usage.speed` is `"fast"` in the log. AgentLens reads this and appends `-fast` to the stored model ID (e.g. `claude-opus-4-7-fast`) so the correct multiplied rates are applied: 6x for Opus 4.6/4.7, 2x for Opus 4.8.
 - **Deprecated models**: Models older than claude-opus-4 (e.g. claude-3-5-sonnet, claude-3-opus) may appear in historical sessions. Add them to `RATES` in `pricing.ts` if encountered; missing models show as `~$?`.
 
 ---
