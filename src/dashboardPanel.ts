@@ -102,6 +102,15 @@ export class DashboardPanel {
         vscode.commands.executeCommand('workbench.view.extension.agent-lens')
       } else if (msg.type === 'closeSidebar') {
         vscode.commands.executeCommand('workbench.action.closeSidebar')
+      } else if (msg.type === 'confirmClear') {
+        const answer = await vscode.window.showWarningMessage(
+          'Clear all AgentLens data? OTEL session data is deleted permanently. AgentLens log cache is cleared and will be rebuilt from your local agent log files (the log files themselves are not deleted).',
+          { modal: true },
+          'Clear All'
+        )
+        if (answer === 'Clear All') {
+          vscode.commands.executeCommand('agentLens.clearSessions')
+        }
       } else if (msg.type === 'setVsCodeConfig' && typeof msg.key === 'string') {
         void vscode.workspace.getConfiguration('agentLens').update(msg.key as string, msg.value, vscode.ConfigurationTarget.Global)
       } else if (msg.type === 'getInstructionFiles' && msg.workspace) {
@@ -192,6 +201,7 @@ export class DashboardPanel {
       ? this.repo.queryBurnRate(activeSession.sessionId)
       : null
 
+    const cfg = vscode.workspace.getConfiguration('agentLens')
     this.panel.webview.postMessage({
       type: 'update',
       summary,
@@ -200,6 +210,9 @@ export class DashboardPanel {
       burnRate: burnRateResult
         ? { sessionId: activeSession!.sessionId, ...burnRateResult }
         : null,
+      enableOtelIngestion: cfg.get<boolean>('enableOtelIngestion', true),
+      enableLogIngestion: cfg.get<boolean>('enableLogIngestion', true),
+      otlpPort: cfg.get<number>('otlpPort', 4318),
     })
   }
 

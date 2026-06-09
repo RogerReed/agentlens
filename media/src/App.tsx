@@ -10,6 +10,7 @@ import {
   sessionTextFilter, filteredSessions, evidenceSessionIds,
   sessionSortKey, sessionSortDir,
   workspaceFilter, availableWorkspaces, shortWorkspaceName,
+  enableOtelIngestion, enableLogIngestion, otlpPort,
 } from './state'
 import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, WorkspaceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
 
@@ -22,6 +23,7 @@ import { Help } from './tabs/Help'
 import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
 import { instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instructions'
+import { IngestionToggles, McpToggle } from './tabs/Settings'
 
 
 const sidebarOpen = signal(true)
@@ -93,6 +95,7 @@ function ConfigPanel() {
           title="Close (Esc)"
         >×</button>
       </div>
+      <IngestionToggles />
       <McpToggle />
       <CollapsibleSection title="Alerts">
         <Alerts />
@@ -104,37 +107,6 @@ function ConfigPanel() {
   )
 }
 
-function McpToggle() {
-  const w = window as unknown as Record<string, unknown>
-  const initial = typeof w.__MCP_ENABLED__ === 'boolean' ? w.__MCP_ENABLED__ as boolean : true
-  const port    = typeof w.__MCP_PORT__    === 'number'  ? w.__MCP_PORT__    as number  : 4316
-  const [enabled, setEnabled] = useState(initial)
-
-  function toggle() {
-    const next = !enabled
-    setEnabled(next)
-    vscode?.postMessage({ type: 'setVsCodeConfig', key: 'enableMcpServer', value: next })
-  }
-
-  return (
-    <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:12px;font-weight:600;color:var(--fg)">MCP Server</span>
-        <label class="toggle-switch" style="margin:0">
-          <input type="checkbox" checked={enabled} onChange={toggle} />
-          <span class="toggle-track"><span class="toggle-thumb" /></span>
-          <span class={'toggle-label' + (enabled ? ' on' : '')}>{enabled ? 'Enabled' : 'Disabled'}</span>
-        </label>
-      </div>
-      {enabled && (
-        <div style="font-size:11px;color:var(--muted)">
-          Listening at <code style="font-size:10px;background:var(--card-bg);padding:1px 4px;border-radius:3px">http://localhost:{port}/mcp</code>
-        </div>
-      )}
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">Restart to apply changes.</div>
-    </div>
-  )
-}
 
 const SEV_COLOR: Record<string, string> = {
   error:   '#f44747',
@@ -323,8 +295,14 @@ export function App() {
         sessions?: SessionSummaryCard[]
         totalCount?: number
         offset?: number
+        enableOtelIngestion?: boolean
+        enableLogIngestion?: boolean
+        otlpPort?: number
       }
       if (msg.type === 'update') {
+        if (msg.enableOtelIngestion !== undefined) enableOtelIngestion.value = msg.enableOtelIngestion
+        if (msg.enableLogIngestion !== undefined) enableLogIngestion.value = msg.enableLogIngestion
+        if (msg.otlpPort !== undefined) otlpPort.value = msg.otlpPort
         if (msg.summary?.toolCalls) toolCalls.value = msg.summary.toolCalls
         if (msg.sessionSummary !== undefined) sessionSummary.value = msg.sessionSummary
         if (msg.analyticsData) {

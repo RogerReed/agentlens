@@ -283,8 +283,8 @@ export function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step
   )
 }
 
-function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
-  sess: SessionSummaryCard; sessIdx: number; totalCount: number; isFirst: boolean
+function SessionBlock({ sess, sessIdx, sessNum, totalCount, isFirst }: {
+  sess: SessionSummaryCard; sessIdx: number; sessNum: number; totalCount: number; isFirst: boolean
 }) {
   const [collapsed, setCollapsed] = useState(!isFirst)
   const [promptExpanded, setPromptExpanded] = useState(false)
@@ -329,8 +329,12 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
         <span>
           <span class="wf-header-chevron">{collapsed ? '▶' : '▼'}</span>
           <span dangerouslySetInnerHTML={{ __html: getAgentDotHtml(sess.source) }} />{' '}
+          <span style="font-size:10px;color:var(--muted);margin-right:4px">#{sessNum}</span>
           <span style="font-size:10px;color:var(--muted)">{sessionTime}</span>{' '}
-          "{sess.userRequest.slice(0, 100)}{isLongPrompt ? '…' : ''}"
+          {sess.userRequest && sess.userRequest !== '[prompt unavailable]' && sess.userRequest !== '[session in progress]'
+            ? <>"{sess.userRequest.slice(0, 100)}{isLongPrompt ? '…' : ''}"</>
+            : <span style="color:var(--muted);font-style:italic">{sess.userRequest || '[no prompt]'}</span>
+          }
           {isLongPrompt && (
             <button class="sw-show-full-btn" style="margin-left:8px" onClick={e => { e.stopPropagation(); setPromptExpanded(v => !v) }}>
               {promptExpanded ? 'Collapse' : 'Show full prompt'}
@@ -367,9 +371,10 @@ function SessionBlock({ sess, sessIdx, totalCount, isFirst }: {
   )
 }
 
-function DayGroup({ label, sessions, focusedId }: {
+function DayGroup({ label, sessions, startNum, focusedId }: {
   label: string
   sessions: SessionSummaryCard[]
+  startNum: number
   focusedId: string | null
 }) {
   const [collapsed, setCollapsed] = useState(false)
@@ -388,6 +393,7 @@ function DayGroup({ label, sessions, focusedId }: {
           key={sess.traceId + idx}
           sess={sess}
           sessIdx={idx}
+          sessNum={startNum + idx}
           totalCount={sessions.length}
           isFirst={idx === 0 && focusedId === null}
         />
@@ -442,9 +448,14 @@ export function Traces() {
         {sessionsToShow.length === 0 && (
           <div class="empty-state">No sessions in this time range</div>
         )}
-        {dayGroups.map(group => (
-          <DayGroup key={group.key} label={group.label} sessions={group.sessions} focusedId={focusedId} />
-        ))}
+        {(() => {
+          let offset = 1
+          return dayGroups.map(group => {
+            const el = <DayGroup key={group.key} label={group.label} sessions={group.sessions} startNum={offset} focusedId={focusedId} />
+            offset += group.sessions.length
+            return el
+          })
+        })()}
       </div>
       {summary.backgroundSpans?.length > 0 && (
         <BgSummaryBlock bgSpans={summary.backgroundSpans} />

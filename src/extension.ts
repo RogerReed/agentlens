@@ -27,6 +27,7 @@ let agentLensDb: AgentLensDb | undefined
 let writer: DatabaseWriter | undefined
 let repository: SessionRepository | undefined
 let logReaderTimer: ReturnType<typeof setInterval> | undefined
+let runLogScanFn: (() => void) | undefined
 
 // ── Cross-window sync ────────────────────────────────────────────────────────
 
@@ -150,11 +151,13 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   // ── Collector ────────────────────────────────────────────────────────────────
-  const port = vscode.workspace.getConfiguration('agentLens').get<number>('otlpPort', 4318)
+  const agentLensCfg = vscode.workspace.getConfiguration('agentLens')
+  const port = agentLensCfg.get<number>('otlpPort', 4318)
   collector = new OtlpCollector(port, store, outputChannel)
   let collectorFailed = false
   try {
     await collector.start()
+    collector.setIngestionEnabled(agentLensCfg.get<boolean>('enableOtelIngestion', true))
   } catch (err) {
     collectorFailed = true
     if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
@@ -216,7 +219,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const fallbackWorkspace = () => vscode.workspace.workspaceFolders?.[0]?.uri.toString() ?? ''
 
     // Periodic incremental scan: only picks up files that have changed since last run.
-    const runLogScan = () => {
+    const runLogScan = runLogScanFn = () => {
       const results = lr.scan()
       if (results.length === 0) return
       const ws = fallbackWorkspace()
@@ -478,6 +481,32 @@ export async function activate(context: vscode.ExtensionContext) {
         }), 500)
       }
       writeLastWriteSignal(context.globalStorageUri)
+    })
+  )
+
+  // ── Reactive configuration changes ──────────────────────────────────────────
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(e => {
+      const cfg = vscode.workspace.getConfiguration('agentLens')
+      if (e.affectsConfiguration('agentLens.enableOtelIngestion') && collector) {
+        collector.setIngestionEnabled(cfg.get<boolean>('enableOtelIngestion', true))
+      }
+      if (e.affectsConfiguration('agentLens.enableLogIngestion')) {
+        const enabled = cfg.get<boolean>('enableLogIngestion', true)
+        if (!enabled) {
+          clearInterval(logReaderTimer)
+          logReaderTimer = undefined
+        } else if (!logReaderTimer && runLogScanFn) {
+          logReaderTimer = setInterval(runLogScanFn, 30_000)
+          runLogScanFn()
+        }
+      }
+      if (
+        e.affectsConfiguration('agentLens.enableOtelIngestion') ||
+        e.affectsConfiguration('agentLens.enableLogIngestion')
+      ) {
+        DashboardPanel.currentPanel?.update()
+      }
     })
   )
 

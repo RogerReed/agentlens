@@ -138,7 +138,7 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
               {[
                 { k: 'LLM calls',  v: String(sess.totalLlmCalls) },
                 { k: 'Tool calls', v: String(sess.totalToolCalls) },
-                { k: sess.turns > 1 ? 'Input tokens (acc.)' : 'Input tokens', v: formatCompact(sess.inputTokens) },
+                { k: 'Input tokens', v: formatCompact(sess.inputTokens) },
                 { k: 'Output tokens', v: formatCompact(sess.outputTokens) },
                 { k: 'Cache hit',  v: cacheRate + '%' },
                 ...(sess.peakContextPerTurn ? [{ k: 'Peak ctx/turn', v: formatCompact(sess.peakContextPerTurn) }] : []),
@@ -313,7 +313,7 @@ function SessionRow({ sess, showWorkspace }: { sess: SessionSummaryCard; showWor
 
         {/* Tokens */}
         <td style="padding:4px 6px;text-align:right;white-space:nowrap;font-size:10px;color:var(--muted)" title={sess.turns > 1 ? 'Input is accumulated across all turns (cache reads counted each turn). See Peak ctx/turn in session detail for actual context window size.' : undefined}>
-          {formatCompact(sess.inputTokens + sess.outputTokens)}{sess.turns > 1 ? <span style="font-size:9px;color:var(--muted);opacity:.7"> acc.</span> : null}
+          {formatCompact(sess.inputTokens + sess.outputTokens)}
         </td>
 
         {/* Duration */}

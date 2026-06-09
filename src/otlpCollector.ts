@@ -9,6 +9,7 @@ export class OtlpCollector {
   private server!: http.Server
   // Sticky fallback trace ID for Codex: reused across payloads in the same session
   // (resets after 30 s of inactivity so back-to-back sessions don't merge).
+  private ingestionEnabled = true
   private codexFallbackTraceId = ''
   private codexLastActivityMs = 0
   // Maps traceId → root spanId so child Codex spans get a synthetic parentSpanId.
@@ -27,6 +28,10 @@ export class OtlpCollector {
     private store: SessionStore,
     private output: vscode.OutputChannel
   ) {}
+
+  setIngestionEnabled(on: boolean) {
+    this.ingestionEnabled = on
+  }
 
   async start() {
     this.server = http.createServer((req, res) => {
@@ -79,6 +84,12 @@ export class OtlpCollector {
           payload = JSON.parse(body)
         } catch {
           this.log('POST', req.url ?? '/', 200, bodyLen, 'non-JSON payload (protobuf?)')
+          res.writeHead(200)
+          res.end()
+          return
+        }
+
+        if (!this.ingestionEnabled) {
           res.writeHead(200)
           res.end()
           return

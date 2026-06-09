@@ -126,7 +126,7 @@ export class DatabaseWriter {
 
   private _writeSessionRow(card: SessionSummaryCard, workspace: string): void {
     const costUsd = calcTokenCostUsd(
-      card.inputTokens,
+      Math.max(0, card.inputTokens - card.cacheReadTokens - card.cacheCreateTokens),
       card.cacheReadTokens,
       card.cacheCreateTokens,
       card.outputTokens,

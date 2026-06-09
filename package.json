@@ -145,6 +145,11 @@
           "default": 4318,
           "description": "Local port for OTLP trace receiver"
         },
+        "agentLens.enableOtelIngestion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Accept incoming OTEL span data. The OTLP server keeps listening on agentLens.otlpPort regardless; disabling this silently drops received payloads without storing them."
+        },
         "agentLens.enableLogIngestion": {
           "type": "boolean",
           "default": true,
