@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.7.2] — 2026-06-08
+
+### Fixed
+
+- `media/help-mascot.png` removed from `.dockerignore`, `.vscodeignore`, and `.npmignore` — it is served by the VS Code webview, standalone server, and Docker image and must be included in all packages; only `media/demo.gif` is README-only
+
+---
+
 ## [0.7.1] — 2026-06-08
 
 ### Added
