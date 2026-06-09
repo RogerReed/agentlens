@@ -272,6 +272,7 @@ export class LogReader {
     let totalInput = 0, totalOutput = 0, totalCacheRead = 0, totalCacheCreate = 0
     let peakContextPerTurn = 0
     let turns = 0, totalToolCalls = 0
+    let hasFastMode = false
     const filesChanged = new Set<string>()
     const filesWritten = new Set<string>()
     const filesRead    = new Set<string>()
@@ -307,7 +308,9 @@ export class LogReader {
       if (entry['type'] === 'assistant') {
         const msg = entry['message'] as Record<string, unknown> | undefined
         if (msg?.['model']) model = msg['model'] as string
-        const usage = msg?.['usage'] as Record<string, number> | undefined
+        const rawUsage = msg?.['usage'] as Record<string, unknown> | undefined
+        if (rawUsage?.['speed'] === 'fast') hasFastMode = true
+        const usage = rawUsage as Record<string, number> | undefined
         if (usage) {
           const inp  = usage['input_tokens']                ?? 0
           const cr   = usage['cache_read_input_tokens']     ?? 0
@@ -343,7 +346,8 @@ export class LogReader {
     }
 
     if (!firstTimestamp) return null
-    return { workspace, card: _buildCard(sessionId, 'claude_code', model || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, peakContextPerTurn, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesWritten, filesSearched: new Set(), userRequest, timeline, initiator }, workspace) }
+    const effectiveModel = (model && hasFastMode) ? `${model}-fast` : model
+    return { workspace, card: _buildCard(sessionId, 'claude_code', effectiveModel || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, peakContextPerTurn, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesWritten, filesSearched: new Set(), userRequest, timeline, initiator }, workspace) }
   }
 
   // ── Codex ───────────────────────────────────────────────────────────────────
