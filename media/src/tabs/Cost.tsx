@@ -231,14 +231,17 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const barDataRef = useRef<Array<{ sessionId: string; slotX: number; slotW: number }>>([])
 
+  // Compute outside the effect so excludedCount is available for JSX rendering.
+  const allData = sessions.slice().reverse().map(sess => {  // oldest → newest left → right
+    const cost = calcSessionCost(sess, sessionCostMode(sess, mode))
+    return { sessionId: sess.sessionId, cost: cost.totalUsd, unknown: cost.modelUnknown, startTime: sess.startTime, source: sess.source }
+  })
+  const excludedCount = allData.filter(d => d.unknown).length
+  const data = allData.filter(d => !d.unknown)
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
-    const data = sessions.slice().reverse().map(sess => {  // oldest → newest left → right
-      const cost = calcSessionCost(sess, sessionCostMode(sess, mode))
-      return { sessionId: sess.sessionId, cost: cost.totalUsd, unknown: cost.modelUnknown, startTime: sess.startTime, source: sess.source }
-    })
 
     // Daily totals for the step-function line overlay
     const dayKey = (t: string) => t ? new Date(t).toISOString().slice(0, 10) : 'none'
@@ -299,16 +302,12 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
       const x = offsetX + i * slotW + barPad
       const barH = (d.cost / maxCost) * chartH
       const y = pad.top + chartH - barH
-      const color = d.unknown ? '#666' : getAgentColor(d.source)
+      const color = getAgentColor(d.source)
       if (barH < 1) {
         ctx.strokeStyle = color; ctx.lineWidth = 1
         ctx.beginPath(); ctx.moveTo(x, pad.top + chartH); ctx.lineTo(x + barW, pad.top + chartH); ctx.stroke()
       } else {
         ctx.fillStyle = color; ctx.fillRect(x, y, barW, barH)
-      }
-      if (d.unknown) {
-        ctx.fillStyle = '#999'; ctx.font = fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'
-        ctx.fillText('?', x + barW / 2, pad.top + chartH - 2)
       }
     })
 
@@ -396,6 +395,11 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
     <div style="margin-bottom:16px">
       <canvas ref={canvasRef} style="width:100%;height:230px;display:block;cursor:pointer"
         onClick={handleClick} title="Click a bar to open that session" />
+      {excludedCount > 0 && (
+        <div style="font-size:10px;color:var(--muted);text-align:right;margin-top:2px">
+          {excludedCount} session{excludedCount === 1 ? '' : 's'} excluded — model unrecognized
+        </div>
+      )}
     </div>
   )
 }
