@@ -25,7 +25,8 @@ async function openDb(): Promise<SqlDb> {
 }
 
 function makeStorageUri(): vscode.Uri {
-  return { scheme: 'file', path: '/tmp/agentlens-reader-test', fsPath: '/tmp/agentlens-reader-test' } as unknown as vscode.Uri
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('vscode').Uri.file('/tmp/agentlens-reader-test')
 }
 
 function makeCard(overrides: Partial<SessionSummaryCard> = {}): SessionSummaryCard {
