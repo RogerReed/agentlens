@@ -61,6 +61,9 @@ const RATES: Record<string, ModelRates> = {
   // ── Fine-tuned ─────────────────────────────────────────────────────────────
   'raptor-mini': { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok:  0,     contextWindowTokens: 0 },
   'goldeneye':   { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 0 },
+  // ── OpenCode Zen  https://opencode.ai/docs/zen/ ────────────────────────────
+  // big-pickle: OpenCode's stealth model, free during limited evaluation period.
+  'big-pickle':  { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok:  0,     contextWindowTokens: 200_000 },
 }
 
 function normalizeModelId(modelId: string): string {

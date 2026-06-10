@@ -7,7 +7,7 @@ import {
 import type { ComponentChildren } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 
-export const DISPLAY_AGENT_ORDER: AgentSource[] = ['copilot', 'claude_code', 'codex']
+export const DISPLAY_AGENT_ORDER: AgentSource[] = ['copilot', 'claude_code', 'codex', 'opencode']
 
 interface AgentThresholdInputsProps {
   profiles: AgentThresholdProfiles

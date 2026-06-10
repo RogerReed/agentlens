@@ -3,7 +3,7 @@ import { LoopSignal } from '../types'
 export interface SessionSummaryCard {
   sessionId: string
   traceId: string
-  source: 'copilot' | 'claude_code' | 'codex'
+  source: 'copilot' | 'claude_code' | 'codex' | 'opencode'
   dataSource: 'otel' | 'log'
   initiator?: 'user' | 'agent' | 'api'
   conversationId?: string

@@ -7,7 +7,7 @@
 
 Local observability that makes AI agent sessions more transparent — see what's happening inside each run. No data leaves your machine.
 
-AgentLens receives **OpenTelemetry traces** from Copilot, Claude Code, and Codex in real time — giving you span timing, time-to-first-token, loop detection, file diffs, and actionable recommendations. It also reads **local session log files** written automatically by each agent as a zero-config fallback, backfilling history and filling gaps when OTEL isn't configured. Both sources are shown in one unified dashboard; OTEL always takes precedence when available.
+AgentLens receives **OpenTelemetry traces** from Copilot, Claude Code, and Codex in real time — giving you span timing, time-to-first-token, loop detection, file diffs, and actionable recommendations. It also reads **local session files** written automatically by each agent as a zero-config fallback — including OpenCode's local **SQLite database** — backfilling history and filling gaps when OTEL isn't configured. Both sources are shown in one unified dashboard; OTEL always takes precedence when available.
 
 ## Getting Started
 
@@ -27,7 +27,7 @@ agentlens
 
 Open <http://localhost:3000> after the server starts. The OTLP receiver listens on port `4318`. Configure agents to point at `http://localhost:4318` (see [Manual Configuration](#manual-configuration)).
 
-> **Log file ingestion** reads local session files from `~/.claude/`, `~/.codex/`, and `~/.copilot/` directly. See [Local Mode Options](#local-mode-options) for environment variables.
+> **Log file ingestion** reads local session files from `~/.claude/`, `~/.codex/`, `~/.copilot/`, and OpenCode's SQLite database at `~/.local/share/opencode/` directly. See [Local Mode Options](#local-mode-options) for environment variables.
 
 ### VS Code Extension (OTEL and log files)
 
@@ -80,7 +80,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ## Features
 
 - **OpenTelemetry collection** — Built-in OTEL receiver captures real-time traces and logs from Copilot, Claude Code, and Codex with no external infrastructure; auto-configured on first activation
-- **Log file ingestion** — Reads local session files written automatically by each agent as a zero-config fallback, backfilling history when OTEL isn't configured (VS Code-family IDEs and native process only)
+- **Log file ingestion** — Reads local session files and databases written automatically by each agent as a zero-config fallback — including JSONL logs for Claude Code, Codex, and Copilot, and OpenCode's SQLite database — backfilling history when OTEL isn't configured (VS Code-family IDEs and native process only)
 - **Sessions Table** — Drill into any session: expand a row to see a full waterfall trace, turn-to-tool flow graph, tool distribution chart, and modified files — all without leaving the session list
 - **Analytics** — Aggregate charts across the active time range: per-agent breakdown, estimated cost with a daily total overlay, token usage per session, and context growth
 - **Advisor** — Project-scoped suggestions for improving your agent instruction file (CLAUDE.md, AGENTS.md, or similar): detects hot files the agent rediscovers every session, loop patterns, high turn-count trends, and scope problems — each suggestion includes ready-to-copy instruction text and an inquiry prompt you can paste directly into your agent. Also includes an efficiency scatter plot (cost vs. LLM calls, colored by cache hit rate) and hot files ranked by access frequency. Select a specific project from the filter for tailored suggestions; all-projects view surfaces only universal patterns.
@@ -109,14 +109,15 @@ AgentLens also reads the local session files that Claude Code, Codex, Copilot CL
 | **Codex CLI** | `~/.codex/sessions/<project>/<session>.jsonl` | `%USERPROFILE%\.codex\sessions\...` |
 | **Copilot CLI** | `~/.copilot/session-state/<session>/events.jsonl` | `%USERPROFILE%\.copilot\session-state\...` |
 | **Copilot Chat** | `~/Library/Application Support/<IDE>/User/workspaceStorage/…/chatSessions/` | `%APPDATA%\<IDE>\User\workspaceStorage\…\chatSessions\` |
+| **OpenCode** | `~/.local/share/opencode/opencode.db` (SQLite) | `%APPDATA%\opencode\opencode.db` |
 
 Copilot Chat sessions are scanned across all installed VS Code-family IDEs automatically — VS Code, VS Code Insiders, Cursor, Windsurf, VSCodium, Trae, and Kiro.
 
 Loading is incremental and runs in the background, sorted newest-first so recent sessions appear immediately. A 30-second poll picks up new sessions as they complete.
 
-**What log data includes:** session ID, workspace, model, timestamps, token counts (input, output, cache read/write), tool calls and file operations (Claude Code only), user prompt (Claude Code and Copilot CLI).
+**What log data includes:** session ID, workspace, model, timestamps, token counts (input, output, cache read/write), tool calls and file operations (Claude Code and OpenCode), user prompt (Claude Code, Copilot CLI, and OpenCode).
 
-**What log data does not include:** time-to-first-token, per-tool execution timing, streaming speed, loop detection signals, or structured error telemetry. Enable OTEL for those.
+**What log data does not include:** time-to-first-token, per-tool execution timing, streaming speed, loop detection signals, or structured error telemetry. Enable OTEL for those. OpenCode sessions show a blue info banner in the Session Overview noting that OTEL traces and TTFT are not available.
 
 To disable log ingestion: set `agentLens.enableLogIngestion` to `false` in VS Code settings.
 
@@ -393,7 +394,23 @@ Not in logs: input tokens per turn (estimated from shutdown totals), TTFT, cache
 
 ---
 
-> **Note:** Agent observability is evolving rapidly. All three platforms are actively expanding what they expose, and the GenAI semantic conventions are still being standardized. AgentLens will be updated as richer data becomes available.
+---
+
+### OpenCode
+
+**SQLite database (automatic, no OTEL setup needed)** — `~/.local/share/opencode/opencode.db`
+
+OpenCode stores all session data in a local SQLite database. AgentLens reads this directly — no agent configuration or OTEL setup is required. The database uses WAL (Write-Ahead Log) mode; AgentLens merges the WAL at read time so sessions are visible immediately after each run.
+
+Available from the database: session ID, user prompt (last user message), model name, workspace directory, timestamps, all token counts (input, output, cache read/write), tool calls with names and inputs/outputs, file paths accessed by tools.
+
+Not available: time-to-first-token, per-tool execution timing, streaming speed, loop detection signals, or structured error telemetry (no OTEL). Sessions show a **Log** badge and a blue info banner in the Overview tab noting these limitations.
+
+Override the default database location with the `OPENCODE_DATA_DIR` environment variable (comma-separated for multiple directories).
+
+---
+
+> **Note:** Agent observability is evolving rapidly. All platforms are actively expanding what they expose, and the GenAI semantic conventions are still being standardized. AgentLens will be updated as richer data becomes available.
 
 ## Additional Features
 

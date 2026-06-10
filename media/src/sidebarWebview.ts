@@ -67,12 +67,14 @@ function agentColor(source: string): string {
   if (source === 'claude_code') return '#FFB085'
   if (source === 'codex') return '#F0FF42'
   if (source === 'copilot') return '#00EAFF'
+  if (source === 'opencode') return '#FFFFFF'
   return '#90a4ae'
 }
 
 function agentLabel(source: string): string {
   if (source === 'claude_code') return 'Claude'
   if (source === 'codex') return 'Codex'
+  if (source === 'opencode') return 'OpenCode'
   return 'Copilot'
 }
 

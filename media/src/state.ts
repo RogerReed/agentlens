@@ -271,8 +271,9 @@ export const filteredSessions = computed<SessionSummaryCard[]>(() => {
 export const agentPresence = computed(() => {
   const sessions = rangedSessions.value
   return {
-    claude:  sessions.some(s => s.source === 'claude_code'),
-    copilot: sessions.some(s => s.source === 'copilot'),
-    codex:   sessions.some(s => s.source === 'codex'),
+    claude:    sessions.some(s => s.source === 'claude_code'),
+    copilot:   sessions.some(s => s.source === 'copilot'),
+    codex:     sessions.some(s => s.source === 'codex'),
+    opencode:  sessions.some(s => s.source === 'opencode'),
   }
 })

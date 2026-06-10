@@ -4,7 +4,7 @@ AgentLens gives you local observability into your AI agent sessions — see what
 
 **OpenTelemetry traces (primary)** — the extension runs a built-in OTEL receiver and auto-configures each agent to stream live telemetry. OTEL is the richest source: real-time span timing, time-to-first-token, loop detection, file diffs, and streaming speed. Sessions show an **OTEL** badge.
 
-**Local log files (fallback)** — the extension also reads session files each agent writes automatically to your home directory. No setup required — session history appears immediately. Sessions show a **Log** badge and are automatically upgraded to OTEL when live telemetry arrives for the same session.
+**Local log files (fallback)** — the extension also reads session files each agent writes automatically to your home directory, including OpenCode's local SQLite database. No setup required — session history appears immediately. Sessions show a **Log** badge and are automatically upgraded to OTEL when live telemetry arrives for the same session.
 
 ## What you can see
 

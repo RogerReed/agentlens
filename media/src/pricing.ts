@@ -68,6 +68,8 @@ const RATES: Record<string, ModelRates> = {
   'claude-opus-4-6':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 27 },
   'claude-opus-4-7':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 15,   multiplierAnnualPostJun1: 27 },
   'claude-opus-4-8':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 15,   multiplierAnnualPostJun1: 27 },
+  // Fable 5 — new tier above Opus; Copilot multipliers TBD (not yet listed in GitHub billing docs)
+  'claude-fable-5':        { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok: 50.00, multiplier: 0,    multiplierAnnualPostJun1: 0 },
   // fast mode (/fast toggle in Claude Code) — model ID appended with -fast by logReader when usage.speed === 'fast'
   'claude-opus-4-6-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
   'claude-opus-4-7-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
@@ -83,6 +85,9 @@ const RATES: Record<string, ModelRates> = {
   // raptor-mini uses GPT-5 mini pricing per footnote 5 — included ($0) in token mode, same annual multiplier
   'raptor-mini': { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0, multiplierAnnualPostJun1: 0.33 },
   'goldeneye':   { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  // ── OpenCode Zen  https://opencode.ai/docs/zen/ ────────────────────────────
+  // big-pickle: OpenCode's stealth model, free during limited evaluation period.
+  'big-pickle':  { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0, multiplierAnnualPostJun1: 0 },
 }
 
 function normalizeModelId(modelId: string): string {

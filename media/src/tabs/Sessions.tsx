@@ -104,6 +104,7 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
           <div>
             {sess.dataSource === 'log' && (() => {
               const isCopilot = sess.source === 'copilot'
+              const isOpenCode = sess.source === 'opencode'
               // Pre-~Feb 2026 Copilot Chat sessions (.json snapshot format): VS Code did not
               // record token counts at all — outputTokens=0 with turns>0 is the fingerprint.
               if (isCopilot && sess.outputTokens === 0 && sess.turns > 0) {
@@ -112,6 +113,15 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
                     <span style="color:var(--vscode-editorWarning-foreground,#cca700);font-weight:600">Log-only session — no token data</span>
                     {' — '}
                     VS Code Copilot Chat did not record token counts in this era. Token counts and cost estimates are unavailable and cannot be recovered.
+                  </div>
+                )
+              }
+              if (isOpenCode) {
+                return (
+                  <div style="margin-bottom:10px;padding:7px 10px;border-radius:4px;border-left:3px solid var(--vscode-editorInfo-foreground,#4fc3f7);background:var(--hover);font-size:11px;color:var(--muted);line-height:1.5">
+                    <span style="color:var(--vscode-editorInfo-foreground,#4fc3f7);font-weight:600">OpenCode SQLite session</span>
+                    {' — '}
+                    Token counts, tools, and files sourced from OpenCode&apos;s local database. OTEL traces and TTFT are not available for OpenCode.
                   </div>
                 )
               }

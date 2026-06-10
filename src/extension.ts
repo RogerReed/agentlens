@@ -214,7 +214,7 @@ export async function activate(context: vscode.ExtensionContext) {
   let logReader: LogReader | undefined
   let startBatchedLoad: ((onAllDone?: () => void) => void) | undefined
   if (enableLogIngestion && writer) {
-    logReader = new LogReader({ log: (msg) => outputChannel!.appendLine(msg) })
+    logReader = new LogReader({ log: (msg) => outputChannel!.appendLine(msg), sqlFactory: agentLensDb?.sqlFactory })
     const lr = logReader  // non-null alias for use inside closures
     const fallbackWorkspace = () => vscode.workspace.workspaceFolders?.[0]?.uri.toString() ?? ''
 
@@ -262,6 +262,7 @@ export async function activate(context: vscode.ExtensionContext) {
         copilot:             'Copilot CLI',
         copilot_vscode:      'Copilot (VS Code)',
         copilot_vscode_json: 'Copilot (VS Code)',
+        opencode:            'OpenCode',
       }
       const countByKey = new Map<string, number>()
 
@@ -303,7 +304,18 @@ export async function activate(context: vscode.ExtensionContext) {
         else onDone()
       }
 
-      const fastFiles = allFiles.filter(f => f.agentKey !== 'copilot_vscode_json')
+      // OpenCode: DB file returns multiple sessions — process separately before batched files.
+      const ocResults = lr.scanOpenCode()
+      if (ocResults.length > 0) {
+        const ws = fallbackWorkspace()
+        for (const { card, workspace } of ocResults) {
+          card.loopSignals = detectLoopSignals(card)
+          writer!.enqueue(card, workspace || ws)
+        }
+        countByKey.set('opencode', (countByKey.get('opencode') ?? 0) + ocResults.length)
+      }
+
+      const fastFiles = allFiles.filter(f => f.agentKey !== 'copilot_vscode_json' && f.agentKey !== 'opencode')
       const slowFiles = allFiles.filter(f => f.agentKey === 'copilot_vscode_json')
 
       processGroup(fastFiles, 10, 0, () => {

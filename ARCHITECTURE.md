@@ -1,6 +1,6 @@
 # AgentLens Architecture
 
-AgentLens is a VS Code extension that receives OpenTelemetry (OTLP) telemetry from AI coding agents (GitHub Copilot, Claude Code, Codex), persists it to a local SQLite database, summarises it into per-session cards, and visualises it in a sidebar and a full dashboard.
+AgentLens is a VS Code extension that receives OpenTelemetry (OTLP) telemetry from AI coding agents (GitHub Copilot, Claude Code, Codex), reads local session files and databases (including OpenCode's SQLite database), persists everything to a local SQLite database, summarises it into per-session cards, and visualises it in a sidebar and a full dashboard.
 
 ---
 
@@ -32,12 +32,13 @@ graph TB
         CX[Codex<br/>OTLP HTTP logs]
     end
 
-    subgraph LocalLogs["Local log files"]
+    subgraph LocalLogs["Local log files / databases"]
         CL_LOGS["~/.claude/projects/**/*.jsonl"]
         CX_LOGS["~/.codex/sessions/**/*.jsonl"]
         CP_LOGS["~/.copilot/session-state/**/*.jsonl"]
         CP_VS["workspaceStorage/{hash}/chatSessions/{uuid}.jsonl<br/>(delta log — newer VS Code-family Copilot Chat)"]
         CP_JSON["workspaceStorage/{hash}/chatSessions/{uuid}.json<br/>(snapshot — older VS Code-family Copilot Chat)"]
+        OC_DB["~/.local/share/opencode/opencode.db<br/>(SQLite — WAL merged at read time)"]
     end
 
     subgraph VSCode Extension
@@ -68,7 +69,7 @@ graph TB
     COL -- addSpan --> STO
     STO -- onUpdate → summarize → enqueue --> WRI
 
-    CL_LOGS & CX_LOGS & CP_LOGS & CP_VS & CP_JSON --> LR
+    CL_LOGS & CX_LOGS & CP_LOGS & CP_VS & CP_JSON & OC_DB --> LR
     LR -- "enqueue(card)" --> WRI
 
     WRI --> DB
@@ -177,8 +178,8 @@ flowchart TD
         CB --> DSH_CB[DashboardPanel<br/>300ms debounce + 10s heartbeat]
     end
 
-    subgraph LOGS["Log file path (disk) — see §4"]
-        LF["~/.claude · ~/.codex · ~/.copilot<br/>JSONL files"] --> LR[LogReader<br/>parseFile / scan]
+    subgraph LOGS["Log file / database path (disk) — see §4"]
+        LF["~/.claude · ~/.codex · ~/.copilot<br/>JSONL files<br/>~/.local/share/opencode/opencode.db (SQLite)"] --> LR[LogReader<br/>parseFile / scanOpenCode / scan]
         LR -- "enqueue(card)" --> WRITE
     end
 
@@ -203,6 +204,7 @@ A parallel, network-free ingestion path that reads session files written to disk
 | Copilot CLI | JSONL (event log) | `~/.copilot/session-state/<uuid>/events.jsonl` | — (written automatically) |
 | Copilot Chat (VS Code-family, newer) | JSONL (delta log) | `workspaceStorage/<hash>/chatSessions/<uuid>.jsonl` | — |
 | Copilot Chat (VS Code-family, older) | JSON (snapshot) | `workspaceStorage/<hash>/chatSessions/<uuid>.json` | — |
+| OpenCode | SQLite database (WAL mode) | `~/.local/share/opencode/opencode.db` (Linux/Mac) | `OPENCODE_DATA_DIR` (comma-separated data dirs) |
 
 `workspaceStorage` is at `~/Library/Application Support/<IDE>/User/workspaceStorage` (macOS), `%APPDATA%\<IDE>\User\workspaceStorage` (Windows), or `$XDG_CONFIG_HOME/<IDE>/User/workspaceStorage` (Linux), where `<IDE>` is any VS Code-family IDE. AgentLens scans all known VS Code-family IDEs automatically — VS Code, VS Code Insiders, Cursor, Windsurf, VSCodium, Trae, and Kiro — via `VSCODE_FAMILY_IDE_NAMES` in `src/vscodeFamilyIdes.ts`. Standalone auto-config writes Copilot settings into every installed IDE's `settings.json`. Windows: Claude Code also checks `%APPDATA%\Claude\projects`. Linux/Mac: `XDG_CONFIG_HOME` is also checked for Claude.
 
@@ -221,6 +223,22 @@ New turn: `kind=2` with `k=["requests"]` (exactly one element). Response sub-arr
 ### Copilot Chat — snapshot format (`.json`)
 
 Older VS Code Copilot Chat versions wrote the full session state as a single JSON object. The `requests` array contains all turns with `message.text`, `timestamp`, `modelId`, and tool call data. No token counts are stored. Only collected when no `.jsonl` sibling exists for the same session UUID.
+
+### OpenCode — SQLite database
+
+OpenCode stores all session data in a local SQLite database (`opencode.db`) using WAL (Write-Ahead Log) mode. AgentLens reads the database directly using `sql.js` (WASM SQLite), merging the WAL file at read time so in-progress sessions are visible immediately.
+
+**WAL merge:** `opencode.db-wal` can be larger than the main database file when sessions are active. `_mergeWal()` parses the 32-byte WAL header (magic, page size, salt pair), iterates frames of size `24 + pageSize`, applies frames whose salt matches the database header, and returns a merged in-memory buffer for `sql.js` to open. The WAL mtime is checked alongside the database mtime so new sessions trigger a rescan.
+
+**Three-query parse:** `_parseOpenCodeDb()` executes three queries in one pass:
+
+1. **Session query** — `session` table: `id, title, directory, model, time_created, tokens_input, tokens_output, tokens_cache_read, tokens_cache_write`. Filters: `parent_id` null/empty (skip sub-sessions), total tokens > 0. Model is stored as JSON (`{"id":"...", "providerID":"..."}`); the `id` field is extracted.
+2. **Message query** — `message` table joined on `session_id`: per-assistant-turn timing (`time.created`, `time.completed` from the `data` JSON) and token counts.
+3. **Part query** — `part` table joined with `message`: `type` (text / tool / step-start / step-finish / reasoning), `text`, `tool_name`, `callID`, `tool_input_json`, `tool_output`, `tool_status`, and timestamps. Results are grouped per session into `partsBySess` for card building.
+
+**User request:** The last `text`-type part with `role=user` is used as `userRequest` (not the first) to capture the most recent user message in multi-turn sessions.
+
+**Timeline:** `llmEvents` (one per assistant message, from the message query) and `toolEvents` (one per tool part, from the part query) are merged and sorted by timestamp into `TimelineEntry[]`.
 
 ### Scan mechanics
 
@@ -248,20 +266,21 @@ flowchart TD
 
 ### Data availability
 
-| Field | OTLP | Claude / Codex logs | Copilot CLI log | Copilot Chat JSONL | Copilot Chat JSON |
-| --- | --- | --- | --- | --- | --- |
-| Session ID, workspace | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Model | ✓ | ✓ | ✓ | ✓ (initial model only) | ✓ (first request) |
-| Timestamps, duration | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Input tokens | ✓ | ✓ | ✓ (from `session.shutdown`) | ✗ not stored | ✗ not stored |
-| Output tokens | ✓ | ✓ | ✓ | ✓ (`completionTokens` per turn) | ✗ not stored |
-| Cache read / write tokens | ✓ | ✓ | ✓ (from `session.shutdown`) | ✗ not stored | ✗ not stored |
-| User request text | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Tool calls (names) | ✓ | ✓ | ✓ | ✗ | ✗ (presence only) |
-| File paths from tools | ✓ | ✓ | ✓ | ✗ | ✗ |
-| TTFT, per-tool timing | ✓ | ✗ | ✗ | ✗ | ✗ |
-| Streaming speed, loop signals | ✓ | ✗ | ✗ | ✗ | ✗ |
-| Full turn timeline | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Field | OTLP | Claude / Codex logs | Copilot CLI log | Copilot Chat JSONL | Copilot Chat JSON | OpenCode SQLite |
+| --- | --- | --- | --- | --- | --- | --- |
+| Session ID, workspace | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Model | ✓ | ✓ | ✓ | ✓ (initial model only) | ✓ (first request) | ✓ |
+| Timestamps, duration | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Input tokens | ✓ | ✓ | ✓ (from `session.shutdown`) | ✗ not stored | ✗ not stored | ✓ |
+| Output tokens | ✓ | ✓ | ✓ | ✓ (`completionTokens` per turn) | ✗ not stored | ✓ |
+| Cache read / write tokens | ✓ | ✓ | ✓ (from `session.shutdown`) | ✗ not stored | ✗ not stored | ✓ |
+| User request text | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ (last user message) |
+| Tool calls (names) | ✓ | ✓ | ✓ | ✗ | ✗ (presence only) | ✓ |
+| Tool call inputs / outputs | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ |
+| File paths from tools | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ |
+| TTFT, per-tool timing | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Streaming speed, loop signals | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Full turn timeline | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ (LLM + tool entries) |
 
 Sessions produced by `LogReader` carry `dataSource: 'log'` on `SessionSummaryCard`; OTLP sessions carry `dataSource: 'otel'`. The UI shows an OTEL/Log source badge on each session row.
 

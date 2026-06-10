@@ -154,7 +154,7 @@ function OverviewSection() {
       )}
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
-        <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code-family IDE extension (VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro), a local web app (npx), or Docker, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and also reads <strong>local session log files</strong> written automatically by each agent as a zero-config fallback — so history loads even without OTEL configured. Both sources feed one unified dashboard and surface efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time.</p>
+        <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code-family IDE extension (VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro), a local web app (npx), or Docker, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and also reads <strong>local session files and databases</strong> written automatically by each agent as a zero-config fallback — including OpenCode's local SQLite database — so history loads even without OTEL configured. Both sources feed one unified dashboard and surface efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time.</p>
       </div>
     </div>
   )
@@ -231,6 +231,7 @@ chmod +x scripts/configure-agents.sh
         </tbody>
       </table>
       <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Open the <em>AgentLens</em> output channel (<em>View → Output → AgentLens</em>) to confirm spans are arriving.</p>
+      <p style="font-size:11px;color:var(--muted);margin:6px 0 0"><strong style="color:var(--fg)">OpenCode:</strong> No configuration needed. AgentLens reads OpenCode's local SQLite database automatically from <code style={codeStyle}>~/.local/share/opencode/</code> — sessions appear as <strong>Log</strong> badge entries without any OTEL setup.</p>
     </div>
   )
 
@@ -341,6 +342,17 @@ function AgentOtelSection() {
           ))}
         </div>
         <p style="margin-top:14px;font-size:12px;color:var(--muted)">The practical effect: Traces and Timeline stay closest to the raw OTEL structure, while Efficiency, Insights, Alerts, Automation, Agents, and Flow all use the normalized session model so the three agents can be compared side by side.</p>
+        <h4 style={subHeadStyle}>Log-only agents (no OTEL)</h4>
+        <div class="glossary">
+          <div class="glossary-item" style="flex-direction:column;gap:6px">
+            <dt class="glossary-term">OpenCode</dt>
+            <dd class="glossary-def" style="display:block">
+              <p style="margin:0 0 6px"><strong style="color:var(--fg)">Format: </strong>Local SQLite database at <code style={codeStyle}>~/.local/share/opencode/opencode.db</code> (Linux/Mac) or <code style={codeStyle}>%APPDATA%\opencode\opencode.db</code> (Windows). No OTEL support. AgentLens reads the database directly using WASM SQLite, merging the WAL file at read time. Override the path with the <code style={codeStyle}>OPENCODE_DATA_DIR</code> environment variable.</p>
+              <p style="margin:0 0 6px"><strong style="color:var(--fg)">What's included: </strong>Session ID, workspace directory, model name, timestamps, all token counts (input, output, cache read/write), user request (last user message in the session), tool call names and inputs/outputs, file paths accessed by tools, and a full per-turn timeline of LLM calls and tool calls.</p>
+              <p style="margin:0"><strong style="color:var(--fg)">Not available: </strong>OTEL traces, time-to-first-token, per-tool execution timing, streaming speed, and loop detection signals. Sessions show a <strong>Log</strong> badge and a blue info banner in the Overview tab noting these limitations.</p>
+            </dd>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -805,7 +817,7 @@ function BadgesSection() {
           <dt class="glossary-term" style="min-width:0">
             <span style={`${badgeStyle}color:#90a4ae;border-color:#90a4ae`}>Log</span>
           </dt>
-          <dd class="glossary-def">Parsed from local conversation log files (~/.claude/projects, ~/.codex/sessions, etc.) — tokens, tool calls, and messages are available, but timing and TTFT are not. No agent configuration needed.</dd>
+          <dd class="glossary-def">Parsed from local session files and databases — <code>~/.claude/projects</code>, <code>~/.codex/sessions</code>, <code>~/.copilot/session-state</code>, and OpenCode's SQLite database at <code>~/.local/share/opencode/</code>. Tokens, tool calls, file paths, and user prompts are available. Timing and TTFT are not available from log sources. No agent configuration needed.</dd>
         </div>
       </div>
 

@@ -21,5 +21,6 @@ AgentLens also loaded session history from local log files each agent writes aut
 | **Claude Code** | `~/.claude/projects/` — conversation history, token counts, tool calls |
 | **Copilot CLI** | `~/.copilot/session-state/` — sessions, token counts, prompts |
 | **Codex CLI** | `~/.codex/sessions/` — sessions and token counts |
+| **OpenCode** | `~/.local/share/opencode/opencode.db` — sessions, token counts, tool calls, file paths, user prompts. No OTEL config needed. |
 
 Sessions from log files show a **Log** badge. When OTEL data arrives for the same session, the badge automatically upgrades to **OTEL** and the richer data replaces the log entry.

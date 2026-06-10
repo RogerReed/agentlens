@@ -223,6 +223,27 @@ Model name available on `codex.user_prompt`, `codex.turn_ttft`, and `codex.tool_
 
 ---
 
+## OpenCode
+
+OpenCode uses token-based pricing for third-party models (routed through its provider abstraction) and offers a free stealth model called **big-pickle** during a limited evaluation period.
+
+### big-pickle — OpenCode Zen free model
+
+**Who it applies to:** Users of OpenCode's built-in Zen model tier during the limited evaluation period.
+
+**Source:** <https://opencode.ai/docs/zen/>
+
+**Rates:** $0 — completely free during evaluation. All token fields (`inputPerMTok`, `cacheReadPerMTok`, `cacheWritePerMTok`, `outputPerMTok`) are set to 0 in the rate table.
+
+**Model ID in OpenCode SQLite:** Stored as JSON `{"id":"big-pickle","providerID":"opencode"}` in the `model` column of the `session` table. AgentLens extracts the `id` field and normalizes it for rate lookup.
+
+**Known gaps:**
+
+- big-pickle pricing is stated as free "during limited evaluation" — it may become paid in the future. Check the source URL and update the rate table when rates are published.
+- Other models used through OpenCode (e.g. Anthropic, OpenAI, or Google models routed via OpenCode's provider abstraction) are billed by the underlying provider at their standard rates. AgentLens applies the provider's published rates for those models automatically.
+
+---
+
 ## Notes for maintainers
 
 - The `PRICING_LAST_UPDATED` constant in `media/src/pricing.ts` surfaces in the UI. Update it whenever rates change.
