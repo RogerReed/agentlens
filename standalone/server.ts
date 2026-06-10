@@ -71,6 +71,41 @@ function addSpan(span: Span) {
 // when the same session ID appears in both, the OTEL version is used.
 let logSessions: Map<string, SessionSummaryCard> = new Map()
 
+function buildImportCardStandalone(raw: Record<string, unknown>): SessionSummaryCard {
+  const num = (v: unknown, def = 0): number => (typeof v === 'number' ? v : def)
+  const str = (v: unknown, def = ''): string => (typeof v === 'string' ? v : def)
+  const arrStr = (v: unknown): string[] => (Array.isArray(v) ? v.filter(x => typeof x === 'string') as string[] : [])
+  return {
+    sessionId:         str(raw['sessionId']),
+    traceId:           str(raw['traceId']),
+    source:            (raw['source'] as SessionSummaryCard['source']) ?? 'claude_code',
+    dataSource:        'log',
+    workspace:         str(raw['workspace']),
+    userRequest:       str(raw['userRequest']),
+    model:             str(raw['model']),
+    turns:             num(raw['turns']),
+    totalLlmCalls:     num(raw['turns']),
+    totalToolCalls:    num(raw['totalToolCalls']),
+    inputTokens:       num(raw['inputTokens']),
+    outputTokens:      num(raw['outputTokens']),
+    cacheReadTokens:   num(raw['cacheReadTokens']),
+    cacheCreateTokens: num(raw['cacheCreateTokens']),
+    cacheHitRate:      num(raw['cacheHitRate']),
+    durationMs:        num(raw['durationMs']),
+    startTime:         str(raw['startTime'], new Date().toISOString()),
+    filesRead:         arrStr(raw['filesRead']),
+    filesChanged:      arrStr(raw['filesChanged']),
+    filesSearched:     [],
+    filesWritten:      [],
+    toolCounts:        (typeof raw['toolCounts'] === 'object' && raw['toolCounts'] !== null ? raw['toolCounts'] : {}) as Record<string, number>,
+    errors:            num(raw['errors']),
+    outcome:           (raw['outcome'] as SessionSummaryCard['outcome']) ?? 'unknown',
+    timeline:          [],
+    backgroundSpans:   [],
+    loopSignals:       Array.isArray(raw['loopSignals']) ? raw['loopSignals'] as SessionSummaryCard['loopSignals'] : [],
+  }
+}
+
 const logReader = new LogReader()
 
 // ── MCP server ────────────────────────────────────────────────────────────────
@@ -991,6 +1026,41 @@ const uiServer = http.createServer((req, res) => {
     res.write(`data: ${buildUpdatePayload()}\n\n`)
     sseClients.push(res)
     req.on('close', () => { sseClients = sseClients.filter(c => c !== res) })
+    return
+  }
+
+  if (req.method === 'POST' && url === '/api/import') {
+    const chunks: Buffer[] = []
+    req.on('data', (c: Buffer) => chunks.push(c))
+    req.on('end', () => {
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as { sessions?: unknown[] }
+        if (!Array.isArray(body.sessions)) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'sessions array required' }))
+          return
+        }
+        const VALID_SOURCES = new Set(['copilot', 'claude_code', 'codex', 'opencode'])
+        let imported = 0
+        let skipped = 0
+        for (const raw of body.sessions) {
+          if (typeof raw !== 'object' || raw === null) continue
+          const s = raw as Record<string, unknown>
+          const id = typeof s['sessionId'] === 'string' ? s['sessionId'] : ''
+          if (!id || !VALID_SOURCES.has(s['source'] as string)) continue
+          if (logSessions.has(id)) { skipped++; continue }
+          const card = buildImportCardStandalone(s)
+          logSessions.set(id, card)
+          imported++
+        }
+        pushUpdate()
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ imported, skipped, failed: 0, total: body.sessions.length }))
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: String(e) }))
+      }
+    })
     return
   }
 

@@ -139,6 +139,214 @@
   cursor: default;
 }
 
+/* ── Import tab ──────────────────────────────────────────────────────────── */
+
+#import-content {
+  padding: 8px 0 20px;
+  max-width: 600px;
+}
+
+.import-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+.import-drop-zone:hover,
+.import-drop-zone-hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.import-drop-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.import-drop-primary {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+
+.import-drop-secondary {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.import-drop-link {
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.import-error {
+  font-size: 12px;
+  color: var(--vscode-errorForeground, #f48771);
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border: 1px solid var(--vscode-errorForeground, #f48771);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--vscode-errorForeground, #f48771) 10%, transparent);
+}
+
+.import-preview-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px 22px;
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.import-preview-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.import-preview-filename {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  word-break: break-all;
+}
+
+.import-preview-filesize {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.import-preview-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.import-preview-count {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.import-preview-count-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.import-preview-dates {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: 6px;
+}
+
+.import-source-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.import-source-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid;
+  opacity: 0.85;
+}
+
+.import-dedup-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.import-large-warning {
+  font-size: 11px;
+  color: var(--warning, #ffb74d);
+  padding: 6px 10px;
+  border: 1px solid var(--warning, #ffb74d);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--warning, #ffb74d) 10%, transparent);
+}
+
+.import-preview-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.import-progress-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+
+.import-progress-track {
+  height: 6px;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.import-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+.import-progress-text {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.import-done-card {
+  align-items: flex-start;
+}
+
+.import-done-icon {
+  font-size: 20px;
+  color: var(--vscode-testing-iconPassed, #4caf50);
+  font-weight: 700;
+}
+
+.import-done-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+
+.import-done-detail {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.import-again-btn {
+  margin-top: 4px;
+}
+
 /* Replay box */
 .export-replay-box {
   border: 1px solid var(--border);

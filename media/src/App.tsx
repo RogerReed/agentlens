@@ -19,6 +19,7 @@ import { Sessions } from './tabs/Sessions'
 import { Analytics } from './tabs/Analytics'
 import { Alerts, computeAlertCount, getTriggeredAlerts, checkAlerts, type TriggeredAlert } from './tabs/Alerts'
 import { Export } from './tabs/Export'
+import { Import } from './tabs/Import'
 import { Help } from './tabs/Help'
 import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
@@ -34,7 +35,8 @@ const TABS = [
   { id: 'sessions',   label: 'Sessions',   title: 'Session list with expand-in-place detail — trace, files, cost, and flagged issues for each session.' },
   { id: 'analytics',  label: 'Analytics',  title: 'Aggregate charts and metrics: token/cost trends, agent comparison, tool distribution, and active insights.' },
   { id: 'patterns',   label: 'Advisor',    title: 'Cross-session behavioral patterns, efficiency map, hot files, and instruction file recommendations.' },
-  { id: 'export',     label: 'Export',     title: 'Export raw or redacted OTEL span data as JSON files.' },
+  { id: 'export',     label: 'Export',     title: 'Export raw or redacted session data as JSON files.' },
+  { id: 'import',     label: 'Import',     title: 'Import session data from an AgentLens export file.' },
 ]
 
 function ActivePanel() {
@@ -44,6 +46,7 @@ function ActivePanel() {
     case 'analytics': return <Analytics />
     case 'patterns':  return <Patterns />
     case 'export':    return <Export />
+    case 'import':    return <Import />
     case 'help':      return <Help />
     default:          return null
   }
