@@ -1163,7 +1163,7 @@ const otlpServer = http.createServer((req, res) => {
 
 otlpServer.on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`[AgentLens] Port ${OTLP_PORT} already in use — is the VS Code extension running? Stop it or set OTLP_PORT=<other> to use a different port.`)
+    console.error(`[AgentLens] Port ${OTLP_PORT} (OTLP) already in use — stop the process using it or set OTLP_PORT=<other> to use a different port.`)
     process.exit(1)
   }
   console.error('[AgentLens] OTLP server error:', err)
@@ -1197,6 +1197,14 @@ Promise.all([
 
 otlpServer.listen(OTLP_PORT, BIND_HOST, () => {
   console.log(`[AgentLens] OTLP receiver → http://localhost:${OTLP_PORT}`)
+})
+
+uiServer.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[AgentLens] Port ${UI_PORT} (UI) already in use — set UI_PORT=<other> to use a different port.`)
+    process.exit(1)
+  }
+  console.error('[AgentLens] UI server error:', err)
 })
 
 uiServer.listen(UI_PORT, BIND_HOST, () => {

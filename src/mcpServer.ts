@@ -528,6 +528,13 @@ export function startMcpHttpServer(
     if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return }
     handleMcpRequest(server, req, res)
   })
+  httpServer.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[AgentLens] Port ${port} (MCP) already in use — stop the process using it or set MCP_PORT=<other> to use a different port.`)
+      process.exit(1)
+    }
+    throw err
+  })
   httpServer.listen(port, bindHost)
   return httpServer
 }
