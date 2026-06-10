@@ -453,12 +453,13 @@ export class DatabaseReader {
 export function openReadonlySnapshot(
   storagePath: string,
   storageUri: vscode.Uri,
+  extensionPath: string,
 ): DatabaseReader | null {
   const dbPath = path.join(storagePath, 'agentlens.db')
   try {
     // sql.js has no bundled types; require is intentional (no ESM build available)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SQL = require('sql.js') as any
+    const SQL = require(path.join(extensionPath, 'dist', 'sql-wasm.js')) as any
     const fileBuffer = fs.readFileSync(dbPath)
     const db = new SQL.Database(fileBuffer)
     return new DatabaseReader(db, storageUri)

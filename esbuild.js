@@ -6,10 +6,11 @@ const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
 
 function copySqlWasm() {
-  const src = path.join(__dirname, 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
-  const dest = path.join(__dirname, 'dist', 'sql-wasm.wasm');
-  fs.mkdirSync(path.join(__dirname, 'dist'), { recursive: true });
-  fs.copyFileSync(src, dest);
+  const sqlJsDir = path.join(__dirname, 'node_modules', 'sql.js', 'dist');
+  const distDir  = path.join(__dirname, 'dist');
+  fs.mkdirSync(distDir, { recursive: true });
+  fs.copyFileSync(path.join(sqlJsDir, 'sql-wasm.wasm'), path.join(distDir, 'sql-wasm.wasm'));
+  fs.copyFileSync(path.join(sqlJsDir, 'sql-wasm.js'),   path.join(distDir, 'sql-wasm.js'));
 }
 
 /**
