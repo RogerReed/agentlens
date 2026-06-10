@@ -57,6 +57,9 @@ export function Import() {
       } else if (msg.type === 'importDone') {
         setDoneState({ imported: msg.imported ?? 0, skipped: msg.skipped ?? 0, failed: msg.failed ?? 0, total: msg.total ?? 0 })
         setPhase('done')
+      } else if (msg.type === 'importError') {
+        setError(`Import failed: ${(msg as { message?: string }).message ?? 'unknown error'}`)
+        setPhase('preview')
       }
     }
     window.addEventListener('message', handler)
@@ -114,27 +117,37 @@ export function Import() {
     if (file) parseFile(file)
   }
 
-  function doImport() {
+  async function doImport() {
     if (!preview) return
     setPhase('importing')
     setProgress({ imported: 0, total: preview.sessions.length })
-    if (vscode) {
+    if (vscode && !window.__STANDALONE__) {
       vscode.postMessage({ type: 'importSessionData', sessions: preview.sessions })
     } else {
-      fetch('/api/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessions: preview.sessions }),
-      })
-        .then(r => r.json())
-        .then((result: ImportDoneState) => {
-          setDoneState(result)
-          setPhase('done')
-        })
-        .catch(err => {
-          setError(`Import failed: ${(err as Error).message}`)
-          setPhase('preview')
-        })
+      try {
+        const BATCH = 50
+        const total = preview.sessions.length
+        let imported = 0
+        let skipped = 0
+        for (let i = 0; i < preview.sessions.length; i += BATCH) {
+          const batch = preview.sessions.slice(i, i + BATCH)
+          const r = await fetch('/api/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessions: batch }),
+          })
+          if (!r.ok) throw new Error(`Server responded ${r.status}`)
+          const result = await r.json() as { imported: number; skipped: number; failed: number }
+          imported += result.imported
+          skipped += result.skipped
+          setProgress({ imported, total })
+        }
+        setDoneState({ imported, skipped, failed: 0, total })
+        setPhase('done')
+      } catch (err) {
+        setError(`Import failed: ${(err as Error).message}`)
+        setPhase('preview')
+      }
     }
   }
 

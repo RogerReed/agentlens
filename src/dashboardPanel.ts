@@ -219,29 +219,38 @@ export class DashboardPanel {
   }
 
   private async importSessions(rawSessions: Record<string, unknown>[]): Promise<void> {
-    const existing = new Set(this.repo.listSessions().map(s => s.sessionId))
-    const BATCH = 50
-    let imported = 0
-    let skipped = 0
-    const total = rawSessions.length
+    try {
+      const existing = new Set(this.repo.listSessions().map(s => s.sessionId))
+      const BATCH = 50
+      let imported = 0
+      let skipped = 0
+      const total = rawSessions.length
 
-    for (let i = 0; i < rawSessions.length; i += BATCH) {
-      const batch = rawSessions.slice(i, i + BATCH)
-      for (const raw of batch) {
-        const id = raw['sessionId'] as string
-        if (existing.has(id)) { skipped++; continue }
-        existing.add(id)
-        const card = buildImportCard(raw)
-        this.repo.enqueue(card, card.workspace)
-        imported++
+      for (let i = 0; i < rawSessions.length; i += BATCH) {
+        const batch = rawSessions.slice(i, i + BATCH)
+        const cards: SessionSummaryCard[] = []
+        for (const raw of batch) {
+          const id = raw['sessionId'] as string
+          if (existing.has(id)) { skipped++; continue }
+          existing.add(id)
+          cards.push(buildImportCard(raw))
+          imported++
+        }
+        if (cards.length > 0) {
+          this.repo.importCards(cards)
+        }
+        this.panel.webview.postMessage({ type: 'importProgress', imported, total, skipped })
+        // Yield between batches so the webview can render progress and other
+        // tasks (log reader, OTEL) can run without starving the event loop.
+        await new Promise<void>(resolve => setTimeout(resolve, 0))
       }
-      await this.repo.drain()
-      this.panel.webview.postMessage({ type: 'importProgress', imported, total, skipped })
-    }
 
-    this.panel.webview.postMessage({ type: 'importDone', imported, skipped, failed: 0, total })
-    this.update()
-    this.sidebarProvider?.refresh()
+      this.panel.webview.postMessage({ type: 'importDone', imported, skipped, failed: 0, total })
+      this.update()
+      this.sidebarProvider?.refresh()
+    } catch (err) {
+      this.panel.webview.postMessage({ type: 'importError', message: String(err) })
+    }
   }
 
   private async exportSessions(redact: boolean, ids: Set<string> | null = null): Promise<void> {
