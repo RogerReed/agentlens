@@ -342,6 +342,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const snapshotReader = openReadonlySnapshot(
           context.globalStorageUri.fsPath,
           context.globalStorageUri,
+          context.extensionUri.fsPath,
         )
         if (snapshotReader && store) {
           const snapshotWriter = writer ?? new DatabaseWriter(agentLensDb!.raw, context.globalStorageUri, () => {})

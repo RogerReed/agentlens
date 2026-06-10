@@ -25,7 +25,8 @@ const BLOBS_DIR = 'blobs'
  */
 export async function openDatabase(storagePath: string, extensionPath: string): Promise<AgentLensDb> {
   // sql.js is loaded dynamically to keep it out of the main extension bundle.
-  const initSqlJs = require('sql.js') as InitSqlJs
+  // Require by path so the packaged extension can resolve it from dist/.
+  const initSqlJs = require(path.join(extensionPath, 'dist', 'sql-wasm.js')) as InitSqlJs
   const SQL = await initSqlJs({
     locateFile: (file: string) => path.join(extensionPath, 'dist', file),
   })
