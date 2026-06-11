@@ -50,7 +50,7 @@ export interface LoopSignal {
 export interface SessionSummaryCard {
   sessionId: string
   traceId: string
-  source: 'copilot' | 'claude_code' | 'codex'
+  source: 'copilot' | 'claude_code' | 'codex' | 'opencode'
   dataSource: 'otel' | 'log'
   initiator?: 'user' | 'agent' | 'api'
   conversationId?: string
@@ -183,7 +183,7 @@ export interface SearchQuery {
   offset?: number
 }
 
-export type AgentFilter = 'all' | 'copilot' | 'claude_code' | 'codex'
+export type AgentFilter = 'all' | 'copilot' | 'claude_code' | 'codex' | 'opencode'
 export type InitiatorFilter = 'all' | 'user' | 'agent' | 'api'
 export type DataSourceFilter = 'all' | 'otel' | 'log'
 export type InsightFilter = 'all' | 'loop' | 'efficiency'

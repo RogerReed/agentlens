@@ -10,7 +10,7 @@ interface SqlDatabase {
   export(): Uint8Array
   close(): void
 }
-interface SqlJsStatic {
+export interface SqlJsStatic {
   Database: new (data?: Buffer | Uint8Array) => SqlDatabase
 }
 type InitSqlJs = (config?: { locateFile?: (file: string) => string }) => Promise<SqlJsStatic>
@@ -46,12 +46,13 @@ export async function openDatabase(storagePath: string, extensionPath: string): 
 
   ensureBlobsDir(storagePath)
 
-  return new AgentLensDb(db, dbPath, path.join(storagePath, BLOBS_DIR))
+  return new AgentLensDb(db, SQL, dbPath, path.join(storagePath, BLOBS_DIR))
 }
 
 export class AgentLensDb {
   constructor(
     private readonly db: SqlDatabase,
+    readonly sqlFactory: SqlJsStatic,
     private readonly dbPath: string,
     readonly blobsDir: string,
   ) {}

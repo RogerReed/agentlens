@@ -395,6 +395,7 @@ export function getInitiatorBadgeHtml(initiator: 'user' | 'agent' | 'api' | unde
 export function getAgentSourceLabel(source: string | null | undefined): string {
   if (source === 'claude_code') return 'Claude'
   if (source === 'codex') return 'Codex'
+  if (source === 'opencode') return 'OpenCode'
   return 'Copilot'
 }
 
@@ -402,12 +403,14 @@ export function getAgentColor(source: string | null | undefined): string {
   if (source === 'claude_code') return '#FFB085'
   if (source === 'codex') return '#F0FF42'
   if (source === 'copilot') return '#00EAFF'
+  if (source === 'opencode') return '#FFFFFF'
   return '#90a4ae'
 }
 
 export function getAgentShortLabel(source: string | null | undefined): string {
   if (source === 'claude_code') return 'CL'
   if (source === 'codex') return 'CX'
+  if (source === 'opencode') return 'OC'
   return 'CP'
 }
 
@@ -704,5 +707,6 @@ export function drawSparkline(containerId: string, dataPoints: number[]): void {
 export function getAgentSourceClass(source: string | null | undefined): string {
   if (source === 'claude_code') return 'session-agent-claude'
   if (source === 'codex') return 'session-agent-codex'
+  if (source === 'opencode') return 'session-agent-opencode'
   return 'session-agent-copilot'
 }

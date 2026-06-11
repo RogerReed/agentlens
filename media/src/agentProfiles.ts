@@ -29,7 +29,7 @@ export interface AgentThresholdProfile {
 
 export type AgentThresholdProfiles = Record<AgentSource, AgentThresholdProfile>
 
-export const AGENT_ORDER: AgentSource[] = ['copilot', 'claude_code', 'codex']
+export const AGENT_ORDER: AgentSource[] = ['copilot', 'claude_code', 'codex', 'opencode']
 
 export const DEFAULT_AGENT_PROFILES: AgentThresholdProfiles = {
   claude_code: {
@@ -74,6 +74,20 @@ export const DEFAULT_AGENT_PROFILES: AgentThresholdProfiles = {
     consecutiveErrorAlert: 6,
     activeMinutesAlert: 60,
   },
+  opencode: {
+    source: 'opencode',
+    label: 'OpenCode',
+    shortLabel: 'OC',
+    color: '#FFFFFF',
+    contextWindowTokens: 200000,
+    turnNudge: 80,
+    turnAlert: 150,
+    identicalRepeatNudge: 3,
+    identicalRepeatAlert: 4,
+    consecutiveErrorNudge: 3,
+    consecutiveErrorAlert: 4,
+    activeMinutesAlert: 30,
+  },
 }
 
 export const AGENT_PROFILE_FIELD_META: Record<AgentProfileMetric, { label: string; unit: string; min: number; max: number; step: number }> = {
@@ -92,6 +106,7 @@ function cloneDefaultProfiles(): AgentThresholdProfiles {
     claude_code: { ...DEFAULT_AGENT_PROFILES.claude_code },
     copilot: { ...DEFAULT_AGENT_PROFILES.copilot },
     codex: { ...DEFAULT_AGENT_PROFILES.codex },
+    opencode: { ...DEFAULT_AGENT_PROFILES.opencode },
   }
 }
 

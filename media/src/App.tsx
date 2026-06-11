@@ -426,10 +426,11 @@ export function App() {
 }
 
 const AGENT_FILTER_OPTIONS: Array<{ value: AgentFilter; label: string; color: string; activeColor?: string }> = [
-  { value: 'all',        label: 'All',     color: 'var(--vscode-descriptionForeground,#888)', activeColor: '#ffffff' },
-  { value: 'copilot',    label: 'Copilot', color: '#00EAFF' },
-  { value: 'claude_code',label: 'Claude',  color: '#FFB085' },
-  { value: 'codex',      label: 'Codex',   color: '#F0FF42' },
+  { value: 'all',        label: 'All',      color: 'var(--vscode-descriptionForeground,#888)', activeColor: '#ffffff' },
+  { value: 'copilot',    label: 'Copilot',  color: '#00EAFF' },
+  { value: 'claude_code',label: 'Claude',   color: '#FFB085' },
+  { value: 'codex',      label: 'Codex',    color: '#F0FF42' },
+  { value: 'opencode',   label: 'OpenCode', color: '#FFFFFF' },
 ]
 
 function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolean }) {
@@ -544,7 +545,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
         <span style="width:1px;height:14px;background:var(--border);margin:0 8px;flex-shrink:0" />
         <div style="display:flex;gap:4px;align-items:center">
           <span style="font-size:10px;color:var(--muted);margin-right:2px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px">Agent</span>
-          {AGENT_FILTER_OPTIONS.filter(o => o.value === 'all' || presentSources.has(o.value)).map(o => {
+          {AGENT_FILTER_OPTIONS.map(o => {
             const active = agent === o.value
             const displayColor = (active && o.activeColor) ? o.activeColor : o.color
             return (

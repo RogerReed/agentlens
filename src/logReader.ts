@@ -73,6 +73,24 @@ function codexSessionsDirs(): string[] {
   return fs.existsSync(base) ? [base] : []
 }
 
+function openCodeDataDirs(): string[] {
+  const envVal = process.env['OPENCODE_DATA_DIR']
+  if (envVal) {
+    return envVal.split(',').map(p => p.trim()).filter(Boolean)
+      .filter(d => { try { return fs.statSync(d).isDirectory() } catch { return false } })
+  }
+  const home = homeDir()
+  const candidates: string[] = []
+  if (process.platform === 'win32') {
+    const appData = process.env['APPDATA']
+    if (appData) candidates.push(path.join(appData, 'opencode'))
+  } else {
+    const xdgData = process.env['XDG_DATA_HOME'] ?? path.join(home, '.local', 'share')
+    candidates.push(path.join(xdgData, 'opencode'))
+  }
+  return candidates.filter(d => { try { return fs.statSync(d).isDirectory() } catch { return false } })
+}
+
 function copilotSessionStateDir(): string | null {
   // Copilot CLI writes session logs to ~/.copilot/session-state/<uuid>/events.jsonl
   // automatically, with no env setup required.
@@ -118,8 +136,18 @@ interface FileState {
 
 // ── Public interface ──────────────────────────────────────────────────────────
 
+/** Minimal sql.js surface needed to open an external SQLite file read-only. */
+export interface OpenCodeSqlFactory {
+  Database: new (data: Buffer | Uint8Array) => {
+    exec(sql: string): Array<{ columns: string[]; values: unknown[][] }>
+    close(): void
+  }
+}
+
 export interface LogReaderOptions {
   log?: (msg: string) => void
+  /** When provided, enables reading OpenCode sessions from its SQLite DB. */
+  sqlFactory?: OpenCodeSqlFactory
 }
 
 export interface LogSessionResult {
@@ -130,10 +158,12 @@ export interface LogSessionResult {
 
 export class LogReader {
   private readonly log: (msg: string) => void
+  private readonly sqlFactory: OpenCodeSqlFactory | undefined
   private readonly fileState = new Map<string, FileState>()
 
   constructor(options: LogReaderOptions = {}) {
     this.log = options.log ?? (() => { /* silent */ })
+    this.sqlFactory = options.sqlFactory
   }
 
   /** Clears cached file state so the next scan re-reads all files from scratch. */
@@ -196,6 +226,12 @@ export class LogReader {
       } catch { /* root not accessible */ }
     }
 
+    // OpenCode — one entry per data dir (the DB file itself is the tracked unit)
+    for (const dataDir of openCodeDataDirs()) {
+      const dbPath = path.join(dataDir, 'opencode.db')
+      try { entries.push({ filePath: dbPath, mtimeMs: fs.statSync(dbPath).mtimeMs, agentKey: 'opencode' }) } catch { /* skip */ }
+    }
+
     // Newest first — caller processes in this order so recent sessions appear first.
     entries.sort((a, b) => b.mtimeMs - a.mtimeMs)
     return entries
@@ -218,6 +254,7 @@ export class LogReader {
       case 'copilot':             return this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId))
       case 'copilot_vscode':      return this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId))
       case 'copilot_vscode_json': return this._processFile(filePath, () => this._parseCopilotVSCodeJsonFile(filePath, sessionId))
+      case 'opencode':            return null  // OpenCode DB returns multiple sessions; use _scanOpenCode
       default:                    return null
     }
   }
@@ -229,6 +266,7 @@ export class LogReader {
       ...codexSessionsDirs(),
       ...((() => { const d = copilotSessionStateDir(); return d ? [d] : [] })()),
       ...vscodeFamilyWorkspaceStorageRoots(),
+      ...openCodeDataDirs(),
     ]
   }
 
@@ -242,6 +280,7 @@ export class LogReader {
       ...this._scanCodex(),
       ...this._scanCopilot(),
       ...this._scanCopilotVSCode(),
+      ...this._scanOpenCode(),
     ]
   }
 
@@ -865,6 +904,345 @@ export class LogReader {
     }
   }
 
+  // ── OpenCode ──────────────────────────────────────────────────────────────────
+  // Primary data source: ~/.local/share/opencode/opencode.db (SQLite)
+  //   Tables: session (id, parent_id, title, cwd, time), message (id, session_id, data JSON)
+  // Fallback: ~/.local/share/opencode/storage/message/*.json (one JSON per message)
+  // Override: OPENCODE_DATA_DIR (comma-separated list of data dirs)
+  //
+  // Only root sessions (parent_id IS NULL / '') are included in this pass.
+  // Subagent session attribution is left for a follow-up.
+
+  /** Public entry point for the initial batch load in extension.ts. */
+  scanOpenCode(): LogSessionResult[] {
+    return this._scanOpenCode()
+  }
+
+  private _scanOpenCode(): LogSessionResult[] {
+    const results: LogSessionResult[] = []
+    const dirs = openCodeDataDirs()
+
+    for (const dataDir of dirs) {
+      const dbPath = path.join(dataDir, 'opencode.db')
+      const walPath = dbPath + '-wal'
+      try {
+        const stat = fs.statSync(dbPath)
+        // Also check WAL mtime — OpenCode writes to the WAL, not the DB file directly.
+        let walMtime = 0
+        try { walMtime = fs.statSync(walPath).mtimeMs } catch { /* no WAL */ }
+        const effectiveMtime = Math.max(stat.mtimeMs, walMtime)
+        const prev = this.fileState.get(dbPath)
+        if (prev && effectiveMtime === prev.mtimeMs && stat.size === prev.bytesRead) continue
+        this.fileState.set(dbPath, { bytesRead: stat.size, mtimeMs: effectiveMtime })
+      } catch {
+        continue
+      }
+
+      if (this.sqlFactory) {
+        try {
+          results.push(...this._parseOpenCodeDb(dbPath))
+        } catch (err) {
+          this.log(`[LogReader] OpenCode DB error ${dbPath}: ${err}`)
+          results.push(...this._parseOpenCodeJsonFallback(dataDir))
+        }
+      } else {
+        results.push(...this._parseOpenCodeJsonFallback(dataDir))
+      }
+    }
+    return results
+  }
+
+  private _parseOpenCodeDb(dbPath: string): LogSessionResult[] {
+    let buf: Uint8Array = fs.readFileSync(dbPath)
+    const walPath = dbPath + '-wal'
+    try {
+      const wal = fs.readFileSync(walPath)
+      if (wal.length > 32) buf = _mergeWal(buf, wal)
+    } catch { /* no WAL file — main DB is fully checkpointed */ }
+    const db = new this.sqlFactory!.Database(buf)
+    try {
+      // ── Session rows ───────────────────────────────────────────────────────
+      const sessRows = db.exec(`
+        SELECT s.id, s.directory, s.title, s.time_created,
+               json_extract(s.model, '$.id') AS model_id,
+               s.tokens_input, s.tokens_output, s.tokens_reasoning,
+               s.tokens_cache_read, s.tokens_cache_write
+        FROM session s
+        WHERE (s.parent_id IS NULL OR s.parent_id = '')
+          AND (s.tokens_input + s.tokens_output + s.tokens_cache_read + s.tokens_cache_write) > 0
+        ORDER BY s.time_created DESC
+      `)
+      if (!sessRows[0]) return []
+      const sc = (n: string) => sessRows[0].columns.indexOf(n)
+      const sessionIds = sessRows[0].values.map(r => String(r[sc('id')]))
+      if (sessionIds.length === 0) return []
+
+      // ── Message rows (per-turn timing & token breakdown) ──────────────────
+      // db.exec() doesn't accept bind parameters — inline quoted IDs (trusted, same-DB source).
+      const inList = sessionIds.map(id => `'${id.replace(/'/g, "''")}'`).join(',')
+      const msgRows = db.exec(
+        `SELECT session_id, id AS msg_id,
+                json_extract(data,'$.role')           AS role,
+                json_extract(data,'$.time.created')   AS t_created,
+                json_extract(data,'$.time.completed') AS t_completed,
+                json_extract(data,'$.tokens.input')   AS tok_in,
+                json_extract(data,'$.tokens.output')  AS tok_out
+         FROM message WHERE session_id IN (${inList})
+         ORDER BY time_created ASC`,
+      )
+
+      // ── Part rows (user text, tool names, files, tool I/O for timeline) ──────
+      // part table may be absent in older DB versions — gracefully skip if so.
+      let partRows: Array<{ columns: string[]; values: unknown[][] }> = []
+      try {
+        partRows = db.exec(
+          `SELECT p.session_id, p.message_id, p.time_created AS part_ts,
+                  json_extract(m.data,'$.role')                 AS msg_role,
+                  json_extract(p.data,'$.type')                 AS type,
+                  json_extract(p.data,'$.text')                 AS text,
+                  json_extract(p.data,'$.tool')                 AS tool_name,
+                  json_extract(p.data,'$.callID')               AS call_id,
+                  json_extract(p.data,'$.state.input.filePath') AS file_path,
+                  json_extract(p.data,'$.state.input')          AS tool_input_json,
+                  substr(json_extract(p.data,'$.state.output'),1,2000) AS tool_output,
+                  json_extract(p.data,'$.state.status')         AS tool_status
+           FROM part p JOIN message m ON m.id = p.message_id
+           WHERE p.session_id IN (${inList})
+           ORDER BY p.time_created ASC`,
+        )
+      } catch { /* part table absent in this DB version */ }
+
+      // Index by session
+      interface MsgInfo { msgId: string; tCreated: number; tCompleted: number; tokIn: number; tokOut: number }
+      interface PartInfo {
+        partTs: number; msgRole: string; type: string
+        text: string | null; toolName: string | null; callId: string | null
+        filePath: string | null; toolInputJson: string | null
+        toolOutput: string | null; toolStatus: string | null
+      }
+      const msgsBySess  = new Map<string, MsgInfo[]>()
+      const partsBySess = new Map<string, PartInfo[]>()
+
+      if (msgRows[0]) {
+        const mc = (n: string) => msgRows[0].columns.indexOf(n)
+        for (const r of msgRows[0].values) {
+          const sid = String(r[mc('session_id')])
+          if (!msgsBySess.has(sid)) msgsBySess.set(sid, [])
+          if (String(r[mc('role')]) === 'assistant') {
+            msgsBySess.get(sid)!.push({
+              msgId: String(r[mc('msg_id')]),
+              tCreated:   Number(r[mc('t_created')]   ?? 0),
+              tCompleted: Number(r[mc('t_completed')] ?? 0),
+              tokIn:  Number(r[mc('tok_in')]  ?? 0),
+              tokOut: Number(r[mc('tok_out')] ?? 0),
+            })
+          }
+        }
+      }
+      if (partRows[0]) {
+        const pc = (n: string) => partRows[0].columns.indexOf(n)
+        for (const r of partRows[0].values) {
+          const sid = String(r[pc('session_id')])
+          if (!partsBySess.has(sid)) partsBySess.set(sid, [])
+          partsBySess.get(sid)!.push({
+            partTs:       Number(r[pc('part_ts')]         ?? 0),
+            msgRole:      String(r[pc('msg_role')]        ?? ''),
+            type:         String(r[pc('type')]            ?? ''),
+            text:         r[pc('text')]           != null ? String(r[pc('text')])           : null,
+            toolName:     r[pc('tool_name')]      != null ? String(r[pc('tool_name')])      : null,
+            callId:       r[pc('call_id')]        != null ? String(r[pc('call_id')])        : null,
+            filePath:     r[pc('file_path')]      != null ? String(r[pc('file_path')])      : null,
+            toolInputJson:r[pc('tool_input_json')]!= null ? String(r[pc('tool_input_json')]): null,
+            toolOutput:   r[pc('tool_output')]    != null ? String(r[pc('tool_output')])    : null,
+            toolStatus:   r[pc('tool_status')]    != null ? String(r[pc('tool_status')])    : null,
+          })
+        }
+      }
+
+      // ── Build cards ────────────────────────────────────────────────────────
+      const results: LogSessionResult[] = []
+      for (const row of sessRows[0].values) {
+        const sessionId = String(row[sc('id')] ?? '')
+        if (!sessionId) continue
+
+        const timeMs    = Number(row[sc('time_created')]      ?? 0)
+        const startTs   = timeMs > 0 ? new Date(timeMs).toISOString() : ''
+        const modelId   = String(row[sc('model_id')]          ?? '')
+        const workspace = String(row[sc('directory')]         ?? '')
+        const tokIn     = Number(row[sc('tokens_input')]      ?? 0)
+        const tokOut    = Number(row[sc('tokens_output')]     ?? 0)
+        const tokReason = Number(row[sc('tokens_reasoning')]  ?? 0)
+        const tokCR     = Number(row[sc('tokens_cache_read')] ?? 0)
+        const tokCW     = Number(row[sc('tokens_cache_write')]?? 0)
+        const title     = String(row[sc('title')] ?? '')
+
+        const msgs  = msgsBySess.get(sessionId)  ?? []
+        const parts = partsBySess.get(sessionId) ?? []
+
+        // User request: last user-typed text (parts are ordered ASC, so last wins).
+        // OpenCode sessions are multi-turn; the most recent prompt best identifies current work.
+        // Falls back to AI-generated session title if no user text parts exist.
+        let userRequest = title.slice(0, 500)
+        for (const p of parts) {
+          if (p.msgRole === 'user' && p.type === 'text' && p.text) {
+            userRequest = p.text.slice(0, 500)
+          }
+        }
+
+        // Tools, files, and timeline events built in a single pass (parts are ASC by time).
+        // LLM entries come from messages; tool entries come from tool parts.
+        // We merge them by timestamp so the Flow tab shows real interleaved activity.
+        const toolCounts: Record<string, number> = {}
+        const filesRead    = new Set<string>()
+        const filesWritten = new Set<string>()
+        const filesChanged = new Set<string>()
+        let totalToolCalls = 0
+
+        // Keyed events: msgId → LLM entry (filled from msgs), callId → tool entry
+        type PendingLlm  = { ts: number; entry: TimelineEntry }
+        type PendingTool = { ts: number; entry: TimelineEntry }
+        const llmEvents:  PendingLlm[]  = []
+        const toolEvents: PendingTool[] = []
+
+        // LLM entries from assistant messages
+        let llmIdx = 0
+        let lastCompleted = 0
+        for (const m of msgs) {
+          const durationMs = m.tCompleted > m.tCreated ? m.tCompleted - m.tCreated : 0
+          llmEvents.push({
+            ts: m.tCreated,
+            entry: {
+              type: 'llm', spanId: `oc-${m.msgId}`,
+              label: `Turn ${++llmIdx}`,
+              durationMs,
+              inputTokens: m.tokIn, outputTokens: m.tokOut,
+              isError: false,
+              timestamp: m.tCreated > 0 ? new Date(m.tCreated).toISOString() : startTs,
+              model: modelId || undefined,
+            },
+          })
+          if (m.tCompleted > lastCompleted) lastCompleted = m.tCompleted
+        }
+
+        // Tool entries from tool parts
+        for (const p of parts) {
+          if (p.type !== 'tool' || !p.toolName) continue
+          toolCounts[p.toolName] = (toolCounts[p.toolName] ?? 0) + 1
+          totalToolCalls++
+          if (p.filePath) {
+            const t = p.toolName.toLowerCase()
+            if (t === 'read' || t === 'glob' || t === 'grep') {
+              filesRead.add(p.filePath)
+            } else if (t === 'write' || t === 'edit' || t === 'patch') {
+              filesWritten.add(p.filePath)
+              filesChanged.add(p.filePath)
+            }
+          }
+          const isError = p.toolStatus === 'error'
+          const label = p.filePath
+            ? `${p.toolName}: ${p.filePath.split('/').pop()}`
+            : p.toolName
+          toolEvents.push({
+            ts: p.partTs,
+            entry: {
+              type: 'tool', spanId: `oc-tool-${p.callId ?? p.partTs}`,
+              label,
+              action: p.toolName,
+              toolInput: p.toolInputJson ?? undefined,
+              resultSummary: p.toolOutput ? p.toolOutput.slice(0, 200) : undefined,
+              fullResult: p.toolOutput ?? undefined,
+              durationMs: 0,
+              isError,
+              errorMessage: isError ? (p.toolOutput ?? undefined) : undefined,
+              timestamp: p.partTs > 0 ? new Date(p.partTs).toISOString() : startTs,
+            },
+          })
+        }
+
+        // Merge LLM and tool events in chronological order
+        const allEvents = [...llmEvents, ...toolEvents].sort((a, b) => a.ts - b.ts)
+        const timeline: TimelineEntry[] = allEvents.map(e => e.entry)
+
+        const endTs = lastCompleted > 0 ? new Date(lastCompleted).toISOString() : startTs
+
+        const card = _buildCard(
+          sessionId, 'opencode', modelId || 'opencode',
+          startTs, endTs,
+          {
+            totalInput: tokIn, totalOutput: tokOut + tokReason,
+            totalCacheRead: tokCR, totalCacheCreate: tokCW, peakContextPerTurn: 0,
+            turns: msgs.length, totalToolCalls, toolCounts,
+            filesRead, filesChanged, filesWritten, filesSearched: new Set(),
+            userRequest, timeline, initiator: 'user',
+          },
+          workspace,
+        )
+        results.push({ card, workspace })
+      }
+      return results
+    } finally {
+      db.close()
+    }
+  }
+
+  private _parseOpenCodeJsonFallback(dataDir: string): LogSessionResult[] {
+    // Reads ~/.local/share/opencode/storage/message/*.json as a fallback when
+    // the SQLite DB is unavailable. Each file is one message; session grouping
+    // uses the session_id field. Session title and cwd are not available here.
+    const msgDir = path.join(dataDir, 'storage', 'message')
+    let names: string[]
+    try { names = fs.readdirSync(msgDir).filter(n => n.endsWith('.json')) } catch { return [] }
+
+    const sessions = new Map<string, {
+      model: string; sessionTime: string
+      tokIn: number; tokOut: number; tokReasoning: number
+      tokCacheRead: number; tokCacheWrite: number; turns: number
+    }>()
+
+    for (const name of names) {
+      let msg: Record<string, unknown>
+      try { msg = JSON.parse(fs.readFileSync(path.join(msgDir, name), 'utf-8')) as Record<string, unknown> } catch { continue }
+      if (msg['role'] !== 'assistant') continue
+      const sessionId = String(msg['session_id'] ?? '')
+      if (!sessionId) continue
+      const tokens = msg['tokens'] as Record<string, unknown> | undefined
+      const cache  = tokens?.['cache'] as Record<string, unknown> | undefined
+      const modelId = String(msg['id'] ?? '')
+      let s = sessions.get(sessionId)
+      if (!s) {
+        s = { model: modelId, sessionTime: '', tokIn: 0, tokOut: 0, tokReasoning: 0, tokCacheRead: 0, tokCacheWrite: 0, turns: 0 }
+        sessions.set(sessionId, s)
+      }
+      if (modelId && !s.model) s.model = modelId
+      s.tokIn        += Number(tokens?.['input']     ?? 0)
+      s.tokOut       += Number(tokens?.['output']    ?? 0)
+      s.tokReasoning += Number(tokens?.['reasoning'] ?? 0)
+      s.tokCacheRead += Number(cache?.['read']  ?? 0)
+      s.tokCacheWrite+= Number(cache?.['write'] ?? 0)
+      s.turns++
+    }
+
+    const results: LogSessionResult[] = []
+    for (const [sessionId, s] of sessions) {
+      const totalOutput = s.tokOut + s.tokReasoning
+      const card = _buildCard(
+        sessionId, 'opencode', s.model || 'opencode',
+        s.sessionTime, s.sessionTime,
+        {
+          totalInput: s.tokIn, totalOutput, totalCacheRead: s.tokCacheRead,
+          totalCacheCreate: s.tokCacheWrite, peakContextPerTurn: 0,
+          turns: s.turns, totalToolCalls: 0, toolCounts: {},
+          filesRead: new Set(), filesChanged: new Set(),
+          filesWritten: new Set(), filesSearched: new Set(),
+          userRequest: '', timeline: [], initiator: 'user',
+        },
+        '',
+      )
+      results.push({ card, workspace: '' })
+    }
+    return results
+  }
+
   // ── Shared helpers ────────────────────────────────────────────────────────────
 
   private _collectJsonlFiles(dir: string): string[] {
@@ -953,7 +1331,7 @@ interface CardAccum {
 
 function _buildCard(
   sessionId: string,
-  source: 'claude_code' | 'codex' | 'copilot',
+  source: 'claude_code' | 'codex' | 'copilot' | 'opencode',
   model: string,
   firstTimestamp: string,
   lastTimestamp: string,
@@ -1069,6 +1447,50 @@ function _extractTextContent(content: unknown): string {
     }
   }
   return ''
+}
+
+/**
+ * Merges outstanding WAL frames into the database buffer so sql.js can read
+ * sessions written since the last checkpoint. SQLite WAL format (spec §2):
+ *   - 32-byte header: magic, version, page size, seq, salt1, salt2, cksum1, cksum2
+ *   - Frames: 24-byte frame header + pageSize bytes of page data
+ *     Frame header: pgno (4), dbSize (4), salt1 (4), salt2 (4), cksum1 (4), cksum2 (4)
+ * Frames whose salts don't match the WAL header belong to a stale WAL — stop there.
+ */
+function _mergeWal(dbBuf: Uint8Array, walBuf: Uint8Array): Uint8Array {
+  const dv = (b: Uint8Array) => new DataView(b.buffer, b.byteOffset, b.byteLength)
+  if (walBuf.length < 32) return dbBuf
+  const wDv = dv(walBuf)
+  const magic = wDv.getUint32(0)
+  if (magic !== 0x377f0682 && magic !== 0x377f0683) return dbBuf
+  const pageSize = wDv.getUint32(8)
+  if (pageSize < 512 || (pageSize & (pageSize - 1)) !== 0) return dbBuf
+  const salt1 = wDv.getUint32(16)
+  const salt2 = wDv.getUint32(20)
+
+  const FRAME = 24 + pageSize
+  let result = new Uint8Array(dbBuf)
+  let off = 32
+
+  while (off + FRAME <= walBuf.length) {
+    const pgno   = wDv.getUint32(off)
+    const fSalt1 = wDv.getUint32(off + 8)
+    const fSalt2 = wDv.getUint32(off + 12)
+    if (fSalt1 !== salt1 || fSalt2 !== salt2) break  // stale generation
+    if (pgno >= 1) {
+      const pageOff = (pgno - 1) * pageSize
+      const pageEnd = pageOff + pageSize
+      if (pageEnd > result.length) {
+        const ext = new Uint8Array(pageEnd)
+        ext.set(result)
+        result = ext
+      }
+      result.set(walBuf.slice(off + 24, off + 24 + pageSize), pageOff)
+    }
+    off += FRAME
+  }
+
+  return result
 }
 
 function _parseTs(ts: string): number {

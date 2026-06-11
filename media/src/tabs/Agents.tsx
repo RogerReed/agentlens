@@ -98,19 +98,21 @@ export function Agents() {
         return ms >= (range.since ?? 0) && ms <= (range.until ?? Date.now())
       })
   if (!allSessions.length) {
-    return <div id="agents-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, or Codex session</div></div>
+    return <div id="agents-content"><div class="empty-state">No agent sessions recorded — start a Copilot, Claude, Codex, or OpenCode session</div></div>
   }
 
   const copStats = computeStats(allSessions.filter(s => s.source === 'copilot'))
   const cldStats = computeStats(allSessions.filter(s => s.source === 'claude_code'))
   const cdxStats = computeStats(allSessions.filter(s => s.source === 'codex'))
+  const ocStats  = computeStats(allSessions.filter(s => s.source === 'opencode'))
 
   return (
     <div id="agents-content">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px">
         <AgentCol label="GitHub Copilot" accent="#00EAFF" stats={copStats} />
         <AgentCol label="Claude" accent="#FFB085" stats={cldStats} />
         <AgentCol label="Codex" accent="#F0FF42" stats={cdxStats} />
+        <AgentCol label="OpenCode" accent="#FFFFFF" stats={ocStats} />
       </div>
     </div>
   )

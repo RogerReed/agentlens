@@ -17,7 +17,7 @@ import { calcTokenCostUsd } from '../src/pricing'
 import { autoConfigureClaudeCode, autoConfigureCodex, autoConfigureCopilotStandalone } from '../src/autoConfigNode'
 import { classifyOtlpPayload } from '../src/otlpParser'
 import { startMcpHttpServer } from '../src/mcpServer'
-import { LogReader } from '../src/logReader'
+import { LogReader, type OpenCodeSqlFactory } from '../src/logReader'
 import { generateSuggestions } from '../src/instructionAdvisor'
 import { detectInstructionFiles, appendSuggestion } from '../src/instructionFiles'
 import type { Span } from '../src/types'
@@ -106,7 +106,7 @@ function buildImportCardStandalone(raw: Record<string, unknown>): SessionSummary
   }
 }
 
-const logReader = new LogReader()
+let logReader = new LogReader()
 
 // ── MCP server ────────────────────────────────────────────────────────────────
 
@@ -143,7 +143,16 @@ function setupLogWatcher() {
   }
 }
 
-function startLogIngestion() {
+async function startLogIngestion() {
+  // Initialize sql.js so we can read the OpenCode SQLite DB.
+  try {
+    const sqlJsDir = path.dirname(require.resolve('sql.js'))
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const initSqlJs = require('sql.js') as (cfg: { locateFile: (f: string) => string }) => Promise<OpenCodeSqlFactory>
+    const sqlFactory = await initSqlJs({ locateFile: (f: string) => path.join(sqlJsDir, f) })
+    logReader = new LogReader({ log: (msg) => console.log(msg), sqlFactory })
+  } catch { /* no sql.js — OpenCode falls back to JSON */ }
+
   // Register the poll first so it always runs, even if no files exist yet at startup.
   setInterval(runLogScan, 5_000)
   // Watch log directories for file-system events so updates appear immediately,
@@ -151,16 +160,13 @@ function startLogIngestion() {
   setupLogWatcher()
   console.log('[AgentLens] Log ingestion enabled — scanning local session files')
 
-  let files: ReturnType<typeof logReader.collectFileMeta>
-  try { files = logReader.collectFileMeta() } catch { return }
-  if (files.length === 0) return
-
   const AGENT_KEY_LABEL: Record<string, string> = {
     claude:               'Claude Code',
     codex:                'Codex',
     copilot:              'Copilot CLI',
     copilot_vscode:       'Copilot (VS Code)',
     copilot_vscode_json:  'Copilot (VS Code)',
+    opencode:             'OpenCode',
   }
   const AGENT_KEY_DIR: Record<string, string> = {
     claude:               '~/.claude/projects/',
@@ -168,13 +174,26 @@ function startLogIngestion() {
     copilot:              '~/.copilot/session-state/',
     copilot_vscode:       '~/Library/…/workspaceStorage/',
     copilot_vscode_json:  '~/Library/…/workspaceStorage/',
+    opencode:             '~/.local/share/opencode/',
+  }
+
+  const countByKey = new Map<string, number>()
+
+  // OpenCode: one DB file = many sessions, handled separately.
+  const ocResults = logReader.scanOpenCode()
+  for (const { card } of ocResults) {
+    logSessions.set(card.sessionId, card)
+    countByKey.set('opencode', (countByKey.get('opencode') ?? 0) + 1)
   }
 
   // Run the initial batch synchronously so logSessions is populated before the
   // browser's first HTTP request. The setImmediate approach deferred this past
   // the first page load, causing a blank screen on startup.
-  const countByKey = new Map<string, number>()
+  let files: ReturnType<typeof logReader.collectFileMeta>
+  try { files = logReader.collectFileMeta() } catch { return }
+
   for (const file of files) {
+    if (file.agentKey === 'opencode') continue  // already handled above
     try {
       const result = logReader.parseFile(file.filePath, file.agentKey)
       if (result) {

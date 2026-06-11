@@ -83,6 +83,9 @@ const RATES: Record<string, ModelRates> = {
   // raptor-mini uses GPT-5 mini pricing per footnote 5 — included ($0) in token mode, same annual multiplier
   'raptor-mini': { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0, multiplierAnnualPostJun1: 0.33 },
   'goldeneye':   { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  // ── OpenCode Zen  https://opencode.ai/docs/zen/ ────────────────────────────
+  // big-pickle: OpenCode's stealth model, free during limited evaluation period.
+  'big-pickle':  { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0, multiplierAnnualPostJun1: 0 },
 }
 
 function normalizeModelId(modelId: string): string {

@@ -95,7 +95,7 @@ export function Analytics() {
     )
   }
 
-  const pricedSess = sessions.filter(s => s.source === 'copilot' || s.source === 'codex' || s.source === 'claude_code')
+  const pricedSess = sessions.filter(s => s.source === 'copilot' || s.source === 'codex' || s.source === 'claude_code' || s.source === 'opencode')
   const copilotSess = sessions.filter(s => s.source === 'copilot')
   const claudeSess  = sessions.filter(s => s.source === 'claude_code')
   const codexSess   = sessions.filter(s => s.source === 'codex')
@@ -106,7 +106,7 @@ export function Analytics() {
   const timeOrdered = [...filteredSessions.value].sort((a, b) =>
     Date.parse(b.startTime || '0') - Date.parse(a.startTime || '0')
   )
-  const pricedChartSess = timeOrdered.filter(s => s.source === 'copilot' || s.source === 'codex' || s.source === 'claude_code')
+  const pricedChartSess = timeOrdered.filter(s => s.source === 'copilot' || s.source === 'codex' || s.source === 'claude_code' || s.source === 'opencode')
 
   // Most recent CHART_MAX sessions (newest-first slice, then reversed to oldest-first for charts)
   const chartSessions = timeOrdered.slice(0, CHART_MAX).reverse()

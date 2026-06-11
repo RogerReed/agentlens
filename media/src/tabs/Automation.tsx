@@ -78,7 +78,7 @@ export const DEFAULT_AUTOMATION_CONFIGS: AutomationConfig[] = [
     min: 10000,
     max: 1000000,
     step: 1000,
-    agentThresholds: { claude_code: 140000, copilot: 89600, codex: 280000 },
+    agentThresholds: { claude_code: 140000, copilot: 89600, codex: 280000, opencode: 140000 },
   },
   {
     id: 'loop_break',
@@ -137,6 +137,7 @@ function cloneAgentThresholds(thresholds?: AgentThresholdMap): AgentThresholdMap
     claude_code: thresholds.claude_code,
     copilot: thresholds.copilot,
     codex: thresholds.codex,
+    opencode: thresholds.opencode,
   }
 }
 
@@ -152,6 +153,7 @@ function fallbackAgentThresholds(threshold: number): AgentThresholdMap {
     claude_code: threshold,
     copilot: threshold,
     codex: threshold,
+    opencode: threshold,
   }
 }
 

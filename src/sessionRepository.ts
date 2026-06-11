@@ -72,7 +72,7 @@ export class SessionRepository {
 
   /** Returns merged session list: live window + historical DB, sorted newest-first. */
   listSessions(filter?: {
-    source?: 'copilot' | 'claude_code' | 'codex'
+    source?: 'copilot' | 'claude_code' | 'codex' | 'opencode'
     limit?: number
   }): SessionSummaryCard[] {
     const dbSessions = this.reader.listSessions(filter)
