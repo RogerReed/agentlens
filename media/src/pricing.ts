@@ -2,7 +2,7 @@
 // Token rates (post Jun 1, 2026):        https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
 // Request multipliers (pre Jun 1, 2026): https://docs.github.com/en/copilot/concepts/billing/copilot-requests
 // Annual-plan multipliers (post Jun 1):  https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans
-export const PRICING_LAST_UPDATED = '2026-06-08'
+export const PRICING_LAST_UPDATED = '2026-06-10'
 
 // Three billing modes:
 //   'token'          — new token-based AI Credits billing, effective Jun 1, 2026
@@ -72,6 +72,7 @@ const RATES: Record<string, ModelRates> = {
   'claude-opus-4-6-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
   'claude-opus-4-7-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
   'claude-opus-4-8-fast':  { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
+  'claude-fable-5':        { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },  // not yet listed in Copilot billing docs
   // ── Google ─────────────────────────────────────────────────────────────────────────────────────
   'gemini-2.5-pro':   { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, multiplier: 1,    multiplierAnnualPostJun1: 1 },  // long-context surcharge (>200K tokens) not implemented
   'gemini-3-flash':   { inputPerMTok: 0.50, cacheReadPerMTok: 0.05,  cacheWritePerMTok: 0, outputPerMTok: 3.00,  multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
