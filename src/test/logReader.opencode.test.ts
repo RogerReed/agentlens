@@ -114,7 +114,7 @@ suite('LogReader — OpenCode', () => {
 
     try {
       const reader = new LogReader({ sqlFactory: factory })
-      const results = reader.scan()
+      const results = reader.scanOpenCode()
       const sess = results.find(r => r.card.sessionId === 'sess-1')
       assert.ok(sess, 'session should be found')
       assert.strictEqual(sess!.card.source, 'opencode')
@@ -154,7 +154,7 @@ suite('LogReader — OpenCode', () => {
 
     try {
       const reader = new LogReader({ sqlFactory: factory })
-      const results = reader.scan()
+      const results = reader.scanOpenCode()
       const ids = results.map(r => r.card.sessionId)
       assert.ok(ids.includes('root-1'), 'root session should be present')
       assert.ok(!ids.includes('child-1'), 'subagent session should be excluded')
@@ -182,7 +182,7 @@ suite('LogReader — OpenCode', () => {
 
     try {
       const reader = new LogReader()  // no sqlFactory → fallback
-      const results = reader.scan()
+      const results = reader.scanOpenCode()
       const sess = results.find(r => r.card.sessionId === 'fallback-sess')
       assert.ok(sess, 'fallback session should be found')
       assert.strictEqual(sess!.card.source, 'opencode')
@@ -202,7 +202,7 @@ suite('LogReader — OpenCode', () => {
     process.env['OPENCODE_DATA_DIR'] = '/nonexistent/path/opencode'
     try {
       const reader = new LogReader({ sqlFactory: factory })
-      assert.strictEqual(reader.scan().length, 0)
+      assert.strictEqual(reader.scanOpenCode().length, 0)
     } finally {
       process.env['OPENCODE_DATA_DIR'] = origEnv
     }

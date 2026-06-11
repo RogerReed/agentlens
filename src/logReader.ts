@@ -992,21 +992,25 @@ export class LogReader {
       )
 
       // ── Part rows (user text, tool names, files, tool I/O for timeline) ──────
-      const partRows = db.exec(
-        `SELECT p.session_id, p.message_id, p.time_created AS part_ts,
-                json_extract(m.data,'$.role')                 AS msg_role,
-                json_extract(p.data,'$.type')                 AS type,
-                json_extract(p.data,'$.text')                 AS text,
-                json_extract(p.data,'$.tool')                 AS tool_name,
-                json_extract(p.data,'$.callID')               AS call_id,
-                json_extract(p.data,'$.state.input.filePath') AS file_path,
-                json_extract(p.data,'$.state.input')          AS tool_input_json,
-                substr(json_extract(p.data,'$.state.output'),1,2000) AS tool_output,
-                json_extract(p.data,'$.state.status')         AS tool_status
-         FROM part p JOIN message m ON m.id = p.message_id
-         WHERE p.session_id IN (${inList})
-         ORDER BY p.time_created ASC`,
-      )
+      // part table may be absent in older DB versions — gracefully skip if so.
+      let partRows: Array<{ columns: string[]; values: unknown[][] }> = []
+      try {
+        partRows = db.exec(
+          `SELECT p.session_id, p.message_id, p.time_created AS part_ts,
+                  json_extract(m.data,'$.role')                 AS msg_role,
+                  json_extract(p.data,'$.type')                 AS type,
+                  json_extract(p.data,'$.text')                 AS text,
+                  json_extract(p.data,'$.tool')                 AS tool_name,
+                  json_extract(p.data,'$.callID')               AS call_id,
+                  json_extract(p.data,'$.state.input.filePath') AS file_path,
+                  json_extract(p.data,'$.state.input')          AS tool_input_json,
+                  substr(json_extract(p.data,'$.state.output'),1,2000) AS tool_output,
+                  json_extract(p.data,'$.state.status')         AS tool_status
+           FROM part p JOIN message m ON m.id = p.message_id
+           WHERE p.session_id IN (${inList})
+           ORDER BY p.time_created ASC`,
+        )
+      } catch { /* part table absent in this DB version */ }
 
       // Index by session
       interface MsgInfo { msgId: string; tCreated: number; tCompleted: number; tokIn: number; tokOut: number }

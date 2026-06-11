@@ -68,8 +68,6 @@ const RATES: Record<string, ModelRates> = {
   'claude-opus-4-6':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 27 },
   'claude-opus-4-7':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 15,   multiplierAnnualPostJun1: 27 },
   'claude-opus-4-8':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 15,   multiplierAnnualPostJun1: 27 },
-  // Fable 5 — new tier above Opus; Copilot multipliers TBD (not yet listed in GitHub billing docs)
-  'claude-fable-5':        { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok: 50.00, multiplier: 0,    multiplierAnnualPostJun1: 0 },
   // fast mode (/fast toggle in Claude Code) — model ID appended with -fast by logReader when usage.speed === 'fast'
   'claude-opus-4-6-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
   'claude-opus-4-7-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
