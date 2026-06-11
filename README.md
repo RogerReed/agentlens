@@ -88,6 +88,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - **Efficiency & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns with suggested prompts to correct course
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, and repeat tool calls — per-agent or shared
 - **Export** — Export filtered sessions as JSON (full or redacted); respects the active agent, source, time range, and text filters
+- **Import** — Import sessions from a previous AgentLens JSON export; drag-drop or file-pick, shows a preview with session count by source and date range, imports with live progress and automatic deduplication (existing sessions are skipped)
 
 ## Data Sources
 
@@ -139,7 +140,9 @@ The Estimated Cost section includes a per-session bar chart with a daily aggrega
 
 All figures are estimates — not your actual bill. Rates are sourced from each provider's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
 
-## Exporting Session Data
+## Exporting and Importing Session Data
+
+### Export
 
 The **Export** tab writes session summary files to your workspace root:
 
@@ -149,6 +152,17 @@ The **Export** tab writes session summary files to your workspace root:
 Exports draw from the full SQLite session history, not just the active window, so all past sessions are included regardless of when they ran.
 
 > **Note:** Session summary exports cannot be replayed with `pnpm run demo --file`. Replay requires raw OTEL span data, which is not yet persisted to disk. This is tracked as a planned enhancement.
+
+### Import
+
+The **Import** tab loads sessions from a previous AgentLens export file into the current installation — useful for migrating data to a new machine, sharing session history across team members, or restoring a local backup.
+
+1. Open the **Import** tab in the dashboard
+2. Drag-and-drop an `export_sessions_*.json` file onto the drop zone, or click **Choose file**
+3. Review the preview: total sessions, breakdown by agent source, and the date range covered
+4. Click **Import** — progress updates live as sessions are written; already-existing sessions are skipped automatically
+
+Import works in both VS Code extension mode and standalone server mode.
 
 ## Recommendations & Malfunction Detection
 
