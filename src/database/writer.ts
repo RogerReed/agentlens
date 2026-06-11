@@ -59,6 +59,26 @@ export class DatabaseWriter {
     return this.drainPromise
   }
 
+  /**
+   * Writes import cards directly in one synchronous transaction, bypassing the
+   * async enqueue/drain pipeline. Safe to call while a drain is in progress
+   * because _writeOnce always commits its transaction before suspending at an
+   * await point, so there is never an open transaction when we enter here.
+   */
+  importCards(cards: SessionSummaryCard[]): void {
+    if (cards.length === 0) return
+    this.db.run('BEGIN')
+    try {
+      for (const card of cards) {
+        this._writeSessionRow(card, card.workspace)
+      }
+      this.db.run('COMMIT')
+    } catch (err) {
+      try { this.db.run('ROLLBACK') } catch { /* ignore */ }
+      throw err
+    }
+  }
+
   clearAll(): void {
     // Increment generation so any _drain() currently awaiting _writeOnce() will
     // see the mismatch and abort before writing further sessions to the DB.

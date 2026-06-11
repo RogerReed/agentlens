@@ -91,12 +91,7 @@ export function Export() {
         <p class="export-replay-desc">
           These exports contain aggregated session summaries — token counts, tool usage,
           cost estimates, file changes, and efficiency signals. They are useful for
-          cost analysis, sharing with teammates, and offline review.
-        </p>
-        <p class="export-replay-note">
-          <strong>Note:</strong> Session summary exports cannot be replayed with
-          <code>pnpm run demo --file</code>. Replay requires raw OTEL span data,
-          which is not yet persisted to disk. See the open issue for raw span export support.
+          cost analysis, sharing with teammates, and offline review. Use the <strong>Import</strong> tab to bring exported files back into AgentLens on any machine.
         </p>
       </div>
     </div>

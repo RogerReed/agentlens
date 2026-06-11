@@ -94,6 +94,8 @@ export class DashboardPanel {
           offset: (msg.query as { offset?: number }).offset ?? 0,
           context: (msg as { context?: string }).context ?? 'search',
         })
+      } else if (msg.type === 'importSessionData' && Array.isArray(msg.sessions)) {
+        void this.importSessions(msg.sessions as Record<string, unknown>[])
       } else if (msg.type === 'exportSessionData' || msg.type === 'exportSessionDataRedacted') {
         const redact = msg.type === 'exportSessionDataRedacted'
         const ids = Array.isArray(msg.sessionIds) ? new Set(msg.sessionIds as string[]) : null
@@ -216,6 +218,41 @@ export class DashboardPanel {
     })
   }
 
+  private async importSessions(rawSessions: Record<string, unknown>[]): Promise<void> {
+    try {
+      const existing = new Set(this.repo.listSessions().map(s => s.sessionId))
+      const BATCH = 50
+      let imported = 0
+      let skipped = 0
+      const total = rawSessions.length
+
+      for (let i = 0; i < rawSessions.length; i += BATCH) {
+        const batch = rawSessions.slice(i, i + BATCH)
+        const cards: SessionSummaryCard[] = []
+        for (const raw of batch) {
+          const id = raw['sessionId'] as string
+          if (existing.has(id)) { skipped++; continue }
+          existing.add(id)
+          cards.push(buildImportCard(raw))
+          imported++
+        }
+        if (cards.length > 0) {
+          this.repo.importCards(cards)
+        }
+        this.panel.webview.postMessage({ type: 'importProgress', imported, total, skipped })
+        // Yield between batches so the webview can render progress and other
+        // tasks (log reader, OTEL) can run without starving the event loop.
+        await new Promise<void>(resolve => setTimeout(resolve, 0))
+      }
+
+      this.panel.webview.postMessage({ type: 'importDone', imported, skipped, failed: 0, total })
+      this.update()
+      this.sidebarProvider?.refresh()
+    } catch (err) {
+      this.panel.webview.postMessage({ type: 'importError', message: String(err) })
+    }
+  }
+
   private async exportSessions(redact: boolean, ids: Set<string> | null = null): Promise<void> {
     const all = this.repo.listSessions()
     const sessions = ids ? all.filter(s => ids.has(s.sessionId)) : all
@@ -324,9 +361,46 @@ export class DashboardPanel {
   }
 }
 
-// ── Efficiency stub ───────────────────────────────────────────────────────────
+// ── Import helper ─────────────────────────────────────────────────────────────
 
 import type { SessionSummaryCard } from './summarizers/summarizerTypes'
+
+function buildImportCard(raw: Record<string, unknown>): SessionSummaryCard {
+  const num = (v: unknown, def = 0): number => (typeof v === 'number' ? v : def)
+  const str = (v: unknown, def = ''): string => (typeof v === 'string' ? v : def)
+  const arr = (v: unknown): string[] => (Array.isArray(v) ? v.filter(x => typeof x === 'string') as string[] : [])
+  return {
+    sessionId:       str(raw['sessionId']),
+    traceId:         str(raw['traceId']),
+    source:          (raw['source'] as SessionSummaryCard['source']) ?? 'claude_code',
+    dataSource:      'log',
+    workspace:       str(raw['workspace']),
+    userRequest:     str(raw['userRequest']),
+    model:           str(raw['model']),
+    turns:           num(raw['turns']),
+    totalLlmCalls:   num(raw['turns']),
+    totalToolCalls:  num(raw['totalToolCalls']),
+    inputTokens:     num(raw['inputTokens']),
+    outputTokens:    num(raw['outputTokens']),
+    cacheReadTokens: num(raw['cacheReadTokens']),
+    cacheCreateTokens: num(raw['cacheCreateTokens']),
+    cacheHitRate:    num(raw['cacheHitRate']),
+    durationMs:      num(raw['durationMs']),
+    startTime:       str(raw['startTime'], new Date().toISOString()),
+    filesRead:       arr(raw['filesRead']),
+    filesChanged:    arr(raw['filesChanged']),
+    filesSearched:   [],
+    filesWritten:    [],
+    toolCounts:      (typeof raw['toolCounts'] === 'object' && raw['toolCounts'] !== null ? raw['toolCounts'] : {}) as Record<string, number>,
+    errors:          num(raw['errors']),
+    outcome:         (raw['outcome'] as SessionSummaryCard['outcome']) ?? 'unknown',
+    timeline:        [],
+    backgroundSpans: [],
+    loopSignals:     Array.isArray(raw['loopSignals']) ? raw['loopSignals'] as SessionSummaryCard['loopSignals'] : [],
+  }
+}
+
+// ── Efficiency stub ───────────────────────────────────────────────────────────
 
 function buildEfficiency(sessions: SessionSummaryCard[]) {
   const totalInput = sessions.reduce((a, s) => a + s.inputTokens, 0)

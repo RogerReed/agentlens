@@ -153,6 +153,11 @@ export class SessionRepository {
     return this.writer.drain()
   }
 
+  /** Writes import cards directly in one transaction, bypassing the async drain. */
+  importCards(cards: SessionSummaryCard[]): void {
+    this.writer.importCards(cards)
+  }
+
   /** Clears all three SQLite tables. */
   clearAll(): void {
     this.writer.clearAll()
