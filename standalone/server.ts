@@ -220,8 +220,6 @@ async function startLogIngestion() {
     .map(v => `  ${v.label.padEnd(20)} ${String(v.count).padStart(4)}  (${v.dir})`)
     .join('\n')
   console.log(`[AgentLens] Loaded ${total} sessions from local logs:\n${lines}`)
-  // Push loaded sessions to any SSE clients that connected before the scan finished.
-  pushUpdate()
 }
 
 // ── OTLP parsing ──────────────────────────────────────────────────────────────
