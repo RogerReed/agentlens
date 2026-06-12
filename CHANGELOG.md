@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.8.2] — 2026-06-11
+
+### Fixed
+
+- **Windows: Codex and Copilot CLI sessions not discovered** — `codexSessionsDirs()` and `copilotSessionStateDir()` only checked Unix-style home-directory paths. On Windows, Codex likely stores sessions under `%LOCALAPPDATA%\Codex\sessions` or `%APPDATA%\Codex\sessions`, and Copilot CLI under `%APPDATA%\copilot\session-state`. Both are now checked as primary candidates on `win32` before falling back to the `~/.codex` / `~/.copilot` paths, matching the existing pattern used for Claude Code (#153, #154)
+
+---
+
 ## [0.8.1] — 2026-06-11
 
 ### Fixed
