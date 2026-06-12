@@ -9,9 +9,11 @@
  *                Override: CLAUDE_CONFIG_DIR (comma-separated list of config dirs)
  *
  *   Codex        ~/.codex/sessions/<project>/<uuid>.jsonl
+ *                %LOCALAPPDATA%\Codex\sessions\<project>\<uuid>.jsonl  (Windows)
  *                Override: CODEX_HOME (comma-separated list of home dirs)
  *
  *   Copilot CLI  ~/.copilot/session-state/<uuid>/events.jsonl
+ *                %APPDATA%\copilot\session-state\<uuid>\events.jsonl  (Windows)
  *
  *   Copilot Chat ~/Library/Application Support/<IDE>/User/workspaceStorage/<hash>/chatSessions/<uuid>.jsonl
  *   (VS Code-   %APPDATA%\<IDE>\User\workspaceStorage\<hash>\chatSessions\<uuid>.jsonl
@@ -69,8 +71,15 @@ function codexSessionsDirs(): string[] {
     return envVal.split(',').map(p => p.trim()).filter(Boolean)
       .map(p => path.join(p, 'sessions'))
   }
-  const base = path.join(homeDir(), '.codex', 'sessions')
-  return fs.existsSync(base) ? [base] : []
+  const candidates: string[] = []
+  if (process.platform === 'win32') {
+    const local = process.env['LOCALAPPDATA']
+    const appData = process.env['APPDATA']
+    if (local) candidates.push(path.join(local, 'Codex', 'sessions'))
+    if (appData) candidates.push(path.join(appData, 'Codex', 'sessions'))
+  }
+  candidates.push(path.join(homeDir(), '.codex', 'sessions'))
+  return candidates.filter(d => { try { return fs.statSync(d).isDirectory() } catch { return false } })
 }
 
 function openCodeDataDirs(): string[] {
@@ -94,8 +103,13 @@ function openCodeDataDirs(): string[] {
 function copilotSessionStateDir(): string | null {
   // Copilot CLI writes session logs to ~/.copilot/session-state/<uuid>/events.jsonl
   // automatically, with no env setup required.
-  const dir = path.join(homeDir(), '.copilot', 'session-state')
-  return fs.existsSync(dir) ? dir : null
+  const candidates: string[] = []
+  if (process.platform === 'win32') {
+    const appData = process.env['APPDATA']
+    if (appData) candidates.push(path.join(appData, 'copilot', 'session-state'))
+  }
+  candidates.push(path.join(homeDir(), '.copilot', 'session-state'))
+  return candidates.find(d => { try { return fs.statSync(d).isDirectory() } catch { return false } }) ?? null
 }
 
 function vscodeFamilyWorkspaceStorageRoots(): string[] {
