@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.8.1] — 2026-06-11
+
+### Fixed
+
+- **Standalone UI hangs empty on startup** — `startLogIngestion()` awaits sql.js before scanning, so the browser frequently connects to the SSE `/events` endpoint during that async gap and receives an empty payload. After the scan completes and `logSessions` is populated, `fileState` is fully current so the 5-second `runLogScan` poll finds no changed files and never pushes an update — the dashboard stays blank indefinitely. Fix: call `pushUpdate()` at the end of `startLogIngestion()` to flush sessions to any already-connected SSE clients (#151, #152)
+
+---
+
 ## [0.8.0] — 2026-06-10
 
 ### Added
