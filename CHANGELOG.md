@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.8.5] — 2026-06-15
+
+### Fixed
+
+- **First session in standalone Traces tab never loads timeline** — The first session in the Traces tab starts expanded by default, but `loadSessionDetail` was only dispatched inside `toggle()`, which fires on user click. The auto-expanded session would show "Loading timeline…" indefinitely until the user manually collapsed and re-expanded it. Fix: add a `useEffect` that fires on mount (and whenever `collapsed` changes) to dispatch the fetch whenever the session is expanded but its timeline has not yet loaded (#161, #162)
+
+---
+
 ## [0.8.4] — 2026-06-14
 
 ### Fixed
