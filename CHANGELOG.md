@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.8.3] — 2026-06-14
+
+### Fixed
+
+- **OOM crash during long Claude Code sessions with enhanced telemetry** — `genAiResponseBuffer` in the OTLP collector leaked one large JSON blob per LLM call when the `claude_code.llm_request` span arrived before its matching `gen_ai.choice` log event (the common ordering with `gen_ai_latest_experimental`). `processTraces` deleted buffer entries when it consumed them, but when the span was already in the store by the time the log arrived, `processLogs` injected immediately and never cleaned up its own entry. Over a long session the buffer accumulated the full accumulated conversation context for every turn, growing the heap to the 4 GB V8 limit and crashing VS Code. Fix: check `injectSpanAttribute`'s return value and delete the buffer key immediately on successful injection. A 500-entry LRU-style cap also guards against orphaned entries when a span is dropped by the agent's OTLP exporter (#155, #156)
+
+---
+
 ## [0.8.2] — 2026-06-11
 
 ### Fixed
