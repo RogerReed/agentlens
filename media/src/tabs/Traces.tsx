@@ -316,6 +316,12 @@ function SessionBlock({ sess, sessIdx, sessNum, totalCount, isFirst }: {
   const loadedTimeline = timelines[sess.sessionId]
   const isLoading = !collapsed && loadedTimeline === undefined
 
+  useEffect(() => {
+    if (!collapsed && loadedTimeline === undefined) {
+      if (vscode) vscode.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
+    }
+  }, [sess.sessionId, collapsed])
+
   const toggle = () => {
     const opening = collapsed
     setCollapsed(v => !v)
