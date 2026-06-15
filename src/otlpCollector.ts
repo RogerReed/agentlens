@@ -21,7 +21,9 @@ export class OtlpCollector {
   private codexActivePromptSessionId = ''
   // Buffers gen_ai.choice / gen_ai.assistant.message log event content keyed by traceId:spanId.
   // Spans and their log events arrive on separate HTTP requests; this handles either ordering.
+  // Capped at 500 entries to evict orphaned entries when a span is dropped by the agent exporter.
   private genAiResponseBuffer = new Map<string, string>()
+  private readonly GEN_AI_BUFFER_MAX = 500
 
   constructor(
     private port: number,
@@ -399,8 +401,17 @@ export class OtlpCollector {
               if (formatted) {
                 const bufKey = `${logTraceId}:${logSpanId}`
                 this.genAiResponseBuffer.set(bufKey, formatted)
-                // If the span already exists in the store, inject immediately.
-                this.store.injectSpanAttribute(logTraceId, logSpanId, 'gen_ai.output.messages', formatted)
+                // Evict oldest entry when cap is exceeded (guards against orphaned entries
+                // if the matching span is never received).
+                if (this.genAiResponseBuffer.size > this.GEN_AI_BUFFER_MAX) {
+                  const firstKey = this.genAiResponseBuffer.keys().next().value
+                  if (firstKey !== undefined) { this.genAiResponseBuffer.delete(firstKey) }
+                }
+                // If the span already exists in the store, inject immediately and remove
+                // from buffer — the span-before-log ordering means processTraces already
+                // ran and will not call genAiResponseBuffer.delete() for this key.
+                const injected = this.store.injectSpanAttribute(logTraceId, logSpanId, 'gen_ai.output.messages', formatted)
+                if (injected) { this.genAiResponseBuffer.delete(bufKey) }
               }
             }
             continue
