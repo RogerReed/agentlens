@@ -555,13 +555,19 @@ function buildSessionSummary(): ReturnType<typeof summarizeSpans> | null {
   return summary
 }
 
+function stripTimelines(summary: ReturnType<typeof summarizeSpans> | null): ReturnType<typeof summarizeSpans> | null {
+  if (!summary) return null
+  return { ...summary, sessions: summary.sessions.map(s => ({ ...s, timeline: [] })) }
+}
+
 function buildUpdatePayload(): string {
   const sessionSummary = buildSessionSummary()
+  const stripped = stripTimelines(sessionSummary)
   const sidebar = sessionSummary ? computeSidebarData(sessionSummary, spans) : null
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : null
   const analyticsData = sessionSummary ? computeAnalyticsData(sessionSummary.sessions) : null
   return JSON.stringify({
-    type: 'update', spans, summary: { toolCalls: {} }, sessionSummary, sidebar, analyticsData,
+    type: 'update', summary: { toolCalls: {} }, sessionSummary: stripped, sidebar, analyticsData,
     ...(sidebarLive ?? {}),
   })
 }
@@ -577,7 +583,9 @@ function pushUpdate() {
 
 function getHtml(): string {
   const sessionSummary = buildSessionSummary()
-  const sessionSummaryJson = safeJson(sessionSummary)
+  // Strip full timeline arrays before inlining — they can be many MB across sessions.
+  // Timelines are loaded lazily via /api/timeline/:sessionId after first paint.
+  const sessionSummaryJson = safeJson(stripTimelines(sessionSummary))
   const sidebarLive = sessionSummary ? computeSidebarPayload(sessionSummary, spans) : {
     isActive: false, lastActivityMs: 0, sessionCount: 0, agentSources: [], currentSession: null, burnRate: null,
   }
@@ -660,7 +668,7 @@ function getHtml(): string {
 </head>
 <body>
   <script>
-    window.__INITIAL_SPANS__ = ${safeJson(spans)};
+    console.log('[AgentLens] HTML received', Date.now());
     window.__INITIAL_TOOL_CALLS__ = {};
     window.__INITIAL_SESSION_SUMMARY__ = ${sessionSummaryJson};
     window.__MASCOT_URI__ = '/help-mascot.png';
@@ -892,14 +900,53 @@ function getHtml(): string {
               },
               30000
             );
+          } else if (msg.type === 'loadSessionDetail' && msg.sessionId) {
+            fetch('/api/timeline/' + encodeURIComponent(msg.sessionId))
+              .then(function(r) { return r.json(); })
+              .then(function(data) {
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: { type: 'sessionDetail', sessionId: msg.sessionId, timeline: data.timeline || [] }
+                }));
+              })
+              .catch(function(e) { console.warn('[AgentLens] timeline fetch failed', e); });
           }
         }
       };
     };
+
     // SSE → dispatch as window message (picked up by Preact app AND sidebar handler below)
+    // Falls back to polling /api/summary every 2s if EventSource fails (e.g. Safari private mode).
+    var _sseOk = false;
+    var _pollTimer = null;
+    function _startPolling() {
+      if (_pollTimer) return;
+      console.warn('[AgentLens] SSE unavailable — falling back to polling');
+      _pollTimer = setInterval(function() {
+        fetch('/api/summary')
+          .then(function(r) { return r.json(); })
+          .then(function(summary) {
+            window.dispatchEvent(new MessageEvent('message', {
+              data: { type: 'update', sessionSummary: summary }
+            }));
+          })
+          .catch(function(e) { console.warn('[AgentLens] poll failed', e); });
+      }, 2000);
+    }
     var _es = new EventSource('/events');
+    _es.onopen = function() {
+      console.log('[AgentLens] SSE connected', Date.now());
+      _sseOk = true;
+      if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+    };
     _es.onmessage = function(e) {
       window.dispatchEvent(new MessageEvent('message', { data: JSON.parse(e.data) }));
+    };
+    _es.onerror = function() {
+      if (!_sseOk) {
+        // Never connected — start polling immediately
+        _startPolling();
+      }
+      // If it was connected before, browser will auto-reconnect; don't start polling yet
     };
   </script>
 
@@ -997,7 +1044,9 @@ function getHtml(): string {
   </div>
 
   <script>
+    console.log('[AgentLens] Inline setup done', Date.now());
     window.onerror = function(msg, src, line, col, err) {
+      console.error('[AgentLens] JS error:', msg, src + ':' + line + ':' + col, err);
       var app = document.getElementById('app');
       if (app) {
         app.style.cssText = 'padding:20px;color:red;font-family:monospace;white-space:pre-wrap';
@@ -1006,8 +1055,7 @@ function getHtml(): string {
     };
   </script>
 
-
-  <script src="/dashboard.js"></script>
+  <script src="/dashboard.js" onload="console.log('[AgentLens] dashboard.js loaded', Date.now())"></script>
 
   <script>
     // Sidebar collapse driven by dashboard toggle
@@ -1194,6 +1242,22 @@ const uiServer = http.createServer((req, res) => {
       } catch (e) { console.warn('[AgentLens] Malformed /action body:', e) }
       res.writeHead(200); res.end()
     })
+    return
+  }
+
+  if (req.method === 'GET' && url === '/api/summary') {
+    const summary = buildSessionSummary()
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(stripTimelines(summary)))
+    return
+  }
+
+  if (req.method === 'GET' && url?.startsWith('/api/timeline/')) {
+    const sessionId = decodeURIComponent(url.slice('/api/timeline/'.length))
+    const summary = buildSessionSummary()
+    const session = summary?.sessions.find(s => s.sessionId === sessionId) ?? null
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ timeline: session?.timeline ?? [] }))
     return
   }
 
