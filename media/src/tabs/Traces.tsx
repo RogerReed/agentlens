@@ -280,7 +280,10 @@ export function StepRow({ step, idx, sessIdx, sessionDur, sessionModel }: { step
           {formatMs(step.durationMs)}
           {entry.type === 'llm' && ((entry.inputTokens ?? 0) > 0 || (entry.outputTokens ?? 0) > 0) && (
             <div style="font-size:9px;color:var(--muted);white-space:nowrap;margin-top:2px">
-              ↑{formatCompact(entry.inputTokens ?? 0)} ↓{formatCompact(entry.outputTokens ?? 0)}
+              {(entry.cacheReadTokens ?? 0) > 0 || (entry.cacheCreateTokens ?? 0) > 0
+                ? <>↑{formatCompact(Math.max(0, (entry.inputTokens ?? 0) - (entry.cacheReadTokens ?? 0) - (entry.cacheCreateTokens ?? 0)))} new +{formatCompact((entry.cacheReadTokens ?? 0) + (entry.cacheCreateTokens ?? 0))} cached ↓{formatCompact(entry.outputTokens ?? 0)}</>
+                : <>↑{formatCompact(entry.inputTokens ?? 0)} ↓{formatCompact(entry.outputTokens ?? 0)}</>
+              }
             </div>
           )}
           {entryCost > 0 && (
