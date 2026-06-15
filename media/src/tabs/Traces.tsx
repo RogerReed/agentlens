@@ -81,9 +81,23 @@ function StepDetail({ step, idx, sessIdx, sessionModel }: { step: Step; idx: num
           <div class="sw-detail-section">
             <div class="sw-detail-heading">Token Usage</div>
             <div class="sw-detail-value">
-              <span class="sw-token-in">{(entry.inputTokens ?? 0).toLocaleString()} input</span>
-              <span class="sw-token-arrow"> → </span>
-              <span class="sw-token-out">{(entry.outputTokens ?? 0).toLocaleString()} output</span>
+              {(entry.cacheReadTokens ?? 0) > 0 || (entry.cacheCreateTokens ?? 0) > 0 ? (
+                <>
+                  <span class="sw-token-in">
+                    {Math.max(0, (entry.inputTokens ?? 0) - (entry.cacheReadTokens ?? 0) - (entry.cacheCreateTokens ?? 0)).toLocaleString()} new
+                    {(entry.cacheReadTokens ?? 0) > 0 && <span style="color:var(--muted)"> + {(entry.cacheReadTokens ?? 0).toLocaleString()} cached</span>}
+                    {(entry.cacheCreateTokens ?? 0) > 0 && <span style="color:var(--muted)"> + {(entry.cacheCreateTokens ?? 0).toLocaleString()} cache write</span>}
+                  </span>
+                  <span class="sw-token-arrow"> → </span>
+                  <span class="sw-token-out">{(entry.outputTokens ?? 0).toLocaleString()} output</span>
+                </>
+              ) : (
+                <>
+                  <span class="sw-token-in">{(entry.inputTokens ?? 0).toLocaleString()} input</span>
+                  <span class="sw-token-arrow"> → </span>
+                  <span class="sw-token-out">{(entry.outputTokens ?? 0).toLocaleString()} output</span>
+                </>
+              )}
             </div>
           </div>
         )}

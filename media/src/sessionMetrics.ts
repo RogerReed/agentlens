@@ -12,7 +12,10 @@ export function fmtUsd(usd: number): string {
 export function calcEntryCost(entry: TimelineEntry, sessionModel: string): number {
   const rates = lookupRates(entry.model || sessionModel)
   if (!rates) return 0
-  return calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, rates)
+  const cacheRead   = entry.cacheReadTokens   ?? 0
+  const cacheCreate = entry.cacheCreateTokens ?? 0
+  const rawInput    = Math.max(0, (entry.inputTokens ?? 0) - cacheRead - cacheCreate)
+  return calcTokenCost(rawInput, cacheRead, cacheCreate, entry.outputTokens ?? 0, rates)
 }
 
 export type { PricingMode }
