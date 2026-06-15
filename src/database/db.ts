@@ -92,6 +92,16 @@ function applyMigrations(db: SqlDatabase): void {
     db.run("ALTER TABLE sessions ADD COLUMN files_written TEXT NOT NULL DEFAULT '[]'")
   }
 
+  // timeline_entries cache token columns
+  const teCols = db.exec('PRAGMA table_info(timeline_entries)')
+  const teColNames = teCols[0]?.values.map(row => row[1] as string) ?? []
+  if (!teColNames.includes('cache_read_tokens')) {
+    db.run('ALTER TABLE timeline_entries ADD COLUMN cache_read_tokens INTEGER')
+  }
+  if (!teColNames.includes('cache_create_tokens')) {
+    db.run('ALTER TABLE timeline_entries ADD COLUMN cache_create_tokens INTEGER')
+  }
+
   // instruction_applied table (feat-instruction-advisor)
   const appliedCols = db.exec('PRAGMA table_info(instruction_applied)')
   if (!appliedCols[0]) {

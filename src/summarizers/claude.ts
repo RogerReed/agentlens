@@ -136,6 +136,8 @@ export function buildClaudeSessions(
           model: childModel,
           inputTokens: inTok + cacheRead + cacheCreate,
           outputTokens: outTok,
+          cacheReadTokens: cacheRead || undefined,
+          cacheCreateTokens: cacheCreate || undefined,
           ttft,
           durationMs: childDur,
           action,

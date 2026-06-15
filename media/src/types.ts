@@ -90,6 +90,8 @@ export interface TimelineEntry {
   model?: string
   inputTokens?: number
   outputTokens?: number
+  cacheReadTokens?: number
+  cacheCreateTokens?: number
   ttft?: number
   durationMs: number
   action?: string
