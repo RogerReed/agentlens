@@ -2,6 +2,24 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.8.6] — 2026-07-19
+
+### Fixed
+
+- **Opus 4.6 fast mode billed at stale 6x rate** — Anthropic removed fast mode for Claude Opus 4.6 on 2026-06-29 (requests now run at standard speed and bill at standard rates), but the `claude-opus-4-6-fast` rate table entry still applied the old 6x multiplier. Sessions using Opus 4.6 fast mode were overpriced by roughly 5x. Fix: `claude-opus-4-6-fast` now matches the standard `claude-opus-4-6` rate in both `src/pricing.ts` and `media/src/pricing.ts` (#163)
+- **gpt-5-mini, raptor-mini no longer free** — both models moved from GitHub Copilot's included/$0 tier to standard paid AI Credits rates ($0.25/$0.025/–/$2.00 per MTok); sessions using them were showing $0 cost. Fix: rate tables updated to the current paid rate (#163)
+- **gpt-5.5 annual-plan multiplier stale** — `multiplierAnnualPostJun1` was 7.5, current Copilot docs show 57; annual-plan legacy-billing users on gpt-5.5 were significantly underpriced. Fix: corrected in `media/src/pricing.ts` (#163)
+
+### Added
+
+- **New models** — `claude-sonnet-5` (introductory pricing through 2026-08-31), `claude-mythos-5`, the `gpt-5.6` family (Luna/Terra/Sol), and new Copilot marketplace models `mai-code-1-flash` / `kimi-k2.7-code` (#163)
+
+### Docs
+
+- `PRICING_SOURCES.md` restructured as a current-state reference and refresh runbook instead of an accumulating changelog; every listed source re-verified and new known gaps documented (data residency multiplier, Copilot code review multiplier, unconfirmed OpenCode Zen free-model IDs) (#163)
+
+---
+
 ## [0.8.5] — 2026-06-15
 
 ### Fixed
