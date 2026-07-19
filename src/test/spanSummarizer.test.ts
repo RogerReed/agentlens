@@ -410,47 +410,6 @@ suite('SpanSummarizer', () => {
       assert.ok(claude?.filesChangedNote?.includes('tool arguments'))
     })
 
-    test('uses the session.id attribute (not the span ID) as sessionId, so it matches the log-ingested card for the same conversation', () => {
-      const spans: Span[] = [
-        makeSpan({
-          traceId: 'claude-trace-sid',
-          spanId: 'cl-root-sid',
-          name: 'claude_code.interaction',
-          attributes: [
-            makeAttr('user_prompt', 'Update dashboard copy'),
-            makeAttr('session.id', 'native-claude-session-uuid'),
-          ],
-        }),
-      ]
-      const result = summarizeSpans(spans)
-      const claude = result.sessions.find(s => s.source === 'claude_code')
-      assert.strictEqual(claude?.sessionId, 'native-claude-session-uuid')
-    })
-
-    test('falls back to the interaction span ID for sessionId when no session.id attribute is present', () => {
-      const root = makeSpan({
-        name: 'claude_code.interaction',
-        attributes: [makeAttr('user_prompt', 'Update dashboard copy')],
-      })
-      const result = summarizeSpans([root])
-      const claude = result.sessions.find(s => s.source === 'claude_code')
-      assert.strictEqual(claude?.sessionId, root.spanId)
-    })
-
-    test('reads session.id from a child span when the root interaction span is synthesized (in-progress session)', () => {
-      const spans: Span[] = [
-        makeSpan({
-          traceId: 'claude-trace-synth',
-          spanId: 'cl-llm-synth',
-          name: 'claude_code.llm_request',
-          attributes: [makeAttr('session.id', 'native-in-progress-uuid')],
-        }),
-      ]
-      const result = summarizeSpans(spans)
-      const claude = result.sessions.find(s => s.source === 'claude_code')
-      assert.strictEqual(claude?.sessionId, 'native-in-progress-uuid')
-    })
-
     test('reports the token-weighted dominant model, not whichever model answered last', () => {
       const root = makeSpan({
         name: 'claude_code.interaction',

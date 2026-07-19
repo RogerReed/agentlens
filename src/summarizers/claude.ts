@@ -3,10 +3,8 @@ import { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizerTypes
 import {
   getAttrStr, getAttrInt, nanoToMs, CLAUDE_WRITE_TOOLS, FULL_WRITE_TOOLS,
   extractResponseText, extractTokenCounts, normalizeUserRequest, getGenAiModel,
-  commonPathPrefix, findProjectRoot, getFirstAttr, rankModelsByWeight,
+  commonPathPrefix, findProjectRoot, rankModelsByWeight,
 } from './helpers'
-
-const SESSION_ID_ATTR_KEYS = ['session.id', 'session_id']
 
 function strOrUndef(v: unknown): string | undefined {
   if (v === null || v === undefined || v === '') { return undefined }
@@ -21,17 +19,6 @@ export function buildClaudeSessions(
     const traceSpans = (spansByTraceId[interaction.traceId] || [])
       .filter(s => s.spanId !== interaction.spanId)
       .sort((a, b) => nanoToMs(a.startTime) - nanoToMs(b.startTime))
-
-    // Claude Code stamps its own session UUID as a session.id resource attribute on
-    // every span it emits — the same UUID used for the local .jsonl transcript file.
-    // Prefer it over the OTEL-generated spanId so this card's sessionId lines up with
-    // the equivalent log-ingested card for the same conversation (see writer.ts enqueue,
-    // which relies on matching session_id to avoid writing OTEL and log duplicates).
-    // The synthesized root span (spanSummarizer.ts) carries no attributes of its own,
-    // so fall back to checking its children, which do.
-    const nativeSessionId = getFirstAttr(interaction, SESSION_ID_ATTR_KEYS)
-      || traceSpans.map(s => getFirstAttr(s, SESSION_ID_ATTR_KEYS)).find(Boolean)
-      || ''
 
     const topSpans = traceSpans.filter(s =>
       s.name === 'claude_code.llm_request' || s.name === 'claude_code.tool'
@@ -341,7 +328,7 @@ export function buildClaudeSessions(
       : undefined
 
     return {
-      sessionId: nativeSessionId || interaction.spanId,
+      sessionId: interaction.spanId,
       traceId: interaction.traceId || '',
       source: 'claude_code' as const,
       dataSource: 'otel' as const,
