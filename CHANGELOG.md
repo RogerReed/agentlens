@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.8.7] — 2026-07-19
+
+### Chore
+
+- **Upgraded CI, release, and Docker to Node 24** — the release workflow's `publish-npm` job was broken on Node 20: `npm install -g npm@latest` now installs an npm version requiring Node `^22.22.2 || ^24.15.0 || >=26`, so the step failed before ever attempting to publish (this is what blocked npm publishing on v0.8.6). `ci.yml`'s test matrix, all three `release.yml` jobs, and both `Dockerfile` stages now standardize on Node 24 (current Active LTS); `package.json` gained an explicit `engines.node: ">=24"` (#164)
+
+---
+
 ## [0.8.6] — 2026-07-19
 
 ### Fixed
