@@ -1,6 +1,6 @@
 // Pricing data for extension-host cost computation (cost_usd stored in sessions table).
 // Rate table is kept in sync with media/src/pricing.ts — update both when rates change.
-// PRICING_LAST_UPDATED: 2026-06-10
+// PRICING_LAST_UPDATED: 2026-07-19
 
 export interface ModelRates {
   inputPerMTok: number
@@ -17,9 +17,11 @@ export interface ModelRates {
 
 const RATES: Record<string, ModelRates> = {
   // ── OpenAI ─────────────────────────────────────────────────────────────────
+  // gpt-4.1: no longer listed on the current API pricing page — kept at legacy $0 rate for historical sessions.
   'gpt-4.1':            { inputPerMTok: 0,     cacheReadPerMTok: 0,      cacheWritePerMTok: 0, outputPerMTok: 0,     contextWindowTokens: 1_000_000 },
-  'gpt-5-mini':         { inputPerMTok: 0,     cacheReadPerMTok: 0,      cacheWritePerMTok: 0, outputPerMTok: 0,     contextWindowTokens: 200_000 },
-  'gpt-5 mini':         { inputPerMTok: 0,     cacheReadPerMTok: 0,      cacheWritePerMTok: 0, outputPerMTok: 0,     contextWindowTokens: 200_000 },
+  // gpt-5-mini: no longer an included/$0 model as of the 2026-07-19 pricing page — now billed at standard rates.
+  'gpt-5-mini':         { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  contextWindowTokens: 200_000 },
+  'gpt-5 mini':         { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  contextWindowTokens: 200_000 },
   'gpt-4o':             { inputPerMTok: 2.50,  cacheReadPerMTok: 1.25,   cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 128_000 },
   'gpt-4o-mini':        { inputPerMTok: 0.15,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 0.60,  contextWindowTokens: 128_000 },
   'gpt-5.1':            { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0, outputPerMTok: 14.00, contextWindowTokens: 256_000 },
@@ -33,7 +35,12 @@ const RATES: Record<string, ModelRates> = {
   'gpt-5.4-mini':       { inputPerMTok: 0.75,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 4.50,  contextWindowTokens: 200_000 },
   'gpt-5.4-nano':       { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0, outputPerMTok: 1.25,  contextWindowTokens: 128_000 },
   'gpt-5.5':            { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, contextWindowTokens: 256_000 },
+  // gpt-5.6 family (new as of 2026-07-19): Luna (small/fast), Terra (mid, ~gpt-5.4 pricing), Sol (flagship, ~gpt-5.5 pricing).
+  'gpt-5.6-luna':       { inputPerMTok: 1.00,  cacheReadPerMTok: 0.10,   cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 256_000 },
+  'gpt-5.6-terra':      { inputPerMTok: 2.50,  cacheReadPerMTok: 0.25,   cacheWritePerMTok: 0, outputPerMTok: 15.00, contextWindowTokens: 256_000 },
+  'gpt-5.6-sol':        { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, contextWindowTokens: 256_000 },
   // ── Codex-only ─────────────────────────────────────────────────────────────
+  // codex-mini-latest: deprecated per OpenAI docs; kept for historical sessions.
   'codex-mini-latest':  { inputPerMTok: 1.50,  cacheReadPerMTok: 0.375,  cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 200_000 },
   // ── Anthropic ──────────────────────────────────────────────────────────────
   'claude-opus-4':      { inputPerMTok: 15.00, cacheReadPerMTok: 1.50,  cacheWritePerMTok: 18.75, outputPerMTok: 75.00, contextWindowTokens: 200_000 },
@@ -44,14 +51,21 @@ const RATES: Record<string, ModelRates> = {
                           inputAbove200kPerMTok: 6.00, outputAbove200kPerMTok: 22.50, cacheReadAbove200kPerMTok: 0.60, cacheWriteAbove200kPerMTok: 7.50 },
   'claude-sonnet-4-5':  { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 1_000_000 },
   'claude-sonnet-4-6':  { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 1_000_000 },
+  // claude-sonnet-5: introductory pricing through 2026-08-31 ($2/$0.20/$2.50/$10); standard pricing ($3/$0.30/$3.75/$15,
+  // matching sonnet-4-6) takes effect 2026-09-01. Update this row on that date.
+  'claude-sonnet-5':    { inputPerMTok:  2.00, cacheReadPerMTok: 0.20,  cacheWritePerMTok:  2.50, outputPerMTok: 10.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-5':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-6':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-7':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-8':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
-  'claude-opus-4-6-fast':{ inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, contextWindowTokens: 1_000_000 },
+  // fast mode for Opus 4.6 was removed 2026-06-29 — requests now run at standard speed/rates despite the -fast suffix.
+  'claude-opus-4-6-fast':{ inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok:  25.00, contextWindowTokens: 1_000_000 },
+  // fast mode for Opus 4.7 is deprecated and scheduled for removal 2026-07-24 — remove/fold into standard rate after that date.
   'claude-opus-4-7-fast':{ inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-8-fast':{ inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
   'claude-fable-5':      { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
+  // claude-mythos-5: limited-availability preview (anthropic.com/glasswing), same rates as Fable 5.
+  'claude-mythos-5':     { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
   // ── Google ─────────────────────────────────────────────────────────────────
   'gemini-2.5-pro':  { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 1_000_000 },
   'gemini-3-flash':  { inputPerMTok: 0.50, cacheReadPerMTok: 0.05,  cacheWritePerMTok: 0, outputPerMTok:  3.00, contextWindowTokens: 1_000_000 },
@@ -59,7 +73,8 @@ const RATES: Record<string, ModelRates> = {
   'gemini-3.1-pro':  { inputPerMTok: 2.00, cacheReadPerMTok: 0.20,  cacheWritePerMTok: 0, outputPerMTok: 12.00, contextWindowTokens: 1_000_000 },
   'gemini-3.5-flash':{ inputPerMTok: 1.50, cacheReadPerMTok: 0.15,  cacheWritePerMTok: 0, outputPerMTok:  9.00, contextWindowTokens: 1_000_000 },
   // ── Fine-tuned ─────────────────────────────────────────────────────────────
-  'raptor-mini': { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok:  0,     contextWindowTokens: 0 },
+  // raptor-mini: no longer an included/$0 model as of the 2026-07-19 Copilot pricing page — now billed at standard rates.
+  'raptor-mini': { inputPerMTok: 0.25, cacheReadPerMTok: 0.025, cacheWritePerMTok: 0, outputPerMTok:  2.00,  contextWindowTokens: 0 },
   'goldeneye':   { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 0 },
   // ── OpenCode Zen  https://opencode.ai/docs/zen/ ────────────────────────────
   // big-pickle: OpenCode's stealth model, free during limited evaluation period.
