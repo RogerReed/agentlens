@@ -2,7 +2,7 @@
 // Token rates (post Jun 1, 2026):        https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
 // Request multipliers (pre Jun 1, 2026): https://docs.github.com/en/copilot/concepts/billing/copilot-requests
 // Annual-plan multipliers (post Jun 1):  https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans
-export const PRICING_LAST_UPDATED = '2026-06-10'
+export const PRICING_LAST_UPDATED = '2026-07-19'
 
 // Three billing modes:
 //   'token'          — new token-based AI Credits billing, effective Jun 1, 2026
@@ -30,10 +30,11 @@ export interface ModelRates {
 const RATES: Record<string, ModelRates> = {
   // ── OpenAI ─────────────────────────────────────────────────────────────────────────────────────
   //                                                                     token rates ──────────────────────────────────── │ pre-Jun1  │ annual post-Jun1
-  // included models: 0× pre-Jun1 AND $0 in token mode (included in Copilot subscription per footnote 1)
+  // gpt-4.1: no longer listed on the current pricing page — kept at legacy $0 rate for historical sessions.
   'gpt-4.1':             { inputPerMTok: 0,     cacheReadPerMTok: 0,      cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0,    multiplierAnnualPostJun1: 1 },
-  'gpt-5-mini':          { inputPerMTok: 0,     cacheReadPerMTok: 0,      cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
-  'gpt-5 mini':          { inputPerMTok: 0,     cacheReadPerMTok: 0,      cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
+  // gpt-5-mini: no longer included/$0 as of 2026-07-19 — now billed at standard token rates.
+  'gpt-5-mini':          { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
+  'gpt-5 mini':          { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
   // older included models kept for historical sessions
   'gpt-4o':              { inputPerMTok: 2.50,  cacheReadPerMTok: 1.25,   cacheWritePerMTok: 0, outputPerMTok: 10.00, multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
   'gpt-4o-mini':         { inputPerMTok: 0.15,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 0.60,  multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
@@ -49,7 +50,12 @@ const RATES: Record<string, ModelRates> = {
   'gpt-5.4':             { inputPerMTok: 2.50,  cacheReadPerMTok: 0.25,   cacheWritePerMTok: 0, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 6 },  // long-context surcharge (>272K tokens) not implemented
   'gpt-5.4-mini':        { inputPerMTok: 0.75,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 4.50,  multiplier: 0.33, multiplierAnnualPostJun1: 6 },
   'gpt-5.4-nano':        { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0, outputPerMTok: 1.25,  multiplier: 0.25, multiplierAnnualPostJun1: 0.25 },
-  'gpt-5.5':             { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, multiplier: 7.5,  multiplierAnnualPostJun1: 7.5 },  // TBD per docs; long-context surcharge (>unknown threshold) not implemented
+  'gpt-5.5':             { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, multiplier: 7.5,  multiplierAnnualPostJun1: 57 },  // annual multiplier corrected 2026-07-19 (was 7.5); long-context surcharge (>unknown threshold) not implemented
+  // gpt-5.6 family (new as of 2026-07-19): Luna (small/fast), Terra (mid, ~gpt-5.4 pricing), Sol (flagship, ~gpt-5.5 pricing).
+  // Not yet listed on the annual-plan multiplier page — multiplierAnnualPostJun1 set to 0 until published.
+  'gpt-5.6-luna':        { inputPerMTok: 1.00,  cacheReadPerMTok: 0.10,   cacheWritePerMTok: 0, outputPerMTok: 6.00,  multiplier: 0,    multiplierAnnualPostJun1: 0 },
+  'gpt-5.6-terra':       { inputPerMTok: 2.50,  cacheReadPerMTok: 0.25,   cacheWritePerMTok: 0, outputPerMTok: 15.00, multiplier: 0,    multiplierAnnualPostJun1: 0 },
+  'gpt-5.6-sol':         { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, multiplier: 0,    multiplierAnnualPostJun1: 0 },  // long-context surcharge (>unknown threshold) not implemented
   // ── Codex-only models ──────────────────────────────────────────────────────────────────────────
   // codex-mini-latest: fine-tuned o4-mini; 75% cache discount (not the usual 90%); deprecated
   'codex-mini-latest':   { inputPerMTok: 1.50,  cacheReadPerMTok: 0.375,  cacheWritePerMTok: 0, outputPerMTok: 6.00,  multiplier: 0,    multiplierAnnualPostJun1: 0 },
@@ -64,15 +70,22 @@ const RATES: Record<string, ModelRates> = {
                              inputAbove200kPerMTok: 6.00, outputAbove200kPerMTok: 22.50, cacheReadAbove200kPerMTok: 0.60, cacheWriteAbove200kPerMTok: 7.50 },
   'claude-sonnet-4-5':     { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 6 },
   'claude-sonnet-4-6':     { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 9 },
+  // claude-sonnet-5: introductory token pricing through 2026-08-31 ($2/$0.20/$2.50/$10); standard ($3/$0.30/$3.75/$15)
+  // takes effect 2026-09-01 — update this row on that date. Not listed on the annual-plan multiplier page.
+  'claude-sonnet-5':       { inputPerMTok:  2.00, cacheReadPerMTok: 0.20, cacheWritePerMTok:  2.50, outputPerMTok: 10.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },
   'claude-opus-4-5':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 15 },
   'claude-opus-4-6':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 27 },
   'claude-opus-4-7':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 15,   multiplierAnnualPostJun1: 27 },
   'claude-opus-4-8':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 15,   multiplierAnnualPostJun1: 27 },
-  // fast mode (/fast toggle in Claude Code) — model ID appended with -fast by logReader when usage.speed === 'fast'
-  'claude-opus-4-6-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
+  // fast mode (/fast toggle in Claude Code) — model ID appended with -fast by logReader when usage.speed === 'fast'.
+  // Opus 4.6 fast mode was removed 2026-06-29: requests run at standard speed/rates despite the -fast suffix.
+  'claude-opus-4-6-fast':  { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok:  25.00, multiplier: 3,  multiplierAnnualPostJun1: 27 },
+  // Opus 4.7 fast mode is deprecated, scheduled for removal 2026-07-24 — Copilot's own pricing docs don't list a fast-mode
+  // row for it at all, so this rate is carried over from direct Anthropic API pricing as a best estimate.
   'claude-opus-4-7-fast':  { inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
   'claude-opus-4-8-fast':  { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
   'claude-fable-5':        { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },  // not yet listed in Copilot billing docs
+  'claude-mythos-5':       { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },  // limited availability preview; not yet listed in Copilot billing docs
   // ── Google ─────────────────────────────────────────────────────────────────────────────────────
   'gemini-2.5-pro':   { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, multiplier: 1,    multiplierAnnualPostJun1: 1 },  // long-context surcharge (>200K tokens) not implemented
   'gemini-3-flash':   { inputPerMTok: 0.50, cacheReadPerMTok: 0.05,  cacheWritePerMTok: 0, outputPerMTok: 3.00,  multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
@@ -80,9 +93,13 @@ const RATES: Record<string, ModelRates> = {
   'gemini-3.1-pro':   { inputPerMTok: 2.00, cacheReadPerMTok: 0.20,  cacheWritePerMTok: 0, outputPerMTok: 12.00, multiplier: 1,    multiplierAnnualPostJun1: 6 },  // long-context surcharge (>200K tokens) not implemented
   'gemini-3.5-flash': { inputPerMTok: 1.50, cacheReadPerMTok: 0.15,  cacheWritePerMTok: 0, outputPerMTok: 9.00,  multiplier: 14,   multiplierAnnualPostJun1: 14 },
   // ── Fine-tuned ─────────────────────────────────────────────────────────────────────────────────
-  // raptor-mini uses GPT-5 mini pricing per footnote 5 — included ($0) in token mode, same annual multiplier
-  'raptor-mini': { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+  // raptor-mini: no longer included/$0 as of 2026-07-19 — now billed at the same standard rate as gpt-5-mini.
+  'raptor-mini': { inputPerMTok: 0.25, cacheReadPerMTok: 0.025, cacheWritePerMTok: 0, outputPerMTok: 2.00,  multiplier: 0, multiplierAnnualPostJun1: 0.33 },
   'goldeneye':   { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  // ── Other third-party (new to Copilot marketplace as of 2026-07-19) ───────────────────────────────
+  // Not yet listed on the annual-plan multiplier page — multiplierAnnualPostJun1 set to 0 until published.
+  'mai-code-1-flash': { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 4.50, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+  'kimi-k2.7-code':   { inputPerMTok: 0.95, cacheReadPerMTok: 0.19,  cacheWritePerMTok: 0, outputPerMTok: 4.00, multiplier: 0, multiplierAnnualPostJun1: 0 },
   // ── OpenCode Zen  https://opencode.ai/docs/zen/ ────────────────────────────
   // big-pickle: OpenCode's stealth model, free during limited evaluation period.
   'big-pickle':  { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0, multiplierAnnualPostJun1: 0 },
