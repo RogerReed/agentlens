@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
@@ -72,7 +72,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install vsce
         run: npm install -g @vscode/vsce
@@ -115,7 +115,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           # registry-url is required so setup-node writes the registry endpoint to
           # .npmrc. Without it, npm throws ENEEDAUTH before attempting OIDC.
@@ -124,7 +124,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Upgrade npm for OIDC Trusted Publishing
-        # Node 20 ships with npm 10.x. OIDC Trusted Publishing requires npm 11.x+.
+        # OIDC Trusted Publishing requires npm 11.x+; keep this in sync with
+        # whatever version ships bundled with the node-version above.
         run: npm install -g npm@latest
 
       - name: Install dependencies
