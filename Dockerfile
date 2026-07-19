@@ -1,5 +1,5 @@
 # ── Build stage ────────────────────────────────────────────────────────────────
-FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
+FROM --platform=$BUILDPLATFORM node:24-alpine AS builder
 WORKDIR /app
 
 RUN npm install -g pnpm@10
@@ -17,7 +17,7 @@ COPY media/dashboard.css media/help-mascot.png media/mascot.png ./media/
 RUN node esbuild.js --production
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
-FROM node:20-alpine
+FROM node:24-alpine
 WORKDIR /app
 
 RUN addgroup -S agentlens && adduser -S agentlens -G agentlens

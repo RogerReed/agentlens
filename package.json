@@ -10,7 +10,8 @@
     "url": "https://github.com/RogerReed/agentlens"
   },
   "engines": {
-    "vscode": "^1.118.0"
+    "vscode": "^1.118.0",
+    "node": ">=24"
   },
   "icon": "media/mascot.png",
   "galleryBanner": {
