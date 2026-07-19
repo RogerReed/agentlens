@@ -3,7 +3,7 @@ import { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizerTypes
 import {
   getAttrStr, getAttrInt, nanoToMs, extractUserRequest,
   summarizeToolArgs, summarizeToolResult, extractResponseText, detectOutputAction,
-  extractTokenCounts, getGenAiModel,
+  extractTokenCounts, getGenAiModel, rankModelsByWeight,
 } from './helpers'
 
 export function buildCopilotSessions(
@@ -41,6 +41,11 @@ export function buildCopilotSessions(
     let totalLlmCalls = 0
     let errors = 0
     let lastOutcome: 'text_response' | 'tool_calls' | 'unknown' = 'unknown'
+    // Seed with the agent-level model (Copilot's own authoritative total) so it's
+    // always represented even if per-turn chat spans report something different —
+    // Copilot lets users switch models mid-conversation via the model picker.
+    const modelTokens = new Map<string, number>()
+    if (model) { modelTokens.set(model, totalInput + outputTokens) }
 
     const timeline: TimelineEntry[] = children.map(child => {
       const childStart = nanoToMs(child.startTime)
@@ -121,7 +126,13 @@ export function buildCopilotSessions(
       } else if (child.name.startsWith('chat')) {
         totalLlmCalls++
         const childModel = getGenAiModel(child)
-        const { input: inTok, output: outTok } = extractTokenCounts(child)
+        const { input: inTok, output: outTok, cacheRead: childCacheRead, cacheCreate: childCacheCreate } = extractTokenCounts(child)
+        // Same OpenAI-vs-Anthropic input-token convention as the session aggregate above.
+        const childIsOpenAIModel = /^gpt-|^o\d/i.test(childModel ?? '')
+        const childTotalInput = childIsOpenAIModel ? inTok : inTok + childCacheRead + childCacheCreate
+        if (childModel) {
+          modelTokens.set(childModel, (modelTokens.get(childModel) ?? 0) + childTotalInput + outTok)
+        }
         const ttft = getAttrInt(child, 'copilot_chat.time_to_first_token')
         const thinking = getAttrStr(child, 'copilot_chat.reasoning_content')
         const outputMsgs = getAttrStr(child, 'gen_ai.output.messages')
@@ -140,8 +151,10 @@ export function buildCopilotSessions(
           label: childModel,
           model: childModel,
           thinking: thinking ? thinking.slice(0, 200) : undefined,
-          inputTokens: inTok,
+          inputTokens: childTotalInput,
           outputTokens: outTok,
+          cacheReadTokens: childCacheRead || undefined,
+          cacheCreateTokens: childCacheCreate || undefined,
           ttft,
           durationMs: childDur,
           action,
@@ -172,6 +185,7 @@ export function buildCopilotSessions(
       workspace: '',
       userRequest: userReq,
       model,
+      models: rankModelsByWeight(modelTokens),
       turns,
       inputTokens: totalInput,
       outputTokens,

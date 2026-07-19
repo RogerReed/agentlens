@@ -3,7 +3,7 @@ import { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizerTypes
 import {
   getAttrStr, getAttrInt, nanoToMs, CLAUDE_WRITE_TOOLS, FULL_WRITE_TOOLS,
   extractResponseText, extractTokenCounts, normalizeUserRequest, getGenAiModel,
-  commonPathPrefix, findProjectRoot, getFirstAttr,
+  commonPathPrefix, findProjectRoot, getFirstAttr, rankModelsByWeight,
 } from './helpers'
 
 const SESSION_ID_ATTR_KEYS = ['session.id', 'session_id']
@@ -47,7 +47,7 @@ export function buildClaudeSessions(
 
     let inputTokens = 0, outputTokens = 0, cacheReadTokens = 0, cacheCreateTokens = 0
     let totalLlmCalls = 0, totalToolCalls = 0, errors = 0
-    let model = ''
+    const modelTokens = new Map<string, number>()
     const toolCounts: Record<string, number> = {}
     const filesRead = new Set<string>()
     const filesSearched = new Set<string>()
@@ -69,7 +69,9 @@ export function buildClaudeSessions(
         const { input: inTok, output: outTok, cacheRead, cacheCreate } = extractTokenCounts(child)
         const ttft = getAttrInt(child, 'ttft_ms')
         const childModel = getGenAiModel(child)
-        if (childModel) { model = childModel }
+        if (childModel) {
+          modelTokens.set(childModel, (modelTokens.get(childModel) ?? 0) + inTok + cacheRead + cacheCreate + outTok)
+        }
         inputTokens += inTok
         outputTokens += outTok
         cacheReadTokens += cacheRead
@@ -310,6 +312,12 @@ export function buildClaudeSessions(
 
     const workspace = findProjectRoot(commonPathPrefix([...allAbsFilePaths]))
 
+    // Sessions can span more than one model (e.g. a Task-tool subagent on a cheaper
+    // model, or a mid-session /model switch) — rank by token volume rather than
+    // reporting whichever model happened to handle the last call.
+    const models = rankModelsByWeight(modelTokens)
+    const model = models[0] ?? ''
+
     const startMs = nanoToMs(interaction.startTime)
     const totalInput = inputTokens + cacheReadTokens + cacheCreateTokens
     const cacheHitRate = (totalInput > 0) ? cacheReadTokens / totalInput : 0
@@ -341,6 +349,7 @@ export function buildClaudeSessions(
       workspace,
       userRequest,
       model,
+      models,
       turns: totalLlmCalls,
       inputTokens: totalInput,
       outputTokens,

@@ -345,6 +345,40 @@ suite('SpanSummarizer', () => {
       assert.strictEqual(codex?.outputTokens, 40)
     })
 
+    test('codex: reports the token-weighted dominant model and includes cache tokens in per-entry inputTokens', () => {
+      const root = makeSpan({
+        name: 'codex.prompt',
+        attributes: [makeAttr('prompt', 'Investigate flaky test')],
+      })
+      const heavyCall = makeSpan({
+        traceId: root.traceId,
+        name: 'codex.response',
+        attributes: [
+          makeAttr('gen_ai.request.model', 'gpt-5.4'),
+          makeAttr('gen_ai.usage.input_tokens', 4000),
+          makeAttr('gen_ai.usage.cache_read.input_tokens', 500),
+          makeAttr('gen_ai.usage.output_tokens', 800),
+        ],
+      })
+      const lightCall = makeSpan({
+        traceId: root.traceId,
+        name: 'codex.response',
+        attributes: [
+          makeAttr('gen_ai.request.model', 'gpt-5.4-mini'),
+          makeAttr('gen_ai.usage.input_tokens', 30),
+          makeAttr('gen_ai.usage.output_tokens', 10),
+        ],
+      })
+
+      const result = summarizeSpans([root, heavyCall, lightCall])
+      const codex = result.sessions.find(s => s.source === 'codex')
+      assert.strictEqual(codex?.model, 'gpt-5.4')
+      assert.deepStrictEqual(codex?.models, ['gpt-5.4', 'gpt-5.4-mini'])
+      const heavyEntry = codex?.timeline.find(e => e.spanId === heavyCall.spanId)
+      assert.strictEqual(heavyEntry?.inputTokens, 4500, 'per-entry inputTokens should include cache read tokens')
+      assert.strictEqual(heavyEntry?.cacheReadTokens, 500)
+    })
+
     test('flags Claude write sessions when telemetry omits changed-file paths', () => {
       const spans: Span[] = [
         makeSpan({
@@ -415,6 +449,38 @@ suite('SpanSummarizer', () => {
       const result = summarizeSpans(spans)
       const claude = result.sessions.find(s => s.source === 'claude_code')
       assert.strictEqual(claude?.sessionId, 'native-in-progress-uuid')
+    })
+
+    test('reports the token-weighted dominant model, not whichever model answered last', () => {
+      const root = makeSpan({
+        name: 'claude_code.interaction',
+        attributes: [makeAttr('user_prompt', 'Refactor auth module')],
+      })
+      const heavyCall = makeChildSpan(root.spanId, {
+        traceId: root.traceId,
+        name: 'claude_code.llm_request',
+        attributes: [
+          makeAttr('gen_ai.request.model', 'claude-opus-4'),
+          makeAttr('gen_ai.usage.input_tokens', 5000),
+          makeAttr('gen_ai.usage.output_tokens', 1000),
+        ],
+      })
+      // A cheap subagent call that happens to be the LAST one processed — under the
+      // old "last write wins" logic this alone would have been reported as the
+      // session's model, even though it did a fraction of the actual work.
+      const lightSubagentCall = makeChildSpan(root.spanId, {
+        traceId: root.traceId,
+        name: 'claude_code.llm_request',
+        attributes: [
+          makeAttr('gen_ai.request.model', 'claude-haiku-4-5'),
+          makeAttr('gen_ai.usage.input_tokens', 50),
+          makeAttr('gen_ai.usage.output_tokens', 20),
+        ],
+      })
+      const result = summarizeSpans([root, heavyCall, lightSubagentCall])
+      const claude = result.sessions.find(s => s.source === 'claude_code')
+      assert.strictEqual(claude?.model, 'claude-opus-4')
+      assert.deepStrictEqual(claude?.models, ['claude-opus-4', 'claude-haiku-4-5'])
     })
 
     test('groups codex timeline by trace and captures tool spans', () => {

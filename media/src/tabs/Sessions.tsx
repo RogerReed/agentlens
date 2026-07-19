@@ -319,6 +319,12 @@ function SessionRow({ sess, showWorkspace }: { sess: SessionSummaryCard; showWor
         {/* Model */}
         <td style="padding:4px 6px;white-space:nowrap;font-size:10px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis">
           {sess.model || '—'}
+          {(sess.models?.length ?? 0) > 1 && (
+            <span
+              title={`Multiple models used in this session: ${sess.models!.join(', ')}`}
+              style="margin-left:4px;padding:0 4px;border-radius:3px;background:var(--hover);color:var(--muted);font-size:9px;vertical-align:middle"
+            >+{sess.models!.length - 1}</span>
+          )}
         </td>
 
         {/* Tokens */}
