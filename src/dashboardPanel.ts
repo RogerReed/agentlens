@@ -267,6 +267,7 @@ export class DashboardPanel {
         traceId:          s.traceId,
         source:           s.source,
         model:            s.model,
+        models:           s.models ?? [s.model],
         startTime:        s.startTime,
         durationMs:       s.durationMs,
         turns:            s.totalLlmCalls,

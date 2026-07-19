@@ -147,6 +147,7 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:10px">
               {[
                 { k: 'LLM calls',  v: String(sess.totalLlmCalls) },
+                ...((sess.models?.length ?? 0) > 1 ? [{ k: 'Models', v: sess.models!.join(', ') }] : []),
                 { k: 'Tool calls', v: String(sess.totalToolCalls) },
                 { k: 'Input tokens', v: formatCompact(sess.inputTokens) },
                 { k: 'Output tokens', v: formatCompact(sess.outputTokens) },

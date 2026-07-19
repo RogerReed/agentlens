@@ -53,22 +53,30 @@ export function calcSessionCost(session: SessionSummaryCard, mode: PricingMode):
   }
 
   // Token-based mode.
-  // session.inputTokens includes cacheRead + cacheCreate for all agents, so subtract them back out.
-  const rawInput = Math.max(0, session.inputTokens - session.cacheReadTokens - session.cacheCreateTokens)
-  const totalUsd = rates
-    ? calcTokenCost(rawInput, session.cacheReadTokens, session.cacheCreateTokens, session.outputTokens, rates)
-    : 0
+  // Sessions can span more than one model (a Task-tool subagent on a cheaper model, a
+  // mid-session /model switch) — when the timeline shows more than one distinct model,
+  // price each LLM entry at its own model and sum, instead of pricing the session's
+  // aggregate tokens at one model's rate. Mirrors src/database/writer.ts's server-side
+  // calculation; single-model sessions fall back to the original aggregate calc.
+  const distinctModels = new Set(llmEntries.map(e => e.model).filter((m): m is string => Boolean(m)))
+  const anyRateUnknown = distinctModels.size > 0
+    ? [...distinctModels].some(m => !lookupRates(m))
+    : !rates
 
-  // Per-turn cumulative cost using per-turn token counts (cache not broken out at turn level).
   let cum = 0
   const byTurn = llmEntries.map(entry => {
-    const entryRates = lookupRates(entry.model || modelId) || rates
-    if (!entryRates) return cum
-    cum += calcTokenCost(entry.inputTokens ?? 0, 0, 0, entry.outputTokens ?? 0, entryRates)
+    cum += calcEntryCost(entry, modelId)
     return cum
   })
 
-  return { totalUsd, aiCredits: totalUsd / 0.01, byTurn, modelUnknown: !rates, pricingMode: mode }
+  const rawInput = Math.max(0, session.inputTokens - session.cacheReadTokens - session.cacheCreateTokens)
+  const totalUsd = distinctModels.size > 1
+    ? byTurn[byTurn.length - 1] ?? 0
+    : rates
+      ? calcTokenCost(rawInput, session.cacheReadTokens, session.cacheCreateTokens, session.outputTokens, rates)
+      : 0
+
+  return { totalUsd, aiCredits: totalUsd / 0.01, byTurn, modelUnknown: anyRateUnknown, pricingMode: mode }
 }
 
 export interface PeakContextUsage {
