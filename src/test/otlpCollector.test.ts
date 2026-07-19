@@ -225,6 +225,42 @@ suite('OtlpCollector', () => {
     assert.strictEqual(res.status, 200)
   })
 
+  test('merges resource-level attributes (e.g. session.id) onto every span', async () => {
+    const payload = {
+      resourceSpans: [{
+        resource: {
+          attributes: [
+            { key: 'session.id', value: { stringValue: 'native-session-uuid' } },
+          ]
+        },
+        scopeSpans: [{
+          spans: [
+            {
+              traceId: 't1', spanId: 's1', name: 'claude_code.interaction',
+              startTimeUnixNano: '1700000000000000000', endTimeUnixNano: '1700000001000000000',
+              attributes: [], status: { code: 0 },
+            },
+            {
+              traceId: 't1', spanId: 's2', name: 'claude_code.llm_request', parentSpanId: 's1',
+              startTimeUnixNano: '1700000000000000000', endTimeUnixNano: '1700000001000000000',
+              // span-level attribute should win over the resource-level one on key collision
+              attributes: [{ key: 'session.id', value: { stringValue: 'span-level-override' } }],
+              status: { code: 0 },
+            },
+          ]
+        }]
+      }]
+    }
+    const res = await postJson(TEST_PORT, '/v1/traces', payload)
+    assert.strictEqual(res.status, 200)
+    assert.strictEqual(store.addedSpans.length, 2)
+    const spans = store.addedSpans as Array<{ spanId: string; attributes: Array<{ key: string; value: { stringValue?: string } }> }>
+    const root = spans.find(s => s.spanId === 's1')!
+    const child = spans.find(s => s.spanId === 's2')!
+    assert.strictEqual(root.attributes.find(a => a.key === 'session.id')?.value.stringValue, 'native-session-uuid')
+    assert.strictEqual(child.attributes.find(a => a.key === 'session.id')?.value.stringValue, 'span-level-override')
+  })
+
   test('stop resolves cleanly', async () => {
     await collector.stop()
     // Second stop should also resolve without error
