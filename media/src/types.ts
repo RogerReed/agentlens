@@ -58,6 +58,8 @@ export interface SessionSummaryCard {
   projectPath?: string
   userRequest: string
   model: string
+  /** Distinct models used across this session's LLM calls, ordered by token volume (descending). `model` is `models[0]`. */
+  models?: string[]
   turns: number
   inputTokens: number
   outputTokens: number

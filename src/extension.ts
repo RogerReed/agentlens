@@ -180,11 +180,14 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   // ── Auto-configure agents ────────────────────────────────────────────────────
-  const [copilotResult, claudeResult, codexResult] = await Promise.all([
-    autoConfigureCopilot(port),
-    autoConfigureClaudeCode(port),
-    autoConfigureCodex(port),
-  ])
+  const autoConfigureAgents = agentLensCfg.get<boolean>('autoConfigureAgents', true)
+  const [copilotResult, claudeResult, codexResult] = autoConfigureAgents
+    ? await Promise.all([
+        autoConfigureCopilot(port),
+        autoConfigureClaudeCode(port),
+        autoConfigureCodex(port),
+      ])
+    : [{ changed: false }, { changed: false }, { changed: false }]
 
   if (copilotResult.error) {
     outputChannel.appendLine(`Auto-configure Copilot failed: ${copilotResult.error}`)

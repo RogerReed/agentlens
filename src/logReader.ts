@@ -34,6 +34,7 @@ import * as path from 'path'
 import * as os from 'os'
 import type { SessionSummaryCard, TimelineEntry } from './summarizers/summarizerTypes'
 import { VSCODE_FAMILY_IDE_NAMES } from './vscodeFamilyIdes'
+import { rankModelsByWeight } from './summarizers/helpers'
 
 // ── Cross-platform home resolution ────────────────────────────────────────────
 
@@ -326,6 +327,10 @@ export class LogReader {
     let peakContextPerTurn = 0
     let turns = 0, totalToolCalls = 0
     let hasFastMode = false
+    // Sessions can mix models (subagents on a cheaper model, or a mid-session /model
+    // switch) — track token volume per model so the card can report the dominant one
+    // instead of whichever model happened to answer last.
+    const modelTokens = new Map<string, number>()
     const filesChanged = new Set<string>()
     const filesWritten = new Set<string>()
     const filesRead    = new Set<string>()
@@ -369,17 +374,25 @@ export class LogReader {
         const rawUsage = msg?.['usage'] as Record<string, unknown> | undefined
         if (rawUsage?.['speed'] === 'fast') hasFastMode = true
         const usage = rawUsage as Record<string, number> | undefined
+        let msgTotalInput = 0, msgCacheRead = 0, msgCacheCreate = 0, msgOutput = 0
         if (usage) {
           const inp  = usage['input_tokens']                ?? 0
           const cr   = usage['cache_read_input_tokens']     ?? 0
           const cc   = usage['cache_creation_input_tokens'] ?? 0
+          msgTotalInput = inp + cr + cc
+          msgCacheRead = cr
+          msgCacheCreate = cc
+          msgOutput = usage['output_tokens'] ?? 0
           totalInput       += inp
-          totalOutput      += usage['output_tokens'] ?? 0
+          totalOutput      += msgOutput
           totalCacheRead   += cr
           totalCacheCreate += cc
           const turnContext = inp + cr + cc
           if (turnContext > peakContextPerTurn) peakContextPerTurn = turnContext
           turns++
+          if (model) {
+            modelTokens.set(model, (modelTokens.get(model) ?? 0) + msgTotalInput + msgOutput)
+          }
         }
         const content = (msg?.['content'] as Array<Record<string, unknown>>) ?? []
         let hasToolCall = false
@@ -398,14 +411,35 @@ export class LogReader {
           }
         }
         const responseText = (content.find(b => b['type'] === 'text') as Record<string,string> | undefined)?.['text']
-        timeline.push({ type: hasToolCall ? 'tool' : 'llm', spanId: `log-a-${idx}`, label: hasToolCall ? 'Tool calls' : 'Response', model: model || undefined, inputTokens: usage?.['input_tokens'], outputTokens: usage?.['output_tokens'], durationMs: 0, isError: false, timestamp: ts ?? '', responseText })
+        timeline.push({
+          type: hasToolCall ? 'tool' : 'llm',
+          spanId: `log-a-${idx}`,
+          label: hasToolCall ? 'Tool calls' : 'Response',
+          model: model || undefined,
+          inputTokens: msgTotalInput || undefined,
+          outputTokens: msgOutput || undefined,
+          cacheReadTokens: msgCacheRead || undefined,
+          cacheCreateTokens: msgCacheCreate || undefined,
+          durationMs: 0,
+          isError: false,
+          timestamp: ts ?? '',
+          responseText,
+        })
         idx++
       }
     }
 
     if (!firstTimestamp) return null
-    const effectiveModel = (model && hasFastMode) ? `${model}-fast` : model
-    return { workspace, card: _buildCard(sessionId, 'claude_code', effectiveModel || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, peakContextPerTurn, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesWritten, filesSearched: new Set(), userRequest, timeline, initiator }, workspace) }
+    // Rank by token volume rather than reporting whichever model answered last;
+    // the fast-mode suffix is a session-wide flag, so it's only applied to the
+    // primary (highest-volume) model, matching the existing single-value behavior.
+    const rankedModels = rankModelsByWeight(modelTokens)
+    const primaryBase = rankedModels[0] || model
+    const effectiveModel = (primaryBase && hasFastMode) ? `${primaryBase}-fast` : primaryBase
+    const models = rankedModels.length > 0
+      ? [effectiveModel || 'claude', ...rankedModels.slice(1)]
+      : (effectiveModel ? [effectiveModel] : [])
+    return { workspace, card: _buildCard(sessionId, 'claude_code', effectiveModel || 'claude', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate, peakContextPerTurn, turns, totalToolCalls, toolCounts, filesRead, filesChanged, filesWritten, filesSearched: new Set(), userRequest, timeline, initiator }, workspace, models) }
   }
 
   // ── Codex ───────────────────────────────────────────────────────────────────
@@ -1351,6 +1385,7 @@ function _buildCard(
   lastTimestamp: string,
   acc: CardAccum,
   workspace = '',
+  models?: string[],
 ): SessionSummaryCard {
   const startMs  = _parseTs(firstTimestamp)
   const endMs    = _parseTs(lastTimestamp)
@@ -1370,6 +1405,7 @@ function _buildCard(
     workspace,
     userRequest: acc.userRequest.slice(0, 500),
     model,
+    models: models ?? (model ? [model] : []),
     turns: acc.turns,
     inputTokens: totalContext,
     outputTokens: acc.totalOutput,

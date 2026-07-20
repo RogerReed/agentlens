@@ -149,13 +149,7 @@ export class DatabaseWriter {
   }
 
   private _writeSessionRow(card: SessionSummaryCard, workspace: string): void {
-    const costUsd = calcTokenCostUsd(
-      Math.max(0, card.inputTokens - card.cacheReadTokens - card.cacheCreateTokens),
-      card.cacheReadTokens,
-      card.cacheCreateTokens,
-      card.outputTokens,
-      card.model,
-    )
+    const costUsd = this._computeSessionCost(card)
     this.db.run(
       `INSERT OR REPLACE INTO sessions (
         session_id, trace_id, source, workspace, project_path, model,
@@ -164,8 +158,8 @@ export class DatabaseWriter {
         total_tool_calls, total_llm_calls, errors, outcome,
         is_sidechain, speed, user_request, tool_counts, loop_signals,
         files_read, files_changed, files_written, files_searched, files_changed_note, cost_usd,
-        data_source
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        data_source, models
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         card.sessionId,
         card.traceId,
@@ -197,8 +191,40 @@ export class DatabaseWriter {
         card.filesChangedNote ?? null,
         costUsd,
         card.dataSource,
+        JSON.stringify(card.models ?? (card.model ? [card.model] : [])),
       ]
     )
+  }
+
+  /**
+   * Sessions can span more than one model (a Task-tool subagent on a cheaper model,
+   * a mid-session /model switch, etc.). Pricing the whole session's aggregate tokens
+   * at one model's rate silently mis-bills whichever portion ran on a different model.
+   * When timeline entries carry more than one distinct model, price each entry at its
+   * own model and sum — otherwise this reduces to the old aggregate calculation
+   * (also correctly applies Anthropic's >200K tiered surcharge per call rather than
+   * to the session's cumulative total).
+   */
+  private _computeSessionCost(card: SessionSummaryCard): number {
+    const llmEntries = card.timeline.filter(e => e.type === 'llm')
+    const distinctModels = new Set(llmEntries.map(e => e.model).filter((m): m is string => Boolean(m)))
+
+    if (distinctModels.size <= 1) {
+      return calcTokenCostUsd(
+        Math.max(0, card.inputTokens - card.cacheReadTokens - card.cacheCreateTokens),
+        card.cacheReadTokens,
+        card.cacheCreateTokens,
+        card.outputTokens,
+        card.model,
+      )
+    }
+
+    return llmEntries.reduce((sum, entry) => {
+      const cacheRead = entry.cacheReadTokens ?? 0
+      const cacheCreate = entry.cacheCreateTokens ?? 0
+      const rawInput = Math.max(0, (entry.inputTokens ?? 0) - cacheRead - cacheCreate)
+      return sum + calcTokenCostUsd(rawInput, cacheRead, cacheCreate, entry.outputTokens ?? 0, entry.model || card.model)
+    }, 0)
   }
 
   private _writeTimelineEntry(sessionId: string, entry: TimelineEntry, position: number): void {

@@ -4,7 +4,7 @@ import {
   getAttrInt, nanoToMs, getFirstAttr,
   isCodexPromptSpanName, isCodexToolExecSpan, isCodexLlmSpanName,
   isCodexToolDecisionSpan, isCodexToolCallSpan, isCodexToolResultSpan,
-  summarizeToolResult, normalizeUserRequest,
+  summarizeToolResult, normalizeUserRequest, rankModelsByWeight,
 } from './helpers'
 
 export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
@@ -19,6 +19,7 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
     let inputTokens = 0, outputTokens = 0, cacheReadTokens = 0, cacheCreateTokens = 0
     let totalLlmCalls = 0, totalToolCalls = 0, errors = 0
     let model = ''
+    const modelTokens = new Map<string, number>()
     const toolCounts: Record<string, number> = {}
     const filesRead = new Set<string>()
     const filesSearched = new Set<string>()
@@ -67,6 +68,7 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
 
       const childModel = getFirstAttr(child, ['gen_ai.request.model', 'gen_ai.response.model', 'model'])
       if (childModel) { model = childModel }
+      const effectiveModel = childModel || model
 
       const { input: inTok, output: outTok, cacheRead, cacheCreate } = extractCodexTokenCounts(child)
 
@@ -91,6 +93,9 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
             outputTokens += outTok
             cacheReadTokens += cacheRead
             cacheCreateTokens += cacheCreate
+            if (effectiveModel) {
+              modelTokens.set(effectiveModel, (modelTokens.get(effectiveModel) ?? 0) + inTok + outTok + cacheRead + cacheCreate)
+            }
           }
           continue
         }
@@ -178,15 +183,20 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
         outputTokens += outTok
         cacheReadTokens += cacheRead
         cacheCreateTokens += cacheCreate
+        if (effectiveModel) {
+          modelTokens.set(effectiveModel, (modelTokens.get(effectiveModel) ?? 0) + inTok + outTok + cacheRead + cacheCreate)
+        }
         const ttftMs = getAttrInt(child, 'ttft_ms') || getAttrInt(child, 'codex.ttft_ms') || lastTtftMs || 0
         lastTtftMs = 0
         timeline.push({
           type: 'llm' as const,
           spanId: child.spanId,
-          label: childModel || model || 'Codex',
-          model: childModel || model,
-          inputTokens: inTok,
+          label: effectiveModel || 'Codex',
+          model: effectiveModel || undefined,
+          inputTokens: inTok + cacheRead + cacheCreate,
           outputTokens: outTok,
+          cacheReadTokens: cacheRead || undefined,
+          cacheCreateTokens: cacheCreate || undefined,
           ttft: ttftMs || undefined,
           action: getFirstAttr(child, ['codex.event.type', 'event.kind', 'stop_reason']) || undefined,
           responseText: getFirstAttr(child, ['output_text', 'assistant_response']) || undefined,
@@ -203,7 +213,7 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
         }
         backgroundSpans.push({
           name: child.name,
-          model: childModel || model,
+          model: effectiveModel,
           purpose: child.name,
           inputTokens: inTok,
           outputTokens: outTok,
@@ -246,6 +256,13 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
     const totalInput = inputTokens
     const cacheHitRate = totalInput > 0 ? cacheReadTokens / totalInput : 0
 
+    // Rank by token volume rather than reporting whichever model handled the last
+    // call — falls back to the last-seen model attribute for in-progress sessions
+    // with no measured tokens yet.
+    const rankedModels = rankModelsByWeight(modelTokens)
+    const primaryModel = rankedModels[0] || model
+    const models = rankedModels.length > 0 ? rankedModels : (primaryModel ? [primaryModel] : [])
+
     const allEndTimes = traceSpans.map(s => nanoToMs(s.endTime) || s.receivedAt || 0).filter(t => t > 0)
     const endMs = allEndTimes.length > 0 ? Math.max(...allEndTimes) : startMs
     const durationMs = endMs - startMs
@@ -258,7 +275,8 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
       conversationId: conversationId || undefined,
       workspace,
       userRequest,
-      model,
+      model: primaryModel,
+      models,
       turns: totalLlmCalls,
       inputTokens: totalInput,
       outputTokens,

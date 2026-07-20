@@ -516,73 +516,81 @@ export class OtlpCollector {
   }
 
   private processTraces(payload: unknown, collectorPath = '/v1/traces'): number {
-    const p = payload as { resourceSpans?: Array<{ scopeSpans?: Array<{ spans?: unknown[] }> }> }
-    const rawSpans = p?.resourceSpans?.flatMap((rs) =>
-      rs.scopeSpans?.flatMap((ss) => ss.spans ?? []) ?? []
-    ) ?? []
-    
-    let count = 0
-    for (const raw of rawSpans) {
-      const span = raw as Record<string, unknown>
-      if (typeof span.traceId !== 'string' || typeof span.spanId !== 'string' || typeof span.name !== 'string') {
-        continue
-      }
+    const p = payload as {
+      resourceSpans?: Array<{ resource?: { attributes?: unknown }; scopeSpans?: Array<{ spans?: unknown[] }> }>
+    }
+    const resourceSpans = p?.resourceSpans ?? []
 
-      let attrs = this.toSpanAttributes(span.attributes)
-      if (this.isCodexWebsocketSpan(span.name, attrs)) { continue }
-      let traceId = span.traceId
-      const parentSpanId = (span.parentSpanId as string) || undefined
-      const mappedCodexSessionId = this.codexSessionByOtelTraceId.get(span.traceId)
-      if (mappedCodexSessionId) {
-        traceId = mappedCodexSessionId
-        attrs = this.setStringAttr(attrs, 'codex.session.id', mappedCodexSessionId)
-        attrs = this.withStringAttr(attrs, 'otel.trace_id', span.traceId)
-      } else if (this.isCodexTraceSpan(span.name, attrs)) {
-        const conversationId = this.getAttrFrom(attrs, [
-          'thread.id', 'thread_id',
-          'conversation.id', 'conversation_id',
-          'codex.conversation.id',
-        ])
-        const turnId = this.getAttrFrom(attrs, ['turn.id', 'turn_id', 'codex.turn.id'])
-        if (conversationId && turnId) {
-          const sessionId = this.resolveCodexSessionId({
-            conversationId,
-            otlpTraceId: span.traceId,
-            turnId,
-            spanName: span.name,
-          })
-          if (sessionId) {
-            traceId = sessionId
-            attrs = this.setStringAttr(attrs, 'codex.session.id', sessionId)
-            attrs = this.setStringAttr(attrs, 'codex.conversation.id', conversationId)
-            attrs = this.setStringAttr(attrs, 'codex.turn.id', turnId)
-          }
-          if (sessionId && span.traceId !== traceId) {
-            attrs = this.withStringAttr(attrs, 'otel.trace_id', span.traceId)
-          }
-          if (sessionId && !parentSpanId && !this.codexSessionRootByTrace.has(traceId)) {
-            this.codexSessionRootByTrace.set(traceId, span.spanId)
+    let count = 0
+    for (const rs of resourceSpans) {
+      // Resource attributes (e.g. session.id) apply to every span emitted by this
+      // process — merge them in so per-span attribute lookups can see them too.
+      // Mirrors the same merge already done for log records in processLogs().
+      const resourceAttrs = this.toSpanAttributes(rs.resource?.attributes)
+      const rawSpans = rs.scopeSpans?.flatMap((ss) => ss.spans ?? []) ?? []
+
+      for (const raw of rawSpans) {
+        const span = raw as Record<string, unknown>
+        if (typeof span.traceId !== 'string' || typeof span.spanId !== 'string' || typeof span.name !== 'string') {
+          continue
+        }
+
+        let attrs = this.mergeAttributes(this.toSpanAttributes(span.attributes), resourceAttrs)
+        if (this.isCodexWebsocketSpan(span.name, attrs)) { continue }
+        let traceId = span.traceId
+        const parentSpanId = (span.parentSpanId as string) || undefined
+        const mappedCodexSessionId = this.codexSessionByOtelTraceId.get(span.traceId)
+        if (mappedCodexSessionId) {
+          traceId = mappedCodexSessionId
+          attrs = this.setStringAttr(attrs, 'codex.session.id', mappedCodexSessionId)
+          attrs = this.withStringAttr(attrs, 'otel.trace_id', span.traceId)
+        } else if (this.isCodexTraceSpan(span.name, attrs)) {
+          const conversationId = this.getAttrFrom(attrs, [
+            'thread.id', 'thread_id',
+            'conversation.id', 'conversation_id',
+            'codex.conversation.id',
+          ])
+          const turnId = this.getAttrFrom(attrs, ['turn.id', 'turn_id', 'codex.turn.id'])
+          if (conversationId && turnId) {
+            const sessionId = this.resolveCodexSessionId({
+              conversationId,
+              otlpTraceId: span.traceId,
+              turnId,
+              spanName: span.name,
+            })
+            if (sessionId) {
+              traceId = sessionId
+              attrs = this.setStringAttr(attrs, 'codex.session.id', sessionId)
+              attrs = this.setStringAttr(attrs, 'codex.conversation.id', conversationId)
+              attrs = this.setStringAttr(attrs, 'codex.turn.id', turnId)
+            }
+            if (sessionId && span.traceId !== traceId) {
+              attrs = this.withStringAttr(attrs, 'otel.trace_id', span.traceId)
+            }
+            if (sessionId && !parentSpanId && !this.codexSessionRootByTrace.has(traceId)) {
+              this.codexSessionRootByTrace.set(traceId, span.spanId)
+            }
           }
         }
+        // Inject gen_ai response content buffered from a prior log event, if available.
+        const bufKey = `${traceId}:${span.spanId}`
+        const bufferedContent = this.genAiResponseBuffer.get(bufKey)
+        if (bufferedContent) {
+          attrs = this.setStringAttr(attrs, 'gen_ai.output.messages', bufferedContent)
+          this.genAiResponseBuffer.delete(bufKey)
+        }
+        this.store.addSpan({
+          traceId,
+          spanId: span.spanId,
+          parentSpanId,
+          name: span.name,
+          startTime: span.startTimeUnixNano as string,
+          endTime: span.endTimeUnixNano as string,
+          attributes: this.setStringAttr(attrs, '_agentlens.collector_path', collectorPath),
+          status: span.status as { code: number; message?: string } | undefined
+        })
+        count++
       }
-      // Inject gen_ai response content buffered from a prior log event, if available.
-      const bufKey = `${traceId}:${span.spanId}`
-      const bufferedContent = this.genAiResponseBuffer.get(bufKey)
-      if (bufferedContent) {
-        attrs = this.setStringAttr(attrs, 'gen_ai.output.messages', bufferedContent)
-        this.genAiResponseBuffer.delete(bufKey)
-      }
-      this.store.addSpan({
-        traceId,
-        spanId: span.spanId,
-        parentSpanId,
-        name: span.name,
-        startTime: span.startTimeUnixNano as string,
-        endTime: span.endTimeUnixNano as string,
-        attributes: this.setStringAttr(attrs, '_agentlens.collector_path', collectorPath),
-        status: span.status as { code: number; message?: string } | undefined
-      })
-      count++
     }
     return count
   }

@@ -115,6 +115,18 @@ export function getFirstAttr(span: Span, keys: string[]): string {
   return ''
 }
 
+/**
+ * Ranks models by total token volume, descending. Sessions can call more than one
+ * model (e.g. a subagent on a cheaper model, or a user switching mid-session) — this
+ * gives a token-weighted "primary model" (ranked[0]) that's more representative than
+ * whichever model happened to handle the last call, plus the full list for display.
+ */
+export function rankModelsByWeight(modelTokens: Map<string, number>): string[] {
+  return [...modelTokens.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([m]) => m)
+}
+
 export function isCodexPromptSpanName(name: string): boolean {
   return name === 'codex.user_prompt'
     || name === 'codex.prompt'
