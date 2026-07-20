@@ -146,6 +146,11 @@
           "default": 4318,
           "description": "Local port for OTLP trace receiver"
         },
+        "agentLens.autoConfigureAgents": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically write OTEL telemetry settings into Claude Code's (~/.claude/settings.json), Codex's (~/.codex/config.toml), and GitHub Copilot's own configuration so they send session data to AgentLens. Disabling this leaves your agents' configuration untouched — you can still configure OTEL manually (see the Help tab) or rely on agentLens.enableLogIngestion alone. Codex and Copilot CLI sessions have little to show without OTEL: their log files carry only aggregate totals, no per-turn tool calls or responses."
+        },
         "agentLens.enableOtelIngestion": {
           "type": "boolean",
           "default": true,
@@ -154,7 +159,7 @@
         "agentLens.enableLogIngestion": {
           "type": "boolean",
           "default": true,
-          "description": "Read local session logs for Claude Code, Codex, and Copilot CLI as a data source. Log data has lower fidelity than OTEL — timing, speed, and loop signals are not available. OTEL data always takes precedence: if a session exists from OTEL, the log file is ignored. Loading is done incrementally in the background and will not block the UI."
+          "description": "Read local session logs for Claude Code, Codex, and Copilot CLI as a data source. Log data has lower fidelity than OTEL — timing, speed, and loop signals are not available for Codex and Copilot CLI, whose log files carry only aggregate totals. Log and OTEL sessions are shown as separate entries rather than merged. Loading is done incrementally in the background and will not block the UI."
         },
         "agentLens.enableMcpServer": {
           "type": "boolean",
