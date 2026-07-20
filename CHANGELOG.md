@@ -2,6 +2,18 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.8.8] — 2026-07-19
+
+### Fixed
+
+- **Sessions using more than one model showed the wrong model and mispriced cost** — session cards reported whichever model happened to handle the *last* LLM call, even when a session legitimately used more than one (a Task-tool subagent on a cheaper model, switching models mid-conversation via `/model`). Cost was computed by pricing the session's entire token count at that one model's rate, so mixed-model sessions could be significantly over- or under-billed. Fix: the reported model is now the token-weighted dominant one, a full list of models used is exposed and shown as a "+N" badge in the Sessions tab, and cost is computed per LLM call at that call's own rate whenever a session's timeline shows more than one distinct model — applied consistently in both the extension's stored cost and the webview's live cost calculator, which had the same bug independently (#165)
+
+### Added
+
+- **`agentLens.autoConfigureAgents` setting** (default on) — the extension automatically writes OTEL telemetry settings into Claude Code's, Codex's, and GitHub Copilot's own configuration on activation; this is now an inspectable, toggleable setting instead of an unconditional side effect (#165)
+
+---
+
 ## [0.8.7] — 2026-07-19
 
 ### Chore
