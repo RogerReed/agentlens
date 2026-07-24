@@ -204,6 +204,7 @@ chmod +x scripts/configure-agents.sh
         </tbody>
       </table>
       <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Start a short <a href="#gl-session">session</a> and check whether a session card appears in the sidebar to confirm data is arriving.</p>
+      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Prefer not to run the script? The VS Code-family <strong>IDE extension</strong> version of AgentLens auto-configures OTEL for all supported agents automatically on activation — no script needed.</p>
     </div>
   ) : (
     <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">

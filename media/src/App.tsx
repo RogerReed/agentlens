@@ -27,7 +27,10 @@ import { instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instr
 import { IngestionToggles, McpToggle } from './tabs/Settings'
 
 
-const sidebarOpen = signal(true)
+// Standalone opens with the left activity sidebar collapsed by default, since it
+// duplicates content already visible in the main dashboard. VS Code's native
+// sidebar (toggled via workbench commands, not this panel) defaults to open.
+const sidebarOpen = signal(window.__STANDALONE__ !== true)
 const configOpen = signal(false)
 const bellOpen = signal(false)
 
