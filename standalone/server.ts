@@ -1235,13 +1235,26 @@ const uiServer = http.createServer((req, res) => {
   if (req.method === 'POST' && url === '/action') {
     const chunks: Buffer[] = []
     req.on('data', (c: Buffer) => chunks.push(c))
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const body = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as { type?: string }
         if (body.type === 'clearAll') {
           spans = []
           try { fs.writeFileSync(DATA_FILE, '[]') } catch (e) { console.warn('[AgentLens] Could not clear data file:', e) }
           pushUpdate()
+        } else if (body.type === 'reconfigureOtel') {
+          const [claudeCode, codex, copilotResults] = await Promise.all([
+            autoConfigureClaudeCode(OTLP_PORT),
+            autoConfigureCodex(OTLP_PORT),
+            autoConfigureCopilotStandalone(OTLP_PORT),
+          ])
+          const copilot = {
+            changed: copilotResults.some(r => r.changed),
+            error: copilotResults.find(r => r.error)?.error,
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ claudeCode, codex, copilot }))
+          return
         }
       } catch (e) { console.warn('[AgentLens] Malformed /action body:', e) }
       res.writeHead(200); res.end()

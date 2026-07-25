@@ -117,6 +117,13 @@ export const enableOtelIngestion = signal(true)
 export const enableLogIngestion = signal(true)
 export const otlpPort = signal(4318)
 
+export type OtelReconfigureResult = {
+  claudeCode: { changed: boolean; error?: string }
+  codex: { changed: boolean; error?: string }
+  copilot: { changed: boolean; error?: string }
+} | { error: string }
+export const otelReconfigureResult = signal<OtelReconfigureResult | null>(null)
+
 // ── Session retention signals ─────────────────────────────────────────────────
 
 export const swRetainedSessions = signal<SessionSummaryCard[]>([])

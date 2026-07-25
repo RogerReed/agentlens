@@ -189,7 +189,7 @@ Each signal includes a specific recommended action and a **Copy for {Agent}** bu
 
 ## Manual Configuration
 
-The VS Code extension configures agents automatically on first activation. For standalone or Docker mode, run the included setup scripts (see [Configuring Agents for Local / Docker](#configuring-agents-for-local--docker) above). Replace `4318` with your custom port if you changed `agentLens.otlpPort`.
+The VS Code extension and the standalone (`npx`) server both auto-configure Copilot, Claude Code, and Codex on every startup — it's idempotent, so it only rewrites a config file when something is actually missing or different, and does nothing on subsequent starts once already configured. The extension shows a one-time notification (and logs to the Output panel) only when it actually changes something; disable it with the `agentLens.autoConfigureAgents` setting if you'd rather manage agent config yourself. If you change an agent's OTEL settings by hand later and want AgentLens to reapply its own values, use the **Configure OTEL** button in the Settings panel (gear icon) instead of waiting for the next restart. Docker mode runs the same auto-configure code, but it writes to the *container's* filesystem, not your host machine, so it has no effect on your host agents unless you volume-mount their config paths in — use the setup scripts below instead. Replace `4318` with your custom port if you changed `agentLens.otlpPort`.
 
 ### GitHub Copilot
 
@@ -361,6 +361,7 @@ Open the VS Code Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for
 | ------- | ------- | ----------- |
 | `agentLens.otlpPort` | `4318` | Local port for the OTLP trace receiver |
 | `agentLens.enableLogIngestion` | `true` | Read local session log files from Claude Code, Codex, and Copilot CLI. Disable if you only want OTEL data. |
+| `agentLens.autoConfigureAgents` | `true` | Automatically write OTEL telemetry settings into Claude Code's, Codex's, and Copilot's own configuration on every activation. Disabling leaves your agents' configuration untouched — use the **Configure OTEL** button in Settings for a one-off manual apply, or configure OTEL manually (see [Manual Configuration](#manual-configuration)). |
 | `agentLens.sessionRetentionDays` | `90` | How many days to keep session history in the local database |
 
 ## Agent Data Formats

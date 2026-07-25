@@ -208,6 +208,17 @@ export async function activate(context: vscode.ExtensionContext) {
     )
   }
 
+  const configuredAgents: string[] = []
+  if (copilotResult.changed) configuredAgents.push('Copilot')
+  if (claudeResult.changed) configuredAgents.push('Claude Code')
+  if (codexResult.changed) configuredAgents.push('Codex')
+  if (configuredAgents.length > 0) {
+    outputChannel.appendLine(`Auto-configured OTEL telemetry for: ${configuredAgents.join(', ')}`)
+    vscode.window.showInformationMessage(
+      `AgentLens configured OTEL telemetry for ${configuredAgents.join(', ')} — restart the agent(s) to start streaming traces. Disable via the agentLens.autoConfigureAgents setting.`
+    )
+  }
+
   // ── Panels ───────────────────────────────────────────────────────────────────
   const repo = repository ?? fallbackRepository(store)
   const provider = new SidebarPanel(repo, context.extensionUri)
