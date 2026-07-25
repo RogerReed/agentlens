@@ -2,6 +2,23 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.9.0] — 2026-07-24
+
+### Added
+
+- **"Configure OTEL" button in Settings** — manually re-applies AgentLens's OTEL configuration to Claude Code, Codex, and Copilot on demand, in both the VS Code extension and standalone. Useful when you've changed one of those agents' telemetry settings by hand and want it pointed back at AgentLens without waiting for the next restart (#166)
+- **Notification on successful OTEL auto-configuration** — the VS Code extension now shows an info toast and logs to the Output panel whenever auto-configuration actually changes an agent's config, instead of doing so silently. Stays quiet once already configured, since the underlying write is idempotent (#166)
+- **"Live · Current Session Activity" header** on the live session sidebar, in both the standalone dashboard's left panel and the VS Code extension's native sidebar view, making clear what that panel shows (#166)
+- **Log-only sessions now explain why the Trace, Flow, Tools, and Files tabs are empty** instead of rendering silently blank, with a link to the Help tab's OTEL setup section (#166)
+
+### Fixed
+
+- **Standalone's live session sidebar no longer opens expanded by default** — it duplicated content already visible in the main dashboard; VS Code's own native sidebar is unaffected (#166)
+- **Flow tab showed a nonzero LLM-call count next to an empty canvas** for log-only Codex/Copilot sessions — the tab label counts LLM calls from a field every ingestion path populates, but the canvas itself renders from the session timeline, which log ingestion leaves empty. Now shows a labeled empty state instead of a near-invisible canvas-drawn message (#166)
+- **"Configure OTEL" button hung forever on "Configuring…" in standalone mode** — the standalone dashboard polyfills the VS Code webview API so its `postMessage` calls always take that code path instead of falling back to a direct fetch, but the polyfill had no handler for the new message type, so the request silently went nowhere (#166)
+
+---
+
 ## [0.8.8] — 2026-07-19
 
 ### Fixed
