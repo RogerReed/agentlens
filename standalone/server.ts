@@ -910,6 +910,15 @@ function getHtml(): string {
                 }));
               })
               .catch(function(e) { console.warn('[AgentLens] timeline fetch failed', e); });
+          } else if (msg.type === 'reconfigureOtel') {
+            fetch('/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'reconfigureOtel' }) })
+              .then(function(r) { return r.json(); })
+              .then(function(results) {
+                window.dispatchEvent(new MessageEvent('message', { data: { type: 'reconfigureOtelResult', results: results } }));
+              })
+              .catch(function(e) {
+                window.dispatchEvent(new MessageEvent('message', { data: { type: 'reconfigureOtelResult', results: { error: String(e) } } }));
+              });
           }
         }
       };
