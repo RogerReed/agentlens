@@ -4,6 +4,7 @@ import { SessionRepository } from './sessionRepository'
 import { InstructionRepository } from './database/instructionRepository'
 import { detectInstructionFiles, appendSuggestion, removeSuggestion } from './instructionFiles'
 import { computeBaseline } from './instructionEffectiveness'
+import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } from './autoConfig'
 
 export class DashboardPanel {
   public static currentPanel: DashboardPanel | undefined
@@ -115,6 +116,14 @@ export class DashboardPanel {
         }
       } else if (msg.type === 'setVsCodeConfig' && typeof msg.key === 'string') {
         void vscode.workspace.getConfiguration('agentLens').update(msg.key as string, msg.value, vscode.ConfigurationTarget.Global)
+      } else if (msg.type === 'reconfigureOtel') {
+        const port = vscode.workspace.getConfiguration('agentLens').get<number>('otlpPort', 4318)
+        const [copilot, claudeCode, codex] = await Promise.all([
+          autoConfigureCopilot(port),
+          autoConfigureClaudeCode(port),
+          autoConfigureCodex(port),
+        ])
+        this.panel.webview.postMessage({ type: 'reconfigureOtelResult', results: { copilot, claudeCode, codex } })
       } else if (msg.type === 'getInstructionFiles' && msg.workspace) {
         const wsFolders = vscode.workspace.workspaceFolders
         const wsRoot = (wsFolders?.[0]?.uri.fsPath) ?? (msg.workspace as string)

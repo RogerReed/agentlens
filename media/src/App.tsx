@@ -10,7 +10,7 @@ import {
   sessionTextFilter, filteredSessions, evidenceSessionIds,
   sessionSortKey, sessionSortDir,
   workspaceFilter, availableWorkspaces, shortWorkspaceName,
-  enableOtelIngestion, enableLogIngestion, otlpPort,
+  enableOtelIngestion, enableLogIngestion, otlpPort, otelReconfigureResult, type OtelReconfigureResult,
 } from './state'
 import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, WorkspaceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
 
@@ -24,10 +24,13 @@ import { Help } from './tabs/Help'
 import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
 import { instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instructions'
-import { IngestionToggles, McpToggle } from './tabs/Settings'
+import { IngestionToggles, McpToggle, OtelReconfigureButton } from './tabs/Settings'
 
 
-const sidebarOpen = signal(true)
+// Standalone opens with the left activity sidebar collapsed by default, since it
+// duplicates content already visible in the main dashboard. VS Code's native
+// sidebar (toggled via workbench commands, not this panel) defaults to open.
+const sidebarOpen = signal(window.__STANDALONE__ !== true)
 const configOpen = signal(false)
 const bellOpen = signal(false)
 
@@ -99,6 +102,7 @@ function ConfigPanel() {
         >×</button>
       </div>
       <IngestionToggles />
+      <OtelReconfigureButton />
       <McpToggle />
       <CollapsibleSection title="Alerts">
         <Alerts />
@@ -301,6 +305,7 @@ export function App() {
         enableOtelIngestion?: boolean
         enableLogIngestion?: boolean
         otlpPort?: number
+        results?: OtelReconfigureResult
       }
       if (msg.type === 'update') {
         if (msg.enableOtelIngestion !== undefined) enableOtelIngestion.value = msg.enableOtelIngestion
@@ -365,6 +370,8 @@ export function App() {
         appliedSuggestions.value = (msg as unknown as {records: typeof appliedSuggestions.value}).records
       } else if (msg.type === 'dismissedSuggestions' && Array.isArray((msg as unknown as {ids?: unknown}).ids)) {
         dismissedIds.value = new Set((msg as unknown as {ids: string[]}).ids)
+      } else if (msg.type === 'reconfigureOtelResult' && msg.results) {
+        otelReconfigureResult.value = msg.results
       } else if (msg.type === 'instructionApplied') {
         // Re-request applied list after successful apply — handled by appliedSuggestions message
       } else if (msg.type === 'searchResults' && msg.sessions != null) {

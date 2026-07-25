@@ -204,11 +204,12 @@ chmod +x scripts/configure-agents.sh
         </tbody>
       </table>
       <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Start a short <a href="#gl-session">session</a> and check whether a session card appears in the sidebar to confirm data is arriving.</p>
+      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Prefer not to run the script? The standalone server already tried to auto-configure OTEL for you on startup — check its terminal output for "configured" or "Could not auto-configure" lines. The VS Code-family <strong>IDE extension</strong> version of AgentLens does the same thing automatically on every activation, with an in-editor notification, if you'd rather run it that way — no script needed.</p>
     </div>
   ) : (
     <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
       <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
-      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">AgentLens automatically configures all supported agents on first activation. Works in VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro, and other VS Code-family IDEs. Just restart each <a href="#gl-agent">agent</a> once — <a href="#gl-session">sessions</a> will start appearing immediately.</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">AgentLens automatically configures all supported agents every time it activates — it only rewrites a config file when something's actually missing, so this is silent after the first successful run. Works in VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro, and other VS Code-family IDEs. Just restart each <a href="#gl-agent">agent</a> once — <a href="#gl-session">sessions</a> will start appearing immediately. Changed an agent's OTEL settings yourself and want AgentLens's values back? Use the <strong>Configure OTEL</strong> button in Settings (gear icon) instead of waiting for the next restart. Disable auto-configuration entirely via the <code style={codeStyle}>agentLens.autoConfigureAgents</code> setting.</p>
       <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart after AgentLens activates:</p>
       <table style="font-size:11px;border-collapse:collapse;width:100%">
         <tbody style="color:var(--muted)">

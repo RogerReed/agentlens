@@ -910,6 +910,15 @@ function getHtml(): string {
                 }));
               })
               .catch(function(e) { console.warn('[AgentLens] timeline fetch failed', e); });
+          } else if (msg.type === 'reconfigureOtel') {
+            fetch('/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'reconfigureOtel' }) })
+              .then(function(r) { return r.json(); })
+              .then(function(results) {
+                window.dispatchEvent(new MessageEvent('message', { data: { type: 'reconfigureOtelResult', results: results } }));
+              })
+              .catch(function(e) {
+                window.dispatchEvent(new MessageEvent('message', { data: { type: 'reconfigureOtelResult', results: { error: String(e) } } }));
+              });
           }
         }
       };
@@ -953,7 +962,10 @@ function getHtml(): string {
 
   <div id="sa-wrap">
     <!-- ── Sidebar (live session monitor) ────────────────────────────────── -->
-    <div id="sa-sidebar">
+    <div id="sa-sidebar" class="sa-collapsed">
+      <div style="flex-shrink:0;padding:7px 10px;border-bottom:1px solid var(--vscode-panel-border)" title="Updates live as the current agent session progresses">
+        <span style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--vscode-descriptionForeground);font-weight:600">Live &middot; Current Session Activity</span>
+      </div>
       <div style="flex:1;overflow-y:auto;padding:8px 8px 8px;font-family:var(--vscode-font-family);color:var(--vscode-foreground)">
         <!-- Status row -->
         <div class="sb-card" style="margin-bottom:6px">
@@ -1232,13 +1244,26 @@ const uiServer = http.createServer((req, res) => {
   if (req.method === 'POST' && url === '/action') {
     const chunks: Buffer[] = []
     req.on('data', (c: Buffer) => chunks.push(c))
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const body = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as { type?: string }
         if (body.type === 'clearAll') {
           spans = []
           try { fs.writeFileSync(DATA_FILE, '[]') } catch (e) { console.warn('[AgentLens] Could not clear data file:', e) }
           pushUpdate()
+        } else if (body.type === 'reconfigureOtel') {
+          const [claudeCode, codex, copilotResults] = await Promise.all([
+            autoConfigureClaudeCode(OTLP_PORT),
+            autoConfigureCodex(OTLP_PORT),
+            autoConfigureCopilotStandalone(OTLP_PORT),
+          ])
+          const copilot = {
+            changed: copilotResults.some(r => r.changed),
+            error: copilotResults.find(r => r.error)?.error,
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ claudeCode, codex, copilot }))
+          return
         }
       } catch (e) { console.warn('[AgentLens] Malformed /action body:', e) }
       res.writeHead(200); res.end()

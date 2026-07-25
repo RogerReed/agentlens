@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { rangedSessions, sessionSummary, sessionTimelines, focusedSessionId, vscode } from '../state'
 import { getAgentSourceLabel, getAgentColor, formatMs, formatSessionTime } from '../utils'
 import { calcEntryCost, fmtUsd } from '../sessionMetrics'
+import { LogIngestionNote } from './IngestionNote'
 import type { SessionSummaryCard, TimelineEntry } from '../types'
 
 type FlowCanvasEl = HTMLCanvasElement & { __flowDraw?: () => void; __flowCenter?: () => void }
@@ -139,6 +140,9 @@ export function FlowCanvas({ sess, height = 520 }: { sess: SessionSummaryCard; h
   if (!sessionTimelines.value[sess.sessionId] && vscode) {
     vscode.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
   }
+
+  const hasTimelineData = ((sessionTimelines.value[sess.sessionId] ?? sess.timeline) ?? [])
+    .some(e => e.type === 'llm' || e.type === 'tool')
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -628,6 +632,15 @@ export function FlowCanvas({ sess, height = 520 }: { sess: SessionSummaryCard; h
       if (prog) prog.textContent = (st.playbackIdx + 1) + ' / ' + st.playbackTurns.length
       draw()
     }, speedRef.current)
+  }
+
+  if (!hasTimelineData) {
+    return (
+      <div class="empty-state" style={`min-height:${Math.min(height, 160)}px;display:flex;flex-direction:column;align-items:center;justify-content:center`}>
+        No flow data for this session
+        {sess.dataSource === 'log' && <LogIngestionNote feature="flow" />}
+      </div>
+    )
   }
 
   return (

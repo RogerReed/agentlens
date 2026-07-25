@@ -326,6 +326,11 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     padding: 8px 10px; margin-bottom: 8px; border-radius: 4px;
     font-size: 11px; line-height: 1.4;
   }
+  .sb-live-header {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--vscode-descriptionForeground); font-weight: 600;
+    padding-bottom: 6px; margin-bottom: 2px;
+  }
 </style>
 </head>
 <body>
@@ -338,6 +343,8 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
   </div>` : ''}
 
   <div class="sb-body">
+
+    <div class="sb-live-header" title="Updates live as the current agent session progresses">Live &middot; Current Session Activity</div>
 
     <!-- Status row -->
     <div class="sb-card" style="margin-bottom:6px">

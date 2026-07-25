@@ -3,7 +3,7 @@ import {
   filteredSessions, sessionSummary, sessionTimelines, burnRateData,
   focusedSessionId, vscode, ignoredInsightKeys,
   sessionSortKey, sessionSortDir, type SortKey,
-  workspaceFilter, shortWorkspaceName,
+  workspaceFilter, shortWorkspaceName, goToHelp,
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
@@ -16,6 +16,7 @@ import { buildDisplaySummary } from '../utils'
 import { Step, StepRow } from './Traces'
 import { FlowCanvas } from './Flow'
 import { ToolsChart } from './Tools'
+import { LogIngestionNote } from './IngestionNote'
 import type { SessionSummaryCard } from '../types'
 
 // ── Session detail panel (shown in expanded row) ──────────────────────────────
@@ -133,7 +134,10 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
                 <div style="margin-bottom:10px;padding:7px 10px;border-radius:4px;border-left:3px solid var(--vscode-editorWarning-foreground,#cca700);background:var(--hover);font-size:11px;color:var(--muted);line-height:1.5">
                   <span style="color:var(--vscode-editorWarning-foreground,#cca700);font-weight:600">Log-only session</span>
                   {' — '}
-                  {parts.join(', ')} not available from local logs. Enable OTEL ingestion via the Help tab for full telemetry.
+                  {parts.join(', ')} not available from local logs.{' '}
+                  <a onClick={() => goToHelp('help-config')} style="color:var(--vscode-textLink-foreground,#4fc3f7);cursor:pointer;text-decoration:underline">
+                    Enable OTEL ingestion
+                  </a>{' '}for full telemetry.
                 </div>
               )
             })()}
@@ -188,7 +192,12 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
           <div>
             {steps.length === 0
               ? (timelines[sess.sessionId] !== undefined
-                  ? <div class="empty-state" style="padding:12px 0">No trace data for this session</div>
+                  ? (
+                    <div class="empty-state" style="padding:12px 0">
+                      No trace data for this session
+                      {sess.dataSource === 'log' && <LogIngestionNote feature="trace" />}
+                    </div>
+                  )
                   : <div class="empty-state" style="padding:12px 0">Loading…</div>)
               : (
                 <div class="waterfall">
@@ -222,7 +231,12 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
         {section === 'files' && (
           <div>
             {sess.filesChanged.length === 0
-              ? <div class="empty-state" style="padding:12px 0">No files modified</div>
+              ? (
+                <div class="empty-state" style="padding:12px 0">
+                  No files modified
+                  {sess.dataSource === 'log' && <LogIngestionNote feature="file change" />}
+                </div>
+              )
               : (
                 <div style="display:flex;flex-direction:column;gap:3px">
                   {sess.filesChanged.map(f => (

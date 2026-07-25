@@ -1,5 +1,6 @@
 import { rangedSessions, COLORS } from '../state'
 import { getAgentColor, getAgentSourceLabel } from '../utils'
+import { LogIngestionNote } from './IngestionNote'
 import type { SessionSummaryCard } from '../types'
 
 // ── Shared donut chart (used by Tools tab and Sessions detail) ─────────────────
@@ -19,7 +20,13 @@ export function ToolsChart({ sessions }: { sessions: SessionSummaryCard[] }) {
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1])
 
   if (entries.length === 0) {
-    return <div class="empty-state">No tool calls recorded for this session</div>
+    const allLog = sessions.length > 0 && sessions.every(s => s.dataSource === 'log')
+    return (
+      <div class="empty-state">
+        No tool calls recorded for this session
+        {allLog && <LogIngestionNote feature="tool call" />}
+      </div>
+    )
   }
 
   const total = entries.reduce((sum, e) => sum + e[1], 0)

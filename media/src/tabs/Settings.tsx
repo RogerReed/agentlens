@@ -1,5 +1,5 @@
-import { useState } from 'preact/hooks'
-import { enableOtelIngestion, enableLogIngestion, otlpPort, vscode } from '../state'
+import { useEffect, useState } from 'preact/hooks'
+import { enableOtelIngestion, enableLogIngestion, otlpPort, vscode, otelReconfigureResult, type OtelReconfigureResult } from '../state'
 
 function sendConfig(key: string, value: boolean) {
   if (vscode) {
@@ -67,6 +67,57 @@ export function IngestionToggles() {
           Clear All Data
         </button>
       </div>
+    </div>
+  )
+}
+
+function summarizeReconfigure(result: OtelReconfigureResult): string {
+  if ('error' in result) return `Failed: ${result.error}`
+  const labels: Record<string, string> = { claudeCode: 'Claude Code', codex: 'Codex', copilot: 'Copilot' }
+  const changed = Object.entries(result).filter(([, r]) => r.changed).map(([k]) => labels[k])
+  const errors = Object.entries(result).filter(([, r]) => r.error).map(([k, r]) => `${labels[k]} (${r.error})`)
+  if (errors.length > 0) return `Failed: ${errors.join(', ')}`
+  if (changed.length === 0) return 'Already up to date — no changes needed.'
+  return `Configured: ${changed.join(', ')}. Restart the agent(s) to start streaming traces.`
+}
+
+export function OtelReconfigureButton() {
+  const [running, setRunning] = useState(false)
+  const result = otelReconfigureResult.value
+
+  function run() {
+    setRunning(true)
+    otelReconfigureResult.value = null
+    if (vscode) {
+      vscode.postMessage({ type: 'reconfigureOtel' })
+    } else {
+      fetch('/action', { method: 'POST', body: JSON.stringify({ type: 'reconfigureOtel' }),
+        headers: { 'Content-Type': 'application/json' } })
+        .then(r => r.json())
+        .then(results => { otelReconfigureResult.value = results })
+        .catch(e => { otelReconfigureResult.value = { error: String(e) } })
+        .finally(() => setRunning(false))
+    }
+  }
+
+  useEffect(() => {
+    if (result) setRunning(false)
+  }, [result])
+
+  return (
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:600;color:var(--fg);margin-bottom:4px">Configure OTEL</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+        Re-applies AgentLens's OTEL settings to Claude Code, Codex, and Copilot. AgentLens already does this automatically on startup — use this if you changed one of those agent's telemetry settings yourself and want to point it back at AgentLens.
+      </div>
+      <button
+        onClick={run}
+        disabled={running}
+        style="padding:3px 10px;font-size:11px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--fg)"
+      >
+        {running ? 'Configuring…' : 'Configure OTEL'}
+      </button>
+      {result && <div style="font-size:11px;color:var(--muted);margin-top:6px">{summarizeReconfigure(result)}</div>}
     </div>
   )
 }

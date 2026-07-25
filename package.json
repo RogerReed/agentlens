@@ -149,7 +149,7 @@
         "agentLens.autoConfigureAgents": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically write OTEL telemetry settings into Claude Code's (~/.claude/settings.json), Codex's (~/.codex/config.toml), and GitHub Copilot's own configuration so they send session data to AgentLens. Disabling this leaves your agents' configuration untouched — you can still configure OTEL manually (see the Help tab) or rely on agentLens.enableLogIngestion alone. Codex and Copilot CLI sessions have little to show without OTEL: their log files carry only aggregate totals, no per-turn tool calls or responses."
+          "description": "Automatically write OTEL telemetry settings into Claude Code's (~/.claude/settings.json), Codex's (~/.codex/config.toml), and GitHub Copilot's own configuration so they send session data to AgentLens. Runs on every activation but only rewrites a file when something's actually missing, so it's silent after the first successful run (shows a notification only when it changes something). Disabling this leaves your agents' configuration untouched — you can still trigger it manually with the Configure OTEL button in Settings, configure OTEL by hand (see the Help tab), or rely on agentLens.enableLogIngestion alone. Codex and Copilot CLI sessions have little to show without OTEL: their log files carry only aggregate totals, no per-turn tool calls or responses."
         },
         "agentLens.enableOtelIngestion": {
           "type": "boolean",
