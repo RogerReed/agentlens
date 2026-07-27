@@ -2,6 +2,17 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.9.1] — 2026-07-26
+
+### Fixed
+
+- **Export tab claimed "All recorded sessions exported as JSON" but only exported the currently filtered subset** — a user who filtered down by Time/Agent/Source/text elsewhere in the app could silently export a partial subset while believing they got everything. Both export cards now show "N sessions matching your current filters" (#167)
+- **Analytics daily-cost chart's x-axis date labels could overlap into illegible text** — the minimum-gap check compared day-group midpoints, but labels were rendered left-aligned at the group's start edge, letting labels drift into each other for days with more sessions. Render and gap-check now share the same anchor point (#167)
+- **Flow graph rendered small/sparse sessions tiny in a mostly-empty canvas** — zoom was hard-capped at 1.4x regardless of available canvas space; raised to 2.2x (#167)
+- **Session/Analytics/Advisor data tables gave no visual hint they were horizontally scrollable at narrow widths** (e.g. a resized VS Code panel) — overlay scrollbars are invisible until hover. Added a persistent thin styled scrollbar across all four scrollable tables (#167)
+
+---
+
 ## [0.9.0] — 2026-07-24
 
 ### Added
