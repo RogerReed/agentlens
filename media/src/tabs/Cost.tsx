@@ -340,14 +340,16 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
         }
         isFirst = false
 
-        // Label only when far enough from the previous one
+        // Label only when far enough from the previous one. Anchor the gap check and the
+        // rendered text at the same point (midX) — anchoring render at x1 while checking
+        // gaps against midX let labels drift into each other for wide (multi-session) days.
         if (midX - lastLabelX >= MIN_LABEL_GAP) {
           const label = dk.length >= 10 ? dk.slice(5, 10) : dk
           ctx.font = labelFont
           ctx.fillStyle = textColor
-          ctx.textAlign = 'left'
+          ctx.textAlign = 'center'
           ctx.textBaseline = 'top'
-          ctx.fillText(label, x1 + 2, pad.top + 1)
+          ctx.fillText(label, midX, pad.top + 1)
           lastLabelX = midX
         }
       }
@@ -530,7 +532,7 @@ export function Cost() {
 
       {/* Session cost table */}
       <h3 style="margin:24px 0 8px;font-size:13px;color:var(--muted)">SESSION COST TABLE</h3>
-      <div style="overflow-x:auto">
+      <div class="h-scroll-hint">
         <table style="width:100%;border-collapse:collapse;font-size:11px">
           <thead>
             <tr style="border-bottom:1px solid var(--vscode-panel-border);color:var(--muted);text-align:left">

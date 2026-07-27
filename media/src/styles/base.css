@@ -66,3 +66,15 @@ body { font-family: var(--vscode-font-family); color: var(--fg); background: var
   flex-shrink: 0;
 }
 .sidebar-toggle-btn:hover { color: var(--fg); background: var(--hover); }
+
+/* ── Component: always-visible thin scrollbar for horizontally-scrollable tables.
+   Default overlay scrollbars are invisible until hover, so at narrow widths (e.g. a
+   resized VS Code panel) there's no hint that columns like Duration/Cost exist off-screen. ── */
+.h-scroll-hint {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.h-scroll-hint::-webkit-scrollbar { height: 7px; }
+.h-scroll-hint::-webkit-scrollbar-track { background: transparent; }
+.h-scroll-hint::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.h-scroll-hint::-webkit-scrollbar-thumb:hover { background: var(--muted); }

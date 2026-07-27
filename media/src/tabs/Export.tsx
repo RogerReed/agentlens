@@ -15,6 +15,7 @@ export function Export() {
 
   const sessions = filteredSessions.value
   const empty = sessions.length === 0
+  const scopeLabel = `${sessions.length} session${sessions.length === 1 ? '' : 's'} matching your current filters`
 
   const doExport = () => {
     send('exportSessionData', sessions.map(s => s.sessionId))
@@ -39,7 +40,7 @@ export function Export() {
             <span class="export-card-badge export-badge-raw">Full</span>
           </div>
           <p class="export-card-desc">
-            All recorded sessions exported as JSON — includes prompt text, token counts,
+            Exported as JSON — includes prompt text, token counts,
             tool usage, file changes, cost estimates, and efficiency signals.
           </p>
           <ul class="export-card-includes">
@@ -49,6 +50,7 @@ export function Export() {
             <li>Duration, errors, outcome, loop signals</li>
           </ul>
           <div class="export-card-warning">Keep private — includes prompt text.</div>
+          <div class="export-card-scope">{empty ? 'No sessions match your current filters' : scopeLabel}</div>
           <button
             class={'export-btn' + (rawDone ? ' export-btn-done' : '')}
             onClick={doExport}
@@ -75,6 +77,7 @@ export function Export() {
             <li>✓ Duration, errors, outcome, loop signals</li>
           </ul>
           <div class="export-card-safe">Safer to share — no prompt text or file paths.</div>
+          <div class="export-card-scope">{empty ? 'No sessions match your current filters' : scopeLabel}</div>
           <button
             class={'export-btn export-btn-secondary' + (redactedDone ? ' export-btn-done' : '')}
             onClick={doRedacted}

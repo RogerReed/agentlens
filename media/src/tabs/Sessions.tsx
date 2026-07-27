@@ -414,7 +414,7 @@ export function Sessions() {
 
   return (
     <div id="sessions-content" style="padding-top:8px">
-      <div style="overflow-x:auto">
+      <div class="h-scroll-hint">
       <table style="width:100%;border-collapse:collapse;font-size:11px">
         <thead>
           <tr style="border-bottom:2px solid var(--vscode-panel-border)">
