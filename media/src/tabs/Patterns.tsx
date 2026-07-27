@@ -166,7 +166,7 @@ function EfficiencyMap({ sessions }: { sessions: SessionSummaryCard[] }) {
           `padding:4px 8px 4px 0;color:${sort.col === col ? 'var(--fg)' : 'var(--muted)'};font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;font-size:11px`
         const arrow = (col: MatchSort) => sort.col === col ? (sort.dir === 'desc' ? ' ↓' : ' ↑') : ''
         return (
-          <div style="margin-top:12px;overflow-x:auto">
+          <div class="h-scroll-hint" style="margin-top:12px">
             <table style="width:100%;border-collapse:collapse;font-size:11px">
               <thead>
                 <tr style="border-bottom:1px solid var(--border)">
@@ -390,7 +390,7 @@ function HotFiles({ sessions }: { sessions: SessionSummaryCard[] }) {
         <button class={'tab-mini' + (mode === 'written' ? ' active' : '')} onClick={() => setMode('written')}>Written</button>
         <button class={'tab-mini' + (mode === 'both'    ? ' active' : '')} onClick={() => setMode('both')}>Both</button>
       </div>
-      <div style="overflow-x:auto">
+      <div class="h-scroll-hint">
         <table style="width:100%;border-collapse:collapse;font-size:11px">
           <thead>
             <tr style="border-bottom:1px solid var(--border)">

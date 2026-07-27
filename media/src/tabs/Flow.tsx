@@ -294,7 +294,9 @@ export function FlowCanvas({ sess, height = 520 }: { sess: SessionSummaryCard; h
       const gW = maxX - minX + 40, gH = maxY - minY + 40
       const rect = canvas.getBoundingClientRect()
       if (!rect.width || !rect.height) return
-      st.zoom = Math.max(0.15, Math.min(rect.width / gW, rect.height / gH, 1.4))
+      // Cap at 2.2x so small/sparse graphs still fill most of the canvas instead of
+      // leaving it mostly empty, while avoiding comically oversized nodes.
+      st.zoom = Math.max(0.15, Math.min(rect.width / gW, rect.height / gH, 2.2))
       st.panX = rect.width  / 2 - (minX + maxX) / 2 * st.zoom
       st.panY = rect.height / 2 - (minY + maxY) / 2 * st.zoom
     }

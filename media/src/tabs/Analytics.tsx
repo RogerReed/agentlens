@@ -257,7 +257,7 @@ export function Analytics() {
             </div>
           )}
           {dayRows.length > 0 && (
-            <div style="overflow-x:auto;margin-bottom:8px">
+            <div class="h-scroll-hint" style="margin-bottom:8px">
               <table style="border-collapse:collapse;font-size:10px;min-width:100%;white-space:nowrap">
                 <thead>
                   <tr style="border-bottom:1px solid var(--border)">

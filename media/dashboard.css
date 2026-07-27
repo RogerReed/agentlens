@@ -133,6 +133,23 @@ body {
   color: var(--fg);
   background: var(--hover);
 }
+.h-scroll-hint {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.h-scroll-hint::-webkit-scrollbar {
+  height: 7px;
+}
+.h-scroll-hint::-webkit-scrollbar-track {
+  background: transparent;
+}
+.h-scroll-hint::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.h-scroll-hint::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
 
 /* media/src/styles/toolbar.css */
 .toolbar {
@@ -1048,6 +1065,12 @@ body {
   color: var(--accent);
   opacity: 0.85;
   margin-top: auto;
+}
+.export-card-scope {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 6px;
 }
 .export-btn {
   margin-top: 4px;
