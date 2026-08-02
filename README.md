@@ -1,13 +1,18 @@
-<h1><img src="media/mascot.png" alt="" width="48" align="center" /> AgentLens</h1>
+<h1><img src="media/mascot.png" alt="AgentLens logo" width="48" align="center" /> AgentLens</h1>
 
 [![CI](https://github.com/RogerReed/agentlens/actions/workflows/ci.yml/badge.svg)](https://github.com/RogerReed/agentlens/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/RogerReed/agentlens)](LICENSE)
 
-![AgentLens demo](media/demo.gif)
+![AgentLens dashboard showing OTEL traces, session monitoring, and agent observability charts](media/demo.gif)
 
-Local observability that makes AI agent sessions more transparent — see what's happening inside each run. No data leaves your machine.
+Local monitoring and observability for agentic AI coding tools — see what's actually happening inside each run. Nothing leaves your machine.
 
-AgentLens receives **OpenTelemetry traces** from Copilot, Claude Code, and Codex in real time — giving you span timing, time-to-first-token, loop detection, file diffs, and actionable recommendations. It also reads **local session files** written automatically by each agent as a zero-config fallback — including OpenCode's local **SQLite database** — backfilling history and filling gaps when OTEL isn't configured. Both sources are shown in one unified dashboard; OTEL always takes precedence when available.
+AgentLens receives **OpenTelemetry traces** from Copilot, Claude Code, and Codex in real time, giving you span timing, time-to-first-token, per-tool latency, and file diffs. It also reads the **local session files** each agent writes automatically — including OpenCode's **SQLite database** — as a zero-config fallback that backfills history from before you set anything up. Both sources appear in one dashboard; OTEL takes precedence when available.
+
+Two things it does that a usage dashboard doesn't:
+
+- **Catches agents that are stuck.** Five named loop and malfunction patterns — identical tool calls repeated, edits oscillating between two states, the same error recurring, runaway scope, context accumulating while progress collapses — each with a correction prompt you can paste straight into the session. [See the full list →](#recommendations--malfunction-detection)
+- **Tells you what to fix in your instructions file.** The Advisor reads across sessions and suggests concrete additions to your CLAUDE.md or AGENTS.md — including hot files the agent rediscovers from scratch on every run. [More →](#features)
 
 ## Getting Started
 

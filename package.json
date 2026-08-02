@@ -1,7 +1,7 @@
 {
   "name": "agentlens-dashboard",
-  "displayName": "AgentLens - AI Agent Observability",
-  "description": "Observability for AI agent sessions — OTEL traces and local log file ingestion. VS Code extension, npx, and Docker.",
+  "displayName": "AgentLens - Agentic AI Monitoring & Observability",
+  "description": "Agentic AI monitoring and observability — OTEL traces and local log file ingestion for Copilot, Claude Code, Codex, and OpenCode. VS Code extension, npx, and Docker.",
   "version": "0.9.1",
   "publisher": "agentlens",
   "license": "MIT",
@@ -21,12 +21,18 @@
   "keywords": [
     "ai",
     "agent",
+    "agentic",
     "opentelemetry",
+    "otel",
     "telemetry",
+    "monitoring",
     "observability",
     "copilot",
     "claude",
-    "tracing"
+    "codex",
+    "opencode",
+    "tracing",
+    "dashboard"
   ],
   "categories": [
     "Other",
