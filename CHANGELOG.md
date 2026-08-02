@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.9.2] — 2026-08-01
+
+### Changed
+
+- **SEO metadata refresh** — `package.json` description/keywords and the README now mention "monitoring" and "agentic" alongside "observability" and "OTEL" so npm, VS Code Marketplace, and GitHub search surface AgentLens for those terms. Added alt text to README images. GitHub repo topics, homepage, and description updated to match (#168)
+
+---
+
 ## [0.9.1] — 2026-07-26
 
 ### Fixed
