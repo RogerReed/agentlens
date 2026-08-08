@@ -22,17 +22,24 @@ import { generateSuggestions } from '../src/instructionAdvisor'
 import { detectInstructionFiles, appendSuggestion } from '../src/instructionFiles'
 import type { Span } from '../src/types'
 import type { SessionSummaryCard } from '../src/summarizers/summarizerTypes'
+import { pruneSpans, DEFAULT_MAX_SPANS } from '../src/spanStore'
 
 const OTLP_PORT  = parseInt(process.env.OTLP_PORT  ?? '4318')
 const UI_PORT    = parseInt(process.env.UI_PORT    ?? '3000')
 const MCP_PORT   = parseInt(process.env.MCP_PORT   ?? '4316')
 const BIND_HOST  = process.env.BIND_HOST ?? '127.0.0.1'
+const MAX_SPANS  = parseInt(process.env.AGENTLENS_MAX_SPANS ?? '') || DEFAULT_MAX_SPANS
 
 const mediaDir  = path.join(__dirname, '..', 'media')
 const DATA_DIR  = process.env.DATA_DIR ?? path.join(os.homedir(), '.agentlens')
 const DATA_FILE = path.join(DATA_DIR, 'spans.json')
 
 // ── Span store with file persistence ─────────────────────────────────────────
+//
+// The in-memory/persisted span list is capped at MAX_SPANS (see spanStore.ts)
+// to keep spans.json well under V8's max string length — without a cap,
+// JSON.stringify(spans) eventually throws RangeError: Invalid string length
+// and every save silently fails forever.
 
 let spans: Span[] = []
 let sseClients: http.ServerResponse[] = []
@@ -41,28 +48,53 @@ let sseClients: http.ServerResponse[] = []
 try {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
   if (fs.existsSync(DATA_FILE)) {
-    const raw = fs.readFileSync(DATA_FILE, 'utf-8')
-    spans = JSON.parse(raw) as Span[]
-    console.log(`[AgentLens] Loaded ${spans.length} spans from ${DATA_FILE}`)
+    const { size } = fs.statSync(DATA_FILE)
+    const MAX_LOADABLE_BYTES = 450 * 1024 * 1024 // stay clear of Node's ~512MB string ceiling
+    if (size > MAX_LOADABLE_BYTES) {
+      const backupFile = `${DATA_FILE}.bak`
+      fs.renameSync(DATA_FILE, backupFile)
+      console.warn(`[AgentLens] ${DATA_FILE} was ${(size / 1024 / 1024).toFixed(0)}MB — too large to load safely. Moved it to ${backupFile} and starting fresh.`)
+    } else {
+      const raw = fs.readFileSync(DATA_FILE, 'utf-8')
+      spans = JSON.parse(raw) as Span[]
+      const dropped = pruneSpans(spans, MAX_SPANS)
+      console.log(`[AgentLens] Loaded ${spans.length} spans from ${DATA_FILE}${dropped ? ` (dropped ${dropped} oldest to respect the ${MAX_SPANS}-span cap)` : ''}`)
+    }
   }
 } catch (e) {
   console.warn('[AgentLens] Could not load persisted data:', e)
+}
+
+function saveSpansNow() {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(spans))
+  } catch (e) {
+    if (e instanceof RangeError && spans.length > 1) {
+      const keep = Math.floor(spans.length / 2)
+      const dropped = spans.length - keep
+      spans.splice(0, dropped)
+      console.warn(`[AgentLens] Save failed (spans array too large to serialize) — dropped oldest ${dropped} spans and retrying`)
+      try { fs.writeFileSync(DATA_FILE, JSON.stringify(spans)) } catch (e2) {
+        console.warn('[AgentLens] Could not save data after emergency prune:', e2)
+      }
+    } else {
+      console.warn('[AgentLens] Could not save data:', e)
+    }
+  }
 }
 
 // Debounced save — writes at most once per second under continuous ingestion
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 function scheduleSave() {
   if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    try { fs.writeFileSync(DATA_FILE, JSON.stringify(spans)) } catch (e) {
-      console.warn('[AgentLens] Could not save data:', e)
-    }
-  }, 1000)
+  saveTimer = setTimeout(saveSpansNow, 1000)
 }
 
 function addSpan(span: Span) {
   if (span.receivedAt === undefined) span.receivedAt = Date.now()
   spans.push(span)
+  const dropped = pruneSpans(spans, MAX_SPANS)
+  if (dropped > 0) console.warn(`[AgentLens] Pruned ${dropped} oldest spans to stay under the ${MAX_SPANS}-span cap`)
 }
 
 // ── Log file sessions ─────────────────────────────────────────────────────────
@@ -1407,10 +1439,8 @@ uiServer.listen(UI_PORT, BIND_HOST, () => {
 
 function shutdown() {
   if (saveTimer) clearTimeout(saveTimer)
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(spans))
-    console.log(`\n[AgentLens] Saved ${spans.length} spans to ${DATA_FILE}`)
-  } catch { /* ignore */ }
+  saveSpansNow()
+  console.log(`\n[AgentLens] Saved ${spans.length} spans to ${DATA_FILE}`)
   process.exit(0)
 }
 process.on('SIGINT', shutdown)

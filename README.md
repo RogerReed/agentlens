@@ -282,6 +282,7 @@ Environment variables:
 | `UI_PORT` | `3000` | Dashboard port |
 | `DATA_DIR` | `~/.agentlens` | Directory for persistent span data |
 | `BIND_HOST` | `127.0.0.1` | Set to `0.0.0.0` for LAN access |
+| `AGENTLENS_MAX_SPANS` | `50000` | Cap on in-memory/persisted spans; oldest spans are dropped once exceeded |
 
 The local server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously, use different ports:
 
