@@ -28,7 +28,8 @@ const OTLP_PORT  = parseInt(process.env.OTLP_PORT  ?? '4318')
 const UI_PORT    = parseInt(process.env.UI_PORT    ?? '3000')
 const MCP_PORT   = parseInt(process.env.MCP_PORT   ?? '4316')
 const BIND_HOST  = process.env.BIND_HOST ?? '127.0.0.1'
-const MAX_SPANS  = parseInt(process.env.AGENTLENS_MAX_SPANS ?? '') || DEFAULT_MAX_SPANS
+const parsedMaxSpans = parseInt(process.env.AGENTLENS_MAX_SPANS ?? '', 10)
+const MAX_SPANS  = Number.isNaN(parsedMaxSpans) ? DEFAULT_MAX_SPANS : parsedMaxSpans
 
 const mediaDir  = path.join(__dirname, '..', 'media')
 const DATA_DIR  = process.env.DATA_DIR ?? path.join(os.homedir(), '.agentlens')
@@ -65,21 +66,26 @@ try {
   console.warn('[AgentLens] Could not load persisted data:', e)
 }
 
-function saveSpansNow() {
+function saveSpansNow(): boolean {
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(spans))
+    return true
   } catch (e) {
     if (e instanceof RangeError && spans.length > 1) {
       const keep = Math.floor(spans.length / 2)
       const dropped = spans.length - keep
       spans.splice(0, dropped)
       console.warn(`[AgentLens] Save failed (spans array too large to serialize) — dropped oldest ${dropped} spans and retrying`)
-      try { fs.writeFileSync(DATA_FILE, JSON.stringify(spans)) } catch (e2) {
+      try {
+        fs.writeFileSync(DATA_FILE, JSON.stringify(spans))
+        return true
+      } catch (e2) {
         console.warn('[AgentLens] Could not save data after emergency prune:', e2)
+        return false
       }
-    } else {
-      console.warn('[AgentLens] Could not save data:', e)
     }
+    console.warn('[AgentLens] Could not save data:', e)
+    return false
   }
 }
 
@@ -1439,8 +1445,9 @@ uiServer.listen(UI_PORT, BIND_HOST, () => {
 
 function shutdown() {
   if (saveTimer) clearTimeout(saveTimer)
-  saveSpansNow()
-  console.log(`\n[AgentLens] Saved ${spans.length} spans to ${DATA_FILE}`)
+  if (saveSpansNow()) {
+    console.log(`\n[AgentLens] Saved ${spans.length} spans to ${DATA_FILE}`)
+  }
   process.exit(0)
 }
 process.on('SIGINT', shutdown)
