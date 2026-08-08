@@ -2,6 +2,19 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.9.3] — 2026-08-07
+
+### Fixed
+
+- **Standalone dashboard's span store grew unbounded, eventually crashing every save** — spans accumulated in memory forever and were fully re-serialized to disk on every save; once the total exceeded V8's ~512MB max string length, `JSON.stringify` began throwing and saves failed silently forever (and, past that point, the persisted file became too large to even load back on restart). Spans are now capped (default 50k, configurable via `AGENTLENS_MAX_SPANS`), oversized existing files are backed up instead of crashing on load, and a save that still somehow fails self-heals by trimming and retrying. A pre-release review also caught and fixed two smaller issues in this same fix: `AGENTLENS_MAX_SPANS=0` was silently ignored in favor of the default, and a failed save on shutdown could still log a false "Saved" message (#169, #171)
+- **Corrected model pricing** — `gpt-5.6-luna` and `gpt-5.6-terra` were overpriced (both have since been repriced down by the vendor and gained real cache-write pricing), `gpt-5.1` was overpriced ($1.75→$1.25 input), and `gpt-4.1` was showing as free when it's actually billed again. See `PRICING_SOURCES.md` for sources (#170)
+
+### Added
+
+- Claude Opus 5, Gemini 3.6 Flash, and two new Copilot-marketplace models (Grok 4.5, Kimi K3) to the cost/pricing tables (#170)
+
+---
+
 ## [0.9.2] — 2026-08-01
 
 ### Changed
