@@ -24,7 +24,7 @@ Copilot has three billing models depending on plan type and date.
 
 **Who it applies to:** All Copilot plans on the new billing model, default from June 1, 2026.
 
-**Source:** <https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing> (verified 2026-07-19)
+**Source:** <https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing> (verified 2026-08-07)
 
 **What this page provides:**
 
@@ -46,7 +46,7 @@ aiCredits = cost / 0.01
 **Who it applies to:** Copilot annual-plan holders who opt to stay on request-based billing
 after June 1, 2026. These users face significantly higher multipliers than the pre-June rates.
 
-**Source:** <https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans> (verified 2026-07-19)
+**Source:** <https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans> (verified 2026-08-07)
 
 **What this page provides:**
 
@@ -89,9 +89,27 @@ sessions; don't expect to re-verify them.
 
 - **Copilot code review multiplier**: not currently modeled in `pricing.ts` — AgentLens doesn't
   distinguish code-review-triggered requests from regular premium requests.
-- `gpt-4.1`, `gpt-4o`, `gpt-4o-mini` are no longer listed on the current AI Credits pricing page
-  at all (paid or included). Kept in `RATES` at their legacy rate for historical/legacy sessions;
-  treat as deprecated.
+- `gpt-4o`, `gpt-4o-mini` are no longer listed on the current AI Credits pricing page at all (paid
+  or included). Kept in `RATES` at their legacy rate for historical/legacy sessions; treat as
+  deprecated. `gpt-4.1` **is** listed again as of 2026-08-07 (real rates: $2.00/$0.50/$8.00) — it
+  was previously assumed delisted/$0; that assumption was wrong or stale and has been corrected.
+- **Long-context surcharge tier** (GPT-5.4, GPT-5.5, and the whole GPT-5.6 family): confirmed to
+  exist — Copilot's pricing page lists a distinct "Long context" row for each, consistently at 2x
+  the default input/cache-read/cache-write rate and 1.5x the default output rate. The token
+  threshold that triggers it is still not stated anywhere we've found (for GPT-5.4 it's rumored to
+  be 272K based on its context window, but that's unconfirmed). Not implemented — `RATES` holds
+  only the default-tier rate. Don't wire this up with a guessed threshold; a wrong threshold would
+  silently mis-price every session that crosses it, which is worse than the current known
+  under-count for long-context calls.
+- `gpt-5.1-codex`, `gpt-5.1-codex-mini`, `gpt-5.1-codex-max`: not independently re-confirmed in the
+  2026-08-07 refresh — absent from the general API pricing page (only base `gpt-5.1` was listed,
+  and it turned out to have been repriced down to $1.25/$10.00 from $1.75/$14.00). Left unchanged
+  at their prior values on the assumption they didn't move, but that's unverified — re-check next
+  refresh.
+- **New third-party marketplace models** (`grok-4.5`, `kimi-k3`, `gemini-3.6-flash`): added
+  2026-08-07 from the Copilot pricing page. Exact telemetry model-ID slugs are unconfirmed (guessed
+  from the docs display name, following the existing naming convention) — verify against real
+  telemetry when encountered.
 
 ---
 
@@ -103,7 +121,7 @@ Claude Code CLI uses Anthropic API token-based pricing only — no request-multi
 
 **Who it applies to:** All Claude Code CLI users billed through the Anthropic API.
 
-**Source:** <https://platform.claude.com/docs/en/about-claude/pricing> (verified 2026-07-19)
+**Source:** <https://platform.claude.com/docs/en/about-claude/pricing> (verified 2026-08-07)
 
 **Formula:**
 
@@ -132,10 +150,11 @@ On `claude_code.llm_request` spans (per-API-call):
 - `ttft_ms` — time to first token in ms
 - `stop_reason` — e.g. `tool_use`, `end_turn`
 
-**Rates (USD per 1M tokens, verified 2026-07-19):**
+**Rates (USD per 1M tokens, verified 2026-08-07):**
 
 | Model                                                                  | Input  | Cache Write (5m) | Cache Write (1h) | Cache Read | Output  |
 | ----------------------------------------------------------------------- | ------ | ----------------- | ----------------- | ---------- | ------- |
+| `claude-opus-5`                                                          | $5.00  | $6.25              | $10.00             | $0.50      | $25.00  |
 | `claude-opus-4-8`                                                        | $5.00  | $6.25              | $10.00             | $0.50      | $25.00  |
 | `claude-opus-4-7`                                                        | $5.00  | $6.25              | $10.00             | $0.50      | $25.00  |
 | `claude-opus-4-6`                                                        | $5.00  | $6.25              | $10.00             | $0.50      | $25.00  |
@@ -148,15 +167,18 @@ On `claude_code.llm_request` spans (per-API-call):
 | `claude-haiku-4-5`                                                       | $1.00  | $1.25              | $2.00              | $0.10      | $5.00   |
 | `claude-fable-5`                                                         | $10.00 | $12.50             | $20.00             | $1.00      | $50.00  |
 | `claude-mythos-5` (limited availability, see anthropic.com/glasswing)   | $10.00 | $12.50             | $20.00             | $1.00      | $50.00  |
+| `claude-opus-5` (fast mode, 2x)                                          | $10.00 | $12.50             | $20.00             | $1.00      | $50.00  |
 | `claude-opus-4-8` (fast mode, 2x)                                        | $10.00 | $12.50             | $20.00             | $1.00      | $50.00  |
-| `claude-opus-4-7` (fast mode, 6x)                                        | $30.00 | $37.50             | $60.00             | $3.00      | $150.00 |
+| `claude-opus-4-7` (fast mode, 6x — **historical only, removed**)        | $30.00 | $37.50             | $60.00             | $3.00      | $150.00 |
 | `claude-opus-4-6` (fast mode — bills at standard rate, see note below)  | $5.00  | $6.25              | $10.00             | $0.50      | $25.00  |
 
-Fast mode is currently only available for Opus 4.7 and 4.8. `claude-opus-4-6` no longer supports
-fast mode — requests with `speed: "fast"` run at standard speed and bill at the standard rate, so
-its `-fast` entry in `RATES` is set equal to the standard rate rather than a multiplied one.
-Opus 4.7 fast mode is deprecated and scheduled for removal on 2026-07-24 — after that date, check
-whether the source page still lists it and update or drop the entry accordingly.
+Fast mode is currently available only for Opus 5 and Opus 4.8 (both listed together, same rate, on
+Anthropic's fast-mode pricing table). As of this refresh (2026-08-07), Anthropic's docs explicitly
+confirm Opus 4.7 fast mode has been removed — requests with `speed: "fast"` now return an error
+rather than being billed. Its `-fast` entry in `RATES` is frozen for historical sessions only.
+`claude-opus-4-6` still doesn't support fast mode — requests with `speed: "fast"` run at standard
+speed and bill at the standard rate, so its `-fast` entry is set equal to the standard rate rather
+than a multiplied one.
 
 **Tiered pricing — `claude-sonnet-4` only:**
 
@@ -202,8 +224,8 @@ Codex CLI uses OpenAI token-based pricing only — no request-multiplier system.
 
 **Sources:**
 
-- Rate card (official, may require login): <https://help.openai.com/en/articles/20001106-codex-rate-card> — returned 403 on 2026-07-19; requires an authenticated session to fetch.
-- Codex CLI pricing page (credits; divide by 25 for USD): <https://developers.openai.com/codex/pricing>
+- Rate card (official, may require login): <https://help.openai.com/en/articles/20001106-codex-rate-card> — returned 403 on 2026-07-19; requires an authenticated session to fetch. Not re-attempted 2026-08-07.
+- Codex CLI pricing page (credits; divide by 25 for USD): <https://developers.openai.com/codex/pricing> — as of 2026-08-07 this 308-redirects to <https://learn.chatgpt.com/docs/pricing>; use that URL directly.
 - API pricing (USD, includes codex models): <https://developers.openai.com/api/docs/pricing>
 - `codex-mini-latest` model spec: <https://developers.openai.com/api/docs/models/codex-mini-latest>
 - Prompt caching mechanics: <https://developers.openai.com/api/docs/guides/prompt-caching>
@@ -237,31 +259,40 @@ On `session_task.turn` spans (per-turn aggregate):
 
 Model name available on `codex.user_prompt`, `codex.turn_ttft`, and `codex.tool_decision` spans via `model` attribute.
 
-**Rates (USD per 1M tokens, verified 2026-07-19):**
+**Rates (USD per 1M tokens, verified 2026-08-07):**
 
-| Model                   | Input   | Cached Input | Output  | Cache discount | Notes                                          |
-| ----------------------- | ------- | ------------ | ------- | -------------- | ---------------------------------------------- |
-| `gpt-5.6-sol`           | $5.00   | $0.50        | $30.00  | 90%            | Flagship; same rate as gpt-5.5; has a long-context surcharge tier, threshold unconfirmed |
-| `gpt-5.6-terra`         | $2.50   | $0.25        | $15.00  | 90%            | Mid tier; same rate as gpt-5.4                 |
-| `gpt-5.6-luna`          | $1.00   | $0.10        | $6.00   | 90%            | Small/fast tier                                |
-| `gpt-5.5`               | $5.00   | $0.50        | $30.00  | 90%            |                                                 |
-| `gpt-5.4`               | $2.50   | $0.25        | $15.00  | 90%            |                                                 |
-| `gpt-5.4-mini`          | $0.75   | $0.075       | $4.50   | 90%            |                                                 |
-| `gpt-5.3-codex`         | $1.75   | $0.175       | $14.00  | 90%            | Deprecated — superseded by the GPT-5.6 family  |
-| `gpt-5.3-codex-spark`   | TBD     | TBD          | TBD     | —              | Research preview; specialized low-latency hardware; not available in the API, no rates published |
-| `gpt-5.2`               | $1.75   | $0.175       | $14.00  | 90%            | Deprecated                                     |
-| `gpt-5.1-codex`         | $1.75   | $0.175       | $14.00  | 90%            | Deprecated                                     |
-| `gpt-5.1-codex-mini`    | $0.75   | $0.075       | $4.50   | 90%            | Deprecated                                     |
-| `codex-mini-latest`     | $1.50   | $0.375       | $6.00   | 75%            | Fine-tuned o4-mini; 200K ctx; deprecated       |
+| Model                   | Input   | Cached Input | Cache Write | Output  | Cache discount | Notes                                          |
+| ----------------------- | ------- | ------------ | ----------- | ------- | -------------- | ---------------------------------------------- |
+| `gpt-5.6-sol`           | $5.00   | $0.50        | $6.25       | $30.00  | 90%            | Flagship; same rate as gpt-5.5; has a long-context surcharge tier (2x input/cache, 1.5x output — threshold unconfirmed) |
+| `gpt-5.6-terra`         | $2.00   | $0.20        | $2.50       | $12.00  | 90%            | Mid tier. Corrected 2026-08-07 (was $2.50/$15.00) |
+| `gpt-5.6-luna`          | $0.20   | $0.02        | $0.25       | $1.20   | 90%            | Small/fast tier. Corrected 2026-08-07 (was $1.00/$6.00) |
+| `gpt-5.5`               | $5.00   | $0.50        | —           | $30.00  | 90%            | Long-context surcharge tier (2x input/cache, 1.5x output — threshold unconfirmed) |
+| `gpt-5.4`               | $2.50   | $0.25        | —           | $15.00  | 90%            | Long-context surcharge tier (2x input/cache, 1.5x output — threshold unconfirmed, possibly 272K) |
+| `gpt-5.4-mini`          | $0.75   | $0.075       | —           | $4.50   | 90%            |                                                 |
+| `gpt-5.3-codex`         | $1.75   | $0.175       | —           | $14.00  | 90%            | Deprecated — superseded by the GPT-5.6 family  |
+| `gpt-5.3-codex-spark`   | TBD     | TBD          | —           | TBD     | —              | Research preview; specialized low-latency hardware; not available in the API, no rates published |
+| `gpt-5.2`               | $1.75   | $0.175       | —           | $14.00  | 90%            | Deprecated                                     |
+| `gpt-5.1`               | $1.25   | $0.125       | —           | $10.00  | 90%            | Corrected 2026-08-07 (was $1.75/$14.00 — repriced down below gpt-5.2) |
+| `gpt-5.1-codex`         | $1.75   | $0.175       | —           | $14.00  | 90%            | Deprecated; not independently re-confirmed 2026-08-07 (see Known gaps) |
+| `gpt-5.1-codex-mini`    | $0.75   | $0.075       | —           | $4.50   | 90%            | Deprecated; not independently re-confirmed 2026-08-07 (see Known gaps) |
+| `gpt-4.1`               | $2.00   | $0.50        | —           | $8.00   | 75%            | Re-listed 2026-08-07 — previously assumed delisted/$0; that was wrong or stale |
+| `codex-mini-latest`     | $1.50   | $0.375       | —           | $6.00   | 75%            | Fine-tuned o4-mini; 200K ctx; deprecated       |
 
 **Credits to USD conversion:** Rates on the Codex CLI pricing page are expressed in credits. 1 USD = 25 credits — verify by checking `inputPerMTok × 25` against the listed credits figure for any current model (e.g. gpt-5.6-sol: $5.00 × 25 = 125 credits, matching the page).
 
 **Known gaps:**
 
-- Long-context surcharges: `gpt-5.5` and `gpt-5.6-sol` have a long-context tier ($10/$1.00/$45 above a certain token threshold — verify the cutoff from the API pricing page). Not yet implemented.
+- Long-context surcharges: `gpt-5.4`, `gpt-5.5`, and the whole `gpt-5.6` family have a long-context
+  tier. As of 2026-08-07 the multiplier pattern is confirmed (2x input/cache-read/cache-write, 1.5x
+  output) via Copilot's pricing page, but the token threshold that triggers it is still not stated
+  anywhere found. Not implemented — don't wire this up with a guessed threshold.
 - `gpt-5.3-codex-spark`: research preview with no published rates.
 - Reasoning tokens (`codex.usage.reasoning_output_tokens`): included in `gen_ai.usage.output_tokens` and billed at the standard output rate per available data; verify against the official rate card once it's fetchable (see Sources above).
 - Which GPT-5.6 variant (Sol/Terra/Luna) is the actual default model invoked by plain `codex` CLI runs (as opposed to an explicit model flag) is not confirmed by public docs.
+- `gpt-5.1-codex`, `gpt-5.1-codex-mini`, `gpt-5.1-codex-max`: absent from the general API pricing
+  page during the 2026-08-07 refresh (only base `gpt-5.1` was listed, and it had in fact been
+  repriced). Left unchanged on the assumption they didn't move — re-verify next refresh, ideally
+  against the auth-gated rate card directly.
 
 ---
 
@@ -273,7 +304,7 @@ OpenCode uses token-based pricing for third-party models (routed through its pro
 
 **Who it applies to:** Users of OpenCode's built-in Zen model tier during the limited evaluation period.
 
-**Source:** <https://opencode.ai/docs/zen/> (verified 2026-07-19)
+**Source:** <https://opencode.ai/docs/zen/> (verified 2026-08-07)
 
 **Rates:** $0 — free during evaluation. All token fields (`inputPerMTok`, `cacheReadPerMTok`, `cacheWritePerMTok`, `outputPerMTok`) are set to 0 in the rate table.
 
@@ -282,7 +313,7 @@ OpenCode uses token-based pricing for third-party models (routed through its pro
 **Known gaps:**
 
 - big-pickle pricing is stated as free "during limited evaluation" — it may become paid in the future. Check the source URL and update the rate table when rates are published.
-- **Other free Zen-exclusive models not yet in `RATES`:** OpenCode Zen also lists DeepSeek V4 Flash Free, MiMo-V2.5 Free, North Mini Code Free, and Nemotron 3 Ultra Free as $0 models, alongside 40+ paid third-party models (GPT, Claude, Gemini, Grok, DeepSeek, Qwen, MiniMax, GLM, Kimi families). Not added here because their exact `id` string as it appears in the OpenCode SQLite `model` JSON column isn't confirmed — guessing the wrong slug would silently fail to match rather than cause harm (missing models fall back to `~$?`), but confirm from real telemetry (or the OpenCode Zen model list API) before adding.
+- **Other free Zen-exclusive models not yet in `RATES`:** OpenCode Zen also lists DeepSeek V4 Flash Free, MiMo-V2.5 Free, North Mini Code Free, Nemotron 3 Ultra Free, and — new as of the 2026-08-07 refresh — Laguna S 2.1 Free, Ling-3.0-tiny Free, and LongCat-2.0 Free as $0 models, alongside 40+ paid third-party models (GPT, Claude, Gemini, Grok, DeepSeek, Qwen, MiniMax, GLM, Kimi families). Not added here because their exact `id` string as it appears in the OpenCode SQLite `model` JSON column isn't confirmed — guessing the wrong slug would silently fail to match rather than cause harm (missing models fall back to `~$?`), but confirm from real telemetry (or the OpenCode Zen model list API) before adding.
 - Other models used through OpenCode (e.g. Anthropic, OpenAI, or Google models routed via OpenCode's provider abstraction) are billed by the underlying provider at their standard rates. AgentLens applies the provider's published rates for those models automatically.
 
 ---

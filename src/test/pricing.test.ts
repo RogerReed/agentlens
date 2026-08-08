@@ -40,8 +40,8 @@ suite('pricing', () => {
   })
 
   test('calcTokenCostUsd returns 0 for included (free) model', () => {
-    // gpt-4.1 has all-zero rates
-    const cost = calcTokenCostUsd(100_000, 0, 0, 10_000, 'gpt-4.1')
+    // big-pickle is free during its OpenCode Zen evaluation period — all-zero rates
+    const cost = calcTokenCostUsd(100_000, 0, 0, 10_000, 'big-pickle')
     assert.strictEqual(cost, 0)
   })
 

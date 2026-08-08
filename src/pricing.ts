@@ -1,6 +1,6 @@
 // Pricing data for extension-host cost computation (cost_usd stored in sessions table).
 // Rate table is kept in sync with media/src/pricing.ts — update both when rates change.
-// PRICING_LAST_UPDATED: 2026-07-19
+// PRICING_LAST_UPDATED: 2026-08-07
 
 export interface ModelRates {
   inputPerMTok: number
@@ -17,14 +17,18 @@ export interface ModelRates {
 
 const RATES: Record<string, ModelRates> = {
   // ── OpenAI ─────────────────────────────────────────────────────────────────
-  // gpt-4.1: no longer listed on the current API pricing page — kept at legacy $0 rate for historical sessions.
-  'gpt-4.1':            { inputPerMTok: 0,     cacheReadPerMTok: 0,      cacheWritePerMTok: 0, outputPerMTok: 0,     contextWindowTokens: 1_000_000 },
+  // gpt-4.1: re-listed on the API pricing page as of 2026-08-07 at real rates (previously assumed delisted/$0 —
+  // that turned out to be wrong or stale; correcting to the live page value).
+  'gpt-4.1':            { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 8.00,  contextWindowTokens: 1_000_000 },
   // gpt-5-mini: no longer an included/$0 model as of the 2026-07-19 pricing page — now billed at standard rates.
   'gpt-5-mini':         { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  contextWindowTokens: 200_000 },
   'gpt-5 mini':         { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  contextWindowTokens: 200_000 },
   'gpt-4o':             { inputPerMTok: 2.50,  cacheReadPerMTok: 1.25,   cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 128_000 },
   'gpt-4o-mini':        { inputPerMTok: 0.15,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 0.60,  contextWindowTokens: 128_000 },
-  'gpt-5.1':            { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0, outputPerMTok: 14.00, contextWindowTokens: 256_000 },
+  // gpt-5.1: corrected 2026-08-07 — was $1.75/$14.00, live API pricing page now shows $1.25/$10.00 (older-gen
+  // model repriced down below gpt-5.2). gpt-5.1-codex/-mini/-max not independently re-confirmed this round
+  // (absent from the general pricing page); left unchanged — see PRICING_SOURCES.md Known gaps.
+  'gpt-5.1':            { inputPerMTok: 1.25,  cacheReadPerMTok: 0.125,  cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 256_000 },
   'gpt-5.1-codex':      { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0, outputPerMTok: 14.00, contextWindowTokens: 256_000 },
   'gpt-5.1-codex-mini': { inputPerMTok: 0.75,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 4.50,  contextWindowTokens: 256_000 },
   'gpt-5.1-codex-max':  { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0, outputPerMTok: 14.00, contextWindowTokens: 256_000 },
@@ -35,10 +39,14 @@ const RATES: Record<string, ModelRates> = {
   'gpt-5.4-mini':       { inputPerMTok: 0.75,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 4.50,  contextWindowTokens: 200_000 },
   'gpt-5.4-nano':       { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0, outputPerMTok: 1.25,  contextWindowTokens: 128_000 },
   'gpt-5.5':            { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, contextWindowTokens: 256_000 },
-  // gpt-5.6 family (new as of 2026-07-19): Luna (small/fast), Terra (mid, ~gpt-5.4 pricing), Sol (flagship, ~gpt-5.5 pricing).
-  'gpt-5.6-luna':       { inputPerMTok: 1.00,  cacheReadPerMTok: 0.10,   cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 256_000 },
-  'gpt-5.6-terra':      { inputPerMTok: 2.50,  cacheReadPerMTok: 0.25,   cacheWritePerMTok: 0, outputPerMTok: 15.00, contextWindowTokens: 256_000 },
-  'gpt-5.6-sol':        { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, contextWindowTokens: 256_000 },
+  // gpt-5.6 family: Luna (small/fast), Terra (mid), Sol (flagship). Corrected 2026-08-07 — Luna and Terra were
+  // repriced down (Luna $1.00→$0.20 input, Terra $2.50→$2.00 input), and the whole family gained real cache-write
+  // pricing (1.25x input, confirmed across the Copilot docs, OpenAI's pricing page, and the Codex credits page).
+  // A "long context" surcharge tier also exists above an unconfirmed token threshold (~2x input/cache, ~1.5x
+  // output per Copilot's docs) — not implemented; see PRICING_SOURCES.md Known gaps.
+  'gpt-5.6-luna':       { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0.25, outputPerMTok: 1.20,  contextWindowTokens: 256_000 },
+  'gpt-5.6-terra':      { inputPerMTok: 2.00,  cacheReadPerMTok: 0.20,   cacheWritePerMTok: 2.50, outputPerMTok: 12.00, contextWindowTokens: 256_000 },
+  'gpt-5.6-sol':        { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 6.25, outputPerMTok: 30.00, contextWindowTokens: 256_000 },
   // ── Codex-only ─────────────────────────────────────────────────────────────
   // codex-mini-latest: deprecated per OpenAI docs; kept for historical sessions.
   'codex-mini-latest':  { inputPerMTok: 1.50,  cacheReadPerMTok: 0.375,  cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 200_000 },
@@ -58,11 +66,16 @@ const RATES: Record<string, ModelRates> = {
   'claude-opus-4-6':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-7':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-8':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
+  // claude-opus-5: added 2026-08-07, now GA per Anthropic's pricing page — same rate as Opus 4.8.
+  'claude-opus-5':      { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
   // fast mode for Opus 4.6 was removed 2026-06-29 — requests now run at standard speed/rates despite the -fast suffix.
   'claude-opus-4-6-fast':{ inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok:  25.00, contextWindowTokens: 1_000_000 },
-  // fast mode for Opus 4.7 is deprecated and scheduled for removal 2026-07-24 — remove/fold into standard rate after that date.
+  // fast mode for Opus 4.7 is confirmed removed as of this refresh (2026-08-07) — Anthropic's docs now state
+  // requests with speed:"fast" return an error. Entry frozen for historical sessions only.
   'claude-opus-4-7-fast':{ inputPerMTok: 30.00, cacheReadPerMTok: 3.00, cacheWritePerMTok: 37.50, outputPerMTok: 150.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-8-fast':{ inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
+  // claude-opus-5-fast: added 2026-08-07 — Anthropic's fast-mode table lists Opus 5 and Opus 4.8 together at the same rate.
+  'claude-opus-5-fast':  { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
   'claude-fable-5':      { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
   // claude-mythos-5: limited-availability preview (anthropic.com/glasswing), same rates as Fable 5.
   'claude-mythos-5':     { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
@@ -72,6 +85,8 @@ const RATES: Record<string, ModelRates> = {
   'gemini-3-pro':    { inputPerMTok: 2.00, cacheReadPerMTok: 0.20,  cacheWritePerMTok: 0, outputPerMTok: 12.00, contextWindowTokens: 1_000_000 },
   'gemini-3.1-pro':  { inputPerMTok: 2.00, cacheReadPerMTok: 0.20,  cacheWritePerMTok: 0, outputPerMTok: 12.00, contextWindowTokens: 1_000_000 },
   'gemini-3.5-flash':{ inputPerMTok: 1.50, cacheReadPerMTok: 0.15,  cacheWritePerMTok: 0, outputPerMTok:  9.00, contextWindowTokens: 1_000_000 },
+  // gemini-3.6-flash: added 2026-08-07, new on the Copilot pricing page.
+  'gemini-3.6-flash':{ inputPerMTok: 1.50, cacheReadPerMTok: 0.15,  cacheWritePerMTok: 0, outputPerMTok:  7.50, contextWindowTokens: 1_000_000 },
   // ── Fine-tuned ─────────────────────────────────────────────────────────────
   // raptor-mini: no longer an included/$0 model as of the 2026-07-19 Copilot pricing page — now billed at standard rates.
   'raptor-mini': { inputPerMTok: 0.25, cacheReadPerMTok: 0.025, cacheWritePerMTok: 0, outputPerMTok:  2.00,  contextWindowTokens: 0 },
