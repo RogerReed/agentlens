@@ -152,6 +152,25 @@ function OverviewSection() {
           <p style={{ textAlign: 'center', fontStyle: 'italic', color: 'var(--muted)', marginTop: 8, marginBottom: 0 }}>Watching your agents so you don't have to.</p>
         </div>
       )}
+      <div style="margin:0 0 16px;background:var(--hover);border:1px solid var(--border);border-left:4px solid var(--warning,#ffb74d);border-radius:6px;padding:12px 16px">
+        <p style="font-size:13px;font-weight:700;margin:0 0 8px;color:var(--foreground)">Important: OTEL captures richer data than log-only history</p>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 10px;line-height:1.75">OpenTelemetry capture is live collection. AgentLens must be running while your agent session runs to collect full OTEL spans, timing, tool payloads, and richer turn-level context. If AgentLens was not running (or OTEL was not configured yet), AgentLens can still backfill from local logs/databases, but those sessions are less detailed.</p>
+        <ul style="margin:0 0 10px 18px;padding:0;font-size:12px;color:var(--muted);line-height:1.75">
+          <li>
+            <span style="font-size:9px;font-weight:600;padding:1px 5px;border-radius:2px;border:1px solid #90a4ae;letter-spacing:0.03em;vertical-align:middle;display:inline-block;margin-right:6px;color:#90a4ae">Log</span>
+            sessions can have missing or reduced detail in Trace, Flow, Tools, and Files.
+          </li>
+          <li>
+            <span style="font-size:9px;font-weight:600;padding:1px 5px;border-radius:2px;border:1px solid #ffffff;letter-spacing:0.03em;vertical-align:middle;display:inline-block;margin-right:6px;color:#ffffff">OTEL</span>
+            sessions usually include fuller timing structure and richer event detail.
+          </li>
+        </ul>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 8px;line-height:1.75"><strong style="color:var(--fg)">How to get richer data with OTEL:</strong></p>
+        <ul style="margin:0 0 0 18px;padding:0;font-size:12px;color:var(--muted);line-height:1.75">
+          <li>Complete <a href="#help-config">Setup</a> and restart each agent.</li>
+          <li>This improves future sessions only; it cannot retroactively add OTEL detail to already-finished log-only sessions.</li>
+        </ul>
+      </div>
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
         <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code-family IDE extension (VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro), a local web app (npx), or Docker, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and also reads <strong>local session files and databases</strong> written automatically by each agent as a zero-config fallback — including OpenCode's local SQLite database — so history loads even without OTEL configured. Both sources feed one unified dashboard and surface efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time.</p>
