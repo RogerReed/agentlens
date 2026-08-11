@@ -371,6 +371,13 @@ function SessionBlock({ sess, sessIdx, sessNum, totalCount, isFirst }: {
         </span>
       </div>
 
+      {sess.source === 'codex' && !collapsed && (
+        <div style="padding:6px 10px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--muted);line-height:1.5">
+          <strong style="color:var(--fg)">Codex trace note:</strong>{' '}
+          Codex telemetry contains many point-in-time log events and very short spans. These may appear as narrow marks in the waterfall even when the overall session lasted much longer. Use Flow for the normalized turn/tool sequence, or expand a row to inspect its exact duration and timestamp.
+        </div>
+      )}
+
       {promptExpanded && (
         <div style="padding:6px 10px 6px 28px;background:var(--hover);border-left:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--fg);white-space:pre-wrap;word-break:break-word">
           {sess.userRequest}
