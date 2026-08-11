@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   cost_usd            REAL    NOT NULL DEFAULT 0,
   data_source         TEXT    NOT NULL DEFAULT 'otel',
   models              TEXT    NOT NULL DEFAULT '[]',
+  one_shot_stats      TEXT    NOT NULL DEFAULT '{}',
   created_at          INTEGER NOT NULL DEFAULT (CAST(strftime('%s', 'now') AS INTEGER) * 1000)
 );
 

@@ -94,6 +94,9 @@ function applyMigrations(db: SqlDatabase): void {
   if (!colNames.includes('models')) {
     db.run("ALTER TABLE sessions ADD COLUMN models TEXT NOT NULL DEFAULT '[]'")
   }
+  if (!colNames.includes('one_shot_stats')) {
+    db.run("ALTER TABLE sessions ADD COLUMN one_shot_stats TEXT NOT NULL DEFAULT '{}'")
+  }
 
   // timeline_entries cache token columns
   const teCols = db.exec('PRAGMA table_info(timeline_entries)')

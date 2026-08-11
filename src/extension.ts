@@ -17,6 +17,7 @@ import { SessionRepository } from './sessionRepository'
 import { summarizeSpans } from './spanSummarizer'
 import { LogReader } from './logReader'
 import { detectLoopSignals } from './loopDetector'
+import { computeOneShotStats } from './oneShotRate'
 import { startMcpHttpServer } from './mcpServer'
 import { InstructionRepository } from './database/instructionRepository'
 
@@ -239,6 +240,7 @@ export async function activate(context: vscode.ExtensionContext) {
       const ws = fallbackWorkspace()
       for (const { card, workspace } of results) {
         card.loopSignals = detectLoopSignals(card)
+        card.oneShotStats = computeOneShotStats(card)
         writer!.enqueue(card, workspace || ws)
       }
       void writer!.drain().then(() => {
@@ -294,6 +296,7 @@ export async function activate(context: vscode.ExtensionContext) {
               const result = lr.parseFile(files[i].filePath, files[i].agentKey)
               if (result) {
                 result.card.loopSignals = detectLoopSignals(result.card)
+                result.card.oneShotStats = computeOneShotStats(result.card)
                 writer!.enqueue(result.card, result.workspace || ws)
                 const dk = files[i].agentKey === 'copilot_vscode_json' ? 'copilot_vscode' : files[i].agentKey
                 countByKey.set(dk, (countByKey.get(dk) ?? 0) + 1)
@@ -324,6 +327,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const ws = fallbackWorkspace()
         for (const { card, workspace } of ocResults) {
           card.loopSignals = detectLoopSignals(card)
+          card.oneShotStats = computeOneShotStats(card)
           writer!.enqueue(card, workspace || ws)
         }
         countByKey.set('opencode', (countByKey.get('opencode') ?? 0) + ocResults.length)

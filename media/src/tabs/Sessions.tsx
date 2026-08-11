@@ -9,7 +9,7 @@ import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
   getDataSourceBadgeHtml, getInitiatorBadgeHtml,
 } from '../utils'
-import { calcSessionCost } from '../sessionMetrics'
+import { calcSessionCost, oneShotRate, avgEditsPerFile } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
 import { generateInsights, InsightCard } from './Insights'
 import { buildDisplaySummary } from '../utils'
@@ -239,6 +239,22 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
               )
               : (
                 <div style="display:flex;flex-direction:column;gap:3px">
+                  {sess.oneShotStats && (() => {
+                    const rate = oneShotRate(sess.oneShotStats)
+                    const avg = avgEditsPerFile(sess.oneShotStats)
+                    return (
+                      <div
+                        data-tip="Counts edit passes per file — a file edited once is 'one-shot', edited again is a retry. This is a proxy for correction effort, not a signal that the code actually worked."
+                        style="display:flex;align-items:center;gap:6px;padding:5px 8px;margin-bottom:2px;font-size:11px;color:var(--muted);cursor:help"
+                      >
+                        <span>
+                          {rate === null
+                            ? `Not enough edited files for a one-shot rate (${sess.oneShotStats.filesConsidered} considered)`
+                            : `${Math.round(rate * 100)}% one-shot (${sess.oneShotStats.oneShotFiles}/${sess.oneShotStats.filesConsidered} files, avg ${avg?.toFixed(1)} edit passes/file)`}
+                        </span>
+                      </div>
+                    )
+                  })()}
                   {sess.filesChanged.map(f => (
                     <div
                       key={f}

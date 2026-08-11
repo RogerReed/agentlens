@@ -61,6 +61,11 @@ function AgentCard({ source, sessions }: { source: string; sessions: SessionSumm
         <div><span style="color:var(--muted)">Cache hit</span> <strong>{(s.cacheHitRate * 100).toFixed(0)}%</strong></div>
         <div><span style="color:var(--muted)">Avg dur</span> <strong>{formatMs(s.avgDuration)}</strong></div>
         {s.avgTtft > 0 && <div><span style="color:var(--muted)">Avg TTFT</span> <strong>{formatMs(s.avgTtft)}</strong></div>}
+        {s.oneShotRate !== null && (
+          <div data-tip="Files edited exactly once vs. files that needed a retry, across all sessions in this view. Edit-pass count, not a signal the code actually worked.">
+            <span style="color:var(--muted)">One-shot</span> <strong>{Math.round(s.oneShotRate * 100)}%</strong>
+          </div>
+        )}
       </div>
       {topTools.length > 0 && (
         <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--muted)">

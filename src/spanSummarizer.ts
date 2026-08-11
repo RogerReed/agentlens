@@ -10,6 +10,7 @@
 
 import { Span } from './types'
 import { detectLoopSignals } from './loopDetector'
+import { computeOneShotStats } from './oneShotRate'
 import { buildCopilotSessions } from './summarizers/copilot'
 import { buildClaudeSessions } from './summarizers/claude'
 import { buildCodexSessions } from './summarizers/codex'
@@ -141,6 +142,7 @@ export function summarizeSpans(spans: Span[]) {
   const sessions = allSorted
 
   sessions.forEach(s => { s.loopSignals = detectLoopSignals(s) })
+  sessions.forEach(s => { s.oneShotStats = computeOneShotStats(s) })
 
   // Background/orphan spans — associate with sessions by traceId
   const bgByTraceId: Record<string, Array<{ name: string; model: string; purpose: string; inputTokens: number; outputTokens: number }>> = {}
