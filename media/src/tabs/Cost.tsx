@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'preact/hooks'
 import { sessionSummary, displaySessions, filteredSessions, dailyStats, lifetimeStats, selectedAgentFilter, timeRange, makeTimeRange, focusedSessionId, activeTab } from '../state'
 import type { TimePreset } from '../state'
 import { getAgentColor, getSessionGlobalNumber, formatCompact, getAgentSourceLabel, formatSessionTime } from '../utils'
-import { calcSessionCost } from '../sessionMetrics'
+import { calcSessionCost, sessionCostMode } from '../sessionMetrics'
 import { PRICING_LAST_UPDATED } from '../pricing'
 import type { PricingMode } from '../sessionMetrics'
 import type { SessionSummaryCard, DailyStatRow } from '../types'
@@ -21,11 +21,6 @@ function fmtCredits(credits: number): string {
   if (credits === 0) return '0'
   if (credits < 0.1) return '<0.1'
   return credits.toFixed(1)
-}
-
-function sessionCostMode(session: SessionSummaryCard, mode: PricingMode): PricingMode {
-  // Codex and Claude Code are always token-based; the mode toggle only applies to Copilot
-  return (session.source === 'codex' || session.source === 'claude_code') ? 'token' : mode
 }
 
 // ── 30-day history chart (SVG) ────────────────────────────────────────────────

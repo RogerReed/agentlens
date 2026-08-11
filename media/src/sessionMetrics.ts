@@ -101,6 +101,26 @@ export interface ErrorHealth {
   recentErrors: string[]
 }
 
+export function sessionCostMode(session: SessionSummaryCard, mode: PricingMode): PricingMode {
+  // Codex and Claude Code are always token-based; the mode toggle only applies to Copilot
+  return (session.source === 'codex' || session.source === 'claude_code') ? 'token' : mode
+}
+
+// 'YYYY-MM-DD', UTC — matches the day-grouping convention used by the Cost tab's daily chart.
+export function dayKeyUtc(t: string | undefined): string {
+  return t ? new Date(t).toISOString().slice(0, 10) : 'none'
+}
+
+// Sum of estimated cost across sessions that started on the given UTC day key.
+// Defaults every session to token-based pricing (Copilot's AI Credits model) since this runs in
+// contexts (alerts) with no user-facing pricing-mode toggle to plumb through.
+export function getDailyCostUsd(sessions: SessionSummaryCard[], dayKey: string): number {
+  return sessions.reduce((sum, s) => {
+    if (dayKeyUtc(s.startTime) !== dayKey) return sum
+    return sum + calcSessionCost(s, sessionCostMode(s, 'token')).totalUsd
+  }, 0)
+}
+
 export function sessionDisplayName(session: SessionSummaryCard): string {
   const req = (session.userRequest ?? '').trim()
   if (!req || req === '[session in progress]') return '[session in progress]'
