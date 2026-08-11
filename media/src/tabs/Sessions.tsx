@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'preact/hooks'
 import {
-  filteredSessions, sessionSummary, sessionTimelines, burnRateData,
+  filteredSessions, sessionSummary, sessionTimelines, gitOutcomes, burnRateData,
   focusedSessionId, vscode, ignoredInsightKeys,
   sessionSortKey, sessionSortDir, type SortKey,
   workspaceFilter, shortWorkspaceName, goToHelp,
@@ -17,11 +17,18 @@ import { Step, StepRow } from './Traces'
 import { FlowCanvas } from './Flow'
 import { ToolsChart } from './Tools'
 import { LogIngestionNote } from './IngestionNote'
-import type { SessionSummaryCard } from '../types'
+import type { SessionSummaryCard, FileOutcome } from '../types'
 
 // ── Session detail panel (shown in expanded row) ──────────────────────────────
 
 type Section = 'overview' | 'trace' | 'files' | 'flow' | 'tools'
+
+const OUTCOME_META: Record<FileOutcome, { icon: string; color: string; label: string }> = {
+  productive: { icon: '✓', color: 'var(--vscode-charts-green,#81c784)', label: 'Committed' },
+  reverted:   { icon: '↺', color: 'var(--error)',                       label: 'Reverted' },
+  abandoned:  { icon: '◑', color: '#f6a623',                            label: 'Uncommitted' },
+  ambiguous:  { icon: '?', color: 'var(--muted)',                       label: 'Unknown' },
+}
 
 function PromptBlock({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false)
@@ -53,10 +60,28 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
   const cost = calcSessionCost(sess, 'token')
   const cacheRate = sess.inputTokens > 0 ? Math.round(sess.cacheReadTokens / sess.inputTokens * 100) : 0
   const burnRate = burnRateData.value
+  const gitOutcome = gitOutcomes.value[sess.sessionId]
 
   useEffect(() => {
     if (!timelines[sess.sessionId] && vscode) {
       vscode.postMessage({ type: 'loadSessionDetail', sessionId: sess.sessionId })
+    }
+  }, [sess.sessionId])
+
+  useEffect(() => {
+    // undefined = not yet requested; null = requested but not applicable (no repo, no files, etc)
+    if (gitOutcomes.value[sess.sessionId] === undefined && sess.filesChanged.length > 0 && vscode) {
+      const endTime = sess.startTime && sess.durationMs
+        ? new Date(new Date(sess.startTime).getTime() + sess.durationMs).toISOString()
+        : sess.startTime
+      vscode.postMessage({
+        type: 'getGitOutcome',
+        sessionId: sess.sessionId,
+        workspace: sess.workspace,
+        filesChanged: sess.filesChanged,
+        startTime: sess.startTime,
+        endTime,
+      })
     }
   }, [sess.sessionId])
 
@@ -239,17 +264,33 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
               )
               : (
                 <div style="display:flex;flex-direction:column;gap:3px">
-                  {sess.filesChanged.map(f => (
+                  {gitOutcome && (
                     <div
-                      key={f}
-                      style={`display:flex;align-items:center;gap:8px;padding:4px 8px;background:var(--hover);border-radius:4px;font-size:11px${vscode ? ';cursor:pointer' : ''}`}
-                      onClick={() => vscode?.postMessage({ type: 'openFile', filePath: f })}
-                      title={vscode ? 'Click to open in editor' : f}
+                      data-tip="Estimated from local git history: compares each file's content right before this session against its content now. Not available without a local git repo, and doesn't cover files git can't see (e.g. gitignored)."
+                      style={`display:flex;align-items:center;gap:6px;padding:5px 8px;margin-bottom:2px;font-size:11px;color:${OUTCOME_META[gitOutcome.overall].color};cursor:help`}
                     >
-                      <span style="color:var(--vscode-charts-green,#81c784);font-size:10px;flex-shrink:0">M</span>
-                      <span style={`font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap${vscode ? ';color:var(--vscode-textLink-foreground,#4fc3f7)' : ''}`}>{f}</span>
+                      <span>{OUTCOME_META[gitOutcome.overall].icon}</span>
+                      <span>{gitOutcome.reason}</span>
                     </div>
-                  ))}
+                  )}
+                  {sess.filesChanged.map(f => {
+                    const fileOutcome = gitOutcome?.files[f]
+                    const meta = fileOutcome ? OUTCOME_META[fileOutcome] : null
+                    return (
+                      <div
+                        key={f}
+                        style={`display:flex;align-items:center;gap:8px;padding:4px 8px;background:var(--hover);border-radius:4px;font-size:11px${vscode ? ';cursor:pointer' : ''}`}
+                        onClick={() => vscode?.postMessage({ type: 'openFile', filePath: f })}
+                        title={vscode ? 'Click to open in editor' : f}
+                      >
+                        <span style="color:var(--vscode-charts-green,#81c784);font-size:10px;flex-shrink:0">M</span>
+                        <span style={`font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1${vscode ? ';color:var(--vscode-textLink-foreground,#4fc3f7)' : ''}`}>{f}</span>
+                        {meta && (
+                          <span style={`color:${meta.color};font-size:10px;flex-shrink:0`} title={meta.label}>{meta.icon} {meta.label}</span>
+                        )}
+                      </div>
+                    )
+                  })}
                   {sess.filesChangedNote && (
                     <div style="font-size:10px;color:var(--muted);margin-top:3px">{sess.filesChangedNote}</div>
                   )}
