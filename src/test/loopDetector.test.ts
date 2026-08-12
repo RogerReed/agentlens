@@ -7,6 +7,7 @@ import {
   detectRunawaySteps,
   detectTokenRunaway,
   inferTaskComplexity,
+  getFileEditCounts,
   LOOP_SIGNAL_ACTIONS,
 } from '../loopDetector'
 import { SessionSummaryCard, TimelineEntry } from '../spanSummarizer'
@@ -293,6 +294,60 @@ suite('detectEditRevertCycle', () => {
     })
     detectEditRevertCycle(session, signals)
     assert.strictEqual(signals.length, 0)
+  })
+})
+
+// ── getFileEditCounts ────────────────────────────────────────────────────────
+
+function makeLlmEdit(filePath: string, oldString: string, newString: string): TimelineEntry {
+  return {
+    type: 'llm',
+    spanId: 'span-' + Math.random().toString(36).slice(2, 8),
+    label: 'claude-sonnet-5',
+    model: 'claude-sonnet-5',
+    inputTokens: 100,
+    outputTokens: 50,
+    durationMs: 2000,
+    isError: false,
+    timestamp: new Date().toISOString(),
+    editDetails: [{ filePath, oldString, newString }],
+  }
+}
+
+suite('getFileEditCounts', () => {
+  test('reads from tool entries when no llm entries have editDetails', () => {
+    const session = makeSession({
+      timeline: [makeEdit('a.ts', '1', '2'), makeTool('Read')],
+    })
+    const counts = getFileEditCounts(session)
+    assert.deepStrictEqual(Object.keys(counts), ['a.ts'])
+    assert.strictEqual(counts['a.ts'].length, 1)
+  })
+
+  test('prefers llm entries over tool entries without double-counting', () => {
+    // Same edit reported on both the 'llm' entry (Claude's primary source, parsed from
+    // gen_ai.output.messages tool_use blocks) and a separate 'tool' entry (secondary
+    // source, from the claude_code.tool span) — this happens whenever both
+    // CLAUDE_CODE_ENHANCED_TELEMETRY_BETA and OTEL_LOG_TOOL_DETAILS are set.
+    const session = makeSession({
+      timeline: [makeLlmEdit('a.ts', '1', '2'), makeEdit('a.ts', '1', '2')],
+    })
+    const counts = getFileEditCounts(session)
+    assert.deepStrictEqual(Object.keys(counts), ['a.ts'])
+    assert.strictEqual(counts['a.ts'].length, 1, 'should count the edit once, not twice')
+  })
+
+  test('falls back to tool entries when llm entries have no editDetails', () => {
+    const session = makeSession({
+      timeline: [makeLlm(100, 50), makeEdit('a.ts', '1', '2')],
+    })
+    const counts = getFileEditCounts(session)
+    assert.deepStrictEqual(Object.keys(counts), ['a.ts'])
+  })
+
+  test('returns empty when no entries have editDetails', () => {
+    const session = makeSession({ timeline: [makeTool('Read'), makeLlm(100, 50)] })
+    assert.deepStrictEqual(getFileEditCounts(session), {})
   })
 })
 

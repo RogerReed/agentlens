@@ -18,6 +18,7 @@ import { autoConfigureClaudeCode, autoConfigureCodex, autoConfigureCopilotStanda
 import { classifyOtlpPayload } from '../src/otlpParser'
 import { startMcpHttpServer } from '../src/mcpServer'
 import { LogReader, type OpenCodeSqlFactory } from '../src/logReader'
+import { computeOneShotStats } from '../src/oneShotRate'
 import { generateSuggestions } from '../src/instructionAdvisor'
 import { detectInstructionFiles, appendSuggestion } from '../src/instructionFiles'
 import type { Span } from '../src/types'
@@ -160,6 +161,7 @@ function runLogScan() {
   const results = logReader.scan()
   let changed = false
   for (const { card } of results) {
+    card.oneShotStats = computeOneShotStats(card)
     logSessions.set(card.sessionId, card)
     changed = true
   }
@@ -220,6 +222,7 @@ async function startLogIngestion() {
   // OpenCode: one DB file = many sessions, handled separately.
   const ocResults = logReader.scanOpenCode()
   for (const { card } of ocResults) {
+    card.oneShotStats = computeOneShotStats(card)
     logSessions.set(card.sessionId, card)
     countByKey.set('opencode', (countByKey.get('opencode') ?? 0) + 1)
   }
@@ -235,6 +238,7 @@ async function startLogIngestion() {
     try {
       const result = logReader.parseFile(file.filePath, file.agentKey)
       if (result) {
+        result.card.oneShotStats = computeOneShotStats(result.card)
         logSessions.set(result.card.sessionId, result.card)
         countByKey.set(file.agentKey, (countByKey.get(file.agentKey) ?? 0) + 1)
       }

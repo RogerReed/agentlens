@@ -105,16 +105,11 @@ export function detectExactToolRepeat(session: SessionSummaryCard, signals: Loop
 
 // ── Shared: per-file edit extraction ─────────────────────────────────────────
 
-/**
- * Walks a session's timeline and groups every (oldString, newString) edit pair by the file it
- * touched. Shared by detectEditRevertCycle below and by oneShotRate.ts's retry-rate metric — both
- * need the same "how many times, and how, was each file edited" data, just aggregated differently.
- */
-export function getFileEditCounts(session: SessionSummaryCard): Record<string, Array<{ old: string; new: string }>> {
+function collectEditDetails(session: SessionSummaryCard, type: 'llm' | 'tool'): Record<string, Array<{ old: string; new: string }>> {
   const fileEdits: Record<string, Array<{ old: string; new: string }>> = {}
 
   for (const entry of session.timeline) {
-    if (entry.type !== 'tool' || !entry.editDetails) { continue }
+    if (entry.type !== type || !entry.editDetails) { continue }
     for (const detail of entry.editDetails) {
       if (!detail.filePath || !detail.oldString || !detail.newString) { continue }
       if (!fileEdits[detail.filePath]) { fileEdits[detail.filePath] = [] }
@@ -123,6 +118,27 @@ export function getFileEditCounts(session: SessionSummaryCard): Record<string, A
   }
 
   return fileEdits
+}
+
+/**
+ * Walks a session's timeline and groups every (oldString, newString) edit pair by the file it
+ * touched. Shared by detectEditRevertCycle below and by oneShotRate.ts's retry-rate metric — both
+ * need the same "how many times, and how, was each file edited" data, just aggregated differently.
+ *
+ * For Claude Code, src/summarizers/claude.ts populates edit details in two places for the *same*
+ * underlying tool call: on the 'llm' entry from the assistant's gen_ai.output.messages tool_use
+ * blocks (primary source, only needs CLAUDE_CODE_ENHANCED_TELEMETRY_BETA), and separately on the
+ * 'tool' entry from claude_code.tool span attributes (secondary source, needs
+ * OTEL_LOG_TOOL_DETAILS). Reading both unconditionally would double-count every edit when both
+ * telemetry flags are set. Instead: prefer 'llm' entries whenever any exist in the session, and
+ * only fall back to 'tool' entries when the session has none — restricting to 'tool' only (the
+ * original behavior here) silently dropped the primary source, reading zero edits for any session
+ * that only had the former.
+ */
+export function getFileEditCounts(session: SessionSummaryCard): Record<string, Array<{ old: string; new: string }>> {
+  const fromLlm = collectEditDetails(session, 'llm')
+  if (Object.keys(fromLlm).length > 0) { return fromLlm }
+  return collectEditDetails(session, 'tool')
 }
 
 // ── Detector 2: Edit-revert cycle ────────────────────────────────────────────
