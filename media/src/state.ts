@@ -1,7 +1,7 @@
 import { signal, computed } from '@preact/signals'
 import { calcSessionCost } from './sessionMetrics'
 import type {
-  FullSummary, SessionSummaryCard, TimelineEntry,
+  FullSummary, SessionSummaryCard, TimelineEntry, GitOutcome,
   AgentFilter, InitiatorFilter, DataSourceFilter, InsightFilter, WorkspaceFilter, VsCodeApi,
   DailyStatRow, LifetimeStats, BurnRate, Projection,
 } from './types'
@@ -96,6 +96,10 @@ export const toolCalls = signal<Record<string, number>>(window.__INITIAL_TOOL_CA
 
 export const sessionTimelines = signal<Record<string, TimelineEntry[]>>({})
 export const blobCache = signal<Record<string, string>>({})
+
+// Lazy git-outcome cache: sessionId → classification, or null once fetched but not applicable
+// (no git repo, no changed files, etc). Absent key = not yet requested. See gitOutcome.ts.
+export const gitOutcomes = signal<Record<string, GitOutcome | null>>({})
 
 // ── UI control signals ────────────────────────────────────────────────────────
 
