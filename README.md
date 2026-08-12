@@ -92,7 +92,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, broken down by model in a day-grouped table
 - **Efficiency & Inefficiency Detection** — Surfaces context bloat, redundant tool calls, cache misses, and five loop/malfunction patterns with suggested prompts to correct course
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, repeat tool calls, and estimated daily cost — per-agent or shared
-- **Export** — Export filtered sessions as JSON (full or redacted); respects the active agent, source, time range, and text filters
+- **Export** — Export filtered sessions as JSON, CSV, or Markdown (full or redacted); respects the active agent, source, time range, and text filters
 - **Import** — Import sessions from a previous AgentLens JSON export; drag-drop or file-pick, shows a preview with session count by source and date range, imports with live progress and automatic deduplication (existing sessions are skipped)
 
 ## Data Sources
@@ -149,10 +149,13 @@ All figures are estimates — not your actual bill. Rates are sourced from each 
 
 ### Export
 
-The **Export** tab writes session summary files to your workspace root:
+The **Export** tab writes session summary files to your workspace root, in your choice of three formats:
 
-- `export_sessions_<timestamp>.json` — full export including prompt text, token counts, tool usage, file changes, and cost estimates for every recorded session
-- `export_sessions_<timestamp>.json` (redacted) — same structure with prompt text (`userRequest`) removed
+- **JSON** (default) — full-fidelity structured export including prompt text, token counts, tool usage, file changes, and cost estimates for every recorded session. This is the only format the **Import** tab reads back in.
+- **CSV** — one row per session, with array/object fields (models, files, tool counts, loop signals) flattened into semicolon-joined cells. Built for dropping into a spreadsheet.
+- **Markdown** — one section per session with the same data laid out as a readable report, prompt included as a blockquote. Built for sharing.
+
+Each format is available both as the full export and as a redacted export (prompt text and file paths replaced with `[redacted]`) — filenames follow `export_sessions_<timestamp>.<ext>` (or `export_redacted_sessions_<timestamp>.<ext>` for the redacted version), with `<ext>` matching the format chosen (`json`, `csv`, or `md`).
 
 Exports draw from the full SQLite session history, not just the active window, so all past sessions are included regardless of when they ran.
 
@@ -160,7 +163,7 @@ Exports draw from the full SQLite session history, not just the active window, s
 
 ### Import
 
-The **Import** tab loads sessions from a previous AgentLens export file into the current installation — useful for migrating data to a new machine, sharing session history across team members, or restoring a local backup.
+The **Import** tab loads sessions from a previous AgentLens **JSON** export file into the current installation — useful for migrating data to a new machine, sharing session history across team members, or restoring a local backup. CSV and Markdown exports are one-way (for external consumption) and can't be imported back.
 
 1. Open the **Import** tab in the dashboard
 2. Drag-and-drop an `export_sessions_*.json` file onto the drop zone, or click **Choose file**
