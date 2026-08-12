@@ -47,6 +47,16 @@ export interface LoopSignal {
   action: string
 }
 
+// Mirrors src/gitOutcome.ts. Fetched lazily per session (see sessionTimelines in state.ts for the
+// same lazy-cache pattern) — never eagerly computed for every loaded session.
+export type FileOutcome = 'productive' | 'reverted' | 'abandoned' | 'ambiguous'
+
+export interface GitOutcome {
+  overall: FileOutcome
+  files: Record<string, FileOutcome>
+  reason: string
+}
+
 export interface SessionSummaryCard {
   sessionId: string
   traceId: string

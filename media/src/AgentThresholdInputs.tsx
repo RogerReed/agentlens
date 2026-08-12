@@ -60,7 +60,7 @@ function thresholdInputStyle(width: number, invalid: boolean): string {
     + ';border-radius:3px;padding:2px 6px;font-size:12px'
 }
 
-function ThresholdNumberTextInput({ value, min, max, width, ariaLabel, onChange }: ThresholdNumberTextInputProps) {
+export function ThresholdNumberTextInput({ value, min, max, width, ariaLabel, onChange }: ThresholdNumberTextInputProps) {
   const [draft, setDraft] = useState(String(value))
 
   useEffect(() => {

@@ -2,7 +2,9 @@ import { useState } from 'preact/hooks'
 import { displaySessions } from '../state'
 import { buildDisplaySummary, formatMs } from '../utils'
 import {
+  fmtUsd,
   getActiveComputeMs,
+  getDailyCostUsd,
   getErrorHealth,
   getIdenticalToolRepeat,
   getPeakContextUsage,
@@ -11,6 +13,7 @@ import {
 import {
   AgentThresholdInputs,
   AgentThresholdNumberInputs,
+  ThresholdNumberTextInput,
 } from '../AgentThresholdInputs'
 import {
   AGENT_ORDER,
@@ -31,6 +34,7 @@ const ALERT_TOOLTIPS: Record<string, string> = {
   long_session:   'Uses active LLM/tool compute time, not wall-clock waiting time.',
   no_cache:       'Only checks sessions above the input-token gate. Cache can be low for small sessions without being a problem.',
   tool_loop:      'Counts identical tool plus argument repeats, not just the same tool name.',
+  daily_cost:     'Estimated cost only, not a real billing figure. Sums today (UTC) across every agent using token-based pricing, so it will overcount for Copilot plans on legacy request-based billing.',
 }
 
 type AgentThresholdMap = Record<AgentSource, number>
@@ -62,6 +66,7 @@ const DEFAULT_CONFIGS: AlertConfig[] = [
   { id: 'long_session', label: 'Long Active Session', severity: 'info', description: 'Fires when active LLM/tool compute time exceeds the agent-specific threshold. Wall-clock idle time does not count.', enabled: true, threshold: 60, unit: 'agent profile', min: 10, max: 240, step: 10 },
   { id: 'no_cache', label: 'Zero Cache Utilization', severity: 'info', description: 'Fires when any session above that agent\'s input-token gate has 0% cache hit rate.', enabled: true, threshold: 30000, unit: 'tokens', min: 5000, max: 200000, step: 5000, agentThresholds: { claude_code: 30000, copilot: 30000, codex: 30000, opencode: 30000 } },
   { id: 'tool_loop', label: 'Identical Tool Repeat', severity: 'warning', description: 'Fires when the same tool with identical arguments repeats beyond the agent-specific threshold without a file change between repeats.', enabled: true, threshold: 5, unit: 'agent profile', min: 3, max: 20, step: 1 },
+  { id: 'daily_cost', label: 'Daily Cost Threshold', severity: 'warning', description: 'Fires when today\'s total estimated cost across all agents crosses the configured dollar threshold.', enabled: false, threshold: 20, unit: 'usd', min: 1, max: 500, step: 1 },
 ]
 
 type EffSummary = ReturnType<typeof buildDisplaySummary>['efficiency']
@@ -288,6 +293,18 @@ function evaluateAlert(
           + worst.profile.label + ' alert ' + worst.profile.identicalRepeatAlert + ' — "' + sessionDisplayName(worst.session) + '"',
       }
     }
+    case 'daily_cost': {
+      // Aggregate across the full session set, not the `sessions` param — callers may pass a
+      // narrowed slice (e.g. checkAlerts()'s 30-second-recent window), which would undercount.
+      const today = new Date().toISOString().slice(0, 10)
+      const total = getDailyCostUsd(buildDisplaySummary().sessions, today)
+      if (total < cfg.threshold) return { triggered: false }
+      return {
+        triggered: true,
+        key: 'daily_cost:' + today,
+        detail: 'Estimated cost today: ' + fmtUsd(total) + ' vs threshold ' + fmtUsd(cfg.threshold),
+      }
+    }
     default: return { triggered: false }
   }
 }
@@ -472,14 +489,27 @@ export function Alerts() {
                 max={cfg.max}
                 onChange={(source, value) => updateConfigAgentThreshold(cfg, source, value)}
               />
+            ) : profileMetrics.length > 0 ? (
+              <AgentThresholdInputs
+                profiles={profiles}
+                metrics={profileMetrics}
+                onChange={updateAgentThreshold}
+              />
             ) : (
-              profileMetrics.length > 0 && (
-                <AgentThresholdInputs
-                  profiles={profiles}
-                  metrics={profileMetrics}
-                  onChange={updateAgentThreshold}
+              // Globally-scoped configs (e.g. daily_cost) — one flat threshold, not per-agent.
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px;margin:8px 0">
+                <span class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700">Threshold</span>
+                {cfg.unit === 'usd' && <span style="color:var(--muted)">$</span>}
+                <ThresholdNumberTextInput
+                  value={cfg.threshold}
+                  min={cfg.min}
+                  max={cfg.max}
+                  width={70}
+                  ariaLabel={cfg.label + ' threshold'}
+                  onChange={value => updateConfig(cfg.id, { threshold: value })}
                 />
-              )
+                {cfg.unit !== 'usd' && <span style="color:var(--muted)">{cfg.unit}</span>}
+              </div>
             )}
           </div>
         )
