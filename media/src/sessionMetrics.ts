@@ -101,6 +101,63 @@ export interface ErrorHealth {
   recentErrors: string[]
 }
 
+export function sessionCostMode(session: SessionSummaryCard, mode: PricingMode): PricingMode {
+  // Codex and Claude Code are always token-based; the mode toggle only applies to Copilot
+  return (session.source === 'codex' || session.source === 'claude_code') ? 'token' : mode
+}
+
+// 'YYYY-MM-DD', UTC — matches the day-grouping convention used by the Cost tab's daily chart.
+export function dayKeyUtc(t: string | undefined): string {
+  return t ? new Date(t).toISOString().slice(0, 10) : 'unknown'
+}
+
+export interface AgentDayCost {
+  source: string
+  input: number
+  output: number
+  cacheCreate: number
+  cacheRead: number
+  cost: number
+  models: Set<string>
+}
+
+export interface DayCost {
+  input: number
+  output: number
+  cacheCreate: number
+  cacheRead: number
+  cost: number
+  agents: Map<string, AgentDayCost>
+}
+
+// Day → agent cost/token breakdown. The single source of truth for "daily cost" — the Analytics
+// tab's cost table, the daily_cost alert, and anything else that needs a per-day total should
+// build on this rather than re-deriving their own day-grouping and summing.
+export function buildDailyCostMap(sessions: SessionSummaryCard[], mode: PricingMode): Map<string, DayCost> {
+  const dayMap = new Map<string, DayCost>()
+  for (const sess of sessions) {
+    const day = dayKeyUtc(sess.startTime)
+    const cost = calcSessionCost(sess, sessionCostMode(sess, mode)).totalUsd
+    if (!dayMap.has(day)) dayMap.set(day, { input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0, agents: new Map() })
+    const de = dayMap.get(day)!
+    de.input += sess.inputTokens; de.output += sess.outputTokens
+    de.cacheCreate += sess.cacheCreateTokens ?? 0; de.cacheRead += sess.cacheReadTokens; de.cost += cost
+    if (!de.agents.has(sess.source)) de.agents.set(sess.source, { source: sess.source, input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0, models: new Set() })
+    const ae = de.agents.get(sess.source)!
+    ae.input += sess.inputTokens; ae.output += sess.outputTokens
+    ae.cacheCreate += sess.cacheCreateTokens ?? 0; ae.cacheRead += sess.cacheReadTokens; ae.cost += cost
+    if (sess.model) ae.models.add(sess.model)
+  }
+  return dayMap
+}
+
+// Estimated cost across sessions that started on the given UTC day key. Defaults to token-based
+// pricing (Copilot's AI Credits model) since this runs in contexts (alerts) with no user-facing
+// pricing-mode toggle to plumb through. Built on buildDailyCostMap, not a separate calculation.
+export function getDailyCostUsd(sessions: SessionSummaryCard[], dayKey: string): number {
+  return buildDailyCostMap(sessions, 'token').get(dayKey)?.cost ?? 0
+}
+
 export function sessionDisplayName(session: SessionSummaryCard): string {
   const req = (session.userRequest ?? '').trim()
   if (!req || req === '[session in progress]') return '[session in progress]'
