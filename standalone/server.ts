@@ -730,6 +730,89 @@ function getHtml(): string {
       _toastTimer = setTimeout(function() { el.classList.remove('visible'); }, 3000);
     }
 
+    // CSV/Markdown export helpers — mirrors src/exportFormats.ts. Kept as hand-written vanilla JS
+    // (not compiled from TS) because this whole block is embedded directly into the served HTML's
+    // inline <script>, matching the rest of this file's acquireVsCodeApi polyfill.
+    function csvCell(value) {
+      return '"' + String(value).replace(/"/g, '""') + '"';
+    }
+    function joinList(items) {
+      return (items || []).join('; ');
+    }
+    function joinToolCounts(counts) {
+      var parts = [];
+      for (var tool in (counts || {})) { parts.push(tool + ':' + counts[tool]); }
+      return parts.join('; ');
+    }
+    function joinLoopSignals(signals) {
+      return (signals || []).map(function(s) { return s.type + '(' + s.severity + ')'; }).join('; ');
+    }
+    var CSV_HEADERS = [
+      'Session ID', 'Trace ID', 'Source', 'Model', 'Models', 'Start Time', 'Duration (ms)', 'Turns',
+      'Tool Calls', 'Input Tokens', 'Output Tokens', 'Cache Read Tokens', 'Cache Create Tokens',
+      'Cache Hit Rate', 'Errors', 'Outcome', 'Tool Counts', 'Files Read', 'Files Changed',
+      'Loop Signals', 'User Request'
+    ];
+    function toCsv(sessions) {
+      var rows = sessions.map(function(s) {
+        return [
+          s.sessionId, s.traceId, s.source, s.model, joinList(s.models), s.startTime,
+          String(s.durationMs), String(s.turns), String(s.totalToolCalls), String(s.inputTokens),
+          String(s.outputTokens), String(s.cacheReadTokens), String(s.cacheCreateTokens),
+          (s.cacheHitRate || 0).toFixed(4), String(s.errors), s.outcome,
+          joinToolCounts(s.toolCounts), joinList(s.filesRead), joinList(s.filesChanged),
+          joinLoopSignals(s.loopSignals), s.userRequest || ''
+        ];
+      });
+      var allRows = [CSV_HEADERS].concat(rows);
+      return allRows.map(function(row) { return row.map(csvCell).join(','); }).join('\r\n') + '\r\n';
+    }
+    function mdEscape(text) {
+      return String(text).replace(/\|/g, '\\|');
+    }
+    function toMarkdown(sessions) {
+      var parts = ['# AgentLens Session Export', '', sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + ', exported ' + new Date().toISOString(), ''];
+      sessions.forEach(function(s) {
+        parts.push('## ' + (s.model || 'unknown model') + ' — ' + (s.startTime || 'unknown time'));
+        parts.push('');
+        parts.push('- **Session ID:** ' + s.sessionId);
+        parts.push('- **Source:** ' + s.source);
+        if (s.models && s.models.length > 1) parts.push('- **Models used:** ' + joinList(s.models));
+        parts.push('- **Duration:** ' + s.durationMs + 'ms');
+        parts.push('- **Turns:** ' + s.turns + ' · **Tool calls:** ' + s.totalToolCalls + ' · **Errors:** ' + s.errors);
+        parts.push('- **Tokens:** ' + s.inputTokens.toLocaleString() + ' in / ' + s.outputTokens.toLocaleString() + ' out '
+          + '(cache read ' + s.cacheReadTokens.toLocaleString() + ', cache write ' + s.cacheCreateTokens.toLocaleString() + ', '
+          + ((s.cacheHitRate || 0) * 100).toFixed(1) + '% hit rate)');
+        parts.push('- **Outcome:** ' + s.outcome);
+        if (s.toolCounts && Object.keys(s.toolCounts).length > 0) {
+          parts.push('- **Tool counts:** ' + joinToolCounts(s.toolCounts));
+        }
+        if (s.loopSignals && s.loopSignals.length > 0) {
+          parts.push('- **Loop signals:** ' + joinLoopSignals(s.loopSignals));
+        }
+        if (s.filesChanged && s.filesChanged.length > 0) {
+          parts.push('', '**Files changed:**', '');
+          s.filesChanged.forEach(function(f) { parts.push('- \`' + mdEscape(f) + '\`'); });
+        }
+        if (s.userRequest) {
+          parts.push('', '**Prompt:**', '', '> ' + mdEscape(s.userRequest).replace(/\n/g, '\n> '));
+        }
+        parts.push('', '---', '');
+      });
+      return parts.join('\n');
+    }
+    function serializeExport(sessions, format) {
+      if (format === 'csv') return toCsv(sessions);
+      if (format === 'markdown') return toMarkdown(sessions);
+      return JSON.stringify(sessions, null, 2);
+    }
+    function exportMimeType(format) {
+      return format === 'csv' ? 'text/csv' : format === 'markdown' ? 'text/markdown' : 'application/json';
+    }
+    function exportFileExtension(format) {
+      return format === 'csv' ? 'csv' : format === 'markdown' ? 'md' : 'json';
+    }
+
     function getNotifContainer() {
       var el = document.getElementById('sa-notif-container');
       if (!el) {
@@ -878,12 +961,13 @@ function getHtml(): string {
                 userRequest:  redact ? '[redacted]' : (s.userRequest || null),
               };
             });
+            var format = (msg.format === 'csv' || msg.format === 'markdown') ? msg.format : 'json';
             var now = new Date();
             var pad = function(n) { return String(n).padStart(2, '0'); };
             var ts = '' + now.getFullYear() + pad(now.getMonth() + 1) + pad(now.getDate()) +
                      '_' + pad(now.getHours()) + pad(now.getMinutes()) + pad(now.getSeconds());
-            var filename = (redact ? 'export_redacted' : 'export') + '_sessions_' + ts + '.json';
-            var blob = new Blob([JSON.stringify(exportable, null, 2)], { type: 'application/json' });
+            var filename = (redact ? 'export_redacted' : 'export') + '_sessions_' + ts + '.' + exportFileExtension(format);
+            var blob = new Blob([serializeExport(exportable, format)], { type: exportMimeType(format) });
             var url = URL.createObjectURL(blob);
             var a = document.createElement('a');
             a.href = url; a.download = filename; a.click();

@@ -5,6 +5,11 @@ import { InstructionRepository } from './database/instructionRepository'
 import { detectInstructionFiles, appendSuggestion, removeSuggestion } from './instructionFiles'
 import { computeBaseline } from './instructionEffectiveness'
 import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } from './autoConfig'
+import { serializeExport, exportFileExtension, type ExportFormat } from './exportFormats'
+
+function isExportFormat(value: unknown): value is ExportFormat {
+  return value === 'json' || value === 'csv' || value === 'markdown'
+}
 
 export class DashboardPanel {
   public static currentPanel: DashboardPanel | undefined
@@ -100,7 +105,8 @@ export class DashboardPanel {
       } else if (msg.type === 'exportSessionData' || msg.type === 'exportSessionDataRedacted') {
         const redact = msg.type === 'exportSessionDataRedacted'
         const ids = Array.isArray(msg.sessionIds) ? new Set(msg.sessionIds as string[]) : null
-        void this.exportSessions(redact, ids)
+        const format = isExportFormat(msg.format) ? msg.format : 'json'
+        void this.exportSessions(redact, ids, format)
       } else if (msg.type === 'openSidebar') {
         vscode.commands.executeCommand('workbench.view.extension.agent-lens')
       } else if (msg.type === 'closeSidebar') {
@@ -262,7 +268,7 @@ export class DashboardPanel {
     }
   }
 
-  private async exportSessions(redact: boolean, ids: Set<string> | null = null): Promise<void> {
+  private async exportSessions(redact: boolean, ids: Set<string> | null = null, format: ExportFormat = 'json'): Promise<void> {
     const all = this.repo.listSessions()
     const sessions = ids ? all.filter(s => ids.has(s.sessionId)) : all
     if (sessions.length === 0) {
@@ -306,13 +312,13 @@ export class DashboardPanel {
     const pad = (n: number) => n.toString().padStart(2, '0')
     const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
     const prefix = redact ? 'export_redacted' : 'export'
-    const filename = `${prefix}_sessions_${ts}.json`
+    const filename = `${prefix}_sessions_${ts}.${exportFileExtension(format)}`
 
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
     const baseUri = workspaceFolder ? workspaceFolder.uri : this.context.globalStorageUri
     const fileUri = vscode.Uri.joinPath(baseUri, filename)
 
-    await vscode.workspace.fs.writeFile(fileUri, Buffer.from(JSON.stringify(exportable, null, 2)))
+    await vscode.workspace.fs.writeFile(fileUri, Buffer.from(serializeExport(exportable, format)))
     vscode.window.showInformationMessage(`AgentLens: Exported ${sessions.length} sessions to ${filename}`)
     const doc = await vscode.workspace.openTextDocument(fileUri)
     vscode.window.showTextDocument(doc, { preview: false })

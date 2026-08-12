@@ -1072,8 +1072,21 @@ body {
   font-weight: 600;
   margin-top: 6px;
 }
-.export-btn {
+.export-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-top: 4px;
+}
+.export-format-select {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--fg);
+  font-size: 12px;
+}
+.export-btn {
   padding: 7px 14px;
   border-radius: 4px;
   border: none;

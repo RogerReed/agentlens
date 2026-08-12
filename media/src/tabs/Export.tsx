@@ -1,30 +1,52 @@
 import { useState } from 'preact/hooks'
 import { filteredSessions, vscode } from '../state'
 
-function send(type: string, sessionIds: string[]) {
+type ExportFormat = 'json' | 'csv' | 'markdown'
+const FORMAT_OPTIONS: Array<{ value: ExportFormat; label: string }> = [
+  { value: 'json', label: 'JSON' },
+  { value: 'csv', label: 'CSV' },
+  { value: 'markdown', label: 'Markdown' },
+]
+
+function send(type: string, sessionIds: string[], format: ExportFormat) {
   if (vscode) {
-    vscode.postMessage({ type, sessionIds })
+    vscode.postMessage({ type, sessionIds, format })
   } else {
-    window.dispatchEvent(new MessageEvent('message', { data: { type, sessionIds } }))
+    window.dispatchEvent(new MessageEvent('message', { data: { type, sessionIds, format } }))
   }
+}
+
+function FormatSelect({ value, onChange }: { value: ExportFormat; onChange: (f: ExportFormat) => void }) {
+  return (
+    <select
+      value={value}
+      onChange={e => onChange((e.target as HTMLSelectElement).value as ExportFormat)}
+      class="export-format-select"
+      aria-label="Export format"
+    >
+      {FORMAT_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+    </select>
+  )
 }
 
 export function Export() {
   const [rawDone, setRawDone] = useState(false)
   const [redactedDone, setRedactedDone] = useState(false)
+  const [rawFormat, setRawFormat] = useState<ExportFormat>('json')
+  const [redactedFormat, setRedactedFormat] = useState<ExportFormat>('json')
 
   const sessions = filteredSessions.value
   const empty = sessions.length === 0
   const scopeLabel = `${sessions.length} session${sessions.length === 1 ? '' : 's'} matching your current filters`
 
   const doExport = () => {
-    send('exportSessionData', sessions.map(s => s.sessionId))
+    send('exportSessionData', sessions.map(s => s.sessionId), rawFormat)
     setRawDone(true)
     setTimeout(() => setRawDone(false), 3000)
   }
 
   const doRedacted = () => {
-    send('exportSessionDataRedacted', sessions.map(s => s.sessionId))
+    send('exportSessionDataRedacted', sessions.map(s => s.sessionId), redactedFormat)
     setRedactedDone(true)
     setTimeout(() => setRedactedDone(false), 3000)
   }
@@ -40,8 +62,9 @@ export function Export() {
             <span class="export-card-badge export-badge-raw">Full</span>
           </div>
           <p class="export-card-desc">
-            Exported as JSON — includes prompt text, token counts,
-            tool usage, file changes, cost estimates, and efficiency signals.
+            Includes prompt text, token counts, tool usage, file changes, cost estimates, and
+            efficiency signals. JSON is the format the Import tab reads back in; CSV and Markdown
+            are for spreadsheets and shareable reports.
           </p>
           <ul class="export-card-includes">
             <li>Prompt text (userRequest)</li>
@@ -51,13 +74,16 @@ export function Export() {
           </ul>
           <div class="export-card-warning">Keep private — includes prompt text.</div>
           <div class="export-card-scope">{empty ? 'No sessions match your current filters' : scopeLabel}</div>
-          <button
-            class={'export-btn' + (rawDone ? ' export-btn-done' : '')}
-            onClick={doExport}
-            disabled={empty}
-          >
-            {rawDone ? '✓ Exported' : 'Export Session Data'}
-          </button>
+          <div class="export-card-actions">
+            <FormatSelect value={rawFormat} onChange={setRawFormat} />
+            <button
+              class={'export-btn' + (rawDone ? ' export-btn-done' : '')}
+              onClick={doExport}
+              disabled={empty}
+            >
+              {rawDone ? '✓ Exported' : 'Export Session Data'}
+            </button>
+          </div>
         </div>
 
         <div class="export-card export-card-redacted">
@@ -78,13 +104,16 @@ export function Export() {
           </ul>
           <div class="export-card-safe">Safer to share — no prompt text or file paths.</div>
           <div class="export-card-scope">{empty ? 'No sessions match your current filters' : scopeLabel}</div>
-          <button
-            class={'export-btn export-btn-secondary' + (redactedDone ? ' export-btn-done' : '')}
-            onClick={doRedacted}
-            disabled={empty}
-          >
-            {redactedDone ? '✓ Exported' : 'Export Session Data (Redacted)'}
-          </button>
+          <div class="export-card-actions">
+            <FormatSelect value={redactedFormat} onChange={setRedactedFormat} />
+            <button
+              class={'export-btn export-btn-secondary' + (redactedDone ? ' export-btn-done' : '')}
+              onClick={doRedacted}
+              disabled={empty}
+            >
+              {redactedDone ? '✓ Exported' : 'Export Session Data (Redacted)'}
+            </button>
+          </div>
         </div>
 
       </div>

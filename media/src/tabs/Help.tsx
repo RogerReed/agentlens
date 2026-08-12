@@ -801,7 +801,7 @@ function ExportSection() {
     <div class="help-section" id="help-export">
       <h3 class="help-heading">{HELP_SECTIONS.export.heading}</h3>
       <div class="help-overview-body">
-        <p>The Export tab lets you download sessions as a JSON file. Exports respect all active filters — agent, source, time range, and text search — so what you export matches exactly what you see in the Sessions tab.</p>
+        <p>The Export tab lets you download sessions as JSON, CSV, or Markdown. Exports respect all active filters — agent, source, time range, and text search — so what you export matches exactly what you see in the Sessions tab.</p>
         <div class="glossary">
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Full export</dt>
@@ -810,6 +810,18 @@ function ExportSection() {
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Redacted export</dt>
             <dd class="glossary-def" style="display:block">Prompt text is removed; all other fields (tokens, cost, timing, tool names, file paths, span structure) are retained. Use this when sharing data for debugging or support without exposing conversation content.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Format: JSON</dt>
+            <dd class="glossary-def" style="display:block">Full-fidelity structured export. The only format the Import tab reads back in — use this if you plan to bring the data into AgentLens on another machine.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Format: CSV</dt>
+            <dd class="glossary-def" style="display:block">One row per session, for spreadsheets. Array/object fields (models, files, tool counts, loop signals) are flattened into semicolon-joined cells.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Format: Markdown</dt>
+            <dd class="glossary-def" style="display:block">One readable section per session — for sharing a report rather than raw data.</dd>
           </div>
         </div>
         <p style="font-size:12px;color:var(--muted);margin-top:12px">Raw OTEL span export for session replay is planned but not yet available.</p>
