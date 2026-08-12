@@ -10,4 +10,4 @@ The **Sessions** tab continuously scans your sessions for five failure patterns.
 
 Each detected signal shows the evidence and concrete examples (tool names, file paths, error messages). Use the **⧉** button to copy the recommended prompt to your clipboard, then paste it into your agent session. Use **Ignore** to dismiss a signal that represents intentional behavior.
 
-Check the **Alerts** tab to configure proactive notifications when sessions exceed thresholds for context window usage, turn count, error rate, or tool repetition.
+Open the gear-icon **Settings** panel's Alerts section to configure proactive notifications when sessions exceed thresholds for context window usage, turn count, error rate, tool repetition, cache utilization, or daily cost.
