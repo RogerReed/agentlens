@@ -264,7 +264,7 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
               )
               : (
                 <div style="display:flex;flex-direction:column;gap:3px">
-                  {sess.oneShotStats && (() => {
+                  {sess.oneShotStats && sess.oneShotStats.filesConsidered > 0 && (() => {
                     const rate = oneShotRate(sess.oneShotStats)
                     const avg = avgEditsPerFile(sess.oneShotStats)
                     return (

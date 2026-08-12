@@ -32,7 +32,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import type { SessionSummaryCard, TimelineEntry } from './summarizers/summarizerTypes'
+import type { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizers/summarizerTypes'
 import { VSCODE_FAMILY_IDE_NAMES } from './vscodeFamilyIdes'
 import { rankModelsByWeight } from './summarizers/helpers'
 
@@ -396,6 +396,7 @@ export class LogReader {
         }
         const content = (msg?.['content'] as Array<Record<string, unknown>>) ?? []
         let hasToolCall = false
+        const msgEditDetails: EditDetail[] = []
         for (const block of content) {
           if (block['type'] === 'tool_use' && block['name']) {
             hasToolCall = true; totalToolCalls++
@@ -407,6 +408,27 @@ export class LogReader {
               if (name === 'Read' || name === 'read_file') filesRead.add(fp)
               else if (['Edit','MultiEdit','replace_string_in_file','NotebookEdit'].includes(name)) filesChanged.add(fp)
               else if (name === 'Write' || name === 'create_file') { filesChanged.add(fp); filesWritten.add(fp) }
+            }
+            if (name === 'MultiEdit' && Array.isArray(inp['edits'])) {
+              for (const e of inp['edits'] as Array<Record<string, unknown>>) {
+                const efp = e['file_path'] ?? e['filePath'] ?? fp
+                if (efp) {
+                  msgEditDetails.push({
+                    filePath: String(efp),
+                    toolName: 'Edit',
+                    oldString: _strOrUndef(e['old_string'] ?? e['oldString']),
+                    newString: _strOrUndef(e['new_string'] ?? e['newString']),
+                  })
+                }
+              }
+            } else if (fp && ['Edit','replace_string_in_file','NotebookEdit','Write','create_file'].includes(name)) {
+              msgEditDetails.push({
+                filePath: fp,
+                toolName: name,
+                oldString: _strOrUndef(inp['old_string'] ?? inp['oldString']),
+                newString: _strOrUndef(inp['new_string'] ?? inp['newString']),
+                content: _strOrUndef(inp['content']),
+              })
             }
           }
         }
@@ -424,6 +446,7 @@ export class LogReader {
           isError: false,
           timestamp: ts ?? '',
           responseText,
+          editDetails: msgEditDetails.length > 0 ? msgEditDetails : undefined,
         })
         idx++
       }
@@ -1497,6 +1520,11 @@ function _extractTextContent(content: unknown): string {
     }
   }
   return ''
+}
+
+function _strOrUndef(v: unknown): string | undefined {
+  if (v === null || v === undefined || v === '') { return undefined }
+  return String(v)
 }
 
 /**
