@@ -6,6 +6,7 @@ import { detectInstructionFiles, appendSuggestion, removeSuggestion } from './in
 import { computeBaseline } from './instructionEffectiveness'
 import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } from './autoConfig'
 import { serializeExport, exportFileExtension, type ExportFormat } from './exportFormats'
+import { classifySessionOutcome, type GitOutcome } from './gitOutcome'
 
 function isExportFormat(value: unknown): value is ExportFormat {
   return value === 'json' || value === 'csv' || value === 'markdown'
@@ -16,6 +17,9 @@ export class DashboardPanel {
   private readonly panel: vscode.WebviewPanel
   private disposables: vscode.Disposable[] = []
   private pendingUpdate: ReturnType<typeof setTimeout> | undefined
+  // On-demand, computed once per session per panel lifetime — see gitOutcome.ts for why this
+  // isn't computed eagerly for every loaded session.
+  private gitOutcomeCache = new Map<string, GitOutcome | null>()
 
   static show(context: vscode.ExtensionContext, repo: SessionRepository, sidebarProvider?: SidebarPanel, instructionRepo?: InstructionRepository) {
     if (DashboardPanel.currentPanel) {
@@ -70,6 +74,14 @@ export class DashboardPanel {
       if (msg.type === 'loadSessionDetail' && msg.sessionId) {
         const timeline = this.repo.loadSessionTimeline(msg.sessionId as string)
         this.panel.webview.postMessage({ type: 'sessionDetail', sessionId: msg.sessionId, timeline })
+      } else if (msg.type === 'getGitOutcome' && msg.sessionId) {
+        void this.sendGitOutcome(
+          msg.sessionId as string,
+          (msg.workspace as string) || '',
+          Array.isArray(msg.filesChanged) ? msg.filesChanged as string[] : [],
+          (msg.startTime as string) || '',
+          (msg.endTime as string) || '',
+        )
       } else if (msg.type === 'loadBlob' && msg.spanId && msg.field) {
         const content = await this.repo.loadBlob(
           msg.spanId as string,
@@ -266,6 +278,16 @@ export class DashboardPanel {
     } catch (err) {
       this.panel.webview.postMessage({ type: 'importError', message: String(err) })
     }
+  }
+
+  private async sendGitOutcome(sessionId: string, workspace: string, filesChanged: string[], startTime: string, endTime: string): Promise<void> {
+    if (this.gitOutcomeCache.has(sessionId)) {
+      this.panel.webview.postMessage({ type: 'gitOutcome', sessionId, outcome: this.gitOutcomeCache.get(sessionId) })
+      return
+    }
+    const outcome = await classifySessionOutcome(workspace, filesChanged, startTime, endTime)
+    this.gitOutcomeCache.set(sessionId, outcome)
+    this.panel.webview.postMessage({ type: 'gitOutcome', sessionId, outcome })
   }
 
   private async exportSessions(redact: boolean, ids: Set<string> | null = null, format: ExportFormat = 'json'): Promise<void> {

@@ -5,7 +5,7 @@ import {
   CHART_MAX, vscode, goToHelp,
 } from '../state'
 import { getAgentColor, getAgentSourceLabel, formatMs, formatCompact } from '../utils'
-import { calcSessionCost } from '../sessionMetrics'
+import { buildDailyCostMap } from '../sessionMetrics'
 import type { SessionSummaryCard } from '../types'
 import type { PricingMode } from '../sessionMetrics'
 import { PRICING_LAST_UPDATED } from '../pricing'
@@ -61,6 +61,11 @@ function AgentCard({ source, sessions }: { source: string; sessions: SessionSumm
         <div><span style="color:var(--muted)">Cache hit</span> <strong>{(s.cacheHitRate * 100).toFixed(0)}%</strong></div>
         <div><span style="color:var(--muted)">Avg dur</span> <strong>{formatMs(s.avgDuration)}</strong></div>
         {s.avgTtft > 0 && <div><span style="color:var(--muted)">Avg TTFT</span> <strong>{formatMs(s.avgTtft)}</strong></div>}
+        {s.oneShotRate !== null && (
+          <div data-tip="Files edited exactly once vs. files that needed a retry, across all sessions in this view. Edit-pass count, not a signal the code actually worked.">
+            <span style="color:var(--muted)">One-shot</span> <strong>{Math.round(s.oneShotRate * 100)}%</strong>
+          </div>
+        )}
       </div>
       {topTools.length > 0 && (
         <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--muted)">
@@ -124,24 +129,9 @@ export function Analytics() {
     </div>
   )
 
-  // Multi-dimensional cost table: day → agent
-  interface AgentDay { source: string; input: number; output: number; cacheCreate: number; cacheRead: number; cost: number; models: Set<string> }
-  interface DayEntry { input: number; output: number; cacheCreate: number; cacheRead: number; cost: number; agents: Map<string, AgentDay> }
-  const dayMap = new Map<string, DayEntry>()
-  pricedSess.forEach(sess => {
-    const day = sess.startTime ? new Date(sess.startTime).toISOString().slice(0, 10) : 'unknown'
-    const effMode: PricingMode = (sess.source === 'codex' || sess.source === 'claude_code') ? 'token' : mode
-    const cost = calcSessionCost(sess, effMode).totalUsd
-    if (!dayMap.has(day)) dayMap.set(day, { input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0, agents: new Map() })
-    const de = dayMap.get(day)!
-    de.input += sess.inputTokens; de.output += sess.outputTokens
-    de.cacheCreate += sess.cacheCreateTokens ?? 0; de.cacheRead += sess.cacheReadTokens; de.cost += cost
-    if (!de.agents.has(sess.source)) de.agents.set(sess.source, { source: sess.source, input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0, models: new Set() })
-    const ae = de.agents.get(sess.source)!
-    ae.input += sess.inputTokens; ae.output += sess.outputTokens
-    ae.cacheCreate += sess.cacheCreateTokens ?? 0; ae.cacheRead += sess.cacheReadTokens; ae.cost += cost
-    if (sess.model) ae.models.add(sess.model)
-  })
+  // Multi-dimensional cost table: day → agent. Shared with the daily_cost alert in Alerts.tsx —
+  // see buildDailyCostMap in sessionMetrics.ts, the single source of truth for day-grouped cost.
+  const dayMap = buildDailyCostMap(pricedSess, mode)
   const dayRows = [...dayMap.entries()].sort((a, b) => a[0].localeCompare(b[0]))
   const grand = dayRows.reduce((g, [, d]) => ({
     input: g.input + d.input, output: g.output + d.output,

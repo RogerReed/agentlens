@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import {
   sessionSummary, toolCalls,
   selectedAgentFilter, initiatorFilter, dataSourceFilter, sessionLimit, activeTab,
-  sessionTimelines, blobCache,
+  sessionTimelines, blobCache, gitOutcomes,
   dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults,
   timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
   vscode, displaySessions, rangedSessions,
@@ -12,7 +12,7 @@ import {
   workspaceFilter, availableWorkspaces, shortWorkspaceName,
   enableOtelIngestion, enableLogIngestion, otlpPort, otelReconfigureResult, type OtelReconfigureResult,
 } from './state'
-import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, WorkspaceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard } from './types'
+import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, WorkspaceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard, GitOutcome } from './types'
 
 // Tab components
 import { Sessions } from './tabs/Sessions'
@@ -294,6 +294,7 @@ export function App() {
         sessionLimit?: number
         sessionId?: string
         timeline?: TimelineEntry[]
+        outcome?: GitOutcome | null
         spanId?: string
         field?: string
         content?: string | null
@@ -340,6 +341,8 @@ export function App() {
         }
       } else if (msg.type === 'sessionDetail' && msg.sessionId) {
         sessionTimelines.value = { ...sessionTimelines.value, [msg.sessionId]: msg.timeline ?? [] }
+      } else if (msg.type === 'gitOutcome' && msg.sessionId) {
+        gitOutcomes.value = { ...gitOutcomes.value, [msg.sessionId]: msg.outcome ?? null }
       } else if (msg.type === 'blobContent' && msg.spanId && msg.field) {
         const key = `${msg.spanId}:${msg.field}`
         if (msg.content != null) {

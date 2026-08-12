@@ -103,16 +103,14 @@ export function detectExactToolRepeat(session: SessionSummaryCard, signals: Loop
   })
 }
 
-// ── Detector 2: Edit-revert cycle ────────────────────────────────────────────
+// ── Shared: per-file edit extraction ─────────────────────────────────────────
 
 /**
- * Detects when a file is edited (A→B) and later reverted to its prior state
- * (B→A). Checks every pair of edits on the same file for exact string reversal.
- *
- * Always critical when detected — there is no legitimate reason for an agent to
- * undo its own edit unless it is oscillating.
+ * Walks a session's timeline and groups every (oldString, newString) edit pair by the file it
+ * touched. Shared by detectEditRevertCycle below and by oneShotRate.ts's retry-rate metric — both
+ * need the same "how many times, and how, was each file edited" data, just aggregated differently.
  */
-export function detectEditRevertCycle(session: SessionSummaryCard, signals: LoopSignal[]): void {
+export function getFileEditCounts(session: SessionSummaryCard): Record<string, Array<{ old: string; new: string }>> {
   const fileEdits: Record<string, Array<{ old: string; new: string }>> = {}
 
   for (const entry of session.timeline) {
@@ -123,6 +121,21 @@ export function detectEditRevertCycle(session: SessionSummaryCard, signals: Loop
       fileEdits[detail.filePath].push({ old: detail.oldString, new: detail.newString })
     }
   }
+
+  return fileEdits
+}
+
+// ── Detector 2: Edit-revert cycle ────────────────────────────────────────────
+
+/**
+ * Detects when a file is edited (A→B) and later reverted to its prior state
+ * (B→A). Checks every pair of edits on the same file for exact string reversal.
+ *
+ * Always critical when detected — there is no legitimate reason for an agent to
+ * undo its own edit unless it is oscillating.
+ */
+export function detectEditRevertCycle(session: SessionSummaryCard, signals: LoopSignal[]): void {
+  const fileEdits = getFileEditCounts(session)
 
   const revertedFiles: string[] = []
 

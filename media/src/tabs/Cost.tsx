@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'preact/hooks'
 import { sessionSummary, displaySessions, filteredSessions, dailyStats, lifetimeStats, selectedAgentFilter, timeRange, makeTimeRange, focusedSessionId, activeTab } from '../state'
 import type { TimePreset } from '../state'
 import { getAgentColor, getSessionGlobalNumber, formatCompact, getAgentSourceLabel, formatSessionTime } from '../utils'
-import { calcSessionCost } from '../sessionMetrics'
+import { calcSessionCost, sessionCostMode, dayKeyUtc } from '../sessionMetrics'
 import { PRICING_LAST_UPDATED } from '../pricing'
 import type { PricingMode } from '../sessionMetrics'
 import type { SessionSummaryCard, DailyStatRow } from '../types'
@@ -21,11 +21,6 @@ function fmtCredits(credits: number): string {
   if (credits === 0) return '0'
   if (credits < 0.1) return '<0.1'
   return credits.toFixed(1)
-}
-
-function sessionCostMode(session: SessionSummaryCard, mode: PricingMode): PricingMode {
-  // Codex and Claude Code are always token-based; the mode toggle only applies to Copilot
-  return (session.source === 'codex' || session.source === 'claude_code') ? 'token' : mode
 }
 
 // ── 30-day history chart (SVG) ────────────────────────────────────────────────
@@ -244,9 +239,8 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
     if (!canvas) return
 
     // Daily totals for the step-function line overlay
-    const dayKey = (t: string) => t ? new Date(t).toISOString().slice(0, 10) : 'none'
     const dayTotals = new Map<string, number>()
-    data.forEach(d => { const dk = dayKey(d.startTime); dayTotals.set(dk, (dayTotals.get(dk) ?? 0) + d.cost) })
+    data.forEach(d => { const dk = dayKeyUtc(d.startTime); dayTotals.set(dk, (dayTotals.get(dk) ?? 0) + d.cost) })
     const maxDailyTotal = Math.max(...Array.from(dayTotals.values()), 0.0001)
     const maxCost = Math.max(...data.map(d => d.cost), 0.0001)
 
@@ -314,7 +308,7 @@ export function CostBarChart({ sessions, mode }: { sessions: SessionSummaryCard[
     // Build day groups once — used by both the label pass and the line pass
     const dayGroups = new Map<string, { start: number; end: number }>()
     data.forEach((d, i) => {
-      const dk = dayKey(d.startTime)
+      const dk = dayKeyUtc(d.startTime)
       if (!dayGroups.has(dk)) dayGroups.set(dk, { start: i, end: i })
       dayGroups.get(dk)!.end = i
     })

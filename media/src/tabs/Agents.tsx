@@ -1,10 +1,12 @@
 import { sessionSummary, timeRange } from '../state'
 import { formatMs, formatCompact } from '../utils'
+import { oneShotRate, avgEditsPerFile } from '../sessionMetrics'
 import type { SessionSummaryCard } from '../types'
 
 export function computeStats(sessions: SessionSummaryCard[]) {
   let totalInput = 0, totalOutput = 0, totalCache = 0
   let totalLlm = 0, totalTools = 0, ttftSum = 0, ttftCount = 0, durSum = 0
+  let filesConsidered = 0, oneShotFiles = 0, totalEdits = 0
   const toolCounts: Record<string, number> = {}
   sessions.forEach(s => {
     totalInput += s.inputTokens ?? 0
@@ -19,7 +21,16 @@ export function computeStats(sessions: SessionSummaryCard[]) {
     ;(s.timeline ?? []).forEach(e => {
       if (e.type === 'llm' && e.ttft) { ttftSum += e.ttft; ttftCount++ }
     })
+    if (s.oneShotStats) {
+      filesConsidered += s.oneShotStats.filesConsidered
+      oneShotFiles += s.oneShotStats.oneShotFiles
+      totalEdits += s.oneShotStats.totalEdits
+    }
   })
+  // File-level aggregate, not an average of per-session rates — a 1-file session shouldn't
+  // weigh the same as a 20-file session. Same MIN_FILES_FOR_RATE gate as the per-session display.
+  const oneShot = oneShotRate({ filesConsidered, oneShotFiles })
+  const editsPerFile = avgEditsPerFile({ filesConsidered, totalEdits })
   return {
     sessions: sessions.length,
     totalInput, totalOutput, totalCache, totalLlm, totalTools,
@@ -27,6 +38,9 @@ export function computeStats(sessions: SessionSummaryCard[]) {
     avgDuration: sessions.length > 0 ? Math.round(durSum / sessions.length) : 0,
     cacheHitRate: totalInput > 0 ? totalCache / totalInput : 0,
     toolCounts,
+    oneShotRate: oneShot,
+    avgEditsPerFile: editsPerFile,
+    oneShotFilesConsidered: filesConsidered,
   }
 }
 
