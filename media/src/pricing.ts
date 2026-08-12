@@ -2,7 +2,7 @@
 // Token rates (post Jun 1, 2026):        https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
 // Request multipliers (pre Jun 1, 2026): https://docs.github.com/en/copilot/concepts/billing/copilot-requests
 // Annual-plan multipliers (post Jun 1):  https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans
-export const PRICING_LAST_UPDATED = '2026-08-07'
+export const PRICING_LAST_UPDATED = '2026-08-12'
 
 // Three billing modes:
 //   'token'          — new token-based AI Credits billing, effective Jun 1, 2026
@@ -33,6 +33,9 @@ const RATES: Record<string, ModelRates> = {
   // gpt-4.1: re-listed on the pricing page as of 2026-08-07 at real rates (previously assumed delisted/$0 —
   // that turned out to be wrong or stale; correcting to the live page value).
   'gpt-4.1':             { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 8.00,  multiplier: 0,    multiplierAnnualPostJun1: 1 },
+  // gpt-4.1-mini: added 2026-08-12 — confirmed on OpenAI's general API pricing page. Not seen on Copilot's own
+  // model list or the annual multiplier page yet — multiplierAnnualPostJun1 set to 0 until published.
+  'gpt-4.1-mini':        { inputPerMTok: 0.40,  cacheReadPerMTok: 0.10,   cacheWritePerMTok: 0, outputPerMTok: 1.60,  multiplier: 0,    multiplierAnnualPostJun1: 0 },
   // gpt-5-mini: no longer included/$0 as of 2026-07-19 — now billed at standard token rates.
   'gpt-5-mini':          { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
   'gpt-5 mini':          { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
@@ -78,8 +81,9 @@ const RATES: Record<string, ModelRates> = {
                              inputAbove200kPerMTok: 6.00, outputAbove200kPerMTok: 22.50, cacheReadAbove200kPerMTok: 0.60, cacheWriteAbove200kPerMTok: 7.50 },
   'claude-sonnet-4-5':     { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 6 },
   'claude-sonnet-4-6':     { inputPerMTok:  3.00, cacheReadPerMTok: 0.30, cacheWritePerMTok:  3.75, outputPerMTok: 15.00, multiplier: 1,    multiplierAnnualPostJun1: 9 },
-  // claude-sonnet-5: introductory token pricing through 2026-08-31 ($2/$0.20/$2.50/$10); standard ($3/$0.30/$3.75/$15)
-  // takes effect 2026-09-01 — update this row on that date. Not listed on the annual-plan multiplier page.
+  // claude-sonnet-5: launched at introductory pricing ($2/$0.20/$2.50/$10) with a scheduled increase to
+  // $3/$0.30/$3.75/$15 on 2026-09-01 — confirmed 2026-08-12 that increase has been cancelled and this rate is
+  // now the permanent standard price. No date-driven change needed. Not listed on the annual-plan multiplier page.
   'claude-sonnet-5':       { inputPerMTok:  2.00, cacheReadPerMTok: 0.20, cacheWritePerMTok:  2.50, outputPerMTok: 10.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },
   'claude-opus-4-5':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 15 },
   'claude-opus-4-6':       { inputPerMTok:  5.00, cacheReadPerMTok: 0.50, cacheWritePerMTok:  6.25, outputPerMTok: 25.00, multiplier: 3,    multiplierAnnualPostJun1: 27 },
@@ -117,6 +121,9 @@ const RATES: Record<string, ModelRates> = {
   // ── Other third-party (new to Copilot marketplace as of 2026-07-19) ───────────────────────────────
   // Not yet listed on the annual-plan multiplier page — multiplierAnnualPostJun1 set to 0 until published.
   'mai-code-1-flash': { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 4.50, multiplier: 0, multiplierAnnualPostJun1: 0.33 },
+  // mai-code-1.1-flash: added 2026-08-12 — new on the Copilot pricing page this refresh; multiplierAnnualPostJun1
+  // confirmed from the annual-plan multiplier page.
+  'mai-code-1.1-flash': { inputPerMTok: 0.20, cacheReadPerMTok: 0.02,  cacheWritePerMTok: 0, outputPerMTok: 1.20, multiplier: 0, multiplierAnnualPostJun1: 0.25 },
   'kimi-k2.7-code':   { inputPerMTok: 0.95, cacheReadPerMTok: 0.19,  cacheWritePerMTok: 0, outputPerMTok: 4.00, multiplier: 0, multiplierAnnualPostJun1: 0 },
   // ── Other third-party (new to Copilot marketplace as of 2026-08-07) ───────────────────────────────
   // Not yet listed on the annual-plan multiplier page. Exact telemetry model-ID slug unconfirmed (guessed from
@@ -127,6 +134,16 @@ const RATES: Record<string, ModelRates> = {
   // ── OpenCode Zen  https://opencode.ai/docs/zen/ ────────────────────────────
   // big-pickle: OpenCode's stealth model, free during limited evaluation period.
   'big-pickle':  { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok: 0,     multiplier: 0, multiplierAnnualPostJun1: 0 },
+  // Free Zen-exclusive models, added 2026-08-12 — model ID slugs confirmed from the Zen docs (previously withheld
+  // pending confirmation; see PRICING_SOURCES.md). All free during their "limited time" evaluation period, same
+  // caveat as big-pickle.
+  'deepseek-v4-flash-free':     { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  'mimo-v2.5-free':              { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  'hy3-free':                    { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  'laguna-s-2.1-free':           { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  'ling-3.0-tiny-free':          { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  'nemotron-3-ultra-free':       { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  'nemotron-3.5-lightning-free': { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
 }
 
 function normalizeModelId(modelId: string): string {

@@ -1,6 +1,6 @@
 // Pricing data for extension-host cost computation (cost_usd stored in sessions table).
 // Rate table is kept in sync with media/src/pricing.ts — update both when rates change.
-// PRICING_LAST_UPDATED: 2026-08-07
+// PRICING_LAST_UPDATED: 2026-08-12
 
 export interface ModelRates {
   inputPerMTok: number
@@ -20,6 +20,8 @@ const RATES: Record<string, ModelRates> = {
   // gpt-4.1: re-listed on the API pricing page as of 2026-08-07 at real rates (previously assumed delisted/$0 —
   // that turned out to be wrong or stale; correcting to the live page value).
   'gpt-4.1':            { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 8.00,  contextWindowTokens: 1_000_000 },
+  // gpt-4.1-mini: added 2026-08-12 — confirmed on OpenAI's general API pricing page.
+  'gpt-4.1-mini':       { inputPerMTok: 0.40,  cacheReadPerMTok: 0.10,   cacheWritePerMTok: 0, outputPerMTok: 1.60,  contextWindowTokens: 0 },
   // gpt-5-mini: no longer an included/$0 model as of the 2026-07-19 pricing page — now billed at standard rates.
   'gpt-5-mini':         { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  contextWindowTokens: 200_000 },
   'gpt-5 mini':         { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  contextWindowTokens: 200_000 },
@@ -47,6 +49,16 @@ const RATES: Record<string, ModelRates> = {
   'gpt-5.6-luna':       { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0.25, outputPerMTok: 1.20,  contextWindowTokens: 256_000 },
   'gpt-5.6-terra':      { inputPerMTok: 2.00,  cacheReadPerMTok: 0.20,   cacheWritePerMTok: 2.50, outputPerMTok: 12.00, contextWindowTokens: 256_000 },
   'gpt-5.6-sol':        { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 6.25, outputPerMTok: 30.00, contextWindowTokens: 256_000 },
+  // ── Copilot marketplace third-party models ──────────────────────────────────
+  // These four were already present in media/src/pricing.ts (browser-side) but missing here — a real sync gap
+  // that made cost_usd store as 0 (not ~$?) for any Copilot session using them, silently under-reporting rather
+  // than flagging as unknown. Added 2026-08-12 to restore parity; rates confirmed against the Copilot pricing page.
+  'grok-4.5':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 0 },
+  'kimi-k3':            { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,   cacheWritePerMTok: 0, outputPerMTok: 15.00, contextWindowTokens: 0 },
+  'kimi-k2.7-code':     { inputPerMTok: 0.95,  cacheReadPerMTok: 0.19,   cacheWritePerMTok: 0, outputPerMTok: 4.00,  contextWindowTokens: 0 },
+  'mai-code-1-flash':   { inputPerMTok: 0.75,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 4.50,  contextWindowTokens: 0 },
+  // mai-code-1.1-flash: added 2026-08-12 — new on the Copilot pricing page this refresh.
+  'mai-code-1.1-flash': { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0, outputPerMTok: 1.20,  contextWindowTokens: 0 },
   // ── Codex-only ─────────────────────────────────────────────────────────────
   // codex-mini-latest: deprecated per OpenAI docs; kept for historical sessions.
   'codex-mini-latest':  { inputPerMTok: 1.50,  cacheReadPerMTok: 0.375,  cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 200_000 },
@@ -59,8 +71,9 @@ const RATES: Record<string, ModelRates> = {
                           inputAbove200kPerMTok: 6.00, outputAbove200kPerMTok: 22.50, cacheReadAbove200kPerMTok: 0.60, cacheWriteAbove200kPerMTok: 7.50 },
   'claude-sonnet-4-5':  { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 1_000_000 },
   'claude-sonnet-4-6':  { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 1_000_000 },
-  // claude-sonnet-5: introductory pricing through 2026-08-31 ($2/$0.20/$2.50/$10); standard pricing ($3/$0.30/$3.75/$15,
-  // matching sonnet-4-6) takes effect 2026-09-01. Update this row on that date.
+  // claude-sonnet-5: launched at introductory pricing ($2/$0.20/$2.50/$10) with a scheduled increase to
+  // $3/$0.30/$3.75/$15 on 2026-09-01 — confirmed 2026-08-12 that increase has been cancelled and this rate is
+  // now the permanent standard price. No date-driven change needed.
   'claude-sonnet-5':    { inputPerMTok:  2.00, cacheReadPerMTok: 0.20,  cacheWritePerMTok:  2.50, outputPerMTok: 10.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-5':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
   'claude-opus-4-6':    { inputPerMTok:  5.00, cacheReadPerMTok: 0.50,  cacheWritePerMTok:  6.25, outputPerMTok: 25.00, contextWindowTokens: 1_000_000 },
@@ -94,6 +107,16 @@ const RATES: Record<string, ModelRates> = {
   // ── OpenCode Zen  https://opencode.ai/docs/zen/ ────────────────────────────
   // big-pickle: OpenCode's stealth model, free during limited evaluation period.
   'big-pickle':  { inputPerMTok: 0,    cacheReadPerMTok: 0,     cacheWritePerMTok: 0, outputPerMTok:  0,     contextWindowTokens: 200_000 },
+  // Free Zen-exclusive models, added 2026-08-12 — model ID slugs confirmed from the Zen docs (previously withheld
+  // pending confirmation; see PRICING_SOURCES.md). All free during their "limited time" evaluation period, same
+  // caveat as big-pickle.
+  'deepseek-v4-flash-free':      { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
+  'mimo-v2.5-free':               { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
+  'hy3-free':                     { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
+  'laguna-s-2.1-free':            { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
+  'ling-3.0-tiny-free':           { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
+  'nemotron-3-ultra-free':        { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
+  'nemotron-3.5-lightning-free':  { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
 }
 
 function normalizeModelId(modelId: string): string {
