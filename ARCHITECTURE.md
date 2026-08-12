@@ -59,7 +59,7 @@ graph TB
 
     subgraph Dashboard UI
         STATE[Preact Signals<br/>state.ts]
-        TABS[Tab Components<br/>Sessions · Analytics · Cost · Alerts · Automation · Export · Help]
+        TABS[Tab Components<br/>Sessions · Analytics · Advisor · Export · Import · Help<br/>+ gear-icon Settings panel: Alerts · Automation]
     end
 
     CP -- "POST /v1/traces" --> COL
@@ -433,13 +433,20 @@ erDiagram
         INTEGER errors
         TEXT outcome
         INTEGER is_sidechain
+        TEXT speed
         TEXT user_request
         TEXT tool_counts
         TEXT loop_signals
         TEXT files_read
         TEXT files_changed
+        TEXT files_written
         TEXT files_searched
+        TEXT files_changed_note
         REAL cost_usd
+        TEXT data_source
+        TEXT models
+        TEXT one_shot_stats
+        INTEGER created_at
     }
     timeline_entries {
         INTEGER id PK
@@ -451,6 +458,8 @@ erDiagram
         TEXT model
         INTEGER input_tokens
         INTEGER output_tokens
+        INTEGER cache_read_tokens
+        INTEGER cache_create_tokens
         INTEGER ttft
         INTEGER duration_ms
         TEXT action
@@ -458,6 +467,7 @@ erDiagram
         INTEGER is_error
         TEXT error_message
         TEXT timestamp
+        TEXT speed
         INTEGER has_blob
     }
     edit_details {
@@ -467,11 +477,33 @@ erDiagram
         TEXT tool_name
         INTEGER has_blob
     }
+    instruction_applied {
+        TEXT id PK
+        TEXT workspace
+        TEXT category
+        TEXT title
+        TEXT suggested_text
+        TEXT applied_to
+        TEXT applied_text
+        TEXT applied_at
+        REAL baseline_cost_avg
+        REAL baseline_turns_avg
+        REAL baseline_error_rate
+        REAL baseline_loop_rate
+        INTEGER baseline_insufficient
+    }
+    instruction_dismissed {
+        TEXT id PK
+        TEXT workspace PK
+        TEXT dismissed_at
+    }
     sessions ||--o{ timeline_entries : "has"
     timeline_entries ||--o{ edit_details : "has"
 ```
 
 Large string fields (`responseText`, `thinking`, `toolInput`, `fullResult`, `oldString`, `newString`) above 512 bytes are stored as files at `globalStorageUri/blobs/<spanId>-<field>.txt` rather than inline in the DB. The `has_blob` flag indicates when to read from disk instead.
+
+`one_shot_stats` (added for the one-shot/retry-rate metric) and `instruction_applied`/`instruction_dismissed` (added for the Advisor tab's instruction-suggestion tracking) are not tied to `sessions` by a foreign key in the diagram above — the former is a column on `sessions`, the latter two are keyed by `workspace` (a free-text column, not `sessions.workspace` as an FK) since suggestions are workspace-scoped, not session-scoped.
 
 ### Component responsibilities
 
@@ -609,6 +641,14 @@ classDiagram
         +timeline: TimelineEntry[]
         +backgroundSpans: BackgroundSpanSummary[]
         +loopSignals: LoopSignal[]
+        +oneShotStats?: OneShotStats
+    }
+
+    class OneShotStats {
+        +filesConsidered: number
+        +oneShotFiles: number
+        +retriedFiles: number
+        +totalEdits: number
     }
 
     class TimelineEntry {
@@ -748,7 +788,7 @@ graph TD
 
 ### Tab component overview
 
-Six flat top-level tabs; secondary views are sub-panels within the expanded session row or the Analytics layout.
+Five tabs in the sticky tab bar (Sessions, Analytics, Advisor, Export, Import), plus a Help icon button. Alerts and Automation are not tabs — they're collapsible sections inside a gear-icon slide-in Settings panel (`ConfigPanel` in `App.tsx`), alongside the OTEL/log ingestion toggles. A separate bell icon shows a live popover of currently-triggered alerts with a shortcut into the same Settings panel. Secondary views are sub-panels within the expanded session row, the Analytics layout, or the Advisor's Instructions sub-view.
 
 ```mermaid
 graph LR
@@ -759,18 +799,21 @@ graph LR
     T1 --> D2[Trace sub-tab<br/>waterfall — LLM calls + tool calls<br/>lazy timeline · blob expand]
     T1 --> D3[Flow sub-tab<br/>turn-to-tool semantic graph<br/>canvas · lazy timelines]
     T1 --> D4[Tools sub-tab<br/>donut chart + call table]
-    T1 --> D5[Files sub-tab<br/>files changed list · open in editor]
+    T1 --> D5[Files sub-tab<br/>files changed · open in editor<br/>one-shot/retry-rate summary<br/>git outcome banner + per-file badges]
 
     T2[Analytics<br/>ESTIMATED COST · AGENT BREAKDOWN<br/>TOKEN USAGE PER SESSION · CONTEXT GROWTH]
     T2 --> A1[CostBarChart — per-session bars<br/>daily total overlay · pricing mode toggle<br/>CSV export download button]
-    T2 --> A2[AgentCard ×3 — per-agent stat tiles]
+    T2 --> A2[AgentCard ×3 — per-agent stat tiles<br/>incl. One-shot rate tile]
     T2 --> A3[SessionTokenChart — input/output bars<br/>day boundary highlights]
     T2 --> A4[ContextGrowthChart — animated<br/>per-session spotlight · play/pause/speed]
 
-    T3[Alerts<br/>configurable threshold alerts<br/>VS Code notification with View Alerts + Copy Prompt]
-    T4[Automation<br/>loop breaker · turn wrap-up<br/>error cascade · context compaction]
-    T5[Export<br/>full or redacted JSON export]
+    T3[Advisor<br/>hot files · behavioral loop patterns<br/>efficiency scatter · Instructions sub-view]
+    T4[Export<br/>full or redacted export<br/>format: JSON · CSV · Markdown]
+    T5[Import<br/>preview + import an AgentLens JSON export]
     T6[Help<br/>sticky TOC nav · glossary · OTEL setup]
+
+    GEAR[Gear icon<br/>ConfigPanel — slide-in] --> S1[Alerts<br/>configurable threshold alerts, incl. daily cost<br/>VS Code notification with View Alerts + Copy Prompt]
+    GEAR --> S2[Automation<br/>loop breaker · turn wrap-up<br/>error cascade · context compaction]
 ```
 
 **Chart data isolation:** Analytics charts (`CostBarChart`, `SessionTokenChart`, `ContextGrowthChart`) source from `rangedSessions` (always newest-first by time) so the Sessions table sort key has no effect on their order.
@@ -796,6 +839,10 @@ sequenceDiagram
     WV->>EXT: {type:'loadBlob', spanId, field, editIndex?}
     EXT->>WV: {type:'blobContent', spanId, field, content}
 
+    Note over EXT,WV: Git outcome (on-demand, cached per panel lifetime)
+    WV->>EXT: {type:'getGitOutcome', sessionId, workspace, filesChanged, startTime, endTime}
+    EXT->>WV: {type:'gitOutcome', sessionId, outcome: GitOutcome | null}
+
     Note over EXT,WV: Session search
     WV->>EXT: {type:'searchSessions', query:SearchQuery}
     EXT->>WV: {type:'searchResults', sessions, totalCount, offset}
@@ -804,7 +851,7 @@ sequenceDiagram
     WV->>EXT: {type:'clearAll'}
     WV->>EXT: {type:'askAI', prompt, agent}
     WV->>EXT: {type:'openFile', filePath}
-    WV->>EXT: {type:'exportSessionData'}
+    WV->>EXT: {type:'exportSessionData' | 'exportSessionDataRedacted', sessionIds?, format: 'json'|'csv'|'markdown'}
     WV->>EXT: {type:'openSidebar' | 'closeSidebar'}
     WV->>EXT: {type:'automation', automationId, agent, prompt, ...}
     WV->>EXT: {type:'alert', label, detail, severity}
@@ -850,7 +897,7 @@ flowchart TD
 
 `contextWindowTokens` (stored in `src/pricing.ts`) enables the `Projection` calculation: given current session token usage and burn rate, estimate time to context exhaustion and final cost.
 
-Pricing data covers: OpenAI (GPT-4.1 through GPT-5.5), Anthropic (Claude Haiku/Sonnet/Opus 4.x), Google (Gemini 2.5–3.5), Codex, and fine-tuned models. Last updated: 2026-05-28.
+Pricing data covers: OpenAI (GPT-4.1 through GPT-5.6), Anthropic (Claude Haiku 3.5/4.5, Sonnet 4.x/5, Opus 4.x/5, Fable 5), Google (Gemini 2.5–3.6), Codex, and fine-tuned models. Refreshed per the runbook in `PRICING_SOURCES.md`. Last updated: 2026-08-07.
 
 ---
 
@@ -936,24 +983,34 @@ agentlens/
 │   ├── otlpCollector.ts          # HTTP server, Codex session synthesis
 │   ├── otlpParser.ts             # Pure parsing (tests/standalone)
 │   ├── sessionStore.ts           # 5-min rolling span window, onUpdate callbacks
+│   ├── spanStore.ts              # Standalone server's persisted span cap (pruneSpans, safe load/save)
 │   ├── sessionRepository.ts      # Merges DB + live window; single session data access point
 │   ├── spanSummarizer.ts         # Orchestrates per-agent builders
 │   ├── pricing.ts                # Extension-host pricing: lookupRates, calcTokenCostUsd
 │   ├── sidebarPanel.ts           # Sidebar webview
 │   ├── dashboardPanel.ts         # Full dashboard webview, message protocol, alert notifications
+│   ├── mcpServer.ts              # MCP server — exposes session history to Claude Code / MCP clients
 │   ├── autoConfig.ts             # Copilot VS Code settings
 │   ├── autoConfigNode.ts         # Claude/Codex file-based config
+│   ├── vscodeFamilyIdes.ts       # App-directory names for VS Code-family IDEs (Copilot Chat log discovery)
 │   ├── exportData.ts             # JSON export helpers
-│   ├── logReader.ts              # LogReader — local log ingestion (Claude/Codex/Copilot CLI/Copilot Chat JSONL+JSON)
-│   ├── loopDetector.ts           # Loop signal detection
+│   ├── exportFormats.ts          # CSV + Markdown export serialization
+│   ├── gitOutcome.ts             # On-demand git-outcome classification (reverted/productive/abandoned/ambiguous)
+│   ├── oneShotRate.ts            # One-shot / retry-rate metric — per-file edit-count aggregation
+│   ├── logReader.ts              # LogReader — local log ingestion (Claude/Codex/Copilot CLI/Copilot Chat JSONL+JSON/OpenCode SQLite)
+│   ├── loopDetector.ts           # Loop signal detection; shares getFileEditCounts with oneShotRate.ts
+│   ├── instructionAdvisor.ts     # Advisor tab analysis — hot files, loop patterns, high turn counts
+│   ├── instructionEffectiveness.ts # Before/after baseline metrics for applied instruction suggestions
+│   ├── instructionFiles.ts       # Detects/reads/writes CLAUDE.md, copilot-instructions.md, AGENTS.md
 │   ├── types.ts                  # Shared extension-host types
 │   ├── database/
 │   │   ├── schema.ts             # SCHEMA_SQL — CREATE TABLE statements + indexes
 │   │   ├── db.ts                 # AgentLensDb — open, migrate, save, dispose
-│   │   ├── writer.ts             # DatabaseWriter — enqueue/drain, blob writes, cost_usd
+│   │   ├── writer.ts             # DatabaseWriter — enqueue/drain, blob writes, cost_usd, one_shot_stats
 │   │   ├── reader.ts             # DatabaseReader — list, search, analytics, burn rate, blobs
 │   │   ├── migration.ts          # migrateGlobalStateToSqlite (one-time)
 │   │   ├── retention.ts          # runRetention — DELETE old sessions + blob eviction
+│   │   ├── instructionRepository.ts # Applied/dismissed instruction-suggestion records
 │   │   └── types.ts              # Shared DB types
 │   ├── summarizers/
 │   │   ├── claude.ts             # Claude Code session builder
@@ -963,6 +1020,16 @@ agentlens/
 │   │   └── summarizerTypes.ts    # SessionSummaryCard, TimelineEntry, etc.
 │   └── test/
 │       ├── sessionStore.test.ts
+│       ├── spanStore.test.ts
+│       ├── spanSummarizer.test.ts
+│       ├── otlpCollector.test.ts
+│       ├── otlpParser.test.ts
+│       ├── loopDetector.test.ts
+│       ├── logReader.opencode.test.ts
+│       ├── gitOutcome.test.ts
+│       ├── oneShotRate.test.ts
+│       ├── exportFormats.test.ts
+│       ├── extension.test.ts
 │       ├── database/
 │       │   ├── writer.test.ts
 │       │   ├── reader.test.ts
@@ -973,13 +1040,14 @@ agentlens/
 │       └── pricing.test.ts
 ├── media/
 │   ├── src/
-│   │   ├── App.tsx               # Preact root, message handler, tab router, sticky tab bar
-│   │   ├── state.ts              # Signals: sessions, timelines, blobs, analytics, sort, time range
+│   │   ├── dashboard.tsx         # Entry point — mounts App into the webview DOM
+│   │   ├── App.tsx               # Preact root, message handler, tab router, sticky tab bar,<br/>bell icon (Alerts popover) + gear icon (ConfigPanel: Alerts · Automation)
+│   │   ├── state.ts              # Signals: sessions, timelines, blobs, analytics, sort, time range, gitOutcomes
 │   │   ├── types.ts              # Frontend types mirroring backend + analytics types
 │   │   ├── pricing.ts            # Browser pricing: rate table, lookupRates, calcTokenCost
-│   │   ├── sessionMetrics.ts     # calcSessionCost, calcEntryCost, fmtUsd
+│   │   ├── sessionMetrics.ts     # calcSessionCost, calcEntryCost, fmtUsd, buildDailyCostMap, getDailyCostUsd
 │   │   ├── utils.ts              # Formatting helpers, agent colors, session labels
-│   │   ├── agentProfiles.ts      # Per-agent alert/automation thresholds (localStorage)
+│   │   ├── agentProfiles.ts      # Per-agent alert/automation thresholds incl. daily cost (localStorage)
 │   │   ├── AgentThresholdInputs.tsx  # Reusable form input components for threshold editing
 │   │   ├── sidebarWebview.ts     # Sidebar JS (no JSX)
 │   │   ├── styles/
@@ -997,8 +1065,9 @@ agentlens/
 │   │   │   └── export.css        # Export tab card layout
 │   │   └── tabs/
 │   │       ├── Sessions.tsx      # Sortable session table, expand-in-place detail panel
-│   │       │                     #   sub-tabs: Overview (InsightCards) · Trace · Flow · Tools · Files
-│   │       ├── Analytics.tsx     # ESTIMATED COST · AGENT BREAKDOWN · TOKEN USAGE · CONTEXT GROWTH
+│   │       │                     #   sub-tabs: Overview (InsightCards) · Trace · Flow · Tools ·
+│   │       │                     #   Files (one-shot/retry-rate summary + git outcome banner/badges)
+│   │       ├── Analytics.tsx     # ESTIMATED COST · AGENT BREAKDOWN (incl. one-shot rate) · TOKEN USAGE · CONTEXT GROWTH
 │   │       ├── Insights.tsx      # InsightCard component + generateInsights; clipboard copy icon
 │   │       ├── Cost.tsx          # CostBarChart (canvas), per-session cost table, M/K token toggle, CSV export, fmtUsd
 │   │       ├── SessionCharts.tsx # ContextGrowthChart (animated), SessionTokenChart, TurnsLink
@@ -1006,9 +1075,14 @@ agentlens/
 │   │       ├── Flow.tsx          # Turn-to-tool semantic graph (canvas), FlowCanvas component
 │   │       ├── Agents.tsx        # computeStats helper used by Analytics AgentCard
 │   │       ├── Tools.tsx         # ToolsChart (donut + table) used by Sessions detail
-│   │       ├── Alerts.tsx        # Alert config UI, checkAlerts, AlertNotification type
+│   │       ├── Patterns.tsx      # Advisor tab — hot files, loop patterns, efficiency scatter, Instructions sub-view
+│   │       ├── Instructions.tsx  # Instruction-file suggestion cards (apply/dismiss) used by Patterns
+│   │       ├── Import.tsx        # Import tab — preview + import an AgentLens JSON export
+│   │       ├── Alerts.tsx        # Alert config UI (incl. daily cost threshold), checkAlerts, AlertNotification type
 │   │       ├── Automation.tsx    # Automation config UI, checkAutomations, prompt building
-│   │       ├── Export.tsx        # Raw + redacted JSON export UI
+│   │       ├── Settings.tsx      # OTEL/log ingestion toggles, MCP toggle, reconfigure button (in gear-icon ConfigPanel)
+│   │       ├── IngestionNote.tsx # Shared OTEL-vs-log-richness callout used by Help/Settings
+│   │       ├── Export.tsx        # Full or redacted export UI — format: JSON · CSV · Markdown
 │   │       └── Help.tsx          # Sticky TOC nav, glossary, OTEL setup guide
 │   ├── dashboard.js              # Compiled Preact bundle
 │   ├── dashboard.css             # Compiled styles
