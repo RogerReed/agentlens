@@ -90,10 +90,16 @@ async function classifyFile(root: string, relPath: string, sessionStartIso: stri
   const after = onDisk !== null ? onDisk : await runGit(root, ['show', 'HEAD:' + relPath])
   if (after === null) return 'ambiguous' // deleted, moved, or never committed and gone
 
-  const before = await contentBeforeSession(root, relPath, sessionStartIso)
+  // These two don't depend on each other's result — run concurrently rather than
+  // paying for two sequential git subprocess round-trips per file. hasCommitSince
+  // ends up unused in the 'reverted' case, but that wastes a little CPU, not latency.
+  const [before, committedSince] = await Promise.all([
+    contentBeforeSession(root, relPath, sessionStartIso),
+    hasCommitSince(root, relPath, sessionEndIso),
+  ])
   if (before !== null && before === after) return 'reverted' // net no-op vs. pre-session state
 
-  return (await hasCommitSince(root, relPath, sessionEndIso)) ? 'productive' : 'abandoned'
+  return committedSince ? 'productive' : 'abandoned'
 }
 
 const OUTCOME_PRIORITY: FileOutcome[] = ['reverted', 'abandoned', 'ambiguous', 'productive']
@@ -130,12 +136,18 @@ export async function classifySessionOutcome(
   const sessionEndIso = endTime || startTime
   if (!sessionStartIso) return null
 
-  const files: Record<string, FileOutcome> = {}
-  for (const absPath of filesChanged.slice(0, MAX_FILES)) {
-    const rel = relativeToRoot(root, absPath)
-    if (!rel) { files[absPath] = 'ambiguous'; continue }
-    files[absPath] = await classifyFile(root, rel, sessionStartIso, sessionEndIso)
-  }
+  // Each file's classification is independent — run them concurrently rather than
+  // one at a time. This is the dominant cost of the whole function (each file spawns
+  // up to two more git subprocesses on top of this), so serializing it was the main
+  // source of visible delay on sessions with more than a handful of changed files.
+  const entries = await Promise.all(
+    filesChanged.slice(0, MAX_FILES).map(async (absPath): Promise<[string, FileOutcome]> => {
+      const rel = relativeToRoot(root, absPath)
+      if (!rel) return [absPath, 'ambiguous']
+      return [absPath, await classifyFile(root, rel, sessionStartIso, sessionEndIso)]
+    })
+  )
+  const files: Record<string, FileOutcome> = Object.fromEntries(entries)
 
   const values = Object.values(files)
   const overall = OUTCOME_PRIORITY.find(p => values.includes(p)) ?? 'ambiguous'
