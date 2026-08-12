@@ -1,4 +1,5 @@
 import { LoopSignal } from '../types'
+import type { OneShotStats } from '../oneShotRate'
 
 export interface SessionSummaryCard {
   sessionId: string
@@ -35,6 +36,10 @@ export interface SessionSummaryCard {
   loopSignals: LoopSignal[]
   peakContextPerTurn?: number   // max single-turn (input + cacheRead + cacheCreate); undefined for single-turn sessions
   filesWritten: string[]        // files fully written (Write / create_file tools); subset of filesChanged
+  /** One-shot/retry edit-pass stats, derived from timeline editDetails. Computed during
+   *  summarization (see spanSummarizer.ts), same lifecycle as loopSignals — absent on
+   *  synthetic/in-progress cards built before that pass runs. */
+  oneShotStats?: OneShotStats
 }
 
 export interface TimelineEntry {

@@ -1,6 +1,18 @@
-import type { SessionSummaryCard, TimelineEntry } from './types'
+import type { SessionSummaryCard, TimelineEntry, OneShotStats } from './types'
 import { getAgentProfiles, resolveAgentProfile, type AgentThresholdProfiles } from './agentProfiles'
 import { lookupRates, calcTokenCost, type PricingMode } from './pricing'
+
+// Mirrors src/oneShotRate.ts — see there for why this metric exists and its honest limitations
+// (edit-pass counting, not a correctness signal).
+export const MIN_FILES_FOR_RATE = 2
+
+export function oneShotRate(stats: Pick<OneShotStats, 'filesConsidered' | 'oneShotFiles'>): number | null {
+  return stats.filesConsidered >= MIN_FILES_FOR_RATE ? stats.oneShotFiles / stats.filesConsidered : null
+}
+
+export function avgEditsPerFile(stats: Pick<OneShotStats, 'filesConsidered' | 'totalEdits'>): number | null {
+  return stats.filesConsidered > 0 ? stats.totalEdits / stats.filesConsidered : null
+}
 
 export function fmtUsd(usd: number): string {
   if (usd === 0) return '$0.00'

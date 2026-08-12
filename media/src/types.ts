@@ -92,6 +92,15 @@ export interface SessionSummaryCard {
   loopSignals: LoopSignal[]
   peakContextPerTurn?: number
   filesWritten: string[]
+  /** Mirrors src/oneShotRate.ts's OneShotStats. Absent on cards computed before this field existed. */
+  oneShotStats?: OneShotStats
+}
+
+export interface OneShotStats {
+  filesConsidered: number
+  oneShotFiles: number
+  retriedFiles: number
+  totalEdits: number
 }
 
 export interface TimelineEntry {

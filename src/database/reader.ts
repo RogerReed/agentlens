@@ -2,6 +2,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import * as vscode from 'vscode'
 import type { SessionSummaryCard, TimelineEntry, EditDetail } from '../summarizers/summarizerTypes'
+import type { OneShotStats } from '../oneShotRate'
 import { lookupRates, calcTokenCostUsd } from '../pricing'
 
 export interface DailyStatRow {
@@ -116,6 +117,7 @@ export class DatabaseReader {
         errors:           (col(row, 'errors') as number) ?? 0,
         outcome:          (col(row, 'outcome') as 'text_response' | 'tool_calls' | 'unknown') ?? 'unknown',
         loopSignals:      this._parseJson(col(row, 'loop_signals') as string, []),
+        oneShotStats:     this._parseJson<OneShotStats | undefined>(col(row, 'one_shot_stats') as string, undefined),
         timeline:         [],
         backgroundSpans:  [],
       } satisfies SessionSummaryCard
@@ -352,6 +354,7 @@ export class DatabaseReader {
         errors:           (col(row, 'errors') as number) ?? 0,
         outcome:          (col(row, 'outcome') as 'text_response' | 'tool_calls' | 'unknown') ?? 'unknown',
         loopSignals:      this._parseJson(col(row, 'loop_signals') as string, []),
+        oneShotStats:     this._parseJson<OneShotStats | undefined>(col(row, 'one_shot_stats') as string, undefined),
         timeline:         [],
         backgroundSpans:  [],
       } satisfies SessionSummaryCard
