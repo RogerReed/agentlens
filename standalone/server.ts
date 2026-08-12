@@ -765,10 +765,10 @@ function getHtml(): string {
         ];
       });
       var allRows = [CSV_HEADERS].concat(rows);
-      return allRows.map(function(row) { return row.map(csvCell).join(','); }).join('\r\n') + '\r\n';
+      return allRows.map(function(row) { return row.map(csvCell).join(','); }).join('\\r\\n') + '\\r\\n';
     }
     function mdEscape(text) {
-      return String(text).replace(/\|/g, '\\|');
+      return String(text).replace(/\\|/g, '\\\\|');
     }
     function toMarkdown(sessions) {
       var parts = ['# AgentLens Session Export', '', sessions.length + ' session' + (sessions.length === 1 ? '' : 's') + ', exported ' + new Date().toISOString(), ''];
@@ -795,11 +795,11 @@ function getHtml(): string {
           s.filesChanged.forEach(function(f) { parts.push('- \`' + mdEscape(f) + '\`'); });
         }
         if (s.userRequest) {
-          parts.push('', '**Prompt:**', '', '> ' + mdEscape(s.userRequest).replace(/\n/g, '\n> '));
+          parts.push('', '**Prompt:**', '', '> ' + mdEscape(s.userRequest).replace(/\\n/g, '\\n> '));
         }
         parts.push('', '---', '');
       });
-      return parts.join('\n');
+      return parts.join('\\n');
     }
     function serializeExport(sessions, format) {
       if (format === 'csv') return toCsv(sessions);
