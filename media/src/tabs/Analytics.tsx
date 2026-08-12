@@ -5,7 +5,7 @@ import {
   CHART_MAX, vscode, goToHelp,
 } from '../state'
 import { getAgentColor, getAgentSourceLabel, formatMs, formatCompact } from '../utils'
-import { calcSessionCost } from '../sessionMetrics'
+import { buildDailyCostMap } from '../sessionMetrics'
 import type { SessionSummaryCard } from '../types'
 import type { PricingMode } from '../sessionMetrics'
 import { PRICING_LAST_UPDATED } from '../pricing'
@@ -124,24 +124,9 @@ export function Analytics() {
     </div>
   )
 
-  // Multi-dimensional cost table: day → agent
-  interface AgentDay { source: string; input: number; output: number; cacheCreate: number; cacheRead: number; cost: number; models: Set<string> }
-  interface DayEntry { input: number; output: number; cacheCreate: number; cacheRead: number; cost: number; agents: Map<string, AgentDay> }
-  const dayMap = new Map<string, DayEntry>()
-  pricedSess.forEach(sess => {
-    const day = sess.startTime ? new Date(sess.startTime).toISOString().slice(0, 10) : 'unknown'
-    const effMode: PricingMode = (sess.source === 'codex' || sess.source === 'claude_code') ? 'token' : mode
-    const cost = calcSessionCost(sess, effMode).totalUsd
-    if (!dayMap.has(day)) dayMap.set(day, { input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0, agents: new Map() })
-    const de = dayMap.get(day)!
-    de.input += sess.inputTokens; de.output += sess.outputTokens
-    de.cacheCreate += sess.cacheCreateTokens ?? 0; de.cacheRead += sess.cacheReadTokens; de.cost += cost
-    if (!de.agents.has(sess.source)) de.agents.set(sess.source, { source: sess.source, input: 0, output: 0, cacheCreate: 0, cacheRead: 0, cost: 0, models: new Set() })
-    const ae = de.agents.get(sess.source)!
-    ae.input += sess.inputTokens; ae.output += sess.outputTokens
-    ae.cacheCreate += sess.cacheCreateTokens ?? 0; ae.cacheRead += sess.cacheReadTokens; ae.cost += cost
-    if (sess.model) ae.models.add(sess.model)
-  })
+  // Multi-dimensional cost table: day → agent. Shared with the daily_cost alert in Alerts.tsx —
+  // see buildDailyCostMap in sessionMetrics.ts, the single source of truth for day-grouped cost.
+  const dayMap = buildDailyCostMap(pricedSess, mode)
   const dayRows = [...dayMap.entries()].sort((a, b) => a[0].localeCompare(b[0]))
   const grand = dayRows.reduce((g, [, d]) => ({
     input: g.input + d.input, output: g.output + d.output,
