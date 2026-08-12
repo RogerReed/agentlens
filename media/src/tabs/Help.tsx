@@ -415,7 +415,7 @@ function SessionsSection() {
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Files</dt>
             <dd class="glossary-def" style="display:block">
-              Every file created or modified during the session, grouped by path. Click any file to open a diff in the editor. The badge shows the number of unique files touched.
+              Every file created or modified during the session, grouped by path. Click any file to open a diff in the editor. The badge shows the number of unique files touched. A one-shot/retry-rate line summarizes edit passes per file (e.g. "80% one-shot (4/5 files, avg 1.2 edit passes/file)") — hidden when fewer than 2 files were edited. A git outcome banner (VS Code extension only) compares each changed file's content against git history to classify it <strong>Committed</strong> (changed since the session and now in a commit), <strong>Reverted</strong> (back to its pre-session content), <strong>Uncommitted</strong> (changed but still sitting in the working tree), or <strong>Unknown</strong> (outcome can't be determined) — computed on demand when the row is expanded, with a matching badge per file.
             </dd>
           </div>
         </div>
@@ -519,7 +519,7 @@ function AnalyticsSection() {
         <div class="glossary">
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Agent Breakdown</dt>
-            <dd class="glossary-def" style="display:block">One card per agent showing total input tokens, output tokens, cache hit rate, estimated cost, and top tools used — all scoped to the active time range and source filter.</dd>
+            <dd class="glossary-def" style="display:block">One card per agent showing total input tokens, output tokens, cache hit rate, estimated cost, One-shot rate, and top tools used — all scoped to the active time range and source filter. One-shot rate is the file-level percentage of edited files that got it right on the first pass, aggregated across all of the agent's sessions; hidden when fewer than 2 files were edited (not enough data for a meaningful rate).</dd>
           </div>
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Estimated Cost</dt>
@@ -672,8 +672,12 @@ function SettingsSection() {
         <p>The gear icon opens a slide-in settings panel containing two collapsible sections: <strong>Alerts</strong> and <strong>Automation</strong>. Close it with the × button or by pressing Escape.</p>
 
         <h4 id="help-alerts" style={subHeadStyle}>Alerts</h4>
-        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Configure thresholds for six signals. When a live session crosses a threshold the bell badge increments and the alert appears in the status card. Two alerts use shared token-count thresholds; the other four use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently.</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Configure thresholds for seven signals. When a live session crosses a threshold the bell badge increments and the alert appears in the status card. Five alerts use per-agent profiles so you can tune Claude Code, Copilot, and Codex independently; the daily cost threshold is a single global dollar figure across all agents.</p>
         <div class="glossary">
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term">Daily Cost Threshold <span style="font-size:10px;font-weight:400;color:var(--muted)">(warning)</span></dt>
+            <dd class="glossary-def" style="display:block">Fires when today's total estimated cost across all agents (UTC day) crosses the configured dollar threshold. Disabled by default. Default threshold: $20/day.</dd>
+          </div>
           <div class="glossary-item" style="flex-direction:column;gap:2px">
             <dt class="glossary-term">Context Window Filling Up <span style="font-size:10px;font-weight:400;color:var(--muted)">(warning)</span></dt>
             <dd class="glossary-def" style="display:block">Fires when peak input tokens for a session reaches the per-agent threshold. Defaults: Claude Code 170K, Copilot 108K, Codex 340K. Adjust per agent or raise the shared baseline.</dd>

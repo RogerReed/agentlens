@@ -440,7 +440,7 @@ Override the default database location with the `OPENCODE_DATA_DIR` environment 
 
 - **Files Changed** — The Files tab tracks every file created or modified by the agent, organized by session with inline before/after diffs
 - **Multi-session Comparison** — The Analytics tab shows per-agent breakdown cards with side-by-side token totals, cache rates, TTFT, and top tools for Copilot, Claude, and Codex
-- **Automated Prompts** — The Automation tab lets you configure threshold-based automations (Loop Breaker, Turn Limit Wrap-up, Context Dump) that trigger a correction prompt when a session crosses a limit — delivered as a VS Code notification or written to a file for agent consumption
+- **Automated Prompts** — The gear-icon Settings panel's Automation section lets you configure threshold-based automations (Loop Breaker, Turn Limit Wrap-up, Context Dump) that trigger a correction prompt when a session crosses a limit — delivered as a VS Code notification or written to a file for agent consumption
 
 ## AI Usage Disclosure
 
