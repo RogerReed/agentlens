@@ -87,6 +87,8 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - **OpenTelemetry collection** — Built-in OTEL receiver captures real-time traces and logs from Copilot, Claude Code, and Codex with no external infrastructure; auto-configured on first activation
 - **Log file ingestion** — Reads local session files and databases written automatically by each agent as a zero-config fallback — including JSONL logs for Claude Code, Codex, and Copilot, and OpenCode's SQLite database — backfilling history when OTEL isn't configured (VS Code-family IDEs and native process only)
 - **Sessions Table** — Drill into any session: expand a row to see a full waterfall trace, turn-to-tool flow graph, tool distribution chart, and modified files — all without leaving the session list
+- **Git Outcome Correlation** — For each file a session changed, compares its content before and after against local git history to show whether the work was committed, reverted, or left uncommitted — answers "did this session's changes actually survive?" after the fact (VS Code extension only)
+- **One-shot / Retry Rate** — Tracks what fraction of edited files reached their final state in a single edit pass vs. needed retries, per session and aggregated per-agent in Analytics — a proxy for correction effort
 - **Analytics** — Aggregate charts across the active time range: per-agent breakdown, estimated cost with a daily total overlay, token usage per session, and context growth
 - **Advisor** — Project-scoped suggestions for improving your agent instruction file (CLAUDE.md, AGENTS.md, or similar): detects hot files the agent rediscovers every session, loop patterns, high turn-count trends, and scope problems — each suggestion includes ready-to-copy instruction text and an inquiry prompt you can paste directly into your agent. Also includes an efficiency scatter plot (cost vs. LLM calls, colored by cache hit rate) and hot files ranked by access frequency. Select a specific project from the filter for tailored suggestions; all-projects view surfaces only universal patterns.
 - **Cost Estimation** — Estimates session cost for Copilot (three billing models), Claude Code, and Codex, broken down by model in a day-grouped table
@@ -94,6 +96,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 - **Configurable Alerts** — Threshold-based notifications for turns, errors, active time, repeat tool calls, and estimated daily cost — per-agent or shared
 - **Export** — Export filtered sessions as JSON, CSV, or Markdown (full or redacted); respects the active agent, source, time range, and text filters
 - **Import** — Import sessions from a previous AgentLens JSON export; drag-drop or file-pick, shows a preview with session count by source and date range, imports with live progress and automatic deduplication (existing sessions are skipped)
+- **MCP Server** — Exposes your own session history to Claude Code (or any MCP-compatible agent) so it can query its recent work, cost, and recurring file/loop patterns before starting a task, instead of you checking the dashboard yourself. Runs by default on port `4316`; see the in-app Help tab's Agent Integration section for setup
 
 ## Data Sources
 
@@ -141,7 +144,7 @@ The **Analytics** tab (Estimated Cost section) shows the dollar cost of Copilot,
 
 **Claude Code** and **Codex** always use token-based pricing — no toggle required. Claude Code is billed against the Anthropic API at standard per-token rates (input, cache write, cache read, output) depending on model (Opus, Sonnet, or Haiku). Codex is billed against the OpenAI API.
 
-The Estimated Cost section includes a per-session bar chart with a daily aggregate line (right axis), a multi-dimensional table grouped by date and agent showing input, output, cache create, cache read, total tokens, and cost, and a model breakdown table. Included Copilot models (GPT-4.1, GPT-5 mini) show $0 under token-based billing.
+The Estimated Cost section includes a per-session bar chart with a daily aggregate line (right axis), a multi-dimensional table grouped by date and agent showing input, output, cache create, cache read, total tokens, and cost, and a model breakdown table. Some models carry a "long context" surcharge above a per-model token-per-call threshold — see [PRICING_SOURCES.md](PRICING_SOURCES.md) for which ones and the exact thresholds.
 
 All figures are estimates — not your actual bill. Rates are sourced from each provider's public pricing docs; see [PRICING_SOURCES.md](PRICING_SOURCES.md) for the authoritative URL for each billing model and notes for maintainers on keeping rates current.
 
@@ -283,6 +286,7 @@ Environment variables:
 | --- | --- | --- |
 | `OTLP_PORT` | `4318` | OTLP HTTP receiver port |
 | `UI_PORT` | `3000` | Dashboard port |
+| `MCP_PORT` | `4316` | MCP endpoint for Claude Code and other MCP-compatible agents |
 | `DATA_DIR` | `~/.agentlens` | Directory for persistent span data |
 | `BIND_HOST` | `127.0.0.1` | Set to `0.0.0.0` for LAN access |
 | `AGENTLENS_MAX_SPANS` | `50000` | Cap on in-memory/persisted spans; oldest spans are dropped once exceeded |
@@ -363,14 +367,18 @@ Open the VS Code Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and search for
 | `AgentLens: Open Dashboard` | Open the full dashboard in an editor panel |
 | `AgentLens: Export OTEL Data` | Write session data to JSON files in your workspace root (also available in the **Export** dashboard tab) |
 | `AgentLens: Export OTEL Data (Redacted)` | Same, with prompt text, tool inputs, tool results, and PII replaced with `[redacted]` |
+| `AgentLens: Show Storage Stats` | Report local database size, blob storage size, session count, date range, and current retention setting to the Output panel |
 
 ## Extension Settings
 
 | Setting | Default | Description |
 | ------- | ------- | ----------- |
 | `agentLens.otlpPort` | `4318` | Local port for the OTLP trace receiver |
+| `agentLens.enableOtelIngestion` | `true` | Accept incoming OTEL span data. The OTLP server keeps listening on `agentLens.otlpPort` regardless; disabling this silently drops received payloads without storing them. |
 | `agentLens.enableLogIngestion` | `true` | Read local session log files from Claude Code, Codex, and Copilot CLI. Disable if you only want OTEL data. |
 | `agentLens.autoConfigureAgents` | `true` | Automatically write OTEL telemetry settings into Claude Code's, Codex's, and Copilot's own configuration on every activation. Disabling leaves your agents' configuration untouched — use the **Configure OTEL** button in Settings for a one-off manual apply, or configure OTEL manually (see [Manual Configuration](#manual-configuration)). |
+| `agentLens.enableMcpServer` | `true` | Start the AgentLens MCP server so Claude Code and other MCP-compatible agents can query your session history. |
+| `agentLens.mcpPort` | `4316` | Local port for the AgentLens MCP server (when `agentLens.enableMcpServer` is true) |
 | `agentLens.sessionRetentionDays` | `90` | How many days to keep session history in the local database |
 
 ## Agent Data Formats
@@ -438,7 +446,7 @@ Override the default database location with the `OPENCODE_DATA_DIR` environment 
 
 ## Additional Features
 
-- **Files Changed** — The Files tab tracks every file created or modified by the agent, organized by session with inline before/after diffs
+- **Files Changed** — The Files sub-tab tracks every file created or modified by the agent, organized by session with inline before/after diffs, a one-shot/retry-rate summary, and (VS Code extension only) a git-outcome banner showing whether each file's changes were committed, reverted, or left uncommitted
 - **Multi-session Comparison** — The Analytics tab shows per-agent breakdown cards with side-by-side token totals, cache rates, TTFT, and top tools for Copilot, Claude, and Codex
 - **Automated Prompts** — The gear-icon Settings panel's Automation section lets you configure threshold-based automations (Loop Breaker, Turn Limit Wrap-up, Context Dump) that trigger a correction prompt when a session crosses a limit — delivered as a VS Code notification or written to a file for agent consumption
 

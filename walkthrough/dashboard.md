@@ -16,4 +16,4 @@ Two icons in the top-right of the tab bar handle alerting and configuration with
 - **Bell icon** — shows a badge when an alert threshold is currently triggered; click it for a status card with severity and detail per alert.
 - **Gear icon** — opens a slide-in Settings panel with two collapsible sections: **Alerts** (configurable thresholds — context window size, turn count, error spike, active session time, cache utilization, identical tool repeats, and daily cost across all agents) and **Automation** (automated prompts triggered when thresholds are crossed — Loop Breaker, Turn Limit Wrap-up, and Context Dump). Also holds the OTEL/log ingestion toggles.
 
-Use the **agent filter** and **session limit** controls at the top to focus on what matters.
+Use the **time range**, **agent filter**, and **text search** controls at the top to focus on what matters.
