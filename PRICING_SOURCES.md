@@ -14,7 +14,14 @@ and revert independently if a source turns out to have been misread.
 1. Fetch each source URL below and compare against the rate tables here.
 2. Update `RATES` in both `src/pricing.ts` and `media/src/pricing.ts` to match. See
    "Notes for maintainers" at the bottom for lookup/normalization details.
-3. Bump `PRICING_LAST_UPDATED` in `media/src/pricing.ts` and the "verified" dates below.
+3. Bump every date that records when pricing was last verified — there's more than one, and it's
+   easy to miss one:
+   - `PRICING_LAST_UPDATED` in `media/src/pricing.ts`
+   - The `PRICING_LAST_UPDATED: <date>` comment at the top of `src/pricing.ts`
+   - Every per-section "verified `<date>`" source line below, for whichever sections you actually
+     re-checked
+   - `ARCHITECTURE.md`'s "Cost Calculation" section — it has its own "Last updated: `<date>`" line
+     independent of the two constants above (found missed once already; check it every time)
 4. Run `tsc --noEmit` (both configs), `eslint src media/src`, and `mocha` to confirm nothing broke.
 5. If a rate or model can't be confirmed from a source, add it to that section's "Known gaps"
    instead of guessing.
@@ -35,6 +42,11 @@ Copilot has three billing models depending on plan type and date.
 
 - Per-model token rates: `inputPerMTok`, `cacheReadPerMTok`, `cacheWritePerMTok`, `outputPerMTok` (USD per 1M tokens)
 - List of included models (effectively $0 — look for models with no token rate listed)
+- Per-model "long context" surcharge tiers for some models — 2x input/cache-read/cache-write, 1.5x
+  output above a per-model token-per-call threshold (272K for GPT-5.4/5.5/5.6-Sol/5.6-Terra, 200K
+  for GPT-5.6-Luna/Gemini 3.1 Pro/Grok 4.5). Modeled in `RATES` via `longContextThresholdTokens` +
+  the `*AboveThresholdPerMTok` fields (`src/pricing.ts` only — `media/src/pricing.ts`'s
+  session-level estimate stays flat-rate, see that file's own comment for why).
 
 **Formula:**
 
@@ -101,18 +113,6 @@ sessions; don't expect to re-verify them.
   pricing page at the same rate ($2.00/$0.50/$8.00) that Codex CLI uses directly (see the Codex
   section below), so `RATES` is left unchanged. Copilot apparently just doesn't currently offer it
   as a selectable model; that's a different thing from the rate being wrong.
-- **Long-context surcharge tier** (GPT-5.4, GPT-5.5, GPT-5.6 family, and — newly discovered this
-  refresh — Gemini 3.1 Pro and Grok 4.5 too): confirmed to exist — Copilot's pricing page lists a
-  distinct "Long context" row for each, consistently at 2x the default input/cache-read/cache-write
-  rate and 1.5x the default output rate. **Token thresholds are now confirmed** (previously
-  thought unconfirmed): 272K for GPT-5.4, GPT-5.5, GPT-5.6 Sol, GPT-5.6 Terra; 200K for GPT-5.6
-  Luna, Gemini 3.1 Pro, and Grok 4.5 — read directly off the pricing page's per-model "≤272K" /
-  "≤200K" default-tier labels. Still **not implemented** in `RATES` (holds only the default-tier
-  rate) — confirming the threshold removes the "wrong guess" risk that blocked this before, but
-  wiring up per-model tiered surcharge logic (mirroring the existing `claude-sonnet-4`
-  `inputAbove200kPerMTok`-style fields, generalized to a per-model threshold rather than the
-  hardcoded 200K `tieredCost()` currently assumes) is real feature work, not a rate-table edit —
-  see `.staged-issues/` for a follow-up if this is worth doing.
 - `gpt-5.1-codex`, `gpt-5.1-codex-mini`, `gpt-5.1-codex-max`: not independently re-confirmed in the
   2026-08-07 refresh — absent from the general API pricing page (only base `gpt-5.1` was listed,
   and it turned out to have been repriced down to $1.25/$10.00 from $1.75/$14.00). Left unchanged
@@ -298,10 +298,6 @@ Model name available on `codex.user_prompt`, `codex.turn_ttft`, and `codex.tool_
 
 **Known gaps:**
 
-- Long-context surcharges: `gpt-5.4`, `gpt-5.5`, and the whole `gpt-5.6` family have a long-context
-  tier — see the Copilot section's Known gaps above for the now-confirmed thresholds (272K for
-  most, 200K for Luna). Still not implemented in `RATES` — this is real feature work (per-model
-  tiered thresholds), not a rate-table edit.
 - `gpt-5.3-codex-spark`: research preview with no published rates.
 - Reasoning tokens (`codex.usage.reasoning_output_tokens`): included in `gen_ai.usage.output_tokens` and billed at the standard output rate per available data; verify against the official rate card once it's fetchable (see Sources above).
 - Which GPT-5.6 variant (Sol/Terra/Luna) is the actual default model invoked by plain `codex` CLI runs (as opposed to an explicit model flag) is not confirmed by public docs.
