@@ -8,11 +8,15 @@ export interface ModelRates {
   cacheWritePerMTok: number
   outputPerMTok: number
   contextWindowTokens: number   // max context window for Projection estimates; 0 = unknown
-  // Optional tiered rates for the >200K tokens-per-call surcharge. When absent, flat rates apply.
-  inputAbove200kPerMTok?: number
-  outputAbove200kPerMTok?: number
-  cacheReadAbove200kPerMTok?: number
-  cacheWriteAbove200kPerMTok?: number
+  // Optional tiered "long context" surcharge, applied per API call above longContextThresholdTokens.
+  // When absent, flat rates apply regardless of call size. Threshold is per-model (confirmed values
+  // vary — 200K for some models, 272K for others — see PRICING_SOURCES.md); defaults to 200K if the
+  // above-threshold rates are set but the threshold itself isn't (kept for claude-sonnet-4 parity).
+  longContextThresholdTokens?: number
+  inputAboveThresholdPerMTok?: number
+  outputAboveThresholdPerMTok?: number
+  cacheReadAboveThresholdPerMTok?: number
+  cacheWriteAboveThresholdPerMTok?: number
 }
 
 const RATES: Record<string, ModelRates> = {
@@ -37,23 +41,38 @@ const RATES: Record<string, ModelRates> = {
   'gpt-5.2':            { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0, outputPerMTok: 14.00, contextWindowTokens: 256_000 },
   'gpt-5.2-codex':      { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0, outputPerMTok: 14.00, contextWindowTokens: 256_000 },
   'gpt-5.3-codex':      { inputPerMTok: 1.75,  cacheReadPerMTok: 0.175,  cacheWritePerMTok: 0, outputPerMTok: 14.00, contextWindowTokens: 256_000 },
-  'gpt-5.4':            { inputPerMTok: 2.50,  cacheReadPerMTok: 0.25,   cacheWritePerMTok: 0, outputPerMTok: 15.00, contextWindowTokens: 272_000 },
+  // gpt-5.4: long-context surcharge above 272K tokens/call confirmed 2026-08-12 (2x input/cache-read, 1.5x output).
+  'gpt-5.4':            { inputPerMTok: 2.50,  cacheReadPerMTok: 0.25,   cacheWritePerMTok: 0, outputPerMTok: 15.00, contextWindowTokens: 272_000,
+                          longContextThresholdTokens: 272_000,
+                          inputAboveThresholdPerMTok: 5.00, cacheReadAboveThresholdPerMTok: 0.50, outputAboveThresholdPerMTok: 22.50 },
   'gpt-5.4-mini':       { inputPerMTok: 0.75,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 4.50,  contextWindowTokens: 200_000 },
   'gpt-5.4-nano':       { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0, outputPerMTok: 1.25,  contextWindowTokens: 128_000 },
-  'gpt-5.5':            { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, contextWindowTokens: 256_000 },
+  // gpt-5.5: long-context surcharge above 272K tokens/call confirmed 2026-08-12 (2x input/cache-read, 1.5x output).
+  'gpt-5.5':            { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 30.00, contextWindowTokens: 256_000,
+                          longContextThresholdTokens: 272_000,
+                          inputAboveThresholdPerMTok: 10.00, cacheReadAboveThresholdPerMTok: 1.00, outputAboveThresholdPerMTok: 45.00 },
   // gpt-5.6 family: Luna (small/fast), Terra (mid), Sol (flagship). Corrected 2026-08-07 — Luna and Terra were
   // repriced down (Luna $1.00→$0.20 input, Terra $2.50→$2.00 input), and the whole family gained real cache-write
   // pricing (1.25x input, confirmed across the Copilot docs, OpenAI's pricing page, and the Codex credits page).
-  // A "long context" surcharge tier also exists above an unconfirmed token threshold (~2x input/cache, ~1.5x
-  // output per Copilot's docs) — not implemented; see PRICING_SOURCES.md Known gaps.
-  'gpt-5.6-luna':       { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0.25, outputPerMTok: 1.20,  contextWindowTokens: 256_000 },
-  'gpt-5.6-terra':      { inputPerMTok: 2.00,  cacheReadPerMTok: 0.20,   cacheWritePerMTok: 2.50, outputPerMTok: 12.00, contextWindowTokens: 256_000 },
-  'gpt-5.6-sol':        { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 6.25, outputPerMTok: 30.00, contextWindowTokens: 256_000 },
+  // Long-context surcharge tiers confirmed 2026-08-12 (2x input/cache-read/cache-write, 1.5x output) — Luna's
+  // threshold (200K) is lower than Sol/Terra's (272K), per Copilot's pricing page default-tier labels.
+  'gpt-5.6-luna':       { inputPerMTok: 0.20,  cacheReadPerMTok: 0.02,   cacheWritePerMTok: 0.25, outputPerMTok: 1.20,  contextWindowTokens: 256_000,
+                          longContextThresholdTokens: 200_000,
+                          inputAboveThresholdPerMTok: 0.40, cacheReadAboveThresholdPerMTok: 0.04, cacheWriteAboveThresholdPerMTok: 0.50, outputAboveThresholdPerMTok: 1.80 },
+  'gpt-5.6-terra':      { inputPerMTok: 2.00,  cacheReadPerMTok: 0.20,   cacheWritePerMTok: 2.50, outputPerMTok: 12.00, contextWindowTokens: 256_000,
+                          longContextThresholdTokens: 272_000,
+                          inputAboveThresholdPerMTok: 4.00, cacheReadAboveThresholdPerMTok: 0.40, cacheWriteAboveThresholdPerMTok: 5.00, outputAboveThresholdPerMTok: 18.00 },
+  'gpt-5.6-sol':        { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 6.25, outputPerMTok: 30.00, contextWindowTokens: 256_000,
+                          longContextThresholdTokens: 272_000,
+                          inputAboveThresholdPerMTok: 10.00, cacheReadAboveThresholdPerMTok: 1.00, cacheWriteAboveThresholdPerMTok: 12.50, outputAboveThresholdPerMTok: 45.00 },
   // ── Copilot marketplace third-party models ──────────────────────────────────
   // These four were already present in media/src/pricing.ts (browser-side) but missing here — a real sync gap
   // that made cost_usd store as 0 (not ~$?) for any Copilot session using them, silently under-reporting rather
   // than flagging as unknown. Added 2026-08-12 to restore parity; rates confirmed against the Copilot pricing page.
-  'grok-4.5':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 0 },
+  // grok-4.5: long-context surcharge above 200K tokens/call confirmed 2026-08-12 (2x input/cache-read, 1.5x output).
+  'grok-4.5':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 0,
+                          longContextThresholdTokens: 200_000,
+                          inputAboveThresholdPerMTok: 4.00, cacheReadAboveThresholdPerMTok: 1.00, outputAboveThresholdPerMTok: 12.00 },
   'kimi-k3':            { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,   cacheWritePerMTok: 0, outputPerMTok: 15.00, contextWindowTokens: 0 },
   'kimi-k2.7-code':     { inputPerMTok: 0.95,  cacheReadPerMTok: 0.19,   cacheWritePerMTok: 0, outputPerMTok: 4.00,  contextWindowTokens: 0 },
   'mai-code-1-flash':   { inputPerMTok: 0.75,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 4.50,  contextWindowTokens: 0 },
@@ -68,7 +87,8 @@ const RATES: Record<string, ModelRates> = {
   'claude-haiku-3-5':   { inputPerMTok:  0.80, cacheReadPerMTok: 0.08,  cacheWritePerMTok:  1.00, outputPerMTok:  4.00, contextWindowTokens: 200_000 },
   'claude-haiku-4-5':   { inputPerMTok:  1.00, cacheReadPerMTok: 0.10,  cacheWritePerMTok:  1.25, outputPerMTok:  5.00, contextWindowTokens: 200_000 },
   'claude-sonnet-4':    { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 1_000_000,
-                          inputAbove200kPerMTok: 6.00, outputAbove200kPerMTok: 22.50, cacheReadAbove200kPerMTok: 0.60, cacheWriteAbove200kPerMTok: 7.50 },
+                          longContextThresholdTokens: 200_000,
+                          inputAboveThresholdPerMTok: 6.00, outputAboveThresholdPerMTok: 22.50, cacheReadAboveThresholdPerMTok: 0.60, cacheWriteAboveThresholdPerMTok: 7.50 },
   'claude-sonnet-4-5':  { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 1_000_000 },
   'claude-sonnet-4-6':  { inputPerMTok:  3.00, cacheReadPerMTok: 0.30,  cacheWritePerMTok:  3.75, outputPerMTok: 15.00, contextWindowTokens: 1_000_000 },
   // claude-sonnet-5: launched at introductory pricing ($2/$0.20/$2.50/$10) with a scheduled increase to
@@ -96,7 +116,10 @@ const RATES: Record<string, ModelRates> = {
   'gemini-2.5-pro':  { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 1_000_000 },
   'gemini-3-flash':  { inputPerMTok: 0.50, cacheReadPerMTok: 0.05,  cacheWritePerMTok: 0, outputPerMTok:  3.00, contextWindowTokens: 1_000_000 },
   'gemini-3-pro':    { inputPerMTok: 2.00, cacheReadPerMTok: 0.20,  cacheWritePerMTok: 0, outputPerMTok: 12.00, contextWindowTokens: 1_000_000 },
-  'gemini-3.1-pro':  { inputPerMTok: 2.00, cacheReadPerMTok: 0.20,  cacheWritePerMTok: 0, outputPerMTok: 12.00, contextWindowTokens: 1_000_000 },
+  // gemini-3.1-pro: long-context surcharge above 200K tokens/call confirmed 2026-08-12 (2x input/cache-read, 1.5x output).
+  'gemini-3.1-pro':  { inputPerMTok: 2.00, cacheReadPerMTok: 0.20,  cacheWritePerMTok: 0, outputPerMTok: 12.00, contextWindowTokens: 1_000_000,
+                       longContextThresholdTokens: 200_000,
+                       inputAboveThresholdPerMTok: 4.00, cacheReadAboveThresholdPerMTok: 0.40, outputAboveThresholdPerMTok: 18.00 },
   'gemini-3.5-flash':{ inputPerMTok: 1.50, cacheReadPerMTok: 0.15,  cacheWritePerMTok: 0, outputPerMTok:  9.00, contextWindowTokens: 1_000_000 },
   // gemini-3.6-flash: added 2026-08-07, new on the Copilot pricing page.
   'gemini-3.6-flash':{ inputPerMTok: 1.50, cacheReadPerMTok: 0.15,  cacheWritePerMTok: 0, outputPerMTok:  7.50, contextWindowTokens: 1_000_000 },
@@ -138,11 +161,10 @@ export function lookupRates(modelId: string): ModelRates | null {
 }
 
 // Applies two-tier pricing: tokens up to the threshold at baseRate, remainder at aboveRate.
-function tieredCost(tokens: number, baseRatePerMTok: number, aboveRatePerMTok: number): number {
-  const THRESHOLD = 200_000
-  if (tokens <= THRESHOLD) return (tokens / 1_000_000) * baseRatePerMTok
-  return (THRESHOLD / 1_000_000) * baseRatePerMTok
-       + ((tokens - THRESHOLD) / 1_000_000) * aboveRatePerMTok
+function tieredCost(tokens: number, threshold: number, baseRatePerMTok: number, aboveRatePerMTok: number): number {
+  if (tokens <= threshold) return (tokens / 1_000_000) * baseRatePerMTok
+  return (threshold / 1_000_000) * baseRatePerMTok
+       + ((tokens - threshold) / 1_000_000) * aboveRatePerMTok
 }
 
 export function calcTokenCostUsd(
@@ -154,11 +176,16 @@ export function calcTokenCostUsd(
 ): number {
   const rates = lookupRates(modelId)
   if (!rates) return 0
-  if (rates.inputAbove200kPerMTok !== undefined) {
-    return tieredCost(inputTokens,     rates.inputPerMTok,      rates.inputAbove200kPerMTok)
-         + tieredCost(cacheReadTokens,  rates.cacheReadPerMTok,  rates.cacheReadAbove200kPerMTok!)
-         + tieredCost(cacheWriteTokens, rates.cacheWritePerMTok, rates.cacheWriteAbove200kPerMTok!)
-         + tieredCost(outputTokens,     rates.outputPerMTok,     rates.outputAbove200kPerMTok!)
+  if (rates.inputAboveThresholdPerMTok !== undefined) {
+    // Threshold defaults to 200K if above-threshold rates are set without an explicit threshold
+    // (kept for claude-sonnet-4 parity — every model added since has set this explicitly).
+    // Missing per-category above-threshold rates (e.g. cache write on a model with no cache-write
+    // pricing at all) fall back to that category's flat rate, i.e. no surcharge for that category.
+    const threshold = rates.longContextThresholdTokens ?? 200_000
+    return tieredCost(inputTokens,     threshold, rates.inputPerMTok,      rates.inputAboveThresholdPerMTok)
+         + tieredCost(cacheReadTokens,  threshold, rates.cacheReadPerMTok,  rates.cacheReadAboveThresholdPerMTok ?? rates.cacheReadPerMTok)
+         + tieredCost(cacheWriteTokens, threshold, rates.cacheWritePerMTok, rates.cacheWriteAboveThresholdPerMTok ?? rates.cacheWritePerMTok)
+         + tieredCost(outputTokens,     threshold, rates.outputPerMTok,     rates.outputAboveThresholdPerMTok ?? rates.outputPerMTok)
   }
   return (inputTokens     / 1_000_000) * rates.inputPerMTok
        + (cacheReadTokens / 1_000_000) * rates.cacheReadPerMTok

@@ -72,4 +72,38 @@ suite('pricing', () => {
     const expected = (300_000 / 1_000_000) * 3.00
     assert.ok(Math.abs(cost - expected) < 0.0001, `Expected $${expected}, got $${cost}`)
   })
+
+  test('calcTokenCostUsd uses flat rate for gpt-5.4 under its 272K threshold', () => {
+    const cost = calcTokenCostUsd(200_000, 0, 0, 100_000, 'gpt-5.4')
+    const expected = (200_000 / 1_000_000) * 2.50 + (100_000 / 1_000_000) * 15.00
+    assert.ok(Math.abs(cost - expected) < 0.0001, `Expected $${expected}, got $${cost}`)
+  })
+
+  test('calcTokenCostUsd applies the surcharge for gpt-5.4 above its 272K threshold', () => {
+    // 372K input: first 272K at $2.50, next 100K at $5.00 (2x)
+    const cost = calcTokenCostUsd(372_000, 0, 0, 0, 'gpt-5.4')
+    const expected = (272_000 / 1_000_000) * 2.50 + (100_000 / 1_000_000) * 5.00
+    assert.ok(Math.abs(cost - expected) < 0.0001, `Expected $${expected}, got $${cost}`)
+  })
+
+  test('calcTokenCostUsd uses flat rate for gpt-5.6-luna under its 200K threshold', () => {
+    const cost = calcTokenCostUsd(150_000, 0, 0, 0, 'gpt-5.6-luna')
+    const expected = (150_000 / 1_000_000) * 0.20
+    assert.ok(Math.abs(cost - expected) < 0.0001, `Expected $${expected}, got $${cost}`)
+  })
+
+  test('calcTokenCostUsd applies the surcharge for gpt-5.6-luna above its 200K threshold (lower than the rest of the 5.6 family)', () => {
+    // 250K input: first 200K at $0.20, next 50K at $0.40 (2x)
+    const cost = calcTokenCostUsd(250_000, 0, 0, 0, 'gpt-5.6-luna')
+    const expected = (200_000 / 1_000_000) * 0.20 + (50_000 / 1_000_000) * 0.40
+    assert.ok(Math.abs(cost - expected) < 0.0001, `Expected $${expected}, got $${cost}`)
+  })
+
+  test('calcTokenCostUsd applies the surcharge to cache-read tokens for grok-4.5', () => {
+    // grok-4.5 has no cache-write pricing (0), so this also exercises the cacheWrite fallback path.
+    // 300K cache-read: first 200K at $0.50, next 100K at $1.00 (2x)
+    const cost = calcTokenCostUsd(0, 300_000, 50_000, 0, 'grok-4.5')
+    const expectedCacheRead = (200_000 / 1_000_000) * 0.50 + (100_000 / 1_000_000) * 1.00
+    assert.ok(Math.abs(cost - expectedCacheRead) < 0.0001, `Expected $${expectedCacheRead}, got $${cost}`)
+  })
 })
