@@ -108,10 +108,10 @@ function summarize(overall: FileOutcome, files: Record<string, FileOutcome>): st
   const total = Object.keys(files).length
   const count = Object.values(files).filter(v => v === overall).length
   switch (overall) {
-    case 'reverted':   return `${count}/${total} file(s) reverted to their pre-session state`
-    case 'abandoned':  return `${count}/${total} file(s) still uncommitted since the session`
-    case 'productive': return `${total} file(s) committed after the session`
-    default:           return `Could not determine the outcome for ${count}/${total} file(s)`
+    case 'reverted':   return `${count}/${total} file(s) reverted to their pre-session state, per git history`
+    case 'abandoned':  return `${count}/${total} file(s) changed but not yet committed to git`
+    case 'productive': return `${total} file(s) committed to git after the session`
+    default:           return `Could not determine git status for ${count}/${total} file(s)`
   }
 }
 
