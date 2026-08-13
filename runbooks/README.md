@@ -18,6 +18,8 @@ automated — there's no cron job or CI check that triggers them.
 1. Write the task's step-by-step procedure as a standalone doc. If it's tightly coupled to an
    existing root-level doc (like pricing is to `PRICING_SOURCES.md`), extend that doc instead of
    creating a new one. Otherwise, add a new file in this directory.
-2. Include: what triggers the task, the exact steps in order, and how to verify the change
-   (which tests/lint/build commands to run before considering it done).
+2. Include: what triggers the task, the exact steps in order, how to verify the change (which
+   tests/lint/build commands to run before considering it done), and whether it needs its own
+   dedicated branch/PR (default: yes — keep runbook-driven changes scoped to just that task, not
+   bundled into unrelated work, same as the pricing refresh below).
 3. Add a row to the table above.
