@@ -2,6 +2,32 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.10.0] — 2026-08-12
+
+### Added
+
+- **Git outcome correlation** — for each file a session changed, compares its content before and after against local git history to show whether the work was committed, reverted, or left uncommitted after the fact — answers "did this session's changes actually survive?" without checking git yourself. Computed on demand when a session's Files sub-tab is opened, with results cached for the life of the session. Works in both the VS Code extension and standalone/npx mode (#176, #182, #189, #190)
+- **One-shot / retry-rate metric** — tracks what fraction of a session's edited files reached their final state in a single edit pass vs. needed retries, shown per-session in the Files sub-tab and aggregated per-agent in Analytics. A proxy for correction effort, not a correctness signal (#177, #183)
+- **Daily cost threshold alert** — a new configurable alert (disabled by default, $20/day) that sums estimated cost across all agents for the current UTC day, using the same alert/notification plumbing as the existing threshold alerts (#175, #183)
+- **CSV and Markdown export formats** — alongside the existing JSON export, sessions can now be exported as CSV (one row per session, for spreadsheets) or Markdown (one section per session, for sharing a report). JSON remains the only format the Import tab reads back in (#178)
+- **Per-model long-context pricing surcharge** — cost estimates now correctly apply the "long context" pricing tier that several models (GPT-5.4, GPT-5.5, the GPT-5.6 family, Gemini 3.1 Pro, Grok 4.5) charge above a per-model token-per-call threshold — previously not modeled at all, silently under-billing large-context calls on these models (#187)
+- New pricing entries: `gpt-4.1-mini`, `mai-code-1.1-flash`, and 7 newly-confirmed free OpenCode Zen models (#185)
+
+### Fixed
+
+- **Copilot sessions using Grok 4.5, Kimi K3, Kimi K2.7 Code, or MAI-Code-1-Flash silently stored $0 cost** since these models were added in v0.9.3 — they existed in the browser-side pricing table but were never added to the extension-host one that actually computes and stores `cost_usd`. Both tables now match (#185)
+- **Claude Sonnet 5's rate table carried a scheduled increase to $3/$15 per million tokens on 2026-09-01** that would have silently changed displayed cost on that date — Anthropic has since cancelled the increase and made the current $2/$10 rate permanent (#185)
+- **`agentLens.sessionRetentionDays` was invisible in VS Code's Settings UI** — the setting was read in code and documented in the README, but never registered in the extension's configuration schema, so it couldn't be found or set through Settings without hand-editing `settings.json` (#188)
+- **`AgentLens: Show Storage Stats` never appeared in the Command Palette** — the command was fully implemented but missing from the extension manifest (#188)
+
+### Changed
+
+- Daily Cost Threshold now appears first in the Alerts settings list (#183)
+- Small in-app Help/Traces documentation clarifications: an OTEL-vs-log-richness callout, clearer Codex OTEL setup/restart guidance, and a Codex trace interpretation note (#172, #173, #174)
+- Added an Import tab section to the in-app Help documentation, which previously had none despite Import being a full feature (#188)
+
+---
+
 ## [0.9.3] — 2026-08-07
 
 ### Fixed
