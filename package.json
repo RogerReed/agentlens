@@ -78,6 +78,10 @@
       {
         "command": "agentLens.dumpSpanAttrs",
         "title": "AgentLens: Dump Span Attributes"
+      },
+      {
+        "command": "agentLens.showStorageStats",
+        "title": "AgentLens: Show Storage Stats"
       }
     ],
     "menus": {
@@ -176,6 +180,11 @@
           "type": "number",
           "default": 4316,
           "description": "Local port for the AgentLens MCP server (when agentLens.enableMcpServer is true). Configure Claude Code to connect with: { \"mcpServers\": { \"agentlens\": { \"url\": \"http://localhost:4316/mcp\" } } }"
+        },
+        "agentLens.sessionRetentionDays": {
+          "type": "number",
+          "default": 90,
+          "description": "How many days to keep session history in the local database. Older sessions (and their blob files) are deleted automatically on activation and every 24 hours."
         }
       }
     },
