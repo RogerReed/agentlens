@@ -19,6 +19,7 @@ import { classifyOtlpPayload } from '../src/otlpParser'
 import { startMcpHttpServer } from '../src/mcpServer'
 import { LogReader, type OpenCodeSqlFactory } from '../src/logReader'
 import { computeOneShotStats } from '../src/oneShotRate'
+import { classifySessionOutcome, type GitOutcome } from '../src/gitOutcome'
 import { generateSuggestions } from '../src/instructionAdvisor'
 import { detectInstructionFiles, appendSuggestion } from '../src/instructionFiles'
 import type { Span } from '../src/types'
@@ -109,6 +110,10 @@ function addSpan(span: Span) {
 // Indexed by sessionId; OTEL-derived sessions (from spans) take precedence —
 // when the same session ID appears in both, the OTEL version is used.
 let logSessions: Map<string, SessionSummaryCard> = new Map()
+
+// Git outcome results, cached for the life of the server process (git operations aren't free) —
+// same eviction-free lifetime as logSessions. Mirrors DashboardPanel's per-panel-lifetime cache.
+const gitOutcomeCache = new Map<string, GitOutcome | null>()
 
 function buildImportCardStandalone(raw: Record<string, unknown>): SessionSummaryCard {
   const num = (v: unknown, def = 0): number => (typeof v === 'number' ? v : def)
@@ -1036,6 +1041,25 @@ function getHtml(): string {
                 }));
               })
               .catch(function(e) { console.warn('[AgentLens] timeline fetch failed', e); });
+          } else if (msg.type === 'getGitOutcome' && msg.sessionId) {
+            fetch('/api/git-outcome', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: msg.sessionId,
+                workspace: msg.workspace || '',
+                filesChanged: msg.filesChanged || [],
+                startTime: msg.startTime || '',
+                endTime: msg.endTime || '',
+              }),
+            })
+              .then(function(r) { return r.json(); })
+              .then(function(data) {
+                window.dispatchEvent(new MessageEvent('message', {
+                  data: { type: 'gitOutcome', sessionId: data.sessionId, outcome: data.outcome }
+                }));
+              })
+              .catch(function(e) { console.warn('[AgentLens] git outcome fetch failed', e); });
           } else if (msg.type === 'reconfigureOtel') {
             fetch('/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'reconfigureOtel' }) })
               .then(function(r) { return r.json(); })
@@ -1410,6 +1434,38 @@ const uiServer = http.createServer((req, res) => {
     const session = summary?.sessions.find(s => s.sessionId === sessionId) ?? null
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ timeline: session?.timeline ?? [] }))
+    return
+  }
+
+  if (req.method === 'POST' && url === '/api/git-outcome') {
+    const chunks: Buffer[] = []
+    req.on('data', (c: Buffer) => chunks.push(c))
+    req.on('end', async () => {
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString('utf-8')) as {
+          sessionId?: string; workspace?: string; filesChanged?: string[]; startTime?: string; endTime?: string
+        }
+        const sessionId = body.sessionId ?? ''
+        if (!sessionId) { res.writeHead(400); res.end(); return }
+        let outcome: GitOutcome | null
+        if (gitOutcomeCache.has(sessionId)) {
+          outcome = gitOutcomeCache.get(sessionId) ?? null
+        } else {
+          outcome = await classifySessionOutcome(
+            body.workspace ?? '',
+            Array.isArray(body.filesChanged) ? body.filesChanged : [],
+            body.startTime ?? '',
+            body.endTime ?? '',
+          )
+          gitOutcomeCache.set(sessionId, outcome)
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ sessionId, outcome }))
+      } catch (e) {
+        console.warn('[AgentLens] Malformed /api/git-outcome body:', e)
+        res.writeHead(400); res.end()
+      }
+    })
     return
   }
 
