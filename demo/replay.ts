@@ -23,10 +23,11 @@
  *   errors      Mixed errors + recovery — Errors + Recommendations tabs
  *   compaction  Input tokens grow 4x per turn (Claude only) — Context Compaction trigger
  *   all         All of the above in sequence (default)
- *   story       10 fixed sessions telling one build-out of the petstore app across
- *               claude/codex/copilot — scaffold, data model, inventory, checkout,
- *               image upload, search+caching, e2e tests, deploy hiccup, validation
- *               fix, TODO sweep. --agents filters which chapters run.
+ *   story       10-chapter build-out of the petstore app — scaffold, data model,
+ *               inventory, checkout, image upload, search+caching, e2e tests, deploy
+ *               hiccup, validation fix, TODO sweep. Every chapter has a claude/codex/
+ *               copilot variant; runs 10 sessions per requested agent (30 total
+ *               unfiltered, 10 if --agents narrows to one).
  *
  * Agents (--agents, comma-separated, default all three):
  *   claude codex copilot
@@ -389,9 +390,19 @@ function copilotChatSpan(tl: Timeline, traceId: string, parentId: string, opts: 
   })
 }
 
+// Attribute keys and the execute_tool/<name> span-name pattern mirror
+// demo/generate-fixtures.js's copilotFormValidation() fixture exactly (validated
+// against src/summarizers/copilot.ts via demo/validate-fixtures.js) — the same
+// known-correct-shape rationale as codexToolTurn() above. toolName must be one of
+// the names src/summarizers/copilot.ts actually recognizes (read_file, create_file,
+// replace_string_in_file, multi_replace_string_in_file, file_search, grep_search,
+// apply_patch) for file extraction to populate; anything else (e.g. a terminal-run
+// tool) still counts as a tool call but won't be attributed to a file, matching real
+// Copilot's behavior since running a command has no single file target either.
 function copilotToolSpan(tl: Timeline, traceId: string, parentId: string, opts: {
   toolName: string
   toolInput: object
+  result?: string
   durationMs?: number
   error?: boolean
 }): object {
@@ -402,7 +413,11 @@ function copilotToolSpan(tl: Timeline, traceId: string, parentId: string, opts: 
     name: `execute_tool/${opts.toolName}`,
     startMs: start, endMs: end,
     error: opts.error,
-    attrs: [attr('tool.name', opts.toolName), attr('tool.input', JSON.stringify(opts.toolInput))],
+    attrs: [
+      attr('gen_ai.tool.name', opts.toolName),
+      attr('gen_ai.tool.call.arguments', JSON.stringify(opts.toolInput)),
+      attr('gen_ai.tool.call.result', opts.result ?? ''),
+    ],
   })
 }
 
@@ -518,11 +533,11 @@ async function scenarioNormal(agent: Agent, startOffsetMs?: number): Promise<voi
   })
   const chat1 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 6800, outputTokens: 440, cacheRead: 4200, model: 'gpt-4o', ttft: 520 })
   const chatId1 = (chat1 as any).spanId
-  const toolEx1 = copilotToolSpan(tl, traceId, chatId1, { toolName: 'read_file', toolInput: { path: 'src/store/checkout/cart.ts' }, durationMs: 60 })
+  const toolEx1 = copilotToolSpan(tl, traceId, chatId1, { toolName: 'read_file', toolInput: { filePath: 'src/store/checkout/cart.ts' }, durationMs: 60 })
 
   const chat2 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 7400, outputTokens: 380, cacheRead: 5200, model: 'gpt-4o', ttft: 490 })
   const chatId2 = (chat2 as any).spanId
-  const toolEx2 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'write_file', toolInput: { path: 'src/store/checkout/cart.ts' } })
+  const toolEx2 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'create_file', toolInput: { filePath: 'src/store/checkout/cart.ts' } })
 
   await post('/v1/traces', tracePayload([root, chat1, toolEx1, chat2, toolEx2]))
   ok('Session closed — normal task (copilot)\n')
@@ -625,45 +640,117 @@ async function scenarioLoop(agent: Agent, startOffsetMs?: number): Promise<void>
   ok('Session closed — check Errors + Automation tabs for Loop Breaker trigger (copilot)\n')
 }
 
-// ── Scenario 3: Context bloat (Claude only) ─────────────────────────────────────
+// ── Scenario 3: Context bloat ────────────────────────────────────────────────────
 // Populates: Tokens (growing bars), Efficiency, Automation
+//
+// The Automation "context_compaction" trigger (media/src/tabs/Automation.tsx
+// DEFAULT_AUTOMATION_CONFIGS) uses a different peak-input-token threshold per
+// agent — 140k claude / 280k codex / 89.6k copilot — so each profile below is
+// scaled from the original claude curve to comfortably clear its own agent's
+// threshold by the last turn, not just claude's.
 
-async function scenarioCompaction(startOffsetMs?: number): Promise<void> {
-  log('Scenario 3 [claude] — Context bloat (input grows 148k tokens across 10 turns)')
+const COMPACTION_USER_REQUEST = 'Find and address every TODO comment in the pet inventory service'
+const COMPACTION_OUTPUT_PROFILE = [380, 340, 300, 270, 240, 200, 160, 120, 90, 60]
+const COMPACTION_INPUT_PROFILES: Record<Agent, number[]> = {
+  claude:  [4_200, 11_800, 22_600, 36_400, 54_000, 72_800, 91_200, 110_000, 128_600, 148_400], // peaks past 140k
+  codex:   [8_400, 23_600, 45_200, 72_800, 108_000, 145_600, 182_400, 220_000, 257_200, 296_800], // peaks past 280k
+  copilot: [2_700, 7_600, 14_500, 23_300, 34_600, 46_600, 58_400, 70_400, 82_300, 95_000], // peaks past 89.6k
+}
+
+async function scenarioCompaction(agent: Agent, startOffsetMs?: number): Promise<void> {
+  const inputProfile = COMPACTION_INPUT_PROFILES[agent]
+  const outputProfile = COMPACTION_OUTPUT_PROFILE
+
+  if (agent === 'claude') {
+    log(`Scenario 3 [claude] — Context bloat (input grows ${inputProfile[9].toLocaleString()} tokens across 10 turns)`)
+    const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
+    const traceId = hex(16)
+    const rootId  = hex(8)
+    const rootStart = tl.tick(0)
+
+    for (let turn = 0; turn < 10; turn++) {
+      const llm = llmSpan(tl, traceId, rootId, {
+        inputTokens:  inputProfile[turn],
+        outputTokens: outputProfile[turn],
+        cacheRead:    turn > 0 ? inputProfile[turn - 1] : 0,
+        cacheCreate:  turn === 0 ? inputProfile[0] : inputProfile[turn] - inputProfile[turn - 1],
+        model: 'claude-opus-4-7',
+        stopReason: turn < 9 ? 'tool_use' : 'end_turn',
+        ttft: 380 + turn * 90,
+      })
+      const llmId = (llm as any).spanId
+      const tool = toolSpan(tl, traceId, llmId, {
+        toolName: 'Grep', toolInput: { pattern: `TODO.*${turn}`, path: 'src/store/pets/' }, durationMs: 200,
+      })
+      const batch = turn < 9 ? [llm, tool] : [llm]
+      await post('/v1/traces', tracePayload(batch))
+      ok(`Turn ${turn + 1}: ${inputProfile[turn].toLocaleString()} input / ${outputProfile[turn]} output tokens`)
+      await sleep(350)
+    }
+
+    const root = sessionSpan(tl, traceId, rootId, {
+      startMs: rootStart, userRequest: COMPACTION_USER_REQUEST,
+      outcome: 'success', totalInput: inputProfile.reduce((a, b) => a + b, 0), totalOutput: 2160,
+    })
+    await post('/v1/traces', tracePayload([root]))
+    ok('Session closed — context compaction should have triggered\n')
+    return
+  }
+
+  if (agent === 'codex') {
+    log(`Scenario 3 [codex] — Context bloat (input grows ${inputProfile[9].toLocaleString()} tokens across 10 turns)`)
+    const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
+    const traceId = hex(16)
+    const ctx = codexSession(traceId)
+
+    const prompt = codexPromptSpan(tl, ctx, { prompt: COMPACTION_USER_REQUEST })
+    await post('/v1/traces', tracePayload([prompt]))
+    await sleep(300)
+
+    for (let turn = 0; turn < 10; turn++) {
+      const spans = codexToolTurn(tl, ctx, {
+        toolName: 'exec_command',
+        args: { cmd: `grep -rn "TODO.*${turn}" src/store/pets/` },
+        output: turn < 9 ? `Found ${3 + turn} matches` : 'No more TODOs found',
+        inputTokens: inputProfile[turn], outputTokens: outputProfile[turn],
+        cachedTokens: turn > 0 ? inputProfile[turn - 1] : 0,
+        model: 'gpt-5.6-sol', toolDurationMs: 200,
+      })
+      await post('/v1/traces', tracePayload(spans))
+      ok(`Turn ${turn + 1}: ${inputProfile[turn].toLocaleString()} input / ${outputProfile[turn]} output tokens`)
+      await sleep(350)
+    }
+    ok('Session closed — context compaction should have triggered\n')
+    return
+  }
+
+  // copilot
+  log(`Scenario 3 [copilot] — Context bloat (input grows ${inputProfile[9].toLocaleString()} tokens across 10 turns)`)
   const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
   const traceId = hex(16)
   const rootId  = hex(8)
-  const rootStart = tl.tick(0)
 
-  const inputProfile  = [4_200, 11_800, 22_600, 36_400, 54_000, 72_800, 91_200, 110_000, 128_600, 148_400]
-  const outputProfile = [380,   340,    300,    270,    240,    200,    160,    120,     90,      60   ]
+  const { root } = copilotAgentSpan(tl, traceId, rootId, {
+    userRequest: COMPACTION_USER_REQUEST, model: 'gpt-4o',
+    inputTokens: inputProfile.reduce((a, b) => a + b, 0), outputTokens: outputProfile.reduce((a, b) => a + b, 0),
+    durationMs: 90_000,
+  })
+  await post('/v1/traces', tracePayload([root]))
+  await sleep(300)
 
   for (let turn = 0; turn < 10; turn++) {
-    const llm = llmSpan(tl, traceId, rootId, {
-      inputTokens:  inputProfile[turn],
-      outputTokens: outputProfile[turn],
-      cacheRead:    turn > 0 ? inputProfile[turn - 1] : 0,
-      cacheCreate:  turn === 0 ? inputProfile[0] : inputProfile[turn] - inputProfile[turn - 1],
-      model: 'claude-opus-4-7',
-      stopReason: turn < 9 ? 'tool_use' : 'end_turn',
-      ttft: 380 + turn * 90,
+    const chat = copilotChatSpan(tl, traceId, rootId, {
+      inputTokens: inputProfile[turn], outputTokens: outputProfile[turn],
+      cacheRead: turn > 0 ? inputProfile[turn - 1] : 0, model: 'gpt-4o', ttft: 400 + turn * 60,
     })
-    const llmId = (llm as any).spanId
-    const tool = toolSpan(tl, traceId, llmId, {
-      toolName: 'Grep', toolInput: { pattern: `TODO.*${turn}`, path: 'src/store/pets/' }, durationMs: 200,
+    const chatId = (chat as any).spanId
+    const tool = copilotToolSpan(tl, traceId, chatId, {
+      toolName: 'grep_search', toolInput: { query: `TODO.*${turn}`, includePattern: 'src/store/pets/' }, durationMs: 200,
     })
-    const batch = turn < 9 ? [llm, tool] : [llm]
-    await post('/v1/traces', tracePayload(batch))
+    await post('/v1/traces', tracePayload([chat, tool]))
     ok(`Turn ${turn + 1}: ${inputProfile[turn].toLocaleString()} input / ${outputProfile[turn]} output tokens`)
     await sleep(350)
   }
-
-  const root = sessionSpan(tl, traceId, rootId, {
-    startMs: rootStart,
-    userRequest: 'Find and address every TODO comment in the pet inventory service',
-    outcome: 'success', totalInput: inputProfile.reduce((a, b) => a + b, 0), totalOutput: 2160,
-  })
-  await post('/v1/traces', tracePayload([root]))
   ok('Session closed — context compaction should have triggered\n')
 }
 
@@ -787,19 +874,19 @@ async function scenarioErrors(agent: Agent, startOffsetMs?: number): Promise<voi
   const chat1 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 5200, outputTokens: 460, model: 'gpt-4o' })
   const chatId1 = (chat1 as any).spanId
   const toolEx1 = copilotToolSpan(tl, traceId, chatId1, {
-    toolName: 'write_file', toolInput: { path: 'src/components/AdoptionForm.tsx' }, durationMs: 70,
+    toolName: 'create_file', toolInput: { filePath: 'src/components/AdoptionForm.tsx' }, durationMs: 70,
   })
   const toolEx1b = copilotToolSpan(tl, traceId, chatId1, {
-    toolName: 'get_errors', toolInput: { path: 'src/components/AdoptionForm.tsx' }, durationMs: 900, error: true,
+    toolName: 'get_errors', toolInput: { filePath: 'src/components/AdoptionForm.tsx' }, durationMs: 900, error: true,
   })
 
   const chat2 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 6800, outputTokens: 340, cacheRead: 5200, model: 'gpt-4o' })
   const chatId2 = (chat2 as any).spanId
   const toolEx2 = copilotToolSpan(tl, traceId, chatId2, {
-    toolName: 'write_file', toolInput: { path: 'src/components/AdoptionForm.tsx' }, durationMs: 65,
+    toolName: 'replace_string_in_file', toolInput: { filePath: 'src/components/AdoptionForm.tsx' }, durationMs: 65,
   })
   const toolEx2b = copilotToolSpan(tl, traceId, chatId2, {
-    toolName: 'get_errors', toolInput: { path: 'src/components/AdoptionForm.tsx' }, durationMs: 700,
+    toolName: 'get_errors', toolInput: { filePath: 'src/components/AdoptionForm.tsx' }, durationMs: 700,
   })
 
   await post('/v1/traces', tracePayload([root, chat1, toolEx1, toolEx1b, chat2, toolEx2, toolEx2b]))
@@ -813,7 +900,7 @@ async function scenarioErrors(agent: Agent, startOffsetMs?: number): Promise<voi
 // Four chapters reuse the scenarios above (checkout, deploy loop, validation errors,
 // TODO sweep) since they already fit the story; six are new.
 
-async function storyScaffold(offsetMs: number): Promise<void> {
+async function storyScaffoldClaude(offsetMs: number): Promise<void> {
   const userRequest = 'Scaffold a new pnpm workspace for the PetHaven petstore app'
   log('Story 1 [claude] — Scaffold the project')
   const tl = new Timeline(offsetMs)
@@ -846,7 +933,7 @@ async function storyScaffold(offsetMs: number): Promise<void> {
   ok('Session closed — project scaffolded\n')
 }
 
-async function storyDataModel(offsetMs: number): Promise<void> {
+async function storyDataModelCodex(offsetMs: number): Promise<void> {
   const userRequest = 'Define the Pet data model and build the adoption listing API'
   log('Story 2 [codex] — Pet data model + adoption API')
   const tl = new Timeline(offsetMs)
@@ -890,7 +977,7 @@ async function storyDataModel(offsetMs: number): Promise<void> {
   ok('Session closed — data model + adoption API\n')
 }
 
-async function storyInventory(offsetMs: number): Promise<void> {
+async function storyInventoryClaude(offsetMs: number): Promise<void> {
   const userRequest = 'Build an inventory service that tracks pet food and supply stock levels'
   log('Story 3 [claude] — Inventory service')
   const tl = new Timeline(offsetMs)
@@ -945,7 +1032,7 @@ async function storyInventory(offsetMs: number): Promise<void> {
   ok('Session closed — inventory service\n')
 }
 
-async function storyImageUpload(offsetMs: number): Promise<void> {
+async function storyImageUploadCopilot(offsetMs: number): Promise<void> {
   const userRequest = 'Add a pet photo upload pipeline with image resizing'
   log('Story 5 [copilot] — Pet image upload pipeline')
   const tl = new Timeline(offsetMs)
@@ -957,11 +1044,11 @@ async function storyImageUpload(offsetMs: number): Promise<void> {
   })
   const chat1 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 5200, outputTokens: 320, model: 'gpt-4o', ttft: 480 })
   const chatId1 = (chat1 as any).spanId
-  const toolEx1 = copilotToolSpan(tl, traceId, chatId1, { toolName: 'write_file', toolInput: { path: 'src/api/upload.ts' }, durationMs: 65 })
+  const toolEx1 = copilotToolSpan(tl, traceId, chatId1, { toolName: 'create_file', toolInput: { filePath: 'src/api/upload.ts' }, durationMs: 65 })
 
   const chat2 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 4600, outputTokens: 240, cacheRead: 3200, model: 'gpt-4o', ttft: 460 })
   const chatId2 = (chat2 as any).spanId
-  const toolEx2 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'write_file', toolInput: { path: 'src/utils/imageResize.ts' }, durationMs: 60 })
+  const toolEx2 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'create_file', toolInput: { filePath: 'src/utils/imageResize.ts' }, durationMs: 60 })
   const toolEx3 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'run_in_terminal', toolInput: { command: 'npm test -- upload' }, durationMs: 1400 })
 
   await post('/v1/traces', tracePayload([root, chat1, toolEx1, chat2, toolEx2, toolEx3]))
@@ -972,7 +1059,7 @@ async function storyImageUpload(offsetMs: number): Promise<void> {
 // via "add import", threshold 15 steps) but ships 11 turns — demonstrates the
 // runaway_steps signal ("Ambiguous Success / Escalating Scope") via realistic scope
 // creep: the import didn't exist because the whole cache layer didn't exist yet.
-async function storySearchCache(offsetMs: number): Promise<void> {
+async function storySearchCacheCodex(offsetMs: number): Promise<void> {
   const userRequest = 'Add import for the Redis cache client in search.ts'
   log('Story 6 [codex] — "just add an import" spirals into full search + caching')
   const tl = new Timeline(offsetMs)
@@ -1031,7 +1118,7 @@ async function storySearchCache(offsetMs: number): Promise<void> {
   ok(`Session closed — "add import" turned into a whole cache layer (${turns.length} steps for what looked simple)\n`)
 }
 
-async function storyE2ETests(offsetMs: number): Promise<void> {
+async function storyE2ETestsCopilot(offsetMs: number): Promise<void> {
   const userRequest = 'Write end-to-end tests covering adoption and checkout flows'
   log('Story 7 [copilot] — End-to-end tests')
   const tl = new Timeline(offsetMs)
@@ -1043,45 +1130,257 @@ async function storyE2ETests(offsetMs: number): Promise<void> {
   })
   const chat1 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 4400, outputTokens: 360, model: 'gpt-4o', ttft: 500 })
   const chatId1 = (chat1 as any).spanId
-  const toolEx1 = copilotToolSpan(tl, traceId, chatId1, { toolName: 'write_file', toolInput: { path: 'tests/adoption.e2e.spec.ts' }, durationMs: 70 })
+  const toolEx1 = copilotToolSpan(tl, traceId, chatId1, { toolName: 'create_file', toolInput: { filePath: 'tests/adoption.e2e.spec.ts' }, durationMs: 70 })
 
   const chat2 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 4200, outputTokens: 280, cacheRead: 2200, model: 'gpt-4o', ttft: 470 })
   const chatId2 = (chat2 as any).spanId
-  const toolEx2 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'write_file', toolInput: { path: 'tests/checkout.e2e.spec.ts' }, durationMs: 65 })
+  const toolEx2 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'create_file', toolInput: { filePath: 'tests/checkout.e2e.spec.ts' }, durationMs: 65 })
   const toolEx3 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'run_in_terminal', toolInput: { command: 'npx playwright test' }, durationMs: 4200 })
 
   await post('/v1/traces', tracePayload([root, chat1, toolEx1, chat2, toolEx2, toolEx3]))
   ok('Session closed — e2e tests (copilot)\n')
 }
 
+// ── Generic per-agent step renderer ─────────────────────────────────────────────
+// Every chapter above was hand-written for one specific agent. To run all 10
+// chapters for every agent (not just the one each was originally written for), the
+// 6 chapters that only had one variant get a generic renderer instead of six more
+// hand-written functions per agent. A chapter is just a list of file operations;
+// each renderer turns that into the target agent's real span shape.
+//
+// Note on detector fidelity: `edit_revert_cycle` (loopDetector.ts) reads
+// `editDetails` populated from `old_string`/`new_string` tool_input, which only
+// src/summarizers/claude.ts extracts today — so the inventory chapter's revert
+// beat is included for every agent for narrative consistency, but the signal
+// itself will currently only actually fire on the Claude variant.
+
+type StoryOp = {
+  file: string
+  op: 'write' | 'edit' | 'run'
+  cmd?: string
+  editFrom?: string
+  editTo?: string
+  error?: boolean
+  inTok: number
+  outTok: number
+}
+
+function opLabel(s: StoryOp): string { return s.op === 'run' ? (s.cmd ?? '') : s.file }
+
+async function renderClaudeSteps(offsetMs: number, userRequest: string, logLine: string, steps: StoryOp[]): Promise<void> {
+  log(logLine)
+  const tl = new Timeline(offsetMs)
+  const traceId = hex(16)
+  const rootId  = hex(8)
+  const rootStart = tl.tick(0)
+  let cumInput = 0
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i]
+    const llm = llmSpan(tl, traceId, rootId, {
+      inputTokens: s.inTok, outputTokens: s.outTok,
+      cacheRead: cumInput, cacheCreate: Math.max(s.inTok - cumInput, 0),
+      stopReason: i === steps.length - 1 ? 'end_turn' : 'tool_use',
+    })
+    cumInput += s.inTok
+    const llmId = (llm as any).spanId
+    const toolName = s.op === 'write' ? 'Write' : s.op === 'edit' ? 'Edit' : 'Bash'
+    const toolInput = s.op === 'run' ? { command: s.cmd }
+      : s.op === 'edit' ? { file_path: s.file, old_string: s.editFrom, new_string: s.editTo }
+      : { file_path: s.file }
+    const tool = toolSpan(tl, traceId, llmId, { toolName, toolInput, durationMs: 200 + i * 30, error: s.error })
+    await post('/v1/traces', tracePayload([llm, tool]))
+    if (s.error) sim(`Turn ${i + 1}: ${opLabel(s)} → error`); else ok(`Turn ${i + 1}: ${opLabel(s)}`)
+    await sleep(500)
+  }
+  const root = sessionSpan(tl, traceId, rootId, {
+    startMs: rootStart, userRequest, outcome: 'success',
+    totalInput: steps.reduce((a, s) => a + s.inTok, 0), totalOutput: steps.reduce((a, s) => a + s.outTok, 0),
+  })
+  await post('/v1/traces', tracePayload([root]))
+  ok('Session closed\n')
+}
+
+async function renderCodexSteps(offsetMs: number, userRequest: string, logLine: string, steps: StoryOp[]): Promise<void> {
+  log(logLine)
+  const tl = new Timeline(offsetMs)
+  const traceId = hex(16)
+  const ctx = codexSession(traceId)
+  const prompt = codexPromptSpan(tl, ctx, { prompt: userRequest })
+  await post('/v1/traces', tracePayload([prompt]))
+  await sleep(350)
+
+  let cumInput = 0
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i]
+    const toolName = s.op === 'run' ? 'exec_command' : 'apply_patch'
+    const args = s.op === 'run' ? { cmd: s.cmd }
+      : s.op === 'edit' ? { path: s.file, diff: `-${s.editFrom}\n+${s.editTo}` }
+      : { path: s.file, diff: `+// ${s.file}` }
+    const output = s.error ? 'Error: command failed'
+      : s.op === 'run' ? 'OK' : `Applied patch to ${s.file}`
+    const spans = codexToolTurn(tl, ctx, {
+      toolName, args, output,
+      inputTokens: s.inTok, outputTokens: s.outTok, cachedTokens: cumInput,
+      model: 'gpt-5.6-sol', toolDurationMs: 200 + i * 40, success: !s.error,
+    })
+    cumInput += s.inTok
+    await post('/v1/traces', tracePayload(spans))
+    if (s.error) sim(`Turn ${i + 1}: ${opLabel(s)} → error`); else ok(`Turn ${i + 1}: ${opLabel(s)}`)
+    await sleep(500)
+  }
+  ok('Session closed\n')
+}
+
+async function renderCopilotSteps(offsetMs: number, userRequest: string, logLine: string, steps: StoryOp[]): Promise<void> {
+  log(logLine)
+  const tl = new Timeline(offsetMs)
+  const traceId = hex(16)
+  const rootId  = hex(8)
+  const totalIn  = steps.reduce((a, s) => a + s.inTok, 0)
+  const totalOut = steps.reduce((a, s) => a + s.outTok, 0)
+  const { root } = copilotAgentSpan(tl, traceId, rootId, {
+    userRequest, model: 'gpt-4o', inputTokens: totalIn, outputTokens: totalOut, durationMs: 60_000 + steps.length * 8_000,
+  })
+  const spans: object[] = [root]
+  let cumInput = 0
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i]
+    const chat = copilotChatSpan(tl, traceId, rootId, {
+      inputTokens: s.inTok, outputTokens: s.outTok, cacheRead: cumInput, model: 'gpt-4o', ttft: 460 + i * 15,
+    })
+    cumInput += s.inTok
+    const chatId = (chat as any).spanId
+    const toolName = s.op === 'run' ? 'run_in_terminal' : s.op === 'edit' ? 'replace_string_in_file' : 'create_file'
+    const toolInput = s.op === 'run' ? { command: s.cmd } : { filePath: s.file }
+    const tool = copilotToolSpan(tl, traceId, chatId, { toolName, toolInput, durationMs: 70 + i * 10, error: s.error })
+    spans.push(chat, tool)
+    if (s.error) sim(`Turn ${i + 1}: ${opLabel(s)} → error`); else ok(`Turn ${i + 1}: ${opLabel(s)}`)
+  }
+  await post('/v1/traces', tracePayload(spans))
+  await sleep(500)
+  ok('Session closed\n')
+}
+
+// ── Step lists for the generically-rendered chapters ────────────────────────────
+
+const SCAFFOLD_STEPS: StoryOp[] = [
+  { file: 'package.json',  op: 'write', inTok: 2200, outTok: 380 },
+  { file: 'tsconfig.json', op: 'write', inTok: 1400, outTok: 160 },
+  { file: 'README.md',     op: 'write', inTok: 1800, outTok: 220 },
+  { file: '', op: 'run', cmd: 'pnpm install', inTok: 2600, outTok: 90 },
+]
+const DATA_MODEL_STEPS: StoryOp[] = [
+  { file: 'src/models/pet.ts',   op: 'write', inTok: 4800, outTok: 420 },
+  { file: 'src/api/adoption.ts', op: 'write', inTok: 7600, outTok: 480 },
+  { file: '', op: 'run', cmd: 'npm test -- adoption', inTok: 3200, outTok: 130 },
+]
+// Same edit-revert-cycle beat as storyInventoryClaude (see the detector-fidelity
+// note above the renderers) — narratively consistent across agents either way.
+const INVENTORY_STEPS: StoryOp[] = [
+  { file: 'src/store/inventory/stock.ts',   op: 'write', inTok: 6000, outTok: 500 },
+  { file: 'src/store/inventory/reorder.ts', op: 'write', inTok: 8600, outTok: 440 },
+  { file: 'src/store/inventory/stock.ts', op: 'edit',
+    editFrom: 'export class Stock', editTo: 'export class Stock implements Reorderable', inTok: 9000, outTok: 200 },
+  { file: 'src/store/inventory/stock.ts', op: 'edit',
+    editFrom: 'export class Stock implements Reorderable', editTo: 'export class Stock', inTok: 9300, outTok: 170 },
+  { file: 'src/store/inventory/stock.ts', op: 'edit',
+    editFrom: 'export class Stock', editTo: 'export class Stock implements Reorderable', inTok: 9500, outTok: 190 },
+  { file: '', op: 'run', cmd: 'npm test -- inventory', inTok: 7600, outTok: 250 },
+]
+const IMAGE_UPLOAD_STEPS: StoryOp[] = [
+  { file: 'src/api/upload.ts',        op: 'write', inTok: 5600, outTok: 420 },
+  { file: 'src/utils/imageResize.ts', op: 'write', inTok: 4400, outTok: 300 },
+  { file: '', op: 'run', cmd: 'npm test -- upload', inTok: 3000, outTok: 120 },
+]
+// Same "trivial ask that spirals" runaway_steps setup as storySearchCacheCodex:
+// userRequest phrased to match loopDetector's SIMPLE_KEYWORDS ("add import"), and
+// kept to 3 distinct files so the complexity classifier doesn't get bumped to
+// "medium" before the step count is even checked (see loopDetector.ts
+// inferTaskComplexity — 4+ files touched overrides the keyword match).
+const SEARCH_CACHE_STEPS: StoryOp[] = [
+  { file: 'src/api/search.ts', op: 'run', cmd: 'cat src/api/search.ts', error: true, inTok: 2200, outTok: 80 },
+  { file: 'src/api/search.ts', op: 'write', inTok: 3800, outTok: 240 },
+  { file: '', op: 'run', cmd: 'npm test -- search', error: true, inTok: 4200, outTok: 100 },
+  { file: 'src/cache/redis.ts', op: 'write', inTok: 5200, outTok: 300 },
+  { file: 'src/api/search.ts', op: 'edit',
+    editFrom: 'import { searchPets }', editTo: 'import { searchPets, petSearchCache }', inTok: 5700, outTok: 160 },
+  { file: '', op: 'run', cmd: 'npm test -- search', error: true, inTok: 6000, outTok: 120 },
+  { file: 'src/config.ts', op: 'write', inTok: 5300, outTok: 220 },
+  { file: '', op: 'run', cmd: 'npm test -- search', error: true, inTok: 6600, outTok: 140 },
+  { file: 'src/api/search.ts', op: 'edit',
+    editFrom: 'return results', editTo: 'return results.length ? results : await buildSearchIndex(pets)', inTok: 7200, outTok: 260 },
+  { file: '', op: 'run', cmd: 'npm test -- search', inTok: 4300, outTok: 140 },
+  { file: '', op: 'run', cmd: 'npm test', inTok: 4700, outTok: 100 },
+]
+const E2E_TESTS_STEPS: StoryOp[] = [
+  { file: 'tests/adoption.e2e.spec.ts', op: 'write', inTok: 4200, outTok: 380 },
+  { file: 'tests/checkout.e2e.spec.ts', op: 'write', inTok: 4000, outTok: 320 },
+  { file: '', op: 'run', cmd: 'npx playwright test', inTok: 3600, outTok: 140 },
+]
+
+const SCAFFOLD_REQUEST     = 'Scaffold a new pnpm workspace for the PetHaven petstore app'
+const DATA_MODEL_REQUEST   = 'Define the Pet data model and build the adoption listing API'
+const INVENTORY_REQUEST    = 'Build an inventory service that tracks pet food and supply stock levels'
+const IMAGE_UPLOAD_REQUEST = 'Add a pet photo upload pipeline with image resizing'
+const SEARCH_CACHE_REQUEST = 'Add import for the Redis cache client in search.ts'
+const E2E_TESTS_REQUEST    = 'Write end-to-end tests covering adoption and checkout flows'
+
+const storyScaffoldCodex   = (o: number) => renderCodexSteps(o, SCAFFOLD_REQUEST, 'Story 1 [codex] — Scaffold the project', SCAFFOLD_STEPS)
+const storyScaffoldCopilot = (o: number) => renderCopilotSteps(o, SCAFFOLD_REQUEST, 'Story 1 [copilot] — Scaffold the project', SCAFFOLD_STEPS)
+
+const storyDataModelClaude  = (o: number) => renderClaudeSteps(o, DATA_MODEL_REQUEST, 'Story 2 [claude] — Pet data model + adoption API', DATA_MODEL_STEPS)
+const storyDataModelCopilot = (o: number) => renderCopilotSteps(o, DATA_MODEL_REQUEST, 'Story 2 [copilot] — Pet data model + adoption API', DATA_MODEL_STEPS)
+
+const storyInventoryCodex   = (o: number) => renderCodexSteps(o, INVENTORY_REQUEST, 'Story 3 [codex] — Inventory service', INVENTORY_STEPS)
+const storyInventoryCopilot = (o: number) => renderCopilotSteps(o, INVENTORY_REQUEST, 'Story 3 [copilot] — Inventory service', INVENTORY_STEPS)
+
+const storyImageUploadClaude = (o: number) => renderClaudeSteps(o, IMAGE_UPLOAD_REQUEST, 'Story 5 [claude] — Pet image upload pipeline', IMAGE_UPLOAD_STEPS)
+const storyImageUploadCodex  = (o: number) => renderCodexSteps(o, IMAGE_UPLOAD_REQUEST, 'Story 5 [codex] — Pet image upload pipeline', IMAGE_UPLOAD_STEPS)
+
+const storySearchCacheClaude  = (o: number) => renderClaudeSteps(o, SEARCH_CACHE_REQUEST, 'Story 6 [claude] — "just add an import" spirals into full search + caching', SEARCH_CACHE_STEPS)
+const storySearchCacheCopilot = (o: number) => renderCopilotSteps(o, SEARCH_CACHE_REQUEST, 'Story 6 [copilot] — "just add an import" spirals into full search + caching', SEARCH_CACHE_STEPS)
+
+const storyE2ETestsClaude = (o: number) => renderClaudeSteps(o, E2E_TESTS_REQUEST, 'Story 7 [claude] — End-to-end tests', E2E_TESTS_STEPS)
+const storyE2ETestsCodex  = (o: number) => renderCodexSteps(o, E2E_TESTS_REQUEST, 'Story 7 [codex] — End-to-end tests', E2E_TESTS_STEPS)
+
 // Narrative order: scaffold → data model → inventory → checkout (reused) → image
 // upload → search/caching → e2e tests → deploy hiccup (reused) → validation fix
 // (reused) → TODO sweep (reused). Every chapter anchors at FRESH_OFFSET_MS (~now at
 // the moment it's sent) rather than a staggered historical offset — since real wall
-// time elapses between chapters (turns, sleeps, network round trips), each chapter's
-// start time still lands strictly after the previous one's, so the sessions list
-// naturally shows them arriving in order at the top as each one completes, the way a
-// live agent session would — instead of only the last chapter ever reaching "now"
-// while the rest sit backdated deep in the list for the whole run.
-const STORY_CHAPTERS: { agent: Agent; run: (offsetMs: number) => Promise<void> }[] = [
-  { agent: 'claude',  run: storyScaffold },
-  { agent: 'codex',   run: storyDataModel },
-  { agent: 'claude',  run: storyInventory },
-  { agent: 'claude',  run: (o) => scenarioNormal('claude', o) },
-  { agent: 'copilot', run: storyImageUpload },
-  { agent: 'codex',   run: storySearchCache },
-  { agent: 'copilot', run: storyE2ETests },
-  { agent: 'codex',   run: (o) => scenarioLoop('codex', o) },
-  { agent: 'claude',  run: (o) => scenarioErrors('claude', o) },
-  { agent: 'claude',  run: (o) => scenarioCompaction(o) },
+// time elapses between chapters (turns, sleeps, network round trips), each call's
+// "now" is later than the previous one's, so the sessions list naturally shows them
+// arriving in order at the top as each one completes, the way live agent sessions
+// would.
+//
+// Every chapter has a renderer for all three agents (either hand-written or via the
+// generic step renderer above), so requesting one agent still gets the full 10-
+// chapter story — just told through that agent — instead of only the subset of
+// chapters that happened to be hand-written for it.
+const STORY_CHAPTERS: Record<Agent, (offsetMs: number) => Promise<void>>[] = [
+  { claude: storyScaffoldClaude,        codex: storyScaffoldCodex,     copilot: storyScaffoldCopilot },
+  { claude: storyDataModelClaude,       codex: storyDataModelCodex,    copilot: storyDataModelCopilot },
+  { claude: storyInventoryClaude,       codex: storyInventoryCodex,    copilot: storyInventoryCopilot },
+  { claude: (o) => scenarioNormal('claude', o), codex: (o) => scenarioNormal('codex', o), copilot: (o) => scenarioNormal('copilot', o) },
+  { claude: storyImageUploadClaude,     codex: storyImageUploadCodex,  copilot: storyImageUploadCopilot },
+  { claude: storySearchCacheClaude,     codex: storySearchCacheCodex,  copilot: storySearchCacheCopilot },
+  { claude: storyE2ETestsClaude,        codex: storyE2ETestsCodex,     copilot: storyE2ETestsCopilot },
+  { claude: (o) => scenarioLoop('claude', o),   codex: (o) => scenarioLoop('codex', o),   copilot: (o) => scenarioLoop('copilot', o) },
+  { claude: (o) => scenarioErrors('claude', o), codex: (o) => scenarioErrors('codex', o), copilot: (o) => scenarioErrors('copilot', o) },
+  { claude: (o) => scenarioCompaction('claude', o), codex: (o) => scenarioCompaction('codex', o), copilot: (o) => scenarioCompaction('copilot', o) },
 ]
 
+// Runs all 10 chapters for every requested agent, interleaved by chapter (chapter 1
+// for every agent, then chapter 2 for every agent, ...) rather than grouped by agent
+// — this is a multi-agent demo, so watching claude/codex/copilot each take their own
+// crack at the same beat back-to-back reads better live than 10 straight claude
+// sessions before codex even starts.
 async function runStory(agentFilter?: Agent[]): Promise<void> {
-  const chapters = agentFilter ? STORY_CHAPTERS.filter(c => agentFilter.includes(c.agent)) : STORY_CHAPTERS
-  const list = chapters.length > 0 ? chapters : STORY_CHAPTERS
-  log(`Story mode — building out the PetHaven petstore app (${list.length} session${list.length !== 1 ? 's' : ''})\n`)
-  for (const chapter of list) {
-    await chapter.run(FRESH_OFFSET_MS)
+  const agents = agentFilter && agentFilter.length > 0 ? agentFilter : ALL_AGENTS
+  log(`Story mode — building out the PetHaven petstore app (${STORY_CHAPTERS.length} sessions × ${agents.length} agent${agents.length !== 1 ? 's' : ''})\n`)
+  for (const chapter of STORY_CHAPTERS) {
+    for (const agent of agents) {
+      await chapter[agent](FRESH_OFFSET_MS)
+    }
   }
 }
 
@@ -1409,7 +1708,7 @@ async function main() {
     for (const call of planned) {
       if (call.type === 'normal')     await scenarioNormal(call.agent!, FRESH_OFFSET_MS)
       if (call.type === 'loop')       await scenarioLoop(call.agent!, FRESH_OFFSET_MS)
-      if (call.type === 'compaction') await scenarioCompaction(FRESH_OFFSET_MS)
+      if (call.type === 'compaction') await scenarioCompaction('claude', FRESH_OFFSET_MS)
       if (call.type === 'errors')     await scenarioErrors(call.agent!, FRESH_OFFSET_MS)
     }
 

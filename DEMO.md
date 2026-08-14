@@ -45,28 +45,29 @@ no real agent runs, no API cost is incurred.
 - `compaction` — input tokens grow ~4x per turn (Claude only). Triggers the Context Compaction
   signal.
 - `all` — every scenario above, in sequence.
-- `story` — a fixed 10-session narrative building out the same petstore app from scratch:
+- `story` — a fixed 10-chapter narrative building out the same petstore app from scratch:
   scaffold → data model → inventory service → checkout discount → image upload → search +
   caching → e2e tests → a Docker build stuck in a loop → a type error and its fix → a TODO sweep
-  that triggers context compaction. Spans claude/codex/copilot and a wide set of distinct files
-  (not just `cart.ts`/`discounts.ts`), so the Files tab reads like one real app taking shape.
-  `--agents` filters which chapters run (e.g. `--scenario story --agents codex` runs just the
-  3 codex chapters). Ignores `--scenario`'s other values and `all`.
+  that triggers context compaction. Every chapter has a claude/codex/copilot variant and touches
+  a distinct, realistic set of files (not just `cart.ts`/`discounts.ts`), so the Files tab reads
+  like one real app taking shape. Runs **10 sessions per requested agent** — unfiltered (default,
+  all three agents) that's 30 sessions; `--agents codex` narrows it to the 10 Codex-told chapters,
+  not fewer.
 
 ### Browser demo
 
 ```bash
-pnpm run demo:show -- --scenario story                 # the 10-session petstore build-out
-pnpm run demo:show -- --scenario story --agents codex   # ...just its 3 Codex chapters
+pnpm run demo:show -- --scenario story                 # the full 30-session petstore build-out (10 per agent)
+pnpm run demo:show -- --scenario story --agents codex   # ...just Codex's 10 chapters
 pnpm run demo:show                                      # open a headed Chromium window + replay all scenarios
 pnpm run demo:tour                                      # also navigate between dashboard tabs automatically
 pnpm run demo:show -- --speed 4                         # flags pass through to replay
 ```
 
-Note: `--agents` *filters* which sessions run rather than adding more, so combining it with `--scenario
-story` narrows down from 10 — e.g. `--agents codex` alone (no `--scenario`) runs the default `all`
-scenario matrix restricted to Codex, which is only 3 sessions (`normal`/`loop`/`errors`; `compaction`
-is Claude-only), not the 10-session story.
+Note: for the plain (non-`story`) scenario matrix, `--agents` still *filters* rather than adds —
+`--agents codex` alone runs the default `all` matrix restricted to Codex, which is only 3 sessions
+(`normal`/`loop`/`errors`; `compaction` stays Claude-only outside of `story` mode). Only `--scenario
+story` guarantees 10 sessions per requested agent.
 
 `--tour` walks: the Sessions tab → expands the most recent session and steps through its Overview /
 Trace / Flow / Tools / Files detail nav → Analytics → the Settings (gear) panel, where Alerts and

@@ -96,6 +96,27 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
             if (effectiveModel) {
               modelTokens.set(effectiveModel, (modelTokens.get(effectiveModel) ?? 0) + inTok + outTok + cacheRead + cacheCreate)
             }
+            // tool_decision is the only per-turn record of token usage for most Codex
+            // sessions (no sse_event completion stream) — without a timeline entry here,
+            // charts and detectors that read session.timeline (Context Growth, token
+            // runaway) never see any Codex turn, even though totals above are correct.
+            const ttftMs = getAttrInt(child, 'ttft_ms') || getAttrInt(child, 'codex.ttft_ms') || lastTtftMs || 0
+            lastTtftMs = 0
+            timeline.push({
+              type: 'llm' as const,
+              spanId: child.spanId,
+              label: effectiveModel || 'Codex',
+              model: effectiveModel || undefined,
+              inputTokens: inTok + cacheRead + cacheCreate,
+              outputTokens: outTok,
+              cacheReadTokens: cacheRead || undefined,
+              cacheCreateTokens: cacheCreate || undefined,
+              ttft: ttftMs || undefined,
+              durationMs: childDur,
+              isError,
+              errorMessage: isError ? (child.status?.message || undefined) : undefined,
+              timestamp: ts,
+            })
           }
           continue
         }
