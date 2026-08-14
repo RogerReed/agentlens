@@ -136,11 +136,13 @@ function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms / SPEED))
 }
 
-// The session list sorts by each session's *start* time, so only the very last
-// scenario/chapter call in a run needs to start ~now — everything before it can stay
-// backdated so a story or scenario sequence still reads chronologically. Anchoring the
-// final call here (never literally 0, so it can't tick forward past real "now") makes
-// it reliably sort as the newest session.
+// The session list sorts by each session's *start* time. Every scenario/chapter call
+// anchors here — ~1s before the real "now" at the moment its Timeline is constructed
+// (never literally 0, so a chapter's own turns can't tick its spans past real "now").
+// Real wall-clock time elapses between calls (turns, sleeps, network round trips), so
+// each call's "now" is later than the previous one's, and sessions still land at the
+// top of the list in creation order — like a live agent session would — instead of
+// only the last one in a run ever reaching "now" while the rest sit backdated.
 const FRESH_OFFSET_MS = 1000
 
 function log(msg: string) { process.stdout.write(`\x1b[36m[demo]\x1b[0m ${msg}\n`) }
@@ -412,7 +414,7 @@ async function scenarioNormal(agent: Agent, startOffsetMs?: number): Promise<voi
 
   if (agent === 'claude') {
     log('Scenario 1 [claude] — Normal task (3 turns, good cache hit)')
-    const tl = new Timeline(startOffsetMs ?? 360_000)
+    const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
     const traceId = hex(16)
     const rootId  = hex(8)
     const rootStart = tl.tick(0)
@@ -458,7 +460,7 @@ async function scenarioNormal(agent: Agent, startOffsetMs?: number): Promise<voi
 
   if (agent === 'codex') {
     log('Scenario 1 [codex] — Normal task (3 tool turns)')
-    const tl = new Timeline(startOffsetMs ?? 340_000)
+    const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
     const traceId = hex(16)
     const ctx = codexSession(traceId)
 
@@ -507,7 +509,7 @@ async function scenarioNormal(agent: Agent, startOffsetMs?: number): Promise<voi
 
   // copilot
   log('Scenario 1 [copilot] — Normal task (2 turns)')
-  const tl = new Timeline(startOffsetMs ?? 120_000)
+  const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
   const traceId = hex(16)
   const rootId  = hex(8)
 
@@ -535,7 +537,7 @@ async function scenarioLoop(agent: Agent, startOffsetMs?: number): Promise<void>
 
   if (agent === 'claude') {
     log('Scenario 2 [claude] — Stuck loop (same Bash call fails 7x, Loop Breaker triggers)')
-    const tl = new Timeline(startOffsetMs ?? 240_000)
+    const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
     const traceId = hex(16)
     const rootId  = hex(8)
     const rootStart = tl.tick(0)
@@ -569,7 +571,7 @@ async function scenarioLoop(agent: Agent, startOffsetMs?: number): Promise<void>
 
   if (agent === 'codex') {
     log('Scenario 2 [codex] — Stuck loop (same exec_command fails 7x)')
-    const tl = new Timeline(startOffsetMs ?? 220_000)
+    const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
     const traceId = hex(16)
     const ctx = codexSession(traceId)
 
@@ -597,7 +599,7 @@ async function scenarioLoop(agent: Agent, startOffsetMs?: number): Promise<void>
 
   // copilot
   log('Scenario 2 [copilot] — Stuck loop (same tool call fails 6x)')
-  const tl = new Timeline(startOffsetMs ?? 200_000)
+  const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
   const traceId = hex(16)
   const rootId  = hex(8)
 
@@ -628,7 +630,7 @@ async function scenarioLoop(agent: Agent, startOffsetMs?: number): Promise<void>
 
 async function scenarioCompaction(startOffsetMs?: number): Promise<void> {
   log('Scenario 3 [claude] — Context bloat (input grows 148k tokens across 10 turns)')
-  const tl = new Timeline(startOffsetMs ?? 180_000)
+  const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
   const traceId = hex(16)
   const rootId  = hex(8)
   const rootStart = tl.tick(0)
@@ -673,7 +675,7 @@ async function scenarioErrors(agent: Agent, startOffsetMs?: number): Promise<voi
 
   if (agent === 'claude') {
     log('Scenario 4 [claude] — Errors + recovery (TypeScript compile errors, then fix)')
-    const tl = new Timeline(startOffsetMs ?? 60_000)
+    const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
     const traceId = hex(16)
     const rootId  = hex(8)
     const rootStart = tl.tick(0)
@@ -722,7 +724,7 @@ async function scenarioErrors(agent: Agent, startOffsetMs?: number): Promise<voi
 
   if (agent === 'codex') {
     log('Scenario 4 [codex] — Errors + recovery (tsc fails, then fixed)')
-    const tl = new Timeline(startOffsetMs ?? 58_000)
+    const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
     const traceId = hex(16)
     const ctx = codexSession(traceId)
 
@@ -774,7 +776,7 @@ async function scenarioErrors(agent: Agent, startOffsetMs?: number): Promise<voi
 
   // copilot
   log('Scenario 4 [copilot] — Errors + recovery')
-  const tl = new Timeline(startOffsetMs ?? 56_000)
+  const tl = new Timeline(startOffsetMs ?? FRESH_OFFSET_MS)
   const traceId = hex(16)
   const rootId  = hex(8)
 
@@ -1054,29 +1056,32 @@ async function storyE2ETests(offsetMs: number): Promise<void> {
 
 // Narrative order: scaffold → data model → inventory → checkout (reused) → image
 // upload → search/caching → e2e tests → deploy hiccup (reused) → validation fix
-// (reused) → TODO sweep (reused). Offsets step down so, absent filtering, the whole
-// arc reads oldest-to-newest; the actual last chapter to run always gets
-// FRESH_OFFSET_MS (see main()) regardless of which chapters --agents keeps.
-const STORY_CHAPTERS: { agent: Agent; defaultOffsetMs: number; run: (offsetMs: number) => Promise<void> }[] = [
-  { agent: 'claude',  defaultOffsetMs: 900_000, run: storyScaffold },
-  { agent: 'codex',   defaultOffsetMs: 800_000, run: storyDataModel },
-  { agent: 'claude',  defaultOffsetMs: 700_000, run: storyInventory },
-  { agent: 'claude',  defaultOffsetMs: 600_000, run: (o) => scenarioNormal('claude', o) },
-  { agent: 'copilot', defaultOffsetMs: 500_000, run: storyImageUpload },
-  { agent: 'codex',   defaultOffsetMs: 400_000, run: storySearchCache },
-  { agent: 'copilot', defaultOffsetMs: 300_000, run: storyE2ETests },
-  { agent: 'codex',   defaultOffsetMs: 220_000, run: (o) => scenarioLoop('codex', o) },
-  { agent: 'claude',  defaultOffsetMs: 90_000,  run: (o) => scenarioErrors('claude', o) },
-  { agent: 'claude',  defaultOffsetMs: 30_000,  run: (o) => scenarioCompaction(o) },
+// (reused) → TODO sweep (reused). Every chapter anchors at FRESH_OFFSET_MS (~now at
+// the moment it's sent) rather than a staggered historical offset — since real wall
+// time elapses between chapters (turns, sleeps, network round trips), each chapter's
+// start time still lands strictly after the previous one's, so the sessions list
+// naturally shows them arriving in order at the top as each one completes, the way a
+// live agent session would — instead of only the last chapter ever reaching "now"
+// while the rest sit backdated deep in the list for the whole run.
+const STORY_CHAPTERS: { agent: Agent; run: (offsetMs: number) => Promise<void> }[] = [
+  { agent: 'claude',  run: storyScaffold },
+  { agent: 'codex',   run: storyDataModel },
+  { agent: 'claude',  run: storyInventory },
+  { agent: 'claude',  run: (o) => scenarioNormal('claude', o) },
+  { agent: 'copilot', run: storyImageUpload },
+  { agent: 'codex',   run: storySearchCache },
+  { agent: 'copilot', run: storyE2ETests },
+  { agent: 'codex',   run: (o) => scenarioLoop('codex', o) },
+  { agent: 'claude',  run: (o) => scenarioErrors('claude', o) },
+  { agent: 'claude',  run: (o) => scenarioCompaction(o) },
 ]
 
 async function runStory(agentFilter?: Agent[]): Promise<void> {
   const chapters = agentFilter ? STORY_CHAPTERS.filter(c => agentFilter.includes(c.agent)) : STORY_CHAPTERS
   const list = chapters.length > 0 ? chapters : STORY_CHAPTERS
   log(`Story mode — building out the PetHaven petstore app (${list.length} session${list.length !== 1 ? 's' : ''})\n`)
-  for (let i = 0; i < list.length; i++) {
-    const offset = i === list.length - 1 ? FRESH_OFFSET_MS : list[i].defaultOffsetMs
-    await list[i].run(offset)
+  for (const chapter of list) {
+    await chapter.run(FRESH_OFFSET_MS)
   }
 }
 
@@ -1398,13 +1403,14 @@ async function main() {
     if (run('compaction') && AGENTS.includes('claude')) planned.push({ type: 'compaction' })
     if (run('errors')) for (const a of AGENTS) planned.push({ type: 'errors', agent: a })
 
-    for (let i = 0; i < planned.length; i++) {
-      const call = planned[i]
-      const offset = i === planned.length - 1 ? FRESH_OFFSET_MS : undefined
-      if (call.type === 'normal')     await scenarioNormal(call.agent!, offset)
-      if (call.type === 'loop')       await scenarioLoop(call.agent!, offset)
-      if (call.type === 'compaction') await scenarioCompaction(offset)
-      if (call.type === 'errors')     await scenarioErrors(call.agent!, offset)
+    // Every call anchors at FRESH_OFFSET_MS (~now) rather than each scenario's old
+    // large per-agent historical offset — see the comment on STORY_CHAPTERS above for
+    // why that still preserves creation-order sorting across the run.
+    for (const call of planned) {
+      if (call.type === 'normal')     await scenarioNormal(call.agent!, FRESH_OFFSET_MS)
+      if (call.type === 'loop')       await scenarioLoop(call.agent!, FRESH_OFFSET_MS)
+      if (call.type === 'compaction') await scenarioCompaction(FRESH_OFFSET_MS)
+      if (call.type === 'errors')     await scenarioErrors(call.agent!, FRESH_OFFSET_MS)
     }
 
     log('All done. Open http://localhost:3000 and explore every tab.')
