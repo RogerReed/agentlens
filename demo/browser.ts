@@ -8,6 +8,8 @@
  *   npx playwright install chromium       (one-time, installs browser)
  *
  * Usage:
+ *   pnpm run demo:show -- --scenario story          # 10-session petstore build-out
+ *   pnpm run demo:show -- --scenario story --agents codex  # ...just its 3 Codex chapters
  *   pnpm run demo:show                    # open browser + replay all scenarios
  *   pnpm run demo:tour                    # also navigate between tabs automatically
  *   pnpm run demo:show -- --speed 4       # pass speed flag through to replay
@@ -33,6 +35,7 @@ const UI_PORT  = parseInt(flag('ui-port', '3000')) || 3000
 const OTLP_PORT = parseInt(flag('port', '4318')) || 4318
 const SPEED    = flag('speed', '1')
 const SCENARIO = flag('scenario', 'all')
+const AGENTS   = flag('agents', '')
 
 function log(msg: string) { process.stdout.write(`\x1b[35m[browser]\x1b[0m ${msg}\n`) }
 function err(msg: string) { process.stderr.write(`\x1b[31m[browser]\x1b[0m ${msg}\n`) }
@@ -60,8 +63,9 @@ function startReplay(): Promise<void> {
       '--speed', SPEED,
       '--port', String(OTLP_PORT),
       '--scenario', SCENARIO,
+      ...(AGENTS ? ['--agents', AGENTS] : []),
     ]
-    log(`Starting replay: node demo/run-ts.js demo/replay.ts --speed ${SPEED} --scenario ${SCENARIO}`)
+    log(`Starting replay: node demo/run-ts.js demo/replay.ts --speed ${SPEED} --scenario ${SCENARIO}${AGENTS ? ` --agents ${AGENTS}` : ''}`)
     const child = spawn(process.execPath, [path.join(__dirname, 'run-ts.js'), ...replayArgs], {
       stdio: ['ignore', 'inherit', 'inherit'],
       shell: false,
@@ -76,21 +80,76 @@ function startReplay(): Promise<void> {
 
 // ── Guided tab tour ────────────────────────────────────────────────────────────
 
-// Ordered for a logical demo flow: overview → data → diagnostics → automation
+// The real top-level tab bar (media/src/App.tsx TABS) — sessions/analytics/patterns/
+// export/import, selected via `button[data-tab="${id}"]`. The previous list here
+// (efficiency/tokens/files/summaries/recommendations/errors/agents/timeline/traces/
+// latency/tools/automation) didn't match any current `data-tab` value, so every
+// step's isVisible() check silently failed and the tour clicked nothing at all —
+// none of those are top-level tabs; most are sections *inside* Sessions' expand-in-
+// place detail view or Analytics' scrolling page, and Automation/Alerts live in the
+// Settings (gear) panel. See tourSessionDetail() and tourSettingsPanel() below for
+// those.
 const TOUR_TABS = [
-  { id: 'efficiency',      label: 'Efficiency',      pauseMs: 5000 },
-  { id: 'tokens',          label: 'Tokens',          pauseMs: 4000 },
-  { id: 'files',           label: 'Files',           pauseMs: 3500 },
-  { id: 'summaries',       label: 'Summaries',       pauseMs: 5000 },
-  { id: 'recommendations', label: 'Recommendations', pauseMs: 5000 },
-  { id: 'errors',          label: 'Errors',          pauseMs: 4000 },
-  { id: 'agents',          label: 'Agents',          pauseMs: 4000 },
-  { id: 'timeline',        label: 'Timeline',        pauseMs: 3500 },
-  { id: 'traces',          label: 'Traces',          pauseMs: 3500 },
-  { id: 'latency',         label: 'Latency',         pauseMs: 3000 },
-  { id: 'tools',           label: 'Tools',           pauseMs: 3000 },
-  { id: 'automation',      label: 'Automation',      pauseMs: 5000 },
+  { id: 'sessions',  label: 'Sessions',  pauseMs: 3000 },
+  { id: 'analytics', label: 'Analytics', pauseMs: 5000 },
+  { id: 'patterns',  label: 'Advisor',   pauseMs: 5000 },
+  { id: 'export',    label: 'Export',    pauseMs: 3000 },
+  { id: 'import',    label: 'Import',    pauseMs: 3000 },
 ]
+
+// Expands the most recent session (Sessions tab's expand-in-place row) and walks its
+// internal Overview/Trace/Flow/Tools/Files nav — these are plain buttons with no
+// data-tab attribute, so matched by accessible name instead. Counts like "Trace (12)"
+// are appended dynamically, hence the regex match rather than exact text.
+async function tourSessionDetail(page: import('playwright').Page, speed: number): Promise<void> {
+  const rows = page.locator('#sessions-content table tbody tr')
+  try {
+    await rows.first().waitFor({ state: 'visible', timeout: 15000 })
+  } catch {
+    log('  (no sessions rendered yet — skipping session detail walkthrough)')
+    return
+  }
+
+  log('  → expanding most recent session')
+  await rows.first().click()
+  await page.waitForTimeout(600 / speed)
+
+  const sections: Array<{ name: RegExp; label: string }> = [
+    { name: /^Overview$/, label: 'Overview' },
+    { name: /^Trace/,     label: 'Trace' },
+    { name: /^Flow/,      label: 'Flow' },
+    { name: /^Tools/,     label: 'Tools' },
+    { name: /^Files/,     label: 'Files' },
+  ]
+  const detail = page.locator('#sessions-content')
+  for (const { name, label } of sections) {
+    const btn = detail.getByRole('button', { name })
+    const visible = await btn.first().isVisible().catch(() => false)
+    if (!visible) continue
+    await btn.first().click()
+    log(`  → session detail: ${label} (2.5s)`)
+    await page.waitForTimeout(2500 / speed)
+  }
+
+  // Collapse — click the same row again
+  await rows.first().click()
+  await page.waitForTimeout(300 / speed)
+}
+
+// Automation and Alerts aren't top-level tabs — they live in the Settings panel
+// behind the gear icon (App.tsx GearButton, title is the stable selector since the
+// button has no other data-* attribute).
+async function tourSettingsPanel(page: import('playwright').Page, speed: number): Promise<void> {
+  const gear = page.getByTitle('Settings — Alerts & Automation')
+  const visible = await gear.isVisible().catch(() => false)
+  if (!visible) return
+
+  log('  → Settings panel (Alerts & Automation, 5s)')
+  await gear.click()
+  await page.waitForTimeout(5000 / speed)
+  await gear.click() // close
+  await page.waitForTimeout(300 / speed)
+}
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 
@@ -136,6 +195,7 @@ async function main() {
 
   if (TOUR) {
     log('Tour mode: navigating tabs as data arrives…')
+    const speed = parseFloat(SPEED) || 1
 
     // Give the first batch of spans a moment to land before switching tabs
     await page.waitForTimeout(3000)
@@ -147,11 +207,19 @@ async function main() {
 
       await btn.click()
       log(`  → ${label} tab (${pauseMs / 1000}s)`)
-      await page.waitForTimeout(pauseMs / parseFloat(SPEED))
+      await page.waitForTimeout(pauseMs / speed)
+
+      // Sessions: also expand a card and walk its Overview/Trace/Flow/Tools/Files
+      // detail nav — those live inside the row, not the top-level tab bar.
+      if (id === 'sessions') await tourSessionDetail(page, speed)
+
+      // Analytics is the natural point to also surface Automation/Alerts, which
+      // live in the Settings (gear) panel rather than a tab of their own.
+      if (id === 'analytics') await tourSettingsPanel(page, speed)
     }
 
-    // Return to Efficiency after tour
-    await page.locator('button[data-tab="efficiency"]').click().catch(() => {})
+    // Return to Sessions after the tour — the most useful default landing tab
+    await page.locator('button[data-tab="sessions"]').click().catch(() => {})
     log('Tour complete — leaving browser open for exploration')
   } else {
     log('No --tour flag. Dashboard is live — explore tabs manually.')

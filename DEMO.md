@@ -21,6 +21,7 @@ pnpm run demo                                    # all agents, all scenarios
 pnpm run demo -- --agents codex                  # Codex only
 pnpm run demo -- --scenario loop --agents claude,codex
 pnpm run demo -- --speed 5                       # 5x faster than real-time
+pnpm run demo -- --scenario story                # 10-session petstore build-out (see below)
 ```
 
 `demo/replay.ts` sends synthetic OTLP spans directly to the collector's `/v1/traces` endpoint —
@@ -30,7 +31,7 @@ no real agent runs, no API cost is incurred.
 
 | Flag | Values | Default | Notes |
 | --- | --- | --- | --- |
-| `--scenario` | `normal`, `loop`, `errors`, `compaction`, `all` | `all` | `compaction` is Claude-only |
+| `--scenario` | `normal`, `loop`, `errors`, `compaction`, `all`, `story` | `all` | `compaction` is Claude-only |
 | `--agents` | comma-separated: `claude`, `codex`, `copilot` | all three | invalid names are ignored; an empty/invalid list falls back to all three |
 | `--speed` | multiplier | `1` | e.g. `--speed 5` runs 5x faster |
 | `--port` | port number | `4318` | must match the collector's OTLP port |
@@ -44,14 +45,33 @@ no real agent runs, no API cost is incurred.
 - `compaction` — input tokens grow ~4x per turn (Claude only). Triggers the Context Compaction
   signal.
 - `all` — every scenario above, in sequence.
+- `story` — a fixed 10-session narrative building out the same petstore app from scratch:
+  scaffold → data model → inventory service → checkout discount → image upload → search +
+  caching → e2e tests → a Docker build stuck in a loop → a type error and its fix → a TODO sweep
+  that triggers context compaction. Spans claude/codex/copilot and a wide set of distinct files
+  (not just `cart.ts`/`discounts.ts`), so the Files tab reads like one real app taking shape.
+  `--agents` filters which chapters run (e.g. `--scenario story --agents codex` runs just the
+  3 codex chapters). Ignores `--scenario`'s other values and `all`.
 
 ### Browser demo
 
 ```bash
-pnpm run demo:show                    # open a headed Chromium window + replay all scenarios
-pnpm run demo:tour                    # also navigate between dashboard tabs automatically
-pnpm run demo:show -- --speed 4       # flags pass through to replay
+pnpm run demo:show -- --scenario story                 # the 10-session petstore build-out
+pnpm run demo:show -- --scenario story --agents codex   # ...just its 3 Codex chapters
+pnpm run demo:show                                      # open a headed Chromium window + replay all scenarios
+pnpm run demo:tour                                      # also navigate between dashboard tabs automatically
+pnpm run demo:show -- --speed 4                         # flags pass through to replay
 ```
+
+Note: `--agents` *filters* which sessions run rather than adding more, so combining it with `--scenario
+story` narrows down from 10 — e.g. `--agents codex` alone (no `--scenario`) runs the default `all`
+scenario matrix restricted to Codex, which is only 3 sessions (`normal`/`loop`/`errors`; `compaction`
+is Claude-only), not the 10-session story.
+
+`--tour` walks: the Sessions tab → expands the most recent session and steps through its Overview /
+Trace / Flow / Tools / Files detail nav → Analytics → the Settings (gear) panel, where Alerts and
+Automation actually live (they aren't top-level tabs) → Advisor → Export → Import, then returns to
+Sessions and leaves the browser open.
 
 Requires `npx playwright install chromium` once. The browser window stays open after replay
 finishes; close it manually or `Ctrl+C` the terminal.

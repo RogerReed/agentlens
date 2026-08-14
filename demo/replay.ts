@@ -23,6 +23,10 @@
  *   errors      Mixed errors + recovery — Errors + Recommendations tabs
  *   compaction  Input tokens grow 4x per turn (Claude only) — Context Compaction trigger
  *   all         All of the above in sequence (default)
+ *   story       10 fixed sessions telling one build-out of the petstore app across
+ *               claude/codex/copilot — scaffold, data model, inventory, checkout,
+ *               image upload, search+caching, e2e tests, deploy hiccup, validation
+ *               fix, TODO sweep. --agents filters which chapters run.
  *
  * Agents (--agents, comma-separated, default all three):
  *   claude codex copilot
@@ -132,6 +136,13 @@ function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms / SPEED))
 }
 
+// The session list sorts by each session's *start* time, so only the very last
+// scenario/chapter call in a run needs to start ~now — everything before it can stay
+// backdated so a story or scenario sequence still reads chronologically. Anchoring the
+// final call here (never literally 0, so it can't tick forward past real "now") makes
+// it reliably sort as the newest session.
+const FRESH_OFFSET_MS = 1000
+
 function log(msg: string) { process.stdout.write(`\x1b[36m[demo]\x1b[0m ${msg}\n`) }
 function ok(msg: string)  { process.stdout.write(`\x1b[32m  ✓\x1b[0m ${msg}\n`) }
 function sim(msg: string) { process.stdout.write(`\x1b[33m  ~\x1b[0m [sim] ${msg}\n`) }
@@ -215,7 +226,7 @@ function sessionSpan(tl: Timeline, traceId: string, spanId: string, opts: {
     name: 'claude_code.interaction',
     startMs: opts.startMs, endMs: end,
     attrs: [
-      attr('user_request',       opts.userRequest),
+      attr('user_prompt',        opts.userRequest),
       attr('outcome',            opts.outcome),
       attr('duration_ms',        end - opts.startMs),
       attr('total_input_tokens', opts.totalInput),
@@ -396,12 +407,12 @@ function copilotToolSpan(tl: Timeline, traceId: string, parentId: string, opts: 
 // ── Scenario 1: Normal task — multi-pet checkout discount ──────────────────────
 // Populates: Tokens, Files, Timeline, Efficiency, Summaries, Traces, Flow
 
-async function scenarioNormal(agent: Agent): Promise<void> {
+async function scenarioNormal(agent: Agent, startOffsetMs?: number): Promise<void> {
   const userRequest = 'Add multi-pet discount pricing to the checkout flow'
 
   if (agent === 'claude') {
     log('Scenario 1 [claude] — Normal task (3 turns, good cache hit)')
-    const tl = new Timeline(360_000)
+    const tl = new Timeline(startOffsetMs ?? 360_000)
     const traceId = hex(16)
     const rootId  = hex(8)
     const rootStart = tl.tick(0)
@@ -447,7 +458,7 @@ async function scenarioNormal(agent: Agent): Promise<void> {
 
   if (agent === 'codex') {
     log('Scenario 1 [codex] — Normal task (3 tool turns)')
-    const tl = new Timeline(340_000)
+    const tl = new Timeline(startOffsetMs ?? 340_000)
     const traceId = hex(16)
     const ctx = codexSession(traceId)
 
@@ -467,7 +478,7 @@ async function scenarioNormal(agent: Agent): Promise<void> {
 
     const turn2 = codexToolTurn(tl, ctx, {
       toolName: 'apply_patch',
-      args: { file: 'src/store/pricing/discounts.ts', diff: '+export function calcMultiPetDiscount(pets) { ... }' },
+      args: { path: 'src/store/pricing/discounts.ts', diff: '+export function calcMultiPetDiscount(pets) { ... }' },
       output: 'Applied patch to src/store/pricing/discounts.ts',
       inputTokens: 14_600, outputTokens: 510, cachedTokens: 9200, model: 'gpt-5.6-sol', toolDurationMs: 220,
     })
@@ -496,7 +507,7 @@ async function scenarioNormal(agent: Agent): Promise<void> {
 
   // copilot
   log('Scenario 1 [copilot] — Normal task (2 turns)')
-  const tl = new Timeline(120_000)
+  const tl = new Timeline(startOffsetMs ?? 120_000)
   const traceId = hex(16)
   const rootId  = hex(8)
 
@@ -518,13 +529,13 @@ async function scenarioNormal(agent: Agent): Promise<void> {
 // ── Scenario 2: Stuck loop — repeated failing command ───────────────────────────
 // Populates: Errors, Alerts, Automation, Recommendations
 
-async function scenarioLoop(agent: Agent): Promise<void> {
+async function scenarioLoop(agent: Agent, startOffsetMs?: number): Promise<void> {
   const userRequest = 'Build and push the petstore-api Docker image to the registry'
   const command = 'docker build -t petstore-api . --no-cache'
 
   if (agent === 'claude') {
     log('Scenario 2 [claude] — Stuck loop (same Bash call fails 7x, Loop Breaker triggers)')
-    const tl = new Timeline(240_000)
+    const tl = new Timeline(startOffsetMs ?? 240_000)
     const traceId = hex(16)
     const rootId  = hex(8)
     const rootStart = tl.tick(0)
@@ -558,7 +569,7 @@ async function scenarioLoop(agent: Agent): Promise<void> {
 
   if (agent === 'codex') {
     log('Scenario 2 [codex] — Stuck loop (same exec_command fails 7x)')
-    const tl = new Timeline(220_000)
+    const tl = new Timeline(startOffsetMs ?? 220_000)
     const traceId = hex(16)
     const ctx = codexSession(traceId)
 
@@ -586,7 +597,7 @@ async function scenarioLoop(agent: Agent): Promise<void> {
 
   // copilot
   log('Scenario 2 [copilot] — Stuck loop (same tool call fails 6x)')
-  const tl = new Timeline(200_000)
+  const tl = new Timeline(startOffsetMs ?? 200_000)
   const traceId = hex(16)
   const rootId  = hex(8)
 
@@ -615,9 +626,9 @@ async function scenarioLoop(agent: Agent): Promise<void> {
 // ── Scenario 3: Context bloat (Claude only) ─────────────────────────────────────
 // Populates: Tokens (growing bars), Efficiency, Automation
 
-async function scenarioCompaction(): Promise<void> {
+async function scenarioCompaction(startOffsetMs?: number): Promise<void> {
   log('Scenario 3 [claude] — Context bloat (input grows 148k tokens across 10 turns)')
-  const tl = new Timeline(180_000)
+  const tl = new Timeline(startOffsetMs ?? 180_000)
   const traceId = hex(16)
   const rootId  = hex(8)
   const rootStart = tl.tick(0)
@@ -657,12 +668,12 @@ async function scenarioCompaction(): Promise<void> {
 // ── Scenario 4: Errors + recovery ────────────────────────────────────────────────
 // Populates: Errors tab, Recommendations (error cascade), multiple file types
 
-async function scenarioErrors(agent: Agent): Promise<void> {
+async function scenarioErrors(agent: Agent, startOffsetMs?: number): Promise<void> {
   const userRequest = 'Add a type-safe pet breed validator utility'
 
   if (agent === 'claude') {
     log('Scenario 4 [claude] — Errors + recovery (TypeScript compile errors, then fix)')
-    const tl = new Timeline(60_000)
+    const tl = new Timeline(startOffsetMs ?? 60_000)
     const traceId = hex(16)
     const rootId  = hex(8)
     const rootStart = tl.tick(0)
@@ -711,7 +722,7 @@ async function scenarioErrors(agent: Agent): Promise<void> {
 
   if (agent === 'codex') {
     log('Scenario 4 [codex] — Errors + recovery (tsc fails, then fixed)')
-    const tl = new Timeline(58_000)
+    const tl = new Timeline(startOffsetMs ?? 58_000)
     const traceId = hex(16)
     const ctx = codexSession(traceId)
 
@@ -721,7 +732,7 @@ async function scenarioErrors(agent: Agent): Promise<void> {
 
     const turn1 = codexToolTurn(tl, ctx, {
       toolName: 'apply_patch',
-      args: { file: 'src/utils/breedValidator.ts', diff: '+export function isValidBreed(input: any) { ... }' },
+      args: { path: 'src/utils/breedValidator.ts', diff: '+export function isValidBreed(input: any) { ... }' },
       output: 'Applied patch to src/utils/breedValidator.ts',
       inputTokens: 5600, outputTokens: 480, model: 'gpt-5.6-sol', toolDurationMs: 200,
     })
@@ -740,7 +751,7 @@ async function scenarioErrors(agent: Agent): Promise<void> {
 
     const turn3 = codexToolTurn(tl, ctx, {
       toolName: 'apply_patch',
-      args: { file: 'src/utils/breedValidator.ts', diff: '-function isValidBreed(input: any)\n+export function isValidBreed(input: unknown)' },
+      args: { path: 'src/utils/breedValidator.ts', diff: '-function isValidBreed(input: any)\n+export function isValidBreed(input: unknown)' },
       output: 'Applied patch to src/utils/breedValidator.ts',
       inputTokens: 8100, outputTokens: 360, cachedTokens: 6200, model: 'gpt-5.6-sol', toolDurationMs: 190,
     })
@@ -763,7 +774,7 @@ async function scenarioErrors(agent: Agent): Promise<void> {
 
   // copilot
   log('Scenario 4 [copilot] — Errors + recovery')
-  const tl = new Timeline(56_000)
+  const tl = new Timeline(startOffsetMs ?? 56_000)
   const traceId = hex(16)
   const rootId  = hex(8)
 
@@ -791,6 +802,282 @@ async function scenarioErrors(agent: Agent): Promise<void> {
 
   await post('/v1/traces', tracePayload([root, chat1, toolEx1, toolEx1b, chat2, toolEx2, toolEx2b]))
   ok('Session closed — error cascade + recovery (copilot)\n')
+}
+
+// ── Story mode: 10-session petstore build-out ───────────────────────────────────
+// A fixed narrative arc (not the --agents × --scenario matrix above) — each chapter
+// is a distinct task against a distinct set of files, so Files/Tokens/Timeline read
+// as one real app taking shape instead of the same cart.ts/discounts.ts repeating.
+// Four chapters reuse the scenarios above (checkout, deploy loop, validation errors,
+// TODO sweep) since they already fit the story; six are new.
+
+async function storyScaffold(offsetMs: number): Promise<void> {
+  const userRequest = 'Scaffold a new pnpm workspace for the PetHaven petstore app'
+  log('Story 1 [claude] — Scaffold the project')
+  const tl = new Timeline(offsetMs)
+  const traceId = hex(16)
+  const rootId  = hex(8)
+  const rootStart = tl.tick(0)
+
+  const llm1 = llmSpan(tl, traceId, rootId, { inputTokens: 3200, outputTokens: 560, cacheCreate: 3200 })
+  const llm1Id = (llm1 as any).spanId
+  const t1 = toolSpan(tl, traceId, llm1Id, { toolName: 'Write', toolInput: { file_path: 'package.json' }, durationMs: 50 })
+  const t2 = toolSpan(tl, traceId, llm1Id, { toolName: 'Write', toolInput: { file_path: 'tsconfig.json' }, durationMs: 45 })
+  const t3 = toolSpan(tl, traceId, llm1Id, { toolName: 'Write', toolInput: { file_path: 'README.md' }, durationMs: 40 })
+  await post('/v1/traces', tracePayload([llm1, t1, t2, t3]))
+  ok('Turn 1: package.json, tsconfig.json, README.md')
+  await sleep(700)
+
+  const llm2 = llmSpan(tl, traceId, rootId, { inputTokens: 4600, outputTokens: 210, cacheRead: 3200, cacheCreate: 900, stopReason: 'tool_use' })
+  const llm2Id = (llm2 as any).spanId
+  const t4 = toolSpan(tl, traceId, llm2Id, { toolName: 'Bash', toolInput: { command: 'pnpm install' }, durationMs: 3200 })
+  await post('/v1/traces', tracePayload([llm2, t4]))
+  ok('Turn 2: pnpm install')
+  await sleep(600)
+
+  const llm3 = llmSpan(tl, traceId, rootId, { inputTokens: 2100, outputTokens: 140, cacheRead: 4600, cacheCreate: 100, stopReason: 'end_turn' })
+  await post('/v1/traces', tracePayload([llm3]))
+  await sleep(300)
+
+  const root = sessionSpan(tl, traceId, rootId, { startMs: rootStart, userRequest, outcome: 'success', totalInput: 9900, totalOutput: 910 })
+  await post('/v1/traces', tracePayload([root]))
+  ok('Session closed — project scaffolded\n')
+}
+
+async function storyDataModel(offsetMs: number): Promise<void> {
+  const userRequest = 'Define the Pet data model and build the adoption listing API'
+  log('Story 2 [codex] — Pet data model + adoption API')
+  const tl = new Timeline(offsetMs)
+  const traceId = hex(16)
+  const ctx = codexSession(traceId)
+
+  const prompt = codexPromptSpan(tl, ctx, { prompt: userRequest })
+  await post('/v1/traces', tracePayload([prompt]))
+  await sleep(400)
+
+  const turn1 = codexToolTurn(tl, ctx, {
+    toolName: 'apply_patch',
+    args: { path: 'src/models/pet.ts', diff: '+export interface Pet { id: string; name: string; species: string; breed: string; ageMonths: number }' },
+    output: 'Applied patch to src/models/pet.ts',
+    inputTokens: 5200, outputTokens: 340, model: 'gpt-5.6-sol', toolDurationMs: 160,
+  })
+  await post('/v1/traces', tracePayload(turn1))
+  ok('Turn 1: define Pet model')
+  await sleep(600)
+
+  const turn2 = codexToolTurn(tl, ctx, {
+    toolName: 'apply_patch',
+    args: { path: 'src/api/adoption.ts', diff: '+export async function listAdoptablePets(filters: PetFilters) { ... }' },
+    output: 'Applied patch to src/api/adoption.ts',
+    inputTokens: 8100, outputTokens: 420, cachedTokens: 5200, model: 'gpt-5.6-sol', toolDurationMs: 190,
+  })
+  await post('/v1/traces', tracePayload(turn2))
+  ok('Turn 2: build adoption listing API')
+  await sleep(600)
+
+  const turn3 = codexToolTurn(tl, ctx, {
+    toolName: 'exec_command',
+    args: { cmd: 'npm test -- adoption' },
+    output: 'PASS  src/api/adoption.test.ts\n6 passed, 6 total',
+    inputTokens: 3600, outputTokens: 120, cachedTokens: 8100, model: 'gpt-5.6-sol', toolDurationMs: 1800,
+  })
+  await post('/v1/traces', tracePayload(turn3))
+  ok('Turn 3: adoption API tests pass')
+  await sleep(500)
+
+  ok('Session closed — data model + adoption API\n')
+}
+
+async function storyInventory(offsetMs: number): Promise<void> {
+  const userRequest = 'Build an inventory service that tracks pet food and supply stock levels'
+  log('Story 3 [claude] — Inventory service')
+  const tl = new Timeline(offsetMs)
+  const traceId = hex(16)
+  const rootId  = hex(8)
+  const rootStart = tl.tick(0)
+
+  const llm1 = llmSpan(tl, traceId, rootId, { inputTokens: 6400, outputTokens: 520, cacheCreate: 6400 })
+  const llm1Id = (llm1 as any).spanId
+  const t1 = toolSpan(tl, traceId, llm1Id, { toolName: 'Write', toolInput: { file_path: 'src/store/inventory/stock.ts' }, durationMs: 60 })
+  await post('/v1/traces', tracePayload([llm1, t1]))
+  ok('Turn 1: stock.ts')
+  await sleep(700)
+
+  const llm2 = llmSpan(tl, traceId, rootId, { inputTokens: 9200, outputTokens: 480, cacheRead: 6400, cacheCreate: 2400, stopReason: 'tool_use' })
+  const llm2Id = (llm2 as any).spanId
+  const t2 = toolSpan(tl, traceId, llm2Id, { toolName: 'Write', toolInput: { file_path: 'src/store/inventory/reorder.ts' }, durationMs: 55 })
+  const t3 = toolSpan(tl, traceId, llm2Id, { toolName: 'Edit',
+    toolInput: { file_path: 'src/store/inventory/stock.ts', old_string: 'export class Stock', new_string: 'export class Stock implements Reorderable' }, durationMs: 50 })
+  await post('/v1/traces', tracePayload([llm2, t2, t3]))
+  ok('Turn 2: reorder.ts + wire into Stock')
+  await sleep(700)
+
+  // Edit-revert cycle (intentional, demonstrates the loop detector's edit_revert_cycle
+  // signal): backs the interface out, then re-applies it verbatim two turns later —
+  // an exact old/new reversal on the same file.
+  const llm2b = llmSpan(tl, traceId, rootId, { inputTokens: 9600, outputTokens: 180, cacheRead: 9200, cacheCreate: 400, stopReason: 'tool_use', ttft: 310 })
+  const llm2bId = (llm2b as any).spanId
+  const t3b = toolSpan(tl, traceId, llm2bId, { toolName: 'Edit',
+    toolInput: { file_path: 'src/store/inventory/stock.ts', old_string: 'export class Stock implements Reorderable', new_string: 'export class Stock' }, durationMs: 45 })
+  await post('/v1/traces', tracePayload([llm2b, t3b]))
+  sim('Turn 2b: second-guessed the interface, reverted stock.ts')
+  await sleep(600)
+
+  const llm2c = llmSpan(tl, traceId, rootId, { inputTokens: 9900, outputTokens: 210, cacheRead: 9600, cacheCreate: 300, stopReason: 'tool_use', ttft: 300 })
+  const llm2cId = (llm2c as any).spanId
+  const t3c = toolSpan(tl, traceId, llm2cId, { toolName: 'Edit',
+    toolInput: { file_path: 'src/store/inventory/stock.ts', old_string: 'export class Stock', new_string: 'export class Stock implements Reorderable' }, durationMs: 45 })
+  await post('/v1/traces', tracePayload([llm2c, t3c]))
+  ok('Turn 2c: re-applied the interface after all')
+  await sleep(600)
+
+  const llm3 = llmSpan(tl, traceId, rootId, { inputTokens: 7800, outputTokens: 260, cacheRead: 9900, cacheCreate: 300, stopReason: 'tool_use' })
+  const llm3Id = (llm3 as any).spanId
+  const t4 = toolSpan(tl, traceId, llm3Id, { toolName: 'Bash', toolInput: { command: 'npm test -- inventory' }, durationMs: 1900 })
+  await post('/v1/traces', tracePayload([llm3, t4]))
+  ok('Turn 3: inventory tests pass')
+  await sleep(500)
+
+  const root = sessionSpan(tl, traceId, rootId, { startMs: rootStart, userRequest, outcome: 'success', totalInput: 36_500, totalOutput: 1650 })
+  await post('/v1/traces', tracePayload([root]))
+  ok('Session closed — inventory service\n')
+}
+
+async function storyImageUpload(offsetMs: number): Promise<void> {
+  const userRequest = 'Add a pet photo upload pipeline with image resizing'
+  log('Story 5 [copilot] — Pet image upload pipeline')
+  const tl = new Timeline(offsetMs)
+  const traceId = hex(16)
+  const rootId  = hex(8)
+
+  const { root } = copilotAgentSpan(tl, traceId, rootId, {
+    userRequest, model: 'gpt-4o', inputTokens: 9800, outputTokens: 560, cacheRead: 3200, durationMs: 80_000,
+  })
+  const chat1 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 5200, outputTokens: 320, model: 'gpt-4o', ttft: 480 })
+  const chatId1 = (chat1 as any).spanId
+  const toolEx1 = copilotToolSpan(tl, traceId, chatId1, { toolName: 'write_file', toolInput: { path: 'src/api/upload.ts' }, durationMs: 65 })
+
+  const chat2 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 4600, outputTokens: 240, cacheRead: 3200, model: 'gpt-4o', ttft: 460 })
+  const chatId2 = (chat2 as any).spanId
+  const toolEx2 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'write_file', toolInput: { path: 'src/utils/imageResize.ts' }, durationMs: 60 })
+  const toolEx3 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'run_in_terminal', toolInput: { command: 'npm test -- upload' }, durationMs: 1400 })
+
+  await post('/v1/traces', tracePayload([root, chat1, toolEx1, chat2, toolEx2, toolEx3]))
+  ok('Session closed — image upload pipeline (copilot)\n')
+}
+
+// Deliberately phrased as a trivial one-line ask (matches loopDetector's SIMPLE_KEYWORDS
+// via "add import", threshold 15 steps) but ships 11 turns — demonstrates the
+// runaway_steps signal ("Ambiguous Success / Escalating Scope") via realistic scope
+// creep: the import didn't exist because the whole cache layer didn't exist yet.
+async function storySearchCache(offsetMs: number): Promise<void> {
+  const userRequest = 'Add import for the Redis cache client in search.ts'
+  log('Story 6 [codex] — "just add an import" spirals into full search + caching')
+  const tl = new Timeline(offsetMs)
+  const traceId = hex(16)
+  const ctx = codexSession(traceId)
+
+  const prompt = codexPromptSpan(tl, ctx, { prompt: userRequest })
+  await post('/v1/traces', tracePayload([prompt]))
+  await sleep(300)
+
+  const turns: Array<Parameters<typeof codexToolTurn>[2]> = [
+    { toolName: 'exec_command', args: { cmd: 'cat src/api/search.ts' },
+      output: 'cat: src/api/search.ts: No such file or directory',
+      inputTokens: 2600, outputTokens: 90, model: 'gpt-5.6-sol', toolDurationMs: 90, success: false },
+    { toolName: 'apply_patch', args: { path: 'src/api/search.ts', diff: '+export async function searchPets(query: string) { ... }' },
+      output: 'Applied patch to src/api/search.ts',
+      inputTokens: 4200, outputTokens: 260, cachedTokens: 2600, model: 'gpt-5.6-sol', toolDurationMs: 170 },
+    { toolName: 'exec_command', args: { cmd: 'npm test -- search' },
+      output: "Cannot find module 'src/cache/redis'",
+      inputTokens: 4600, outputTokens: 110, cachedTokens: 4200, model: 'gpt-5.6-sol', toolDurationMs: 900, success: false },
+    { toolName: 'apply_patch', args: { path: 'src/cache/redis.ts', diff: '+export const petSearchCache = createCache({ ttlSeconds: 60 })' },
+      output: 'Applied patch to src/cache/redis.ts',
+      inputTokens: 5800, outputTokens: 320, cachedTokens: 4600, model: 'gpt-5.6-sol', toolDurationMs: 180 },
+    { toolName: 'apply_patch', args: { path: 'src/api/search.ts', diff: "+import { petSearchCache } from '../cache/redis'" },
+      output: 'Applied patch to src/api/search.ts',
+      inputTokens: 6300, outputTokens: 180, cachedTokens: 5800, model: 'gpt-5.6-sol', toolDurationMs: 150 },
+    { toolName: 'exec_command', args: { cmd: 'npm test -- search' },
+      output: 'ReferenceError: REDIS_URL is not defined',
+      inputTokens: 6700, outputTokens: 130, cachedTokens: 6300, model: 'gpt-5.6-sol', toolDurationMs: 900, success: false },
+    { toolName: 'apply_patch', args: { path: 'src/config.ts', diff: '+export const redisUrl = process.env.REDIS_URL ?? \'redis://localhost:6379\'' },
+      output: 'Applied patch to src/config.ts',
+      inputTokens: 5900, outputTokens: 240, cachedTokens: 6700, model: 'gpt-5.6-sol', toolDurationMs: 140 },
+    { toolName: 'exec_command', args: { cmd: 'npm test -- search' },
+      output: 'FAIL  src/api/search.test.ts\nsearchPets() returned 0 results — index not built',
+      inputTokens: 7400, outputTokens: 150, cachedTokens: 5900, model: 'gpt-5.6-sol', toolDurationMs: 1100, success: false },
+    { toolName: 'apply_patch', args: { path: 'src/api/search.ts', diff: '+await buildSearchIndex(pets)' },
+      output: 'Applied patch to src/api/search.ts',
+      inputTokens: 8100, outputTokens: 290, cachedTokens: 7400, model: 'gpt-5.6-sol', toolDurationMs: 160 },
+    { toolName: 'exec_command', args: { cmd: 'npm test -- search' },
+      output: 'PASS  src/api/search.test.ts\n8 passed, 8 total',
+      inputTokens: 4800, outputTokens: 150, cachedTokens: 8100, model: 'gpt-5.6-sol', toolDurationMs: 2000 },
+    { toolName: 'exec_command', args: { cmd: 'npm test' },
+      output: 'PASS  47 passed, 47 total',
+      inputTokens: 5200, outputTokens: 110, cachedTokens: 4800, model: 'gpt-5.6-sol', toolDurationMs: 4200 },
+  ]
+
+  for (let i = 0; i < turns.length; i++) {
+    const spans = codexToolTurn(tl, ctx, turns[i])
+    await post('/v1/traces', tracePayload(spans))
+    const t = turns[i]
+    const label = `Turn ${i + 1}: ${t.toolName === 'exec_command' ? (t.args as { cmd: string }).cmd : (t.args as { path: string }).path}`
+    if (t.success === false) sim(label + ' → error'); else ok(label)
+    await sleep(350)
+  }
+
+  ok(`Session closed — "add import" turned into a whole cache layer (${turns.length} steps for what looked simple)\n`)
+}
+
+async function storyE2ETests(offsetMs: number): Promise<void> {
+  const userRequest = 'Write end-to-end tests covering adoption and checkout flows'
+  log('Story 7 [copilot] — End-to-end tests')
+  const tl = new Timeline(offsetMs)
+  const traceId = hex(16)
+  const rootId  = hex(8)
+
+  const { root } = copilotAgentSpan(tl, traceId, rootId, {
+    userRequest, model: 'gpt-4o', inputTokens: 8600, outputTokens: 640, cacheRead: 2200, durationMs: 70_000,
+  })
+  const chat1 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 4400, outputTokens: 360, model: 'gpt-4o', ttft: 500 })
+  const chatId1 = (chat1 as any).spanId
+  const toolEx1 = copilotToolSpan(tl, traceId, chatId1, { toolName: 'write_file', toolInput: { path: 'tests/adoption.e2e.spec.ts' }, durationMs: 70 })
+
+  const chat2 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 4200, outputTokens: 280, cacheRead: 2200, model: 'gpt-4o', ttft: 470 })
+  const chatId2 = (chat2 as any).spanId
+  const toolEx2 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'write_file', toolInput: { path: 'tests/checkout.e2e.spec.ts' }, durationMs: 65 })
+  const toolEx3 = copilotToolSpan(tl, traceId, chatId2, { toolName: 'run_in_terminal', toolInput: { command: 'npx playwright test' }, durationMs: 4200 })
+
+  await post('/v1/traces', tracePayload([root, chat1, toolEx1, chat2, toolEx2, toolEx3]))
+  ok('Session closed — e2e tests (copilot)\n')
+}
+
+// Narrative order: scaffold → data model → inventory → checkout (reused) → image
+// upload → search/caching → e2e tests → deploy hiccup (reused) → validation fix
+// (reused) → TODO sweep (reused). Offsets step down so, absent filtering, the whole
+// arc reads oldest-to-newest; the actual last chapter to run always gets
+// FRESH_OFFSET_MS (see main()) regardless of which chapters --agents keeps.
+const STORY_CHAPTERS: { agent: Agent; defaultOffsetMs: number; run: (offsetMs: number) => Promise<void> }[] = [
+  { agent: 'claude',  defaultOffsetMs: 900_000, run: storyScaffold },
+  { agent: 'codex',   defaultOffsetMs: 800_000, run: storyDataModel },
+  { agent: 'claude',  defaultOffsetMs: 700_000, run: storyInventory },
+  { agent: 'claude',  defaultOffsetMs: 600_000, run: (o) => scenarioNormal('claude', o) },
+  { agent: 'copilot', defaultOffsetMs: 500_000, run: storyImageUpload },
+  { agent: 'codex',   defaultOffsetMs: 400_000, run: storySearchCache },
+  { agent: 'copilot', defaultOffsetMs: 300_000, run: storyE2ETests },
+  { agent: 'codex',   defaultOffsetMs: 220_000, run: (o) => scenarioLoop('codex', o) },
+  { agent: 'claude',  defaultOffsetMs: 90_000,  run: (o) => scenarioErrors('claude', o) },
+  { agent: 'claude',  defaultOffsetMs: 30_000,  run: (o) => scenarioCompaction(o) },
+]
+
+async function runStory(agentFilter?: Agent[]): Promise<void> {
+  const chapters = agentFilter ? STORY_CHAPTERS.filter(c => agentFilter.includes(c.agent)) : STORY_CHAPTERS
+  const list = chapters.length > 0 ? chapters : STORY_CHAPTERS
+  log(`Story mode — building out the PetHaven petstore app (${list.length} session${list.length !== 1 ? 's' : ''})\n`)
+  for (let i = 0; i < list.length; i++) {
+    const offset = i === list.length - 1 ? FRESH_OFFSET_MS : list[i].defaultOffsetMs
+    await list[i].run(offset)
+  }
 }
 
 // ── Fixture replay ─────────────────────────────────────────────────────────────
@@ -1095,11 +1382,30 @@ async function main() {
 
     log('  \x1b[33m~\x1b[0m = simulated error span (intentional, not a real failure)\n')
 
+    if (SCENARIO === 'story') {
+      const hasAgentsFlag = args.includes('--agents')
+      await runStory(hasAgentsFlag ? AGENTS : undefined)
+      log('Story complete. Open http://localhost:3000 and explore every tab.')
+      return
+    }
+
     function run(name: string) { return SCENARIO === 'all' || SCENARIO === name }
-    if (run('normal'))     { for (const a of AGENTS) await scenarioNormal(a) }
-    if (run('loop'))       { for (const a of AGENTS) await scenarioLoop(a) }
-    if (run('compaction') && AGENTS.includes('claude')) await scenarioCompaction()
-    if (run('errors'))     { for (const a of AGENTS) await scenarioErrors(a) }
+
+    type PlannedCall = { type: 'normal' | 'loop' | 'compaction' | 'errors'; agent?: Agent }
+    const planned: PlannedCall[] = []
+    if (run('normal')) for (const a of AGENTS) planned.push({ type: 'normal', agent: a })
+    if (run('loop')) for (const a of AGENTS) planned.push({ type: 'loop', agent: a })
+    if (run('compaction') && AGENTS.includes('claude')) planned.push({ type: 'compaction' })
+    if (run('errors')) for (const a of AGENTS) planned.push({ type: 'errors', agent: a })
+
+    for (let i = 0; i < planned.length; i++) {
+      const call = planned[i]
+      const offset = i === planned.length - 1 ? FRESH_OFFSET_MS : undefined
+      if (call.type === 'normal')     await scenarioNormal(call.agent!, offset)
+      if (call.type === 'loop')       await scenarioLoop(call.agent!, offset)
+      if (call.type === 'compaction') await scenarioCompaction(offset)
+      if (call.type === 'errors')     await scenarioErrors(call.agent!, offset)
+    }
 
     log('All done. Open http://localhost:3000 and explore every tab.')
   } catch (e: unknown) {
