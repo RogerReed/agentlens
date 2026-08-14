@@ -4,7 +4,7 @@
  * script in parallel so the dashboard populates live in front of you.
  *
  * Prerequisites:
- *   pnpm run standalone                   (OTLP + UI servers)
+ *   pnpm run local                   (OTLP + UI servers)
  *   npx playwright install chromium       (one-time, installs browser)
  *
  * Usage:
@@ -99,7 +99,7 @@ async function main() {
   const uiAlive = await checkServer(UI_PORT)
   if (!uiAlive) {
     err(`Cannot reach dashboard at http://127.0.0.1:${UI_PORT}`)
-    err('Start the standalone server first:  pnpm run standalone')
+    err('Start the standalone server first:  pnpm run local')
     process.exit(1)
   }
 

@@ -1,0 +1,105 @@
+# Demo toolchain
+
+Scripts for generating realistic AgentLens session data without a real AI agent, a real API key,
+or any real/sensitive data — useful for local development, screenshots, and live demos. Every
+scenario plays out against a single running example (a pet store app: adoption flow, inventory,
+checkout, pet-image uploads) so the demo tells one coherent story across scenarios and agents
+instead of unrelated snippets.
+
+All commands assume the standalone server is running:
+
+```bash
+pnpm run local
+```
+
+This starts the OTLP collector on port `4318` and the dashboard UI on port `3000`.
+
+## Replay (synthetic data)
+
+```bash
+pnpm run demo                                    # all agents, all scenarios
+pnpm run demo -- --agents codex                  # Codex only
+pnpm run demo -- --scenario loop --agents claude,codex
+pnpm run demo -- --speed 5                       # 5x faster than real-time
+```
+
+`demo/replay.ts` sends synthetic OTLP spans directly to the collector's `/v1/traces` endpoint —
+no real agent runs, no API cost is incurred.
+
+**Flags:**
+
+| Flag | Values | Default | Notes |
+| --- | --- | --- | --- |
+| `--scenario` | `normal`, `loop`, `errors`, `compaction`, `all` | `all` | `compaction` is Claude-only |
+| `--agents` | comma-separated: `claude`, `codex`, `copilot` | all three | invalid names are ignored; an empty/invalid list falls back to all three |
+| `--speed` | multiplier | `1` | e.g. `--speed 5` runs 5x faster |
+| `--port` | port number | `4318` | must match the collector's OTLP port |
+
+**Scenarios** (each runs once per requested agent, except `compaction`):
+
+- `normal` — clean multi-turn task. Populates the Tokens, Files, Timeline, and Efficiency tabs.
+- `loop` — the same failing command repeated several times. Triggers the Loop Breaker automation
+  and the "Tool Call Deadlock" / "Hallucination Amplification Loop" signals.
+- `errors` — a type error followed by a fix. Populates the Errors and Recommendations tabs.
+- `compaction` — input tokens grow ~4x per turn (Claude only). Triggers the Context Compaction
+  signal.
+- `all` — every scenario above, in sequence.
+
+### Browser demo
+
+```bash
+pnpm run demo:show                    # open a headed Chromium window + replay all scenarios
+pnpm run demo:tour                    # also navigate between dashboard tabs automatically
+pnpm run demo:show -- --speed 4       # flags pass through to replay
+```
+
+Requires `npx playwright install chromium` once. The browser window stays open after replay
+finishes; close it manually or `Ctrl+C` the terminal.
+
+## Capturing real sessions as fixtures
+
+For a deterministic replay of an actual agent session (rather than synthetic data), record one
+with `pnpm run capture`, then replay it later:
+
+```bash
+pnpm run capture -- my-session              # start recording
+pnpm run capture -- --duration 120          # auto-save after 120s
+pnpm run capture:list                       # list saved fixtures
+pnpm run capture -- --delete my-session     # remove a fixture
+
+pnpm run demo -- --fixture my-session       # replay a saved fixture
+```
+
+Works with Claude Code and Codex, both of which route telemetry through the standalone server's
+OTLP endpoint. Copilot telemetry routes through the VS Code extension instead, so it can't be
+captured this way — record a mixed Claude Code / Codex session if you need fixture coverage.
+
+**Before committing any fixture file**, run the redaction script — fixture JSON is gitignored by
+default specifically to prevent accidental PII exposure:
+
+```bash
+node scripts/redact-spans.js
+```
+
+## Replaying a session export file
+
+```bash
+pnpm run demo -- --file /path/to/export_redacted_claude_main_20260522_152343.json
+```
+
+Replays a session summary export (see the dashboard's **Export** tab). Only works with **redacted
+JSON** exports — full-fidelity or CSV/Markdown exports aren't supported as replay input.
+
+> Session summary exports (redacted or not) can't currently reconstruct full per-turn timelines
+> for replay — they carry the session's aggregate/summary fields, not raw OTEL span data, which
+> AgentLens doesn't persist to disk. This is tracked as a planned enhancement.
+
+## Generating and validating fixtures for tests
+
+Separate from the demo/capture flow above — these back the automated test suite, not live demos:
+
+```bash
+pnpm run fixtures:generate    # (re)generate demo/fixtures/*.json from generate-fixtures.js
+pnpm run fixtures:validate    # validate fixtures against the current summarizer logic
+pnpm run fixtures:check       # generate + validate against a scratch dir, leaving repo fixtures untouched
+```

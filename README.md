@@ -162,7 +162,7 @@ Each format is available both as the full export and as a redacted export (promp
 
 Exports draw from the full SQLite session history, not just the active window, so all past sessions are included regardless of when they ran.
 
-> **Note:** Session summary exports cannot be replayed with `pnpm run demo --file`. Replay requires raw OTEL span data, which is not yet persisted to disk. This is tracked as a planned enhancement.
+> **Note:** Session summary exports cannot be replayed with `pnpm run demo --file`. Replay requires raw OTEL span data, which is not yet persisted to disk. This is tracked as a planned enhancement. See [DEMO.md](DEMO.md) for the full replay/demo toolchain.
 
 ### Import
 
