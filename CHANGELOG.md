@@ -12,6 +12,8 @@ All notable changes to AgentLens are documented here.
 
 - Expanded the internal demo tooling (`pnpm run demo`) with a new multi-agent "story" scenario — a 10-chapter petstore build-out told from Codex's, Claude's, and Copilot's perspectives — plus a `--cdp` flag to reuse an already-open demo browser instead of launching a new window each run. No user-facing product change (#192)
 
+---
+
 ## [0.10.0] — 2026-08-12
 
 ### Added
