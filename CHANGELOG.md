@@ -2,6 +2,16 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.10.1] — 2026-08-15
+
+### Fixed
+
+- **Codex sessions never populated the Context Growth chart or triggered the token-runaway "Infinite Loop — Context Accumulation" signal** — a Codex turn's per-turn token usage is carried on its `tool_decision` span for most sessions, and that span updated aggregate session totals but never wrote a timeline entry, so both features always saw zero turns for any Codex session, real or demo. Codex's Context Growth chart and that Automation signal now work like Claude's and Copilot's (#192)
+
+### Changed
+
+- Expanded the internal demo tooling (`pnpm run demo`) with a new multi-agent "story" scenario — a 10-chapter petstore build-out told from Codex's, Claude's, and Copilot's perspectives — plus a `--cdp` flag to reuse an already-open demo browser instead of launching a new window each run. No user-facing product change (#192)
+
 ## [0.10.0] — 2026-08-12
 
 ### Added
