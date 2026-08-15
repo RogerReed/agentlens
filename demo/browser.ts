@@ -14,9 +14,20 @@
  *   pnpm run demo:tour                    # also navigate between tabs automatically
  *   pnpm run demo:show -- --speed 4       # pass speed flag through to replay
  *   pnpm run demo:show -- --scenario loop --tour
+ *   pnpm run demo:show -- --cdp           # reuse an already-open demo browser instead
+ *                                          # of launching a new window (see below)
  *
  * The browser window stays open after replay finishes — close it manually
  * or press Ctrl+C in the terminal.
+ *
+ * --cdp: by default every run launches a brand new Chromium window. Pass --cdp to
+ * instead attach over the Chrome DevTools Protocol to a browser this script itself
+ * already launched with --cdp — no manual port-hunting needed, since it always uses
+ * the same fixed CDP_PORT (override with --cdp-port). The first --cdp run finds
+ * nothing listening yet, so it launches a fresh window anyway (with the debug port
+ * open for next time); every run after that reuses the same window/tab. This can
+ * only attach to a browser that was started with that debug port open — it can't
+ * reach into an arbitrary already-running Chrome you didn't launch this way.
  */
 
 import { spawn } from 'node:child_process'
@@ -36,6 +47,8 @@ const OTLP_PORT = parseInt(flag('port', '4318')) || 4318
 const SPEED    = flag('speed', '1')
 const SCENARIO = flag('scenario', 'all')
 const AGENTS   = flag('agents', '')
+const CDP      = args.includes('--cdp')
+const CDP_PORT = parseInt(flag('cdp-port', '9223')) || 9223
 
 function log(msg: string) { process.stdout.write(`\x1b[35m[browser]\x1b[0m ${msg}\n`) }
 function err(msg: string) { process.stderr.write(`\x1b[31m[browser]\x1b[0m ${msg}\n`) }
@@ -151,6 +164,44 @@ async function tourSettingsPanel(page: import('playwright').Page, speed: number)
   await page.waitForTimeout(300 / speed)
 }
 
+// ── Browser: launch fresh, or attach to an already-open one ────────────────────
+
+// --cdp always targets the same fixed CDP_PORT, so there's nothing to hunt for: the
+// first --cdp run finds no debug port open yet, falls through to launching a fresh
+// browser (with that port now open), and every run after that attaches to it
+// instead of opening a new window. Without --cdp, behavior is unchanged — a fresh
+// window every time, no debug port exposed.
+async function connectOrLaunch(chromium: import('playwright').BrowserType): Promise<{
+  browser: import('playwright').Browser
+  page: import('playwright').Page
+  attached: boolean
+}> {
+  if (CDP) {
+    try {
+      const browser = await chromium.connectOverCDP(`http://127.0.0.1:${CDP_PORT}`, { timeout: 2000 })
+      log(`Attached to existing browser on CDP port ${CDP_PORT}.`)
+      const ctx = browser.contexts()[0] ?? await browser.newContext()
+      const dashboardUrl = `http://localhost:${UI_PORT}`
+      const existing = ctx.pages().find(p => p.url().startsWith(dashboardUrl))
+      if (existing) {
+        log('Reusing existing dashboard tab.')
+        await existing.bringToFront()
+        return { browser, page: existing, attached: true }
+      }
+      return { browser, page: await ctx.newPage(), attached: true }
+    } catch {
+      log(`No browser found on CDP port ${CDP_PORT} — launching a new one (left open on that port for next time).`)
+    }
+  }
+
+  const browser = await chromium.launch({
+    headless: false,
+    args: CDP ? ['--start-maximized', `--remote-debugging-port=${CDP_PORT}`] : ['--start-maximized'],
+  })
+  const ctx = await browser.newContext({ viewport: null }) // null = use maximized window size
+  return { browser, page: await ctx.newPage(), attached: false }
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -175,14 +226,11 @@ async function main() {
   }
 
   log(`Opening dashboard at http://localhost:${UI_PORT}`)
-  const browser = await chromium.launch({
-    headless: false,
-    args: ['--start-maximized'],
-  })
-  const ctx = await browser.newContext({
-    viewport: null,   // use maximized window size
-  })
-  const page = await ctx.newPage()
+  const { browser, page } = await connectOrLaunch(chromium)
+  // In --cdp mode the whole point is leaving the browser open for the next run to
+  // reuse — including the very first run, which launches it fresh with the debug
+  // port on. Only close it on exit when we're not managing a --cdp-reusable window.
+  const keepOpenOnExit = CDP
 
   await page.goto(`http://localhost:${UI_PORT}`)
   await page.waitForLoadState('domcontentloaded')
@@ -223,7 +271,7 @@ async function main() {
     log('Tour complete — leaving browser open for exploration')
   } else {
     log('No --tour flag. Dashboard is live — explore tabs manually.')
-    log('Press Ctrl+C to close the browser and exit.')
+    log(keepOpenOnExit ? 'Press Ctrl+C to exit — the browser stays open for the next --cdp run.' : 'Press Ctrl+C to close the browser and exit.')
   }
 
   await replayDone
@@ -232,6 +280,7 @@ async function main() {
   // Keep the process alive so the browser stays open
   await new Promise<void>(resolve => {
     process.on('SIGINT', () => {
+      if (keepOpenOnExit) { resolve(); return } // leave the CDP-debuggable browser running
       browser.close().finally(resolve)
     })
   })

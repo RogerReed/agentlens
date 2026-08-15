@@ -62,12 +62,22 @@ pnpm run demo:show -- --scenario story --agents codex   # ...just Codex's 10 cha
 pnpm run demo:show                                      # open a headed Chromium window + replay all scenarios
 pnpm run demo:tour                                      # also navigate between dashboard tabs automatically
 pnpm run demo:show -- --speed 4                         # flags pass through to replay
+pnpm run demo:show -- --cdp                             # reuse an already-open demo browser (see below)
 ```
 
 Note: for the plain (non-`story`) scenario matrix, `--agents` still *filters* rather than adds —
 `--agents codex` alone runs the default `all` matrix restricted to Codex, which is only 3 sessions
 (`normal`/`loop`/`errors`; `compaction` stays Claude-only outside of `story` mode). Only `--scenario
 story` guarantees 10 sessions per requested agent.
+
+**`--cdp`** — by default every `demo:show`/`demo:tour` run opens a brand new Chromium window. `--cdp`
+attaches to a browser this script already left open instead, over the Chrome DevTools Protocol, so
+repeated runs reuse the same window/tab rather than piling up new ones. There's no port to hunt for:
+it always uses the same fixed port (`9223`, override with `--cdp-port`), so the first `--cdp` run
+finds nothing there yet and just launches a fresh window with that debug port open; every run after
+that attaches to it. Ctrl+C in `--cdp` mode leaves the browser running for next time instead of
+closing it. This can only attach to a browser started this way — it can't reach into an arbitrary
+Chrome window you already had open without a debug port exposed.
 
 `--tour` walks: the Sessions tab → expands the most recent session and steps through its Overview /
 Trace / Flow / Tools / Files detail nav → Analytics → the Settings (gear) panel, where Alerts and
