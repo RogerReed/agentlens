@@ -12,6 +12,7 @@ automated — there's no cron job or CI check that triggers them.
 | Task | Trigger | Instructions |
 | --- | --- | --- |
 | Refresh model pricing | A vendor changes rates, adds/retires a model, or you notice cost estimates look off | [`PRICING_SOURCES.md`](../PRICING_SOURCES.md) |
+| Cut a release | Someone asks for a release (e.g. "release these changes as X.Y.Z") | [`RELEASING.md`](RELEASING.md) |
 
 ## Adding a new runbook
 
