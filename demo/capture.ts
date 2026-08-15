@@ -9,7 +9,7 @@
  * Claude Code or Codex instead.
  *
  * Prerequisites:
- *   pnpm run standalone        (standalone server must be running)
+ *   pnpm run local        (standalone server must be running)
  *
  * Usage:
  *   pnpm run capture -- [name]
@@ -20,7 +20,7 @@
  *   pnpm run capture -- --delete my-session
  *
  * Workflow:
- *   1. Start standalone server:  pnpm run standalone
+ *   1. Start standalone server:  pnpm run local
  *   2. Start capture:            pnpm run capture -- my-session
  *   3. Run your Claude Code / Codex session normally
  *   4. Press s (or wait for --duration) to save
@@ -340,7 +340,7 @@ async function main() {
   const alive = await checkServer()
   if (!alive) {
     err(`Cannot reach http://127.0.0.1:${UI_PORT}`)
-    err('Start the standalone server first:  pnpm run standalone')
+    err('Start the standalone server first:  pnpm run local')
     process.exit(1)
   }
 

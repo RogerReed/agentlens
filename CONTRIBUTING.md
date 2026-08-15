@@ -21,7 +21,7 @@ pnpm install
 
 **Run in VS Code:** Press `F5` to open a VS Code Extension Development Host with AgentLens loaded.
 
-**Run standalone:** `pnpm run standalone` — starts the OTLP collector on port `4318` and the dashboard UI on port `3000`.
+**Run standalone:** `pnpm run local` — starts the OTLP collector on port `4318` and the dashboard UI on port `3000`.
 
 **Build:**
 
@@ -61,6 +61,6 @@ node esbuild.js        # Bundle — outputs to dist/ and media/
 
 Please keep PRs focused on a single change. Large refactors should be discussed in an issue first.
 
-## Fixture data
+## Demo data and fixtures
 
-If you need to test against real telemetry, use `pnpm run capture` to record a local session. Run `node scripts/redact-spans.js` before committing any fixture files — fixture JSON files are gitignored by default to prevent accidental PII exposure.
+See [DEMO.md](DEMO.md) for generating synthetic demo sessions, capturing real telemetry as a fixture, and the redaction step required before committing any fixture file.
