@@ -668,6 +668,9 @@ async function scenarioCompaction(agent: Agent, startOffsetMs?: number): Promise
     const rootId  = hex(8)
     const rootStart = tl.tick(0)
 
+    // Turns 0-8 sweep the TODOs (growing context = the compaction trigger); turn 9
+    // actually addresses what it found — "address every TODO" should leave an edit
+    // behind, not just nine rounds of grep.
     for (let turn = 0; turn < 10; turn++) {
       const llm = llmSpan(tl, traceId, rootId, {
         inputTokens:  inputProfile[turn],
@@ -679,11 +682,15 @@ async function scenarioCompaction(agent: Agent, startOffsetMs?: number): Promise
         ttft: 380 + turn * 90,
       })
       const llmId = (llm as any).spanId
-      const tool = toolSpan(tl, traceId, llmId, {
-        toolName: 'Grep', toolInput: { pattern: `TODO.*${turn}`, path: 'src/store/pets/' }, durationMs: 200,
-      })
-      const batch = turn < 9 ? [llm, tool] : [llm]
-      await post('/v1/traces', tracePayload(batch))
+      const tool = turn < 9
+        ? toolSpan(tl, traceId, llmId, {
+            toolName: 'Grep', toolInput: { pattern: `TODO.*${turn}`, path: 'src/store/pets/' }, durationMs: 200,
+          })
+        : toolSpan(tl, traceId, llmId, {
+            toolName: 'Edit', durationMs: 90,
+            toolInput: { file_path: 'src/store/pets/petService.ts', old_string: '// TODO: revisit', new_string: '// resolved — see PETSTORE-TODO-SWEEP' },
+          })
+      await post('/v1/traces', tracePayload([llm, tool]))
       ok(`Turn ${turn + 1}: ${inputProfile[turn].toLocaleString()} input / ${outputProfile[turn]} output tokens`)
       await sleep(350)
     }
@@ -708,14 +715,22 @@ async function scenarioCompaction(agent: Agent, startOffsetMs?: number): Promise
     await sleep(300)
 
     for (let turn = 0; turn < 10; turn++) {
-      const spans = codexToolTurn(tl, ctx, {
-        toolName: 'exec_command',
-        args: { cmd: `grep -rn "TODO.*${turn}" src/store/pets/` },
-        output: turn < 9 ? `Found ${3 + turn} matches` : 'No more TODOs found',
-        inputTokens: inputProfile[turn], outputTokens: outputProfile[turn],
-        cachedTokens: turn > 0 ? inputProfile[turn - 1] : 0,
-        model: 'gpt-5.6-sol', toolDurationMs: 200,
-      })
+      const spans = turn < 9
+        ? codexToolTurn(tl, ctx, {
+            toolName: 'exec_command',
+            args: { cmd: `grep -rn "TODO.*${turn}" src/store/pets/` },
+            output: `Found ${3 + turn} matches`,
+            inputTokens: inputProfile[turn], outputTokens: outputProfile[turn],
+            cachedTokens: turn > 0 ? inputProfile[turn - 1] : 0,
+            model: 'gpt-5.6-sol', toolDurationMs: 200,
+          })
+        : codexToolTurn(tl, ctx, {
+            toolName: 'apply_patch',
+            args: { path: 'src/store/pets/petService.ts', diff: '-// TODO: revisit\n+// resolved — see PETSTORE-TODO-SWEEP' },
+            output: 'Applied patch to src/store/pets/petService.ts',
+            inputTokens: inputProfile[turn], outputTokens: outputProfile[turn],
+            cachedTokens: inputProfile[turn - 1], model: 'gpt-5.6-sol', toolDurationMs: 150,
+          })
       await post('/v1/traces', tracePayload(spans))
       ok(`Turn ${turn + 1}: ${inputProfile[turn].toLocaleString()} input / ${outputProfile[turn]} output tokens`)
       await sleep(350)
@@ -744,9 +759,13 @@ async function scenarioCompaction(agent: Agent, startOffsetMs?: number): Promise
       cacheRead: turn > 0 ? inputProfile[turn - 1] : 0, model: 'gpt-4o', ttft: 400 + turn * 60,
     })
     const chatId = (chat as any).spanId
-    const tool = copilotToolSpan(tl, traceId, chatId, {
-      toolName: 'grep_search', toolInput: { query: `TODO.*${turn}`, includePattern: 'src/store/pets/' }, durationMs: 200,
-    })
+    const tool = turn < 9
+      ? copilotToolSpan(tl, traceId, chatId, {
+          toolName: 'grep_search', toolInput: { query: `TODO.*${turn}`, includePattern: 'src/store/pets/' }, durationMs: 200,
+        })
+      : copilotToolSpan(tl, traceId, chatId, {
+          toolName: 'replace_string_in_file', toolInput: { filePath: 'src/store/pets/petService.ts' }, durationMs: 90,
+        })
     await post('/v1/traces', tracePayload([chat, tool]))
     ok(`Turn ${turn + 1}: ${inputProfile[turn].toLocaleString()} input / ${outputProfile[turn]} output tokens`)
     await sleep(350)
@@ -874,19 +893,19 @@ async function scenarioErrors(agent: Agent, startOffsetMs?: number): Promise<voi
   const chat1 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 5200, outputTokens: 460, model: 'gpt-4o' })
   const chatId1 = (chat1 as any).spanId
   const toolEx1 = copilotToolSpan(tl, traceId, chatId1, {
-    toolName: 'create_file', toolInput: { filePath: 'src/components/AdoptionForm.tsx' }, durationMs: 70,
+    toolName: 'create_file', toolInput: { filePath: 'src/utils/breedValidator.ts' }, durationMs: 70,
   })
   const toolEx1b = copilotToolSpan(tl, traceId, chatId1, {
-    toolName: 'get_errors', toolInput: { filePath: 'src/components/AdoptionForm.tsx' }, durationMs: 900, error: true,
+    toolName: 'get_errors', toolInput: { filePath: 'src/utils/breedValidator.ts' }, durationMs: 900, error: true,
   })
 
   const chat2 = copilotChatSpan(tl, traceId, rootId, { inputTokens: 6800, outputTokens: 340, cacheRead: 5200, model: 'gpt-4o' })
   const chatId2 = (chat2 as any).spanId
   const toolEx2 = copilotToolSpan(tl, traceId, chatId2, {
-    toolName: 'replace_string_in_file', toolInput: { filePath: 'src/components/AdoptionForm.tsx' }, durationMs: 65,
+    toolName: 'replace_string_in_file', toolInput: { filePath: 'src/utils/breedValidator.ts' }, durationMs: 65,
   })
   const toolEx2b = copilotToolSpan(tl, traceId, chatId2, {
-    toolName: 'get_errors', toolInput: { filePath: 'src/components/AdoptionForm.tsx' }, durationMs: 700,
+    toolName: 'get_errors', toolInput: { filePath: 'src/utils/breedValidator.ts' }, durationMs: 700,
   })
 
   await post('/v1/traces', tracePayload([root, chat1, toolEx1, toolEx1b, chat2, toolEx2, toolEx2b]))
