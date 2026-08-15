@@ -1,10 +1,6 @@
 # Demo toolchain
 
-Scripts for generating realistic AgentLens session data without a real AI agent, a real API key,
-or any real/sensitive data — useful for local development, screenshots, and live demos. Every
-scenario plays out against a single running example (a pet store app: adoption flow, inventory,
-checkout, pet-image uploads) so the demo tells one coherent story across scenarios and agents
-instead of unrelated snippets.
+Scripts for generating realistic AgentLens session data without a real AI agent, a real API key, or any real/sensitive data — useful for local development, screenshots, and live demos. Every scenario plays out against a single running example (a pet store app: adoption flow, inventory, checkout, pet-image uploads) so the demo tells one coherent story across scenarios and agents instead of unrelated snippets.
 
 All commands assume the standalone server is running:
 
@@ -24,8 +20,7 @@ pnpm run demo -- --speed 5                       # 5x faster than real-time
 pnpm run demo -- --scenario story                # 10-session petstore build-out (see below)
 ```
 
-`demo/replay.ts` sends synthetic OTLP spans directly to the collector's `/v1/traces` endpoint —
-no real agent runs, no API cost is incurred.
+`demo/replay.ts` sends synthetic OTLP spans directly to the collector's `/v1/traces` endpoint — no real agent runs, no API cost is incurred.
 
 **Flags:**
 
@@ -39,20 +34,11 @@ no real agent runs, no API cost is incurred.
 **Scenarios** (each runs once per requested agent, except `compaction`):
 
 - `normal` — clean multi-turn task. Populates the Tokens, Files, Timeline, and Efficiency tabs.
-- `loop` — the same failing command repeated several times. Triggers the Loop Breaker automation
-  and the "Tool Call Deadlock" / "Hallucination Amplification Loop" signals.
+- `loop` — the same failing command repeated several times. Triggers the Loop Breaker automation and the "Tool Call Deadlock" / "Hallucination Amplification Loop" signals.
 - `errors` — a type error followed by a fix. Populates the Errors and Recommendations tabs.
-- `compaction` — input tokens grow ~4x per turn (Claude only). Triggers the Context Compaction
-  signal.
+- `compaction` — input tokens grow ~4x per turn (Claude only). Triggers the Context Compaction signal.
 - `all` — every scenario above, in sequence.
-- `story` — a fixed 10-chapter narrative building out the same petstore app from scratch:
-  scaffold → data model → inventory service → checkout discount → image upload → search +
-  caching → e2e tests → a Docker build stuck in a loop → a type error and its fix → a TODO sweep
-  that triggers context compaction. Every chapter has a claude/codex/copilot variant and touches
-  a distinct, realistic set of files (not just `cart.ts`/`discounts.ts`), so the Files tab reads
-  like one real app taking shape. Runs **10 sessions per requested agent** — unfiltered (default,
-  all three agents) that's 30 sessions; `--agents codex` narrows it to the 10 Codex-told chapters,
-  not fewer.
+- `story` — a fixed 10-chapter narrative building out the same petstore app from scratch: scaffold → data model → inventory service → checkout discount → image upload → search + caching → e2e tests → a Docker build stuck in a loop → a type error and its fix → a TODO sweep that triggers context compaction. Every chapter has a claude/codex/copilot variant and touches a distinct, realistic set of files (not just `cart.ts`/`discounts.ts`), so the Files tab reads like one real app taking shape. Runs **10 sessions per requested agent** — unfiltered (default, all three agents) that's 30 sessions; `--agents codex` narrows it to the 10 Codex-told chapters, not fewer.
 
 ### Browser demo
 
@@ -65,32 +51,17 @@ pnpm run demo:show -- --speed 4                         # flags pass through to 
 pnpm run demo:show -- --cdp                             # reuse an already-open demo browser (see below)
 ```
 
-Note: for the plain (non-`story`) scenario matrix, `--agents` still *filters* rather than adds —
-`--agents codex` alone runs the default `all` matrix restricted to Codex, which is only 3 sessions
-(`normal`/`loop`/`errors`; `compaction` stays Claude-only outside of `story` mode). Only `--scenario
-story` guarantees 10 sessions per requested agent.
+Note: for the plain (non-`story`) scenario matrix, `--agents` still *filters* rather than adds — `--agents codex` alone runs the default `all` matrix restricted to Codex, which is only 3 sessions (`normal`/`loop`/`errors`; `compaction` stays Claude-only outside of `story` mode). Only `--scenario story` guarantees 10 sessions per requested agent.
 
-**`--cdp`** — by default every `demo:show`/`demo:tour` run opens a brand new Chromium window. `--cdp`
-attaches to a browser this script already left open instead, over the Chrome DevTools Protocol, so
-repeated runs reuse the same window/tab rather than piling up new ones. There's no port to hunt for:
-it always uses the same fixed port (`9223`, override with `--cdp-port`), so the first `--cdp` run
-finds nothing there yet and just launches a fresh window with that debug port open; every run after
-that attaches to it. Ctrl+C in `--cdp` mode leaves the browser running for next time instead of
-closing it. This can only attach to a browser started this way — it can't reach into an arbitrary
-Chrome window you already had open without a debug port exposed.
+**`--cdp`** — by default every `demo:show`/`demo:tour` run opens a brand new Chromium window. `--cdp` attaches to a browser this script already left open instead, over the Chrome DevTools Protocol, so repeated runs reuse the same window/tab rather than piling up new ones. There's no port to hunt for: it always uses the same fixed port (`9223`, override with `--cdp-port`), so the first `--cdp` run finds nothing there yet and just launches a fresh window with that debug port open; every run after that attaches to it. Ctrl+C in `--cdp` mode leaves the browser running for next time instead of closing it. This can only attach to a browser started this way — it can't reach into an arbitrary Chrome window you already had open without a debug port exposed.
 
-`--tour` walks: the Sessions tab → expands the most recent session and steps through its Overview /
-Trace / Flow / Tools / Files detail nav → Analytics → the Settings (gear) panel, where Alerts and
-Automation actually live (they aren't top-level tabs) → Advisor → Export → Import, then returns to
-Sessions and leaves the browser open.
+`--tour` walks: the Sessions tab → expands the most recent session and steps through its Overview / Trace / Flow / Tools / Files detail nav → Analytics → the Settings (gear) panel, where Alerts and Automation actually live (they aren't top-level tabs) → Advisor → Export → Import, then returns to Sessions and leaves the browser open.
 
-Requires `npx playwright install chromium` once. The browser window stays open after replay
-finishes; close it manually or `Ctrl+C` the terminal.
+Requires `npx playwright install chromium` once. The browser window stays open after replay finishes; close it manually or `Ctrl+C` the terminal.
 
 ## Capturing real sessions as fixtures
 
-For a deterministic replay of an actual agent session (rather than synthetic data), record one
-with `pnpm run capture`, then replay it later:
+For a deterministic replay of an actual agent session (rather than synthetic data), record one with `pnpm run capture`, then replay it later:
 
 ```bash
 pnpm run capture -- my-session              # start recording
@@ -101,12 +72,9 @@ pnpm run capture -- --delete my-session     # remove a fixture
 pnpm run demo -- --fixture my-session       # replay a saved fixture
 ```
 
-Works with Claude Code and Codex, both of which route telemetry through the standalone server's
-OTLP endpoint. Copilot telemetry routes through the VS Code extension instead, so it can't be
-captured this way — record a mixed Claude Code / Codex session if you need fixture coverage.
+Works with Claude Code and Codex, both of which route telemetry through the standalone server's OTLP endpoint. Copilot telemetry routes through the VS Code extension instead, so it can't be captured this way — record a mixed Claude Code / Codex session if you need fixture coverage.
 
-**Before committing any fixture file**, run the redaction script — fixture JSON is gitignored by
-default specifically to prevent accidental PII exposure:
+**Before committing any fixture file**, run the redaction script — fixture JSON is gitignored by default specifically to prevent accidental PII exposure:
 
 ```bash
 node scripts/redact-spans.js
@@ -118,12 +86,9 @@ node scripts/redact-spans.js
 pnpm run demo -- --file /path/to/export_redacted_claude_main_20260522_152343.json
 ```
 
-Replays a session summary export (see the dashboard's **Export** tab). Only works with **redacted
-JSON** exports — full-fidelity or CSV/Markdown exports aren't supported as replay input.
+Replays a session summary export (see the dashboard's **Export** tab). Only works with **redacted JSON** exports — full-fidelity or CSV/Markdown exports aren't supported as replay input.
 
-> Session summary exports (redacted or not) can't currently reconstruct full per-turn timelines
-> for replay — they carry the session's aggregate/summary fields, not raw OTEL span data, which
-> AgentLens doesn't persist to disk. This is tracked as a planned enhancement.
+> Session summary exports (redacted or not) can't currently reconstruct full per-turn timelines for replay — they carry the session's aggregate/summary fields, not raw OTEL span data, which AgentLens doesn't persist to disk. This is tracked as a planned enhancement.
 
 ## Generating and validating fixtures for tests
 
