@@ -21,6 +21,7 @@ import { Alerts, computeAlertCount, getTriggeredAlerts, checkAlerts, type Trigge
 import { Export } from './tabs/Export'
 import { Import } from './tabs/Import'
 import { Help } from './tabs/Help'
+import { Pricing } from './tabs/Pricing'
 import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
 import { instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instructions'
@@ -51,6 +52,7 @@ function ActivePanel() {
     case 'export':    return <Export />
     case 'import':    return <Import />
     case 'help':      return <Help />
+    case 'pricing':   return <Pricing />
     default:          return null
   }
 }
@@ -158,6 +160,16 @@ function IconHelp() {
   )
 }
 
+function IconDollar() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+      <path d="M12 6v12" />
+    </svg>
+  )
+}
+
 function AlertStatusCard({ alerts }: { alerts: TriggeredAlert[] }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') bellOpen.value = false }
@@ -240,6 +252,17 @@ function HelpButton() {
       title="Help"
       onClick={() => { activeTab.value = 'help' }}
     ><IconHelp /></button>
+  )
+}
+
+function PricingButton() {
+  const isActive = normalizeTabId(activeTab.value) === 'pricing'
+  return (
+    <button
+      class={'icon-btn' + (isActive ? ' active' : '')}
+      title="Pricing — full rate table AgentLens uses to estimate cost"
+      onClick={() => { activeTab.value = 'pricing' }}
+    ><IconDollar /></button>
   )
 }
 
@@ -395,7 +418,7 @@ export function App() {
   }, [])
 
   const tab = normalizeTabId(activeTab.value)
-  const showFilterBars = tab !== 'help'
+  const showFilterBars = tab !== 'help' && tab !== 'pricing'
 
   return (
     <>
@@ -419,6 +442,7 @@ export function App() {
         <div style="margin-left:auto;display:flex;align-items:center;border-left:1px solid var(--border);padding-left:2px">
           <BellButton />
           <GearButton />
+          <PricingButton />
           <HelpButton />
         </div>
       </div>
