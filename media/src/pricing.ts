@@ -234,15 +234,19 @@ function normalizeModelId(modelId: string): string {
     .trim()
 }
 
+// Exact match only, after normalization — no prefix-matching fallback. A previous
+// version fell back to substring-prefix matching ("versioned or aliased model IDs"),
+// but that let an unrecognized *newer* model silently inherit an unrelated *older*
+// model's rate whenever the new ID happened to start with an existing key (e.g. a
+// hypothetical claude-opus-4-9 would have matched the deprecated claude-opus-4 entry
+// and been priced at its stale rate instead of showing as unknown). Showing ~$? for
+// a genuinely unrecognized model and prompting a RATES addition is the intended
+// failure mode elsewhere in this file — a confidently wrong number is worse than a
+// visible gap. Kept in sync with the same fix in src/pricing.ts.
 export function lookupRates(modelId: string): ModelRates | null {
   if (!modelId) return null
   const normalized = normalizeModelId(modelId)
-  if (RATES[normalized]) return RATES[normalized]
-  // Prefix match for versioned or aliased model IDs
-  for (const key of Object.keys(RATES)) {
-    if (normalized.startsWith(key) || key.startsWith(normalized)) return RATES[key]
-  }
-  return null
+  return RATES[normalized] ?? null
 }
 
 // Token-based cost: the new Copilot AI Credits model (Jun 2026+).

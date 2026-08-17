@@ -142,22 +142,34 @@ const RATES: Record<string, ModelRates> = {
   'nemotron-3.5-lightning-free':  { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
 }
 
-function normalizeModelId(modelId: string): string {
+// Exported so callers that build a model ID by appending their own suffix (e.g.
+// logReader.ts's fast-mode `-fast` marker) can strip a trailing date first — a raw
+// model string can be date-suffixed (e.g. claude-opus-4-7-20260315), and appending
+// another suffix afterward moves the date off the end, out of reach of the
+// date-stripping regex normalizeModelId() applies below.
+export function stripDateSuffix(modelId: string): string {
   return modelId
-    .toLowerCase()
-    .replace(/-\d{4}-\d{2}-\d{2}$/, '')
-    .replace(/-\d{8}$/, '')
-    .trim()
+    .replace(/-\d{4}-\d{2}-\d{2}$/, '')  // strip date suffix e.g. -2025-04-14
+    .replace(/-\d{8}$/, '')               // strip YYYYMMDD suffix e.g. -20260501
 }
 
+function normalizeModelId(modelId: string): string {
+  return stripDateSuffix(modelId.toLowerCase()).trim()
+}
+
+// Exact match only, after normalization — no prefix-matching fallback. A previous
+// version fell back to substring-prefix matching ("versioned or aliased model IDs"),
+// but that let an unrecognized *newer* model silently inherit an unrelated *older*
+// model's rate whenever the new ID happened to start with an existing key (e.g. a
+// hypothetical claude-opus-4-9 would have matched the deprecated claude-opus-4 entry
+// and been priced at its stale rate instead of showing as unknown). Showing ~$? for
+// a genuinely unrecognized model and prompting a RATES addition is the intended
+// failure mode elsewhere in this file — a confidently wrong number is worse than a
+// visible gap.
 export function lookupRates(modelId: string): ModelRates | null {
   if (!modelId) return null
   const normalized = normalizeModelId(modelId)
-  if (RATES[normalized]) return RATES[normalized]
-  for (const key of Object.keys(RATES)) {
-    if (normalized.startsWith(key) || key.startsWith(normalized)) return RATES[key]
-  }
-  return null
+  return RATES[normalized] ?? null
 }
 
 // Applies two-tier pricing: tokens up to the threshold at baseRate, remainder at aboveRate.

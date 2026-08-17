@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { lookupRates, calcTokenCostUsd } from '../pricing'
+import { lookupRates, calcTokenCostUsd, stripDateSuffix } from '../pricing'
 
 suite('pricing', () => {
   test('lookupRates returns rates for known model', () => {
@@ -17,6 +17,44 @@ suite('pricing', () => {
   test('lookupRates strips date suffix', () => {
     const rates = lookupRates('claude-sonnet-4-6-20260101')
     assert.ok(rates !== null, 'Should match after stripping date suffix')
+  })
+
+  test('lookupRates does not prefix-match an unknown newer model onto an older one', () => {
+    // claude-opus-4-9 doesn't exist in RATES, but claude-opus-4 does (deprecated,
+    // $15/$75). A substring-prefix fallback would previously match this incorrectly —
+    // must fall through to null (shown as ~$? in the UI) instead of a wrong rate.
+    const rates = lookupRates('claude-opus-4-9')
+    assert.strictEqual(rates, null, 'Should not silently inherit claude-opus-4\'s rate')
+  })
+
+  test('lookupRates does not prefix-match a differently-suffixed known model', () => {
+    // gpt-4.1 exists; gpt-4.1-turbo does not. Must not match gpt-4.1's rate.
+    const rates = lookupRates('gpt-4.1-turbo')
+    assert.strictEqual(rates, null)
+  })
+
+  test('stripDateSuffix removes a trailing YYYY-MM-DD date', () => {
+    assert.strictEqual(stripDateSuffix('claude-opus-4-7-2026-03-15'), 'claude-opus-4-7')
+  })
+
+  test('stripDateSuffix removes a trailing YYYYMMDD date', () => {
+    assert.strictEqual(stripDateSuffix('claude-opus-4-7-20260315'), 'claude-opus-4-7')
+  })
+
+  test('stripDateSuffix leaves an undated model ID unchanged', () => {
+    assert.strictEqual(stripDateSuffix('claude-opus-4-7'), 'claude-opus-4-7')
+  })
+
+  test('lookupRates resolves a fast-mode model ID built from a date-stripped base (logReader.ts pattern)', () => {
+    // Regression test for the fast-mode + date-suffix ordering bug: logReader.ts
+    // builds the fast-mode model ID as `${stripDateSuffix(primaryBase)}-fast`, not
+    // `${primaryBase}-fast`. Simulate that construction directly.
+    const rawDatedModel = 'claude-opus-4-7-20260315'
+    const effectiveModel = `${stripDateSuffix(rawDatedModel)}-fast`
+    assert.strictEqual(effectiveModel, 'claude-opus-4-7-fast')
+    const rates = lookupRates(effectiveModel)
+    assert.ok(rates !== null, 'Should resolve to the fast-mode rate')
+    assert.strictEqual(rates!.inputPerMTok, 30.00, 'Should be the fast-mode rate ($30), not the standard rate ($5)')
   })
 
   test('calcTokenCostUsd returns 0 for unknown model', () => {
