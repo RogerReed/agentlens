@@ -14,16 +14,24 @@ and revert independently if a source turns out to have been misread.
 1. Fetch each source URL below and compare against the rate tables here.
 2. Update `RATES` in both `src/pricing.ts` and `media/src/pricing.ts` to match. See
    "Notes for maintainers" at the bottom for lookup/normalization details.
-3. Bump every date that records when pricing was last verified — there's more than one, and it's
+3. If you added, removed, or renamed a model key in `RATES`, update `PRICING_SECTIONS` in
+   `media/src/pricing.ts` to match — it's the vendor grouping + source citations the in-app Pricing
+   page (`$` icon in the header, `media/src/tabs/Pricing.tsx`) renders. A model left out doesn't go
+   missing — the page has an "Uncategorized" fallback for exactly this — but it should still land in
+   the right vendor group rather than sit there as a nudge to finish the job. If a source URL in a
+   section changed, update `PRICING_SECTIONS[].sources` too.
+4. Bump every date that records when pricing was last verified — there's more than one, and it's
    easy to miss one:
    - `PRICING_LAST_UPDATED` in `media/src/pricing.ts`
    - The `PRICING_LAST_UPDATED: <date>` comment at the top of `src/pricing.ts`
    - Every per-section "verified `<date>`" source line below, for whichever sections you actually
      re-checked
+   - The matching `PRICING_SECTIONS[].verified` date(s) in `media/src/pricing.ts` — these mirror the
+     sections below and drive the "verified `<date>`" text shown on the in-app Pricing page itself
    - `ARCHITECTURE.md`'s "Cost Calculation" section — it has its own "Last updated: `<date>`" line
      independent of the two constants above (found missed once already; check it every time)
-4. Run `tsc --noEmit` (both configs), `eslint src media/src`, and `mocha` to confirm nothing broke.
-5. If a rate or model can't be confirmed from a source, add it to that section's "Known gaps"
+5. Run `tsc --noEmit` (both configs), `eslint src media/src`, and `mocha` to confirm nothing broke.
+6. If a rate or model can't be confirmed from a source, add it to that section's "Known gaps"
    instead of guessing.
 
 ---

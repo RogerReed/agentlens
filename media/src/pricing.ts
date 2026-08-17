@@ -27,7 +27,7 @@ export interface ModelRates {
 }
 
 // Keyed by normalized model ID (lowercase, no date suffix).
-const RATES: Record<string, ModelRates> = {
+export const RATES: Record<string, ModelRates> = {
   // ── OpenAI ─────────────────────────────────────────────────────────────────────────────────────
   //                                                                     token rates ──────────────────────────────────── │ pre-Jun1  │ annual post-Jun1
   // gpt-4.1: re-listed on the pricing page as of 2026-08-07 at real rates (previously assumed delisted/$0 —
@@ -145,6 +145,86 @@ const RATES: Record<string, ModelRates> = {
   'nemotron-3-ultra-free':       { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
   'nemotron-3.5-lightning-free': { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
 }
+
+// ── UI display grouping ──────────────────────────────────────────────────────────
+// Purely presentational metadata for the Pricing page (tabs/Pricing.tsx) — groups
+// RATES entries by vendor (mirroring the section comments above), with the sources
+// each group was last checked against. Doesn't affect cost calculation at all;
+// PRICING_SOURCES.md's refresh runbook covers keeping this in sync alongside RATES.
+export interface PricingSection {
+  label: string
+  verified: string  // YYYY-MM-DD
+  sources: { label: string; url: string }[]
+  modelKeys: string[]
+}
+
+export const PRICING_SECTIONS: PricingSection[] = [
+  {
+    label: 'OpenAI (GPT / Codex family)',
+    verified: '2026-08-12',
+    sources: [
+      { label: 'Copilot model pricing', url: 'https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing' },
+      { label: 'OpenAI API pricing', url: 'https://developers.openai.com/api/docs/pricing' },
+      { label: 'Codex CLI pricing', url: 'https://learn.chatgpt.com/docs/pricing' },
+    ],
+    modelKeys: [
+      'gpt-4.1', 'gpt-4.1-mini', 'gpt-5-mini', 'gpt-5 mini', 'gpt-4o', 'gpt-4o-mini',
+      'gpt-5.1', 'gpt-5.1-codex', 'gpt-5.1-codex-mini', 'gpt-5.1-codex-max',
+      'gpt-5.2', 'gpt-5.2-codex', 'gpt-5.3-codex', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano',
+      'gpt-5.5', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol', 'codex-mini-latest',
+    ],
+  },
+  {
+    label: 'Anthropic (Claude)',
+    verified: '2026-08-12',
+    sources: [
+      { label: 'Anthropic API pricing', url: 'https://platform.claude.com/docs/en/about-claude/pricing' },
+      { label: 'Copilot model pricing', url: 'https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing' },
+    ],
+    modelKeys: [
+      'claude-opus-4', 'claude-opus-4-1', 'claude-haiku-3-5', 'claude-haiku-4-5',
+      'claude-sonnet-4', 'claude-sonnet-4-5', 'claude-sonnet-4-6', 'claude-sonnet-5',
+      'claude-opus-4-5', 'claude-opus-4-6', 'claude-opus-4-7', 'claude-opus-4-8', 'claude-opus-5',
+      'claude-opus-4-6-fast', 'claude-opus-4-7-fast', 'claude-opus-4-8-fast', 'claude-opus-5-fast',
+      'claude-fable-5', 'claude-mythos-5',
+    ],
+  },
+  {
+    label: 'Google (Gemini)',
+    verified: '2026-08-12',
+    sources: [
+      { label: 'Copilot model pricing', url: 'https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing' },
+    ],
+    modelKeys: ['gemini-2.5-pro', 'gemini-3-flash', 'gemini-3-pro', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-3.6-flash'],
+  },
+  {
+    label: 'Fine-tuned & other Copilot-marketplace models',
+    verified: '2026-08-12',
+    sources: [
+      { label: 'Copilot model pricing', url: 'https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing' },
+    ],
+    modelKeys: ['raptor-mini', 'goldeneye', 'mai-code-1-flash', 'mai-code-1.1-flash', 'kimi-k2.7-code', 'grok-4.5', 'kimi-k3'],
+  },
+  {
+    label: 'OpenCode Zen (free evaluation models)',
+    verified: '2026-08-12',
+    sources: [
+      { label: 'OpenCode Zen docs', url: 'https://opencode.ai/docs/zen/' },
+    ],
+    modelKeys: [
+      'big-pickle', 'deepseek-v4-flash-free', 'mimo-v2.5-free', 'hy3-free',
+      'laguna-s-2.1-free', 'ling-3.0-tiny-free', 'nemotron-3-ultra-free', 'nemotron-3.5-lightning-free',
+    ],
+  },
+]
+
+// Copilot's request-based billing (multiplier / multiplierAnnualPostJun1 fields) applies across
+// every model above regardless of vendor, so its sources are shown once, globally, rather than
+// repeated per section.
+export const REQUEST_BILLING_SOURCES = [
+  { label: 'Annual-plan multipliers (post-Jun 1, 2026)', url: 'https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans' },
+  { label: 'Legacy request multipliers (pre-Jun 1, 2026, historical)', url: 'https://docs.github.com/en/copilot/concepts/billing/copilot-requests' },
+]
 
 function normalizeModelId(modelId: string): string {
   return modelId
