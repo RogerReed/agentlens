@@ -2,6 +2,22 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.11.0] — 2026-08-17
+
+### Added
+
+- **Pricing page** — a new `$` icon in the header, next to Help, opens a page showing the exact rate table AgentLens uses to estimate cost: every model, grouped by vendor (OpenAI, Anthropic, Google, fine-tuned/third-party Copilot-marketplace models, OpenCode Zen), each with a "verified `<date>`" and source links as footnotes. An "Uncategorized" fallback section guarantees a model can never silently go missing from the page even if a future pricing refresh forgets to sort it into a vendor group (#194)
+
+### Fixed
+
+- **A Codex or Claude fast-mode session's cost could be silently wrong.** Three related gaps found while auditing the cost-estimation system: (1) `lookupRates()`'s substring-prefix fallback could mis-price a brand-new, unrecognized model by matching it against an older, unrelated model already in the rate table instead of showing the intended "unknown model" indicator — removed; (2) Claude Code fast-mode (`/fast`) sessions with a date-suffixed model ID (a common shape) were silently priced at the standard rate instead of the real fast-mode rate — up to 6x underestimated — fixed by stripping the date before appending the fast-mode marker; (3) fast mode is undetectable at all for Claude Code sessions ingested via OTEL rather than the local log file — this appears to be a gap in what Claude Code's OTEL telemetry exposes rather than something AgentLens can read around, so it's documented as a known limitation in `PRICING_SOURCES.md` rather than fixed in code (#195)
+
+### Changed
+
+- Established a runbook (`runbooks/RELEASING.md`) for cutting releases. No user-facing product change (#193)
+
+---
+
 ## [0.10.1] — 2026-08-15
 
 ### Fixed
