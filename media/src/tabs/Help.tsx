@@ -177,6 +177,14 @@ function OverviewSection() {
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
         <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code-family IDE extension (VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro), a local web app (npx), or Docker, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and also reads <strong>local session files and databases</strong> written automatically by each agent as a zero-config fallback — including OpenCode's local SQLite database — so history loads even without OTEL configured. Both sources feed one unified dashboard and surface efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time.</p>
+        <p style="font-size:13px;margin:10px 0 4px"><strong>AgentLens detects five loop / malfunction patterns</strong> — each with a ready-to-paste correction prompt (see <a href="#help-loops">Loop Detection</a> below for details):</p>
+        <ul style="margin:0 0 0 18px;padding:0;font-size:13px;color:var(--muted);line-height:1.75">
+          <li><a href="#help-tool-deadlock">Tool Call Deadlock</a> — the same tool call repeated 5+ times</li>
+          <li><a href="#help-state-spiral">State Corruption Spiral</a> — a file edited then reverted, oscillating</li>
+          <li><a href="#help-hallucination">Hallucination Amplification Loop</a> — the same error recurring 3+ times</li>
+          <li><a href="#help-runaway-steps">Ambiguous Success / Escalating Scope</a> — runaway step count, no stopping condition</li>
+          <li><a href="#help-context-accumulation">Infinite Loop — Context Accumulation</a> — input tokens growing while output collapses</li>
+        </ul>
       </div>
     </div>
   )
@@ -723,6 +731,9 @@ function SettingsSection() {
             <dd class="glossary-def" style="display:block">Fires when a session reaches the agent-specific turn threshold. Sends a prompt asking the agent to summarize progress, merge check-in details, and work toward a clean stopping point before hitting the model's hard turn limit. Default: 120 turns.</dd>
           </div>
         </div>
+
+        <h4 id="help-clear-all" style={subHeadStyle}>Clear All Data</h4>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">This button only deletes what AgentLens itself has stored — its local database/cache of parsed sessions. It does <strong>not</strong> touch the source files it read those sessions from: OTEL-captured sessions are removed permanently, but log-sourced sessions (Claude Code, Codex, Copilot JSONL logs, OpenCode's SQLite database) are re-read from those local log files and will reappear on the next scan. AgentLens currently has no feature to delete the underlying log files themselves — if you want those gone too, remove or rotate them yourself outside AgentLens (e.g. in <code style={codeStyle}>~/.claude/</code>, <code style={codeStyle}>~/.codex/</code>, <code style={codeStyle}>~/.copilot/</code>).</p>
       </div>
     </div>
   )
