@@ -797,6 +797,10 @@ Only use find_relevant_context if your task closely matches past prompts by keyw
             <dt class="glossary-term"><code style={codeStyle}>get_efficiency_report</code></dt>
             <dd class="glossary-def" style="display:block">Trend analysis over the last N days (default 30): cost trend (increasing/stable/decreasing), average cost and turns, error rate, agent/model ranking by cost efficiency, and most frequent loop signals with their occurrence rate.</dd>
           </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term"><code style={codeStyle}>get_instruction_suggestions</code></dt>
+            <dd class="glossary-def" style="display:block">Returns pending Advisor suggestions for improving the agent instruction file (CLAUDE.md, AGENTS.md, etc.) for the specified workspace — the same ready-to-paste text shown in the Advisor tab's Instructions File section. Use at the start of a session to check for improvements before beginning work. Requires <code style={codeStyle}>workspace</code> (absolute path) — cross-workspace suggestions aren't meaningful.</dd>
+          </div>
         </div>
 
         <h4 style={subHeadStyle}>Example prompts</h4>
@@ -811,7 +815,11 @@ to see what files similar sessions touched and what they typically cost.
 
 # To check efficiency trends over time:
 Use agentlens get_efficiency_report to see if sessions are getting more or
-less expensive, and which loop signals keep recurring.`}</pre>
+less expensive, and which loop signals keep recurring.
+
+# Before starting work — check for open Advisor suggestions:
+Use agentlens get_instruction_suggestions with workspace="/absolute/path/to/project"
+to see pending instruction-file suggestions before beginning work.`}</pre>
 
       </div>
     </div>
