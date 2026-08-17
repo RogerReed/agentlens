@@ -35,6 +35,7 @@ import * as os from 'os'
 import type { SessionSummaryCard, TimelineEntry, EditDetail } from './summarizers/summarizerTypes'
 import { VSCODE_FAMILY_IDE_NAMES } from './vscodeFamilyIdes'
 import { rankModelsByWeight } from './summarizers/helpers'
+import { stripDateSuffix } from './pricing'
 
 // ── Cross-platform home resolution ────────────────────────────────────────────
 
@@ -458,7 +459,12 @@ export class LogReader {
     // primary (highest-volume) model, matching the existing single-value behavior.
     const rankedModels = rankModelsByWeight(modelTokens)
     const primaryBase = rankedModels[0] || model
-    const effectiveModel = (primaryBase && hasFastMode) ? `${primaryBase}-fast` : primaryBase
+    // Strip a trailing date suffix (Anthropic's model field is often date-suffixed,
+    // e.g. claude-opus-4-7-20260315) before appending -fast — otherwise the date
+    // ends up in the middle of the string instead of at the end, where pricing.ts's
+    // own date-stripping regex can no longer reach it, and the session silently
+    // prices at the standard (non-fast) rate instead of the real fast-mode rate.
+    const effectiveModel = (primaryBase && hasFastMode) ? `${stripDateSuffix(primaryBase)}-fast` : primaryBase
     const models = rankedModels.length > 0
       ? [effectiveModel || 'claude', ...rankedModels.slice(1)]
       : (effectiveModel ? [effectiveModel] : [])
