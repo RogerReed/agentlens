@@ -581,7 +581,7 @@ function PatternsSection() {
             <dd class="glossary-def" style="display:block">Triggered when a significant share of sessions exceed 1.5× the average turn count, indicating missing upfront context. Works for all agent types including Copilot.</dd>
           </div>
         </div>
-        <p style={mutedP}>Each suggestion card shows a <strong>Recommended addition</strong> — text ready to paste into your instruction file — and an <strong>Ask your agent</strong> prompt you can copy and send directly to your agent to get its own recommendation. Both have Copy buttons.</p>
+        <p style={mutedP}>Each suggestion card shows a <strong>Recommended addition</strong> — text ready to paste into your instruction file — and an <strong>Ask your agent</strong> prompt you can copy and send directly to your agent to get its own recommendation. Both have Copy buttons. <strong>AgentLens never edits your instruction file itself</strong> — nothing here writes to disk; every suggestion is copy-and-paste only, applied by you (or by the agent, if you paste the "Ask your agent" prompt into it).</p>
 
         <h4 style={subHeadStyle}>Efficiency Map</h4>
         <p style={mutedP}>A scatter plot where each dot is one session. Right = more expensive. Up = more LLM calls. Color = cache hit rate (green ≥60%, orange 20–60%, red &lt;20%). Click a dot to navigate to that session. The table below shows the top 10 sessions sorted by the active column — click any column header to re-sort.</p>
@@ -716,15 +716,19 @@ function SettingsSection() {
         </div>
 
         <h4 id="help-automation" style={subHeadStyle}>Automation</h4>
-        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Automations send a prompt to the agent automatically when a session crosses a threshold — without you having to intervene manually. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex. In the VS Code extension, automations surface as a notification with a copyable prompt. In standalone (npx) mode they appear as an in-page notification.</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Automations watch live sessions and fire a correction prompt when a session crosses a threshold — but AgentLens never sends that prompt to the agent process itself, and there's no live channel (MCP included) that pushes it in automatically. Delivery is one of two things, per automation, controlled by its <strong>Write prompts file</strong> toggle in Settings: by default, a notification appears (VS Code warning notification, or an in-page notification in standalone/npx mode) with a <strong>Copy Prompt</strong> button — you copy it and paste it into the agent yourself. With <strong>Write prompts file</strong> enabled instead, AgentLens appends the prompt to <code style={codeStyle}>agentlens-prompts-&#123;agent&#125;.md</code> in the workspace root rather than showing a notification; nothing reads that file back to the agent automatically — it only helps if you (or an instruction you've added to CLAUDE.md/AGENTS.md) has the agent check it. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex.</p>
         <div class="glossary">
           <div class="glossary-item" style="flex-direction:column;gap:4px">
-            <dt class="glossary-term">Context Dump</dt>
+            <dt class="glossary-term">Context Compaction</dt>
             <dd class="glossary-def" style="display:block">Fires when a session's peak input tokens reaches the configured threshold. Sends a prompt asking the agent to summarize its context and compact before continuing. Helps avoid context-window overflows and keeps token cost in check. Default: 140K tokens.</dd>
           </div>
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Loop Breaker</dt>
             <dd class="glossary-def" style="display:block">Fires when the same tool with identical arguments repeats beyond the threshold without a file change between repeats. Sends a prompt instructing the agent to stop and choose a different approach. A hard-stop backstop fires at 8 repeats regardless of configuration. Default: 3 repeats.</dd>
+          </div>
+          <div class="glossary-item" style="flex-direction:column;gap:4px">
+            <dt class="glossary-term">Error Cascade Stop</dt>
+            <dd class="glossary-def" style="display:block">Fires when a session hits its agent-specific consecutive-error streak. Sends a prompt instructing the agent to stop, diagnose the root cause, and change strategy before trying again. A hard-stop backstop fires at 8 consecutive errors regardless of configuration. Default: 3 consecutive errors.</dd>
           </div>
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Turn Limit Wrap-up</dt>
