@@ -40,6 +40,12 @@ export const timeRange = signal<TimeRange>({ preset: 'all' })
 // DB-queried sessions for the active time range (separate from the Search tab results)
 export const rangedSearchResults = signal<SearchResultData | null>(null)
 
+// DB-queried sessions for a full, uncapped Export — rangedSearchResults above is intentionally
+// capped to CHART_MAX for chart/table rendering, which is wrong for "export everything matching
+// my filters"; this is a dedicated signal so the Export tab's own uncapped fetch never clobbers
+// (or gets clobbered by) the capped view every other tab reads from.
+export const exportSearchResults = signal<SearchResultData | null>(null)
+
 // ── Analytics signals ─────────────────────────────────────────────────────────
 
 export const dailyStats = signal<DailyStatRow[]>([])

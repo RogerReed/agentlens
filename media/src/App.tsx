@@ -4,7 +4,7 @@ import {
   sessionSummary, toolCalls,
   selectedAgentFilter, initiatorFilter, dataSourceFilter, sessionLimit, activeTab,
   sessionTimelines, blobCache, gitOutcomes,
-  dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults,
+  dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults, exportSearchResults,
   timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
   vscode, displaySessions, rangedSessions,
   sessionTextFilter, filteredSessions, evidenceSessionIds,
@@ -406,8 +406,11 @@ export function App() {
           totalCount: msg.totalCount ?? 0,
           offset: msg.offset ?? 0,
         }
-        if ((msg as { context?: string }).context === 'timeRange') {
+        const context = (msg as { context?: string }).context
+        if (context === 'timeRange') {
           rangedSearchResults.value = data
+        } else if (context === 'export') {
+          exportSearchResults.value = data
         } else {
           searchResults.value = data
         }

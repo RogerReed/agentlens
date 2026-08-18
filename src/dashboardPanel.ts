@@ -303,6 +303,7 @@ export class DashboardPanel {
         sessionId:        s.sessionId,
         traceId:          s.traceId,
         source:           s.source,
+        dataSource:       s.dataSource ?? 'otel',
         model:            s.model,
         models:           s.models ?? [s.model],
         startTime:        s.startTime,
