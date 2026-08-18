@@ -8,10 +8,35 @@ import {
 
 export function buildCopilotSessions(
   invokeAgentSpans: Span[],
-  childrenOf: Record<string, Span[]>
+  childrenOf: Record<string, Span[]>,
+  spansByTraceId: Record<string, Span[]> = {}
 ): SessionSummaryCard[] {
+  // How many invoke_agent spans share each traceId — used below to guard the orphan fallback,
+  // since attributing orphaned children by traceId alone would be ambiguous if a trace ever
+  // legitimately contains more than one Copilot session.
+  const invokeAgentCountByTrace = new Map<string, number>()
+  for (const a of invokeAgentSpans) {
+    if (!a.traceId) { continue }
+    invokeAgentCountByTrace.set(a.traceId, (invokeAgentCountByTrace.get(a.traceId) ?? 0) + 1)
+  }
+
   return invokeAgentSpans.map(agent => {
-    const children = collectDescendants(agent.spanId, childrenOf)
+    let children = collectDescendants(agent.spanId, childrenOf)
+
+    // Some real Copilot sessions report a normal invoke_agent span (correct turns/tokens/prompt)
+    // but its chat/execute_tool children carry a parentSpanId that never resolves back to it —
+    // collectDescendants then finds nothing, so tools/files/timeline all read empty even though
+    // the session clearly did work. This mirrors a parent-linking gap already known to affect
+    // in-progress Copilot sessions (see the orphan-parent synthesis in spanSummarizer.ts) — this
+    // is the completed-session sibling of that same class of bug. Fall back to every same-trace
+    // span that looks like a Copilot child, but only when the strict parent chain found nothing
+    // and the trace unambiguously belongs to this one session.
+    if (children.length === 0 && agent.traceId && invokeAgentCountByTrace.get(agent.traceId) === 1) {
+      children = (spansByTraceId[agent.traceId] ?? [])
+        .filter(s => s.spanId !== agent.spanId && (s.name.startsWith('chat') || s.name.startsWith('execute_tool')))
+    }
+
+    children = children
       .slice()
       .sort((a, b) => nanoToMs(a.startTime) - nanoToMs(b.startTime))
 

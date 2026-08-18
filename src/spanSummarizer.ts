@@ -134,7 +134,7 @@ export function summarizeSpans(spans: Span[]) {
   }
 
   const allSorted = [
-    ...buildCopilotSessions(invokeAgentSpans, childrenOf),
+    ...buildCopilotSessions(invokeAgentSpans, childrenOf, spansByTraceId),
     ...buildClaudeSessions(claudeInteractionSpans, spansByTraceId),
     ...buildCodexSessions(spans),
   ].sort((a, b) => timestampToMs(a.startTime) - timestampToMs(b.startTime))
