@@ -508,6 +508,41 @@ suite('SpanSummarizer', () => {
       assert.ok((codex?.filesRead || []).includes('fullDashboardPanel.ts'))
     })
 
+    test('extracts file paths from Codex apply_patch unified-diff arguments', () => {
+      const patch = [
+        '*** Begin Patch',
+        '*** Update File: src/summarizers/codex.ts',
+        '@@',
+        '-old line',
+        '+new line',
+        '*** Add File: src/newThing.ts',
+        '+created',
+        '*** End Patch',
+      ].join('\n')
+      const spans: Span[] = [
+        makeSpan({
+          traceId: 'codex-apply-patch-trace',
+          spanId: 'cx-root-3',
+          name: 'codex.user_message',
+          attributes: [makeAttr('user_prompt', 'Fix the summarizer')],
+        }),
+        makeSpan({
+          traceId: 'codex-apply-patch-trace',
+          spanId: 'cx-tool-3',
+          name: 'codex.tool_result',
+          attributes: [
+            makeAttr('tool_name', 'apply_patch'),
+            makeAttr('arguments', JSON.stringify({ input: patch })),
+          ],
+        }),
+      ]
+
+      const result = summarizeSpans(spans)
+      const codex = result.sessions.find(s => s.source === 'codex')
+      assert.ok(codex)
+      assert.deepStrictEqual(codex?.filesChanged.sort(), ['src/newThing.ts', 'src/summarizers/codex.ts'])
+    })
+
     test('shows Codex tool_result output on the summary tool step', () => {
       const spans: Span[] = [
         makeSpan({
