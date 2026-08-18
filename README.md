@@ -452,7 +452,7 @@ Override the default database location with the `OPENCODE_DATA_DIR` environment 
 
 ## AI Usage Disclosure
 
-AgentLens was built primarily with [Claude Opus](https://www.anthropic.com/claude). Thank you to Anthropic for building tools that make projects like this possible.
+AgentLens was built primarily with [Claude](https://www.anthropic.com/claude). Thank you to Anthropic for building tools that make projects like this possible.
 
 ## License
 
