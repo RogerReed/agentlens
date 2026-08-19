@@ -18,7 +18,8 @@ AgentLens is a VS Code extension that receives OpenTelemetry (OTLP) telemetry fr
 10. [Frontend Architecture](#10-frontend-architecture)
 11. [Cost Calculation](#11-cost-calculation)
 12. [Auto-Configuration](#12-auto-configuration)
-13. [Build Pipeline](#13-build-pipeline)
+13. [Background Service Mode](#13-background-service-mode)
+14. [Build Pipeline](#14-build-pipeline)
 
 ---
 
@@ -927,9 +928,53 @@ flowchart TD
 
 ---
 
-## 13. Build Pipeline
+## 13. Background Service Mode
 
-Four independent esbuild targets produce four output bundles.
+Standalone-mode only (`agentlens service <cmd>`, dispatched from `standalone/cli.ts` before the
+normal server bootstrap). Lets the server outlive a closed terminal, sleep, or reboot — otherwise
+incoming OTEL data has nowhere to go while nothing is listening, and agents don't queue or retry
+failed exports, so the gap is permanent. Not applicable to the VS Code extension, which is already
+kept running by the IDE itself.
+
+`src/serviceConfig.ts` holds all the pure logic (config read/write, flag parsing, npx detection,
+and the three service-definition generators) so it's unit-tested without shelling out to a real
+OS service manager. `standalone/service/{macos,linux,windows}.ts` each pair that pure output with
+the actual `fs`/`child_process` calls for their platform.
+
+```mermaid
+flowchart TD
+    CLI["agentlens service install<br/>(standalone/cli.ts)"] --> NPX{Running via npx?}
+
+    NPX -- yes --> BOOT["npm install -g agentlens-dashboard<br/>(visible, not silent)"]
+    BOOT --> REEXEC[Re-invoke as the now-globally-linked<br/>`agentlens service install`]
+    REEXEC --> DISPATCH
+
+    NPX -- no --> DISPATCH{os.platform&#40;&#41;}
+
+    DISPATCH -- darwin --> MAC["launchd LaunchAgent<br/>~/Library/LaunchAgents/com.agentlens.server.plist<br/>RunAtLoad + KeepAlive"]
+    DISPATCH -- linux --> LIN["systemd --user unit<br/>~/.config/systemd/user/agentlens.service<br/>enable --now"]
+    DISPATCH -- win32 --> WIN["Scheduled Task at logon<br/>+ generated run.cmd wrapper<br/>(env vars set per-task, not persisted globally)"]
+
+    MAC & LIN & WIN --> CFG[Write ~/.agentlens/config.json<br/>ports · bindHost · dataDir]
+    CFG --> LOG[All 3 platforms redirect stdout/stderr<br/>to dataDir/logs/service.log]
+
+    STATUS["agentlens service status"] --> PROBE["HTTP GET http://bindHost:uiPort/<br/>(same convention as the Dockerfile HEALTHCHECK)"]
+```
+
+`standalone/server.ts` reads `~/.agentlens/config.json` at startup as a fallback underneath the
+existing `OTLP_PORT`/`UI_PORT`/`MCP_PORT`/`BIND_HOST`/`DATA_DIR` env vars (env var still wins if
+set), so an ad-hoc `npx`/`node standalone/server.js` run and a service install share one config
+story instead of diverging.
+
+`uninstall` removes the service definition only — it never touches `~/.agentlens`'s data or
+config, matching the same separation the extension's Clear-All-Data command already keeps between
+"stop this from running" and "delete my data."
+
+---
+
+## 14. Build Pipeline
+
+Five independent esbuild targets produce five output bundles.
 
 ```mermaid
 graph LR
@@ -938,6 +983,7 @@ graph LR
         SRC_DASH[media/src/dashboard.tsx<br/>+ media/src/**]
         SRC_SB[media/src/sidebarWebview.ts]
         SRC_SA[standalone/server.ts]
+        SRC_CLI[standalone/cli.ts<br/>+ standalone/service/**]
     end
 
     subgraph esbuild targets
@@ -945,6 +991,7 @@ graph LR
         B2[Dashboard bundle<br/>format: iife · platform: browser<br/>jsx: preact/jsx-runtime]
         B3[Sidebar bundle<br/>format: iife · platform: browser]
         B4[Standalone bundle<br/>format: cjs · platform: node]
+        B5[CLI bundle<br/>format: cjs · platform: node]
     end
 
     subgraph Outputs
@@ -952,15 +999,22 @@ graph LR
         O2[media/dashboard.js]
         O3[media/sidebar.js]
         O4[standalone/server.js]
+        O5[standalone/cli.js]
     end
 
     SRC_EXT --> B1 --> O1
     SRC_DASH --> B2 --> O2
     SRC_SB --> B3 --> O3
     SRC_SA --> B4 --> O4
+    SRC_CLI --> B5 --> O5
 ```
 
 `sql.js` is loaded dynamically at runtime (not bundled) to keep the extension bundle small. The WASM binary is copied to `dist/sql-wasm.wasm` during the build and located via `extensionUri` at activation.
+
+`standalone/cli.js` dynamically imports either `standalone/server.js`'s source or
+`standalone/service/index.ts` at runtime depending on the `service` subcommand check — esbuild
+bundles both paths into the one output file regardless, so there's no separate service-only
+bundle to keep track of.
 
 ### Type-check vs bundle
 
@@ -971,6 +1025,12 @@ graph LR
     ESB[esbuild.js] --> BUNDLES[Bundles output<br/>No type checking]
     TC_ONLY & BUNDLES --> CI["pnpm run compile<br/>passes only when both succeed"]
 ```
+
+`standalone/tsconfig.json` covers `standalone/**` (including `cli.ts` and `service/**`) for
+editor IntelliSense and can be run manually via `tsc -p standalone/tsconfig.json --noEmit` — it
+isn't currently wired into `pnpm run compile`/`check-types`, so a `standalone`-only type error
+won't fail CI today. Pre-existing gap, not introduced by the background-service feature, but
+worth knowing about since it's the one part of the codebase `check-types` doesn't actually cover.
 
 ---
 
@@ -1002,6 +1062,7 @@ agentlens/
 │   ├── instructionAdvisor.ts     # Advisor tab analysis — hot files, loop patterns, high turn counts
 │   ├── instructionEffectiveness.ts # Before/after baseline metrics for applied instruction suggestions
 │   ├── instructionFiles.ts       # Detects/reads/writes CLAUDE.md, copilot-instructions.md, AGENTS.md
+│   ├── serviceConfig.ts          # Background-service config file + launchd/systemd/Windows-task generators (pure, tested)
 │   ├── types.ts                  # Shared extension-host types
 │   ├── database/
 │   │   ├── schema.ts             # SCHEMA_SQL — CREATE TABLE statements + indexes
@@ -1029,6 +1090,7 @@ agentlens/
 │       ├── gitOutcome.test.ts
 │       ├── oneShotRate.test.ts
 │       ├── exportFormats.test.ts
+│       ├── serviceConfig.test.ts
 │       ├── extension.test.ts
 │       ├── database/
 │       │   ├── writer.test.ts
@@ -1089,8 +1151,15 @@ agentlens/
 │   └── sidebar.js                # Compiled sidebar script
 ├── standalone/
 │   ├── server.ts                 # Standalone HTTP server (no VS Code)
-│   └── cli.js                    # npx entrypoint: `agentlens` / `agentlens-dashboard` — starts server, auto-opens browser (--no-open to suppress)
-├── esbuild.js                    # Build configuration (4 targets)
+│   ├── cli.ts                    # npx entrypoint: `agentlens` / `agentlens-dashboard` — dispatches to
+│   │                              #   `service` subcommand or starts the server directly
+│   └── service/
+│       ├── index.ts              # `agentlens service <cmd>` dispatch, npx-bootstrap, logs/status
+│       ├── health.ts             # HTTP probe used by `service status` on all 3 platforms
+│       ├── macos.ts              # launchd install/uninstall/start/stop/restart
+│       ├── linux.ts              # systemd --user install/uninstall/start/stop/restart
+│       └── windows.ts            # Scheduled Task install/uninstall/start/stop/restart
+├── esbuild.js                    # Build configuration (5 targets)
 ├── package.json                  # VS Code manifest + scripts
 └── ARCHITECTURE.md               # This file
 ```
