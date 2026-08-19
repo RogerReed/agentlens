@@ -3,6 +3,20 @@ import { SessionRepository } from './sessionRepository'
 import { nanoToMs } from './summarizers/helpers'
 import { Span } from './types'
 import { calcTokenCostUsd } from './pricing'
+import { SessionSummaryCard } from './summarizers/summarizerTypes'
+
+// Only the most recent N sessions feed the average — averaging over full history let one
+// unusually long session skew the bar-scaling average for everyone after it, especially
+// early on when the total session count is small.
+const AVG_WINDOW = 5
+
+export function tokenAverages(all: SessionSummaryCard[]): { avgInputTokens: number; avgOutputTokens: number } {
+  const recent = all.slice(0, AVG_WINDOW)
+  return {
+    avgInputTokens: recent.length > 0 ? recent.reduce((s, x) => s + x.inputTokens, 0) / recent.length : 1,
+    avgOutputTokens: recent.length > 0 ? recent.reduce((s, x) => s + x.outputTokens, 0) / recent.length : 1,
+  }
+}
 
 export class SidebarPanel implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView
@@ -91,10 +105,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
     const latest = all.length > 0 ? all[0] : null
 
     // Per-type averages for independent bar scaling
-    const avgInputTokens = all.length > 0
-      ? all.reduce((s, x) => s + x.inputTokens, 0) / all.length : 1
-    const avgOutputTokens = all.length > 0
-      ? all.reduce((s, x) => s + x.outputTokens, 0) / all.length : 1
+    const { avgInputTokens, avgOutputTokens } = tokenAverages(all)
 
     // Burn rate for the current session — use latest if the session is active
     const burnRateResult = activity.isActive && latest
@@ -227,8 +238,7 @@ export class SidebarPanel implements vscode.WebviewViewProvider {
       costPerHour: burnRateResult.burnRate.costPerHour,
     } : null
 
-    const avgInputTokens = all.length > 0 ? all.reduce((s, x) => s + x.inputTokens, 0) / all.length : 1
-    const avgOutputTokens = all.length > 0 ? all.reduce((s, x) => s + x.outputTokens, 0) / all.length : 1
+    const { avgInputTokens, avgOutputTokens } = tokenAverages(all)
 
     const initData = JSON.stringify({
       lastActivityMs: activity.lastMs,
