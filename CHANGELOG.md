@@ -2,6 +2,27 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.12.0] — 2026-08-18
+
+### Added
+
+- **Background Service mode** — `agentlens service <install|uninstall|start|stop|restart|status|logs>` installs the standalone server as an OS-native background service (macOS `launchd`, Linux `systemd --user`, Windows Scheduled Task at logon), so it survives a closed terminal, sleep, or reboot instead of silently losing incoming OTEL data whenever nothing is running to receive it. `npx agentlens-dashboard service install` works as a single command even with no prior install — it bootstraps a global install first, then continues (#207)
+- **Automation triggers exposed via a new MCP tool** — `check_automation_triggers` lets an agent poll Automation's threshold state directly over MCP, alongside the existing notification/prompts-file delivery paths (#197)
+
+### Fixed
+
+- **Export silently truncated to 25 sessions for any bounded time range** (Today, Last 7 Days, Last 30 Days, custom range) — Export reused a signal deliberately capped for chart/table rendering, so choosing any range other than "All" exported only the first 25 matching sessions with no indication anything was cut off, contradicting the documented "full session history" export behavior. Also adds a missing `dataSource` field and `filesRead` section to CSV/Markdown export output (#203)
+- **Copilot sessions with a broken telemetry parent-span link showed an empty Tools/Files tab** despite clearly running tools and editing files — added a same-trace fallback for the case where a Copilot session's tool spans never resolve back to their parent (#201)
+- **Codex sessions using `apply_patch` showed an empty Files tab** — its arguments are a unified-diff patch string, not the `filePath`/`path` shape AgentLens expected, so file paths were silently dropped while tool-call counts stayed correct, making the gap easy to miss (#202)
+- **Codex sessions could show files as modified that were only read** — a shell-command fallback used to extract file paths from Codex's `exec_command` tool calls pulled every file-looking path out of the raw command string regardless of whether the command actually wrote anything, so a read-only command like `cat foo.ts` or `rg pattern foo.ts` marked `foo.ts` as changed (#205)
+- **Sidebar token-usage bar averages could be skewed by a single unusually long session** — averaged across a session's entire history instead of the 5 most recent, so with few total sessions one outlier could dominate the bar scaling for everything else (#204)
+
+### Changed
+
+- Several in-app Help/README wording and accuracy fixes: corrected the Git Outcome Correlation VS-Code-only claim, clarified Clear All Data's actual scope, fixed inaccuracies in the Automation/Advisor sections, documented the previously-missing `get_instruction_suggestions` MCP tool, and reorganized/tightened the Setup "not seeing data" callout. No user-facing product behavior change (#196, #198, #199, #200, #206)
+
+---
+
 ## [0.11.0] — 2026-08-17
 
 ### Added
