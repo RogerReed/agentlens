@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as os from 'os'
+import * as path from 'path'
 import { execFileSync, spawn } from 'child_process'
 import {
   parseServiceInstallFlags, isRunningFromNpx, writeServiceConfig, readServiceConfig,
@@ -57,10 +58,20 @@ avoids gaps in your session history from forgetting to start it, closing the
 terminal, or a reboot.`)
 }
 
+/** Resolves the just-installed global package's cli.js directly via `npm root -g`, rather than
+ *  looking up `agentlens` by name on PATH — npx prepends its own cache's bin directory to PATH
+ *  for its entire process tree (including children spawned from inside the npx-run script), so
+ *  a bare-name lookup right after `npm install -g` still resolves back to the stale npx-cached
+ *  copy instead of the new global one. */
+function resolveGlobalCliPath(): string {
+  const globalRoot = execFileSync('npm', ['root', '-g'], { encoding: 'utf-8' }).trim()
+  return path.join(globalRoot, 'agentlens-dashboard', 'standalone', 'cli.js')
+}
+
 /** npx runs from an ephemeral cache with no stable path a service definition can point
  *  at, so a first-time `npx agentlens-dashboard service install` bootstraps a real global
  *  install for the user (visibly, not silently — this touches global npm state) and then
- *  re-invokes itself as the now-globally-linked `agentlens` command. */
+ *  re-invokes the newly-installed copy directly to continue. */
 function bootstrapGlobalInstall(remainingArgs: string[]): number {
   if (shouldBlockRepeatedBootstrap(process.env)) {
     console.error(
@@ -75,9 +86,23 @@ function bootstrapGlobalInstall(remainingArgs: string[]): number {
   console.log('  npm install -g agentlens-dashboard')
   execFileSync('npm', ['install', '-g', 'agentlens-dashboard'], { stdio: 'inherit' })
   console.log('[AgentLens] Global install complete. Continuing with service install...')
-  execFileSync('agentlens', ['service', 'install', ...remainingArgs], {
-    stdio: 'inherit', env: childEnvForReexec(process.env),
-  })
+
+  const globalCliPath = resolveGlobalCliPath()
+  if (!fs.existsSync(globalCliPath)) {
+    console.error(
+      `[AgentLens] Installed globally, but couldn't find it at the expected path (${globalCliPath}). ` +
+      'Run `agentlens service install` yourself to continue — the global install should now be on your PATH.'
+    )
+    return 1
+  }
+  try {
+    execFileSync(process.execPath, [globalCliPath, 'service', 'install', ...remainingArgs], {
+      stdio: 'inherit', env: childEnvForReexec(process.env),
+    })
+  } catch (e) {
+    const status = (e as { status?: number }).status
+    return typeof status === 'number' ? status : 1
+  }
   return 0
 }
 
