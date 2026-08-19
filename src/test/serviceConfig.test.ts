@@ -5,6 +5,7 @@ import * as path from 'path'
 import {
   defaultServiceConfig, serviceConfigPath, readServiceConfig, writeServiceConfig,
   serviceLogPath, parseServiceInstallFlags, isRunningFromNpx,
+  childEnvForReexec, shouldBlockRepeatedBootstrap, REEXEC_GUARD_ENV,
   generateLaunchdPlist, generateSystemdUnit, generateWindowsWrapperScript,
   launchdLabel, SYSTEMD_UNIT_NAME, WINDOWS_TASK_NAME,
   type ServiceProgram,
@@ -112,6 +113,39 @@ suite('serviceConfig', () => {
 
     test('returns false for a normal global-install path and user-agent', () => {
       assert.strictEqual(isRunningFromNpx('npm/10.0.0 node/v24', '/usr/local/lib/node_modules/agentlens-dashboard/standalone/cli.js'), false)
+    })
+  })
+
+  suite('childEnvForReexec / shouldBlockRepeatedBootstrap', () => {
+    test('strips npm_config_user_agent so a re-exec\'d child does not see itself as still running via npx', () => {
+      const parentEnv = { PATH: '/usr/bin', npm_config_user_agent: 'npm/10.0.0 node/v24 npx/10.0.0' }
+      const childEnv = childEnvForReexec(parentEnv)
+      assert.strictEqual(childEnv.npm_config_user_agent, undefined)
+      assert.strictEqual(childEnv.PATH, '/usr/bin')
+    })
+
+    test('stamps the re-exec guard marker', () => {
+      const childEnv = childEnvForReexec({})
+      assert.strictEqual(childEnv[REEXEC_GUARD_ENV], '1')
+    })
+
+    test('shouldBlockRepeatedBootstrap is false without the marker', () => {
+      assert.strictEqual(shouldBlockRepeatedBootstrap({}), false)
+    })
+
+    test('shouldBlockRepeatedBootstrap is true once childEnvForReexec has stamped the marker', () => {
+      const childEnv = childEnvForReexec({ npm_config_user_agent: 'npm/10.0.0 npx/10.0.0' })
+      assert.strictEqual(shouldBlockRepeatedBootstrap(childEnv), true)
+    })
+
+    test('regression: without stripping, a naive re-exec would loop forever detecting npx again', () => {
+      // This is the exact bug: execFileSync inherits the parent env by default, so re-invoking
+      // `agentlens service install` without childEnvForReexec would carry the stale npx user-agent
+      // straight through, and isRunningFromNpx would trigger another bootstrap indefinitely.
+      const parentEnv = { npm_config_user_agent: 'npm/10.0.0 node/v24 npx/10.0.0' }
+      assert.strictEqual(isRunningFromNpx(parentEnv.npm_config_user_agent, '/usr/local/bin/agentlens'), true)
+      const fixedChildEnv = childEnvForReexec(parentEnv)
+      assert.strictEqual(isRunningFromNpx(fixedChildEnv.npm_config_user_agent, '/usr/local/bin/agentlens'), false)
     })
   })
 

@@ -3,6 +3,7 @@ import * as os from 'os'
 import { execFileSync, spawn } from 'child_process'
 import {
   parseServiceInstallFlags, isRunningFromNpx, writeServiceConfig, readServiceConfig,
+  shouldBlockRepeatedBootstrap, childEnvForReexec,
   type ServiceConfig, type ServiceProgram,
 } from '../../src/serviceConfig'
 import * as macos from './macos'
@@ -61,12 +62,22 @@ terminal, or a reboot.`)
  *  install for the user (visibly, not silently — this touches global npm state) and then
  *  re-invokes itself as the now-globally-linked `agentlens` command. */
 function bootstrapGlobalInstall(remainingArgs: string[]): number {
+  if (shouldBlockRepeatedBootstrap(process.env)) {
+    console.error(
+      '[AgentLens] Still detected as running via npx after installing globally and re-invoking ' +
+      '`agentlens` — that shouldn\'t happen and looks like a bug rather than a real npx run. ' +
+      'Try running `npm install -g agentlens-dashboard` yourself, then `agentlens service install` directly.'
+    )
+    return 1
+  }
   console.log('[AgentLens] Running via npx — installing agentlens-dashboard globally first, ' +
     'so the background service has a stable command to launch on every start:')
   console.log('  npm install -g agentlens-dashboard')
   execFileSync('npm', ['install', '-g', 'agentlens-dashboard'], { stdio: 'inherit' })
   console.log('[AgentLens] Global install complete. Continuing with service install...')
-  execFileSync('agentlens', ['service', 'install', ...remainingArgs], { stdio: 'inherit' })
+  execFileSync('agentlens', ['service', 'install', ...remainingArgs], {
+    stdio: 'inherit', env: childEnvForReexec(process.env),
+  })
   return 0
 }
 
