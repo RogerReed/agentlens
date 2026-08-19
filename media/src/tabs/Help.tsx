@@ -201,23 +201,10 @@ function ConfigSection() {
 
   const callout = standalone ? (
     <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
-      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
-      <p style="font-size:12px;color:var(--muted);margin:0 0 6px">AgentLens attempts to configure OTEL automatically when the standalone server starts. The VS Code-family extension does the same when it activates. If configuration is missing or stale, use <strong>Configure OTEL</strong> in Settings, or review the <a href="https://github.com/RogerReed/agentlens/tree/main/scripts" target="_blank" rel="noreferrer">configuration scripts in the repository</a>.</p>
-      <pre style="font-size:11px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre">{`# macOS / Linux — make executable (once), then run:
-chmod +x scripts/configure-agents.sh
-./scripts/configure-agents.sh             # all agents
-./scripts/configure-agents.sh --agent claude
-./scripts/configure-agents.sh --agent codex
-./scripts/configure-agents.sh --agent copilot
-
-# Windows (PowerShell) — if blocked, allow scripts first (once):
-# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-.\\scripts\\configure-agents.ps1
-.\\scripts\\configure-agents.ps1 -Agent claude
-.\\scripts\\configure-agents.ps1 -Agent codex
-.\\scripts\\configure-agents.ps1 -Agent copilot`}</pre>
-      <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Configuration is read when the agent starts. After using the button or a script, restart each <a href="#gl-agent">agent</a>:</p>
-      <table style="font-size:11px;border-collapse:collapse;width:100%">
+      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any detailed OTEL data?</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 6px">AgentLens attempts to configure OTEL automatically when the standalone server starts. The VS Code-family extension does the same when it activates.</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 6px">Configuration is read at startup — restart each <a href="#gl-agent">agent</a> after making changes:</p>
+      <table style="font-size:12px;border-collapse:collapse;width:100%">
         <tbody style="color:var(--muted)">
           <tr style="border-bottom:1px solid var(--border)">
             <td style="padding:4px 12px 4px 0;white-space:nowrap;vertical-align:top;color:var(--foreground)">Claude Code</td>
@@ -233,12 +220,26 @@ chmod +x scripts/configure-agents.sh
           </tr>
         </tbody>
       </table>
-      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Start a short <a href="#gl-session">session</a> and check whether a session card appears in the sidebar to confirm data is arriving.</p>
-      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">Prefer not to run the script? The standalone server auto-configures OTEL on startup, and the VS Code-family <strong>IDE extension</strong> does so on activation. Use <strong>Configure OTEL</strong> in Settings to re-apply it manually. Check the server terminal or AgentLens Output channel for configuration messages. Scripts are also available in the <a href="https://github.com/RogerReed/agentlens/tree/main/scripts" target="_blank" rel="noreferrer">repository</a>.</p>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 0">Start a short <a href="#gl-session">session</a> and check whether a session card appears in the sidebar to confirm data is arriving.</p>
+      <p style="font-size:12px;color:var(--muted);margin:8px 0 6px">If configuration is missing or stale, use <strong>Configure OTEL</strong> in Settings, or review the <a href="https://github.com/RogerReed/agentlens/tree/main/scripts" target="_blank" rel="noreferrer">configuration scripts in the repository</a>.</p>
+      <pre style="font-size:12px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre">{`# macOS / Linux — make executable (once), then run:
+chmod +x scripts/configure-agents.sh
+./scripts/configure-agents.sh             # all agents
+./scripts/configure-agents.sh --agent claude
+./scripts/configure-agents.sh --agent codex
+./scripts/configure-agents.sh --agent copilot
+
+# Windows (PowerShell) — if blocked, allow scripts first (once):
+# Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\\scripts\\configure-agents.ps1
+.\\scripts\\configure-agents.ps1 -Agent claude
+.\\scripts\\configure-agents.ps1 -Agent codex
+.\\scripts\\configure-agents.ps1 -Agent copilot`}</pre>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 0">Prefer not to run the script? Use <strong>Configure OTEL</strong> in Settings to re-apply it manually. Check the server terminal or AgentLens Output channel for configuration messages.</p>
     </div>
   ) : (
     <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
-      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any data?</p>
+      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Not seeing any detailed OTEL data?</p>
       <p style="font-size:12px;color:var(--muted);margin:0 0 8px">AgentLens automatically configures all supported agents on startup/activation, including Codex's <code style={codeStyle}>[otel]</code> section. It only rewrites a file when a required setting is missing or differs, so this is silent after the first successful run. Works in VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro, and other VS Code-family IDEs. After configuration, restart each <a href="#gl-agent">agent</a> once so it reads the new settings. Changed an agent's OTEL settings yourself? Use the <strong>Configure OTEL</strong> button in Settings (gear icon), or review the <a href="https://github.com/RogerReed/agentlens/tree/main/scripts" target="_blank" rel="noreferrer">repository scripts</a>. Disable auto-configuration entirely via the <code style={codeStyle}>agentLens.autoConfigureAgents</code> setting.</p>
       <p style="font-size:11px;color:var(--muted);margin:0 0 6px">Config is read at startup — restart after AgentLens activates:</p>
       <table style="font-size:11px;border-collapse:collapse;width:100%">
