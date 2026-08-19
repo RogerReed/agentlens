@@ -7,6 +7,25 @@ import {
   summarizeToolResult, normalizeUserRequest, rankModelsByWeight,
 } from './helpers'
 
+// A shell command mentioning a file path doesn't mean the file was changed — `cat foo.ts`,
+// `rg pattern foo.ts`, and `git diff foo.ts` are all reads. Only treat the command as a write
+// when it contains one of these unambiguous write signals; otherwise the mentioned files are
+// reads, not changes (this was previously always treated as a change, which is why sessions
+// that only ran read-only shell commands could show files as modified).
+const SHELL_WRITE_SIGNS = [
+  />{1,2}(?!=)/,             // output redirection: > or >> (not >=)
+  /\btee\b/,
+  /\bsed\b.*(^|\s)-i\b/,     // sed -i: in-place edit (plain `sed` without -i only prints to stdout)
+  /\b(mv|cp|rm|rmdir|mkdir|touch|chmod|ln)\b/,
+  /\bgit\s+apply\b/,
+  /\bpatch\b/,
+  /--write\b|--fix\b/,       // prettier --write, eslint --fix, etc.
+]
+
+function shellCommandWritesFiles(cmd: string): boolean {
+  return SHELL_WRITE_SIGNS.some(re => re.test(cmd))
+}
+
 export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
   const toMs = (s: Span) => nanoToMs(s.startTime) || s.receivedAt || 0
   const codexBySession = groupCodexSpansBySession(spans)
@@ -188,13 +207,15 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
           const cmd = cmdFromArgs
             || getFirstAttr(child, ['cmd', 'command', 'codex.tool.cmd', 'codex.tool.command', 'shell_command'])
           if (cmd) {
+            const isWrite = shellCommandWritesFiles(cmd)
             // Match absolute paths, ./relative paths, AND bare relative paths (e.g. src/file.ts)
             const fileRe = /(?:^|[\s'"<>`|])([./~]?(?:[\w.-]+\/)+[\w.-]+\.(?:ts|tsx|js|jsx|mjs|cjs|py|go|rs|rb|java|kt|swift|cpp|c|h|cs|php|html|css|scss|json|yaml|yml|toml|md|txt|sh|env))\b/g
             let m: RegExpExecArray | null
             while ((m = fileRe.exec(cmd)) !== null) {
               const p = m[1].replace(/['"]/g, '')
               if (p.length > 2 && !p.includes('*')) {
-                filesChanged.add(p)
+                if (isWrite) { filesChanged.add(p) }
+                else { filesRead.add(p.split('/').pop() || p) }
               }
             }
           }
