@@ -7,11 +7,13 @@ function sendConfig(key: string, value: boolean) {
   }
 }
 
+const CLEAR_ALL_CONFIRM_TEXT = 'Clear all AgentLens data? OTEL session data is deleted permanently. AgentLens log cache is cleared and will be rebuilt from your local agent log files (the log files themselves are not deleted).'
+
 export function sendConfirmClear() {
   if (vscode) {
     vscode.postMessage({ type: 'confirmClear' })
   } else {
-    if (!confirm('Clear all AgentLens session data? This cannot be undone.')) return
+    if (!confirm(CLEAR_ALL_CONFIRM_TEXT)) return
     fetch('/action', { method: 'POST', body: JSON.stringify({ type: 'clearAll' }),
       headers: { 'Content-Type': 'application/json' } })
   }
