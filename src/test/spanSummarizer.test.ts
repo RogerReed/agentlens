@@ -282,6 +282,45 @@ suite('SpanSummarizer', () => {
       assert.strictEqual(copilot?.totalToolCalls, 1)
       assert.ok(copilot?.filesChanged.includes('src/components/SignupForm.tsx'))
     })
+
+    test('recovers Copilot tool spans whose parentSpanId never resolves to the session, via traceId', () => {
+      const agent = makeAgentSpan({ traceId: 'copilot-orphaned', spanId: 'agent-root-2', userRequest: 'fix the readme' })
+      // parentSpanId points at a span that doesn't exist anywhere in this payload — a real-world
+      // gap between how Copilot assigns parent IDs and where the root invoke_agent span actually
+      // ends up, distinct from the already-handled in-progress case (spanSummarizer.ts:91-134).
+      const tool = makeChildSpan('some-parent-id-that-was-never-captured', {
+        traceId: 'copilot-orphaned',
+        name: 'execute_tool/replace_string_in_file',
+        attributes: [
+          makeAttr('gen_ai.tool.name', 'replace_string_in_file'),
+          makeAttr('gen_ai.tool.call.arguments', JSON.stringify({ filePath: 'README.md' })),
+        ],
+      })
+
+      const result = summarizeSpans([agent, tool])
+      const copilot = result.sessions.find(s => s.source === 'copilot')
+      assert.ok(copilot)
+      assert.strictEqual(copilot?.totalToolCalls, 1)
+      assert.ok(copilot?.filesChanged.includes('README.md'))
+    })
+
+    test('does not guess which session owns orphaned spans when a trace has more than one Copilot session', () => {
+      const agentA = makeAgentSpan({ traceId: 'copilot-ambiguous', spanId: 'agent-a', userRequest: 'first request' })
+      const agentB = makeAgentSpan({ traceId: 'copilot-ambiguous', spanId: 'agent-b', userRequest: 'second request' })
+      const tool = makeChildSpan('missing-parent', {
+        traceId: 'copilot-ambiguous',
+        name: 'execute_tool/replace_string_in_file',
+        attributes: [
+          makeAttr('gen_ai.tool.name', 'replace_string_in_file'),
+          makeAttr('gen_ai.tool.call.arguments', JSON.stringify({ filePath: 'README.md' })),
+        ],
+      })
+
+      const result = summarizeSpans([agentA, agentB, tool])
+      const sessions = result.sessions.filter(s => s.source === 'copilot')
+      assert.strictEqual(sessions.length, 2)
+      assert.ok(sessions.every(s => s.totalToolCalls === 0))
+    })
   })
 
   suite('edge cases', () => {
