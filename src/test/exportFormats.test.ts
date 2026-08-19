@@ -6,6 +6,7 @@ function makeSession(overrides: Partial<ExportableSession> = {}): ExportableSess
     sessionId: 's1',
     traceId: 't1',
     source: 'claude_code',
+    dataSource: 'otel',
     model: 'claude-sonnet-4-6',
     models: ['claude-sonnet-4-6'],
     startTime: '2026-08-11T10:00:00.000Z',
@@ -43,6 +44,12 @@ suite('exportFormats', () => {
       const lines = csv.trim().split('\r\n')
       assert.strictEqual(lines.length, 3)
       assert.ok(lines[0].startsWith('"Session ID","Trace ID"'))
+    })
+
+    test('includes the data source column', () => {
+      const csv = toCsv([makeSession({ dataSource: 'log' })])
+      assert.ok(csv.includes('"Data Source"'))
+      assert.ok(csv.includes('"log"'))
     })
 
     test('quotes every field and escapes embedded quotes', () => {
@@ -94,6 +101,18 @@ suite('exportFormats', () => {
     test('escapes pipe characters in file paths', () => {
       const md = toMarkdown([makeSession({ filesChanged: ['weird|file.ts'] })])
       assert.ok(md.includes('weird\\|file.ts'))
+    })
+
+    test('includes a files read section and notes the data source', () => {
+      const md = toMarkdown([makeSession({ dataSource: 'log', filesRead: ['a.ts', 'b.ts'] })])
+      assert.ok(md.includes('**Files read:**'))
+      assert.ok(md.includes('- `a.ts`'))
+      assert.ok(md.includes('(log file)'))
+    })
+
+    test('omits the files read section when empty', () => {
+      const md = toMarkdown([makeSession({ filesRead: [] })])
+      assert.ok(!md.includes('**Files read:**'))
     })
   })
 

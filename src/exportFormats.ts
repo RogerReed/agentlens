@@ -17,6 +17,7 @@ export interface ExportableSession {
   sessionId: string
   traceId: string
   source: string
+  dataSource: string
   model: string
   models: string[]
   startTime: string
@@ -61,7 +62,7 @@ function joinLoopSignals(signals: Pick<LoopSignal, 'type' | 'severity'>[]): stri
 }
 
 const CSV_HEADERS = [
-  'Session ID', 'Trace ID', 'Source', 'Model', 'Models', 'Start Time', 'Duration (ms)', 'Turns',
+  'Session ID', 'Trace ID', 'Source', 'Data Source', 'Model', 'Models', 'Start Time', 'Duration (ms)', 'Turns',
   'Tool Calls', 'Input Tokens', 'Output Tokens', 'Cache Read Tokens', 'Cache Create Tokens',
   'Cache Hit Rate', 'Errors', 'Outcome', 'Tool Counts', 'Files Read', 'Files Changed',
   'Loop Signals', 'User Request',
@@ -72,6 +73,7 @@ export function toCsv(sessions: ExportableSession[]): string {
     s.sessionId,
     s.traceId,
     s.source,
+    s.dataSource,
     s.model,
     joinList(s.models),
     s.startTime,
@@ -110,7 +112,7 @@ export function toMarkdown(sessions: ExportableSession[]): string {
     parts.push(`## ${s.model || 'unknown model'} — ${s.startTime || 'unknown time'}`)
     parts.push('')
     parts.push(`- **Session ID:** ${s.sessionId}`)
-    parts.push(`- **Source:** ${s.source}`)
+    parts.push(`- **Source:** ${s.source} (${s.dataSource === 'log' ? 'log file' : 'OTEL'})`)
     if (s.models.length > 1) parts.push(`- **Models used:** ${joinList(s.models)}`)
     parts.push(`- **Duration:** ${s.durationMs}ms`)
     parts.push(`- **Turns:** ${s.turns} · **Tool calls:** ${s.totalToolCalls} · **Errors:** ${s.errors}`)
@@ -123,6 +125,9 @@ export function toMarkdown(sessions: ExportableSession[]): string {
     }
     if (s.loopSignals.length > 0) {
       parts.push(`- **Loop signals:** ${joinLoopSignals(s.loopSignals)}`)
+    }
+    if (s.filesRead.length > 0) {
+      parts.push(``, `**Files read:**`, ``, ...s.filesRead.map(f => `- \`${mdEscape(f)}\``))
     }
     if (s.filesChanged.length > 0) {
       parts.push(``, `**Files changed:**`, ``, ...s.filesChanged.map(f => `- \`${mdEscape(f)}\``))

@@ -1,5 +1,10 @@
-import { useState } from 'preact/hooks'
-import { filteredSessions, vscode } from '../state'
+import { useEffect, useState } from 'preact/hooks'
+import {
+  filteredSessions, vscode, timeRange, rangedSearchResults, exportSearchResults,
+  agentFilteredSessions, selectedAgentFilter, workspaceFilter, dataSourceFilter,
+  sessionTextFilter, initiatorFilter, evidenceSessionIds,
+} from '../state'
+import type { SessionSummaryCard } from '../types'
 
 type ExportFormat = 'json' | 'csv' | 'markdown'
 const FORMAT_OPTIONS: Array<{ value: ExportFormat; label: string }> = [
@@ -14,6 +19,44 @@ function send(type: string, sessionIds: string[], format: ExportFormat) {
   } else {
     window.dispatchEvent(new MessageEvent('message', { data: { type, sessionIds, format } }))
   }
+}
+
+// Requests every session matching the current time range / agent / text filters, uncapped —
+// time range, agent, and text are pushed into the DB query itself; the filters below aren't
+// part of SearchQuery so they're re-applied client-side once results come back.
+function requestFullExportSessions() {
+  const range = timeRange.value
+  const agent = selectedAgentFilter.value
+  const text = sessionTextFilter.value.trim()
+  const query = {
+    since: range.since,
+    until: range.until,
+    source: agent !== 'all' ? agent : undefined,
+    text: text || undefined,
+    limit: 1_000_000,
+    orderBy: 'start_time',
+    orderDir: 'DESC',
+  }
+  if (vscode) {
+    vscode.postMessage({ type: 'searchSessions', query, context: 'export' })
+  } else {
+    window.dispatchEvent(new MessageEvent('message', { data: { type: 'searchSessions', query, context: 'export' } }))
+  }
+}
+
+// dataSourceFilter/workspaceFilter/initiatorFilter/evidenceSessionIds aren't part of the DB
+// query above, so they're applied here against the uncapped result set.
+function applyRemainingFilters(sessions: SessionSummaryCard[]): SessionSummaryCard[] {
+  let result = sessions
+  const dsFilter = dataSourceFilter.value
+  if (dsFilter !== 'all') result = result.filter(s => (s.dataSource ?? 'otel') === dsFilter)
+  const wsFilter = workspaceFilter.value
+  if (wsFilter !== 'all') result = result.filter(s => (s.workspace ?? '') === wsFilter)
+  const iFilter = initiatorFilter.value
+  if (iFilter !== 'all') result = result.filter(s => (s.initiator ?? 'user') === iFilter)
+  const evIds = evidenceSessionIds.value
+  if (evIds !== null) result = result.filter(s => evIds.has(s.sessionId))
+  return result
 }
 
 function FormatSelect({ value, onChange }: { value: ExportFormat; onChange: (f: ExportFormat) => void }) {
@@ -34,22 +77,67 @@ export function Export() {
   const [redactedDone, setRedactedDone] = useState(false)
   const [rawFormat, setRawFormat] = useState<ExportFormat>('json')
   const [redactedFormat, setRedactedFormat] = useState<ExportFormat>('json')
+  // Set while waiting on the uncapped fetch for a bounded time range; null the rest of the time.
+  const [pending, setPending] = useState<{ redact: boolean; format: ExportFormat } | null>(null)
 
+  const isAllTime = timeRange.value.preset === 'all'
+  // Capped preview list — fine for the "All" time range (already uncapped there) and for the
+  // on-screen count/empty-state check, but never used directly as the bounded-range export payload.
   const sessions = filteredSessions.value
   const empty = sessions.length === 0
-  const scopeLabel = `${sessions.length} session${sessions.length === 1 ? '' : 's'} matching your current filters`
+  const trueTotal = isAllTime ? sessions.length : (rangedSearchResults.value?.totalCount ?? sessions.length)
+  const scopeLabel = `${trueTotal} session${trueTotal === 1 ? '' : 's'} matching your current filters`
+
+  useEffect(() => {
+    if (!pending) return
+    const results = exportSearchResults.value
+    if (!results) return  // still waiting on the response
+
+    // Merge DB results with any in-memory sessions in range not yet persisted — same pattern
+    // rangedSessions uses for on-screen display, so export and display never disagree.
+    const range = timeRange.value
+    const since = range.since ?? 0
+    const until = range.until ?? Date.now()
+    const dbIds = new Set(results.sessions.map(s => s.sessionId))
+    const inMemoryInRange = agentFilteredSessions.value.filter(s => {
+      if (dbIds.has(s.sessionId)) return false
+      if (!s.startTime) return false
+      const ms = new Date(s.startTime).getTime()
+      return ms >= since && ms <= until
+    })
+    const finalSessions = applyRemainingFilters([...results.sessions, ...inMemoryInRange])
+    send(pending.redact ? 'exportSessionDataRedacted' : 'exportSessionData', finalSessions.map(s => s.sessionId), pending.format)
+
+    if (pending.redact) { setRedactedDone(true); setTimeout(() => setRedactedDone(false), 3000) }
+    else { setRawDone(true); setTimeout(() => setRawDone(false), 3000) }
+    setPending(null)
+    exportSearchResults.value = null
+  }, [pending, exportSearchResults.value])
 
   const doExport = () => {
-    send('exportSessionData', sessions.map(s => s.sessionId), rawFormat)
-    setRawDone(true)
-    setTimeout(() => setRawDone(false), 3000)
+    if (isAllTime) {
+      send('exportSessionData', sessions.map(s => s.sessionId), rawFormat)
+      setRawDone(true)
+      setTimeout(() => setRawDone(false), 3000)
+      return
+    }
+    setPending({ redact: false, format: rawFormat })
+    requestFullExportSessions()
   }
 
   const doRedacted = () => {
-    send('exportSessionDataRedacted', sessions.map(s => s.sessionId), redactedFormat)
-    setRedactedDone(true)
-    setTimeout(() => setRedactedDone(false), 3000)
+    if (isAllTime) {
+      send('exportSessionDataRedacted', sessions.map(s => s.sessionId), redactedFormat)
+      setRedactedDone(true)
+      setTimeout(() => setRedactedDone(false), 3000)
+      return
+    }
+    setPending({ redact: true, format: redactedFormat })
+    requestFullExportSessions()
   }
+
+  const preparingRaw = pending !== null && !pending.redact
+  const preparingRedacted = pending !== null && pending.redact
 
   return (
     <div id="export-content" style="padding-top:8px">
@@ -79,9 +167,9 @@ export function Export() {
             <button
               class={'export-btn' + (rawDone ? ' export-btn-done' : '')}
               onClick={doExport}
-              disabled={empty}
+              disabled={empty || preparingRaw}
             >
-              {rawDone ? '✓ Exported' : 'Export Session Data'}
+              {rawDone ? '✓ Exported' : preparingRaw ? 'Preparing…' : 'Export Session Data'}
             </button>
           </div>
         </div>
@@ -109,9 +197,9 @@ export function Export() {
             <button
               class={'export-btn export-btn-secondary' + (redactedDone ? ' export-btn-done' : '')}
               onClick={doRedacted}
-              disabled={empty}
+              disabled={empty || preparingRedacted}
             >
-              {redactedDone ? '✓ Exported' : 'Export Session Data (Redacted)'}
+              {redactedDone ? '✓ Exported' : preparingRedacted ? 'Preparing…' : 'Export Session Data (Redacted)'}
             </button>
           </div>
         </div>

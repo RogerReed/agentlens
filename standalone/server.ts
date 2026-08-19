@@ -757,7 +757,7 @@ function getHtml(): string {
       return (signals || []).map(function(s) { return s.type + '(' + s.severity + ')'; }).join('; ');
     }
     var CSV_HEADERS = [
-      'Session ID', 'Trace ID', 'Source', 'Model', 'Models', 'Start Time', 'Duration (ms)', 'Turns',
+      'Session ID', 'Trace ID', 'Source', 'Data Source', 'Model', 'Models', 'Start Time', 'Duration (ms)', 'Turns',
       'Tool Calls', 'Input Tokens', 'Output Tokens', 'Cache Read Tokens', 'Cache Create Tokens',
       'Cache Hit Rate', 'Errors', 'Outcome', 'Tool Counts', 'Files Read', 'Files Changed',
       'Loop Signals', 'User Request'
@@ -765,7 +765,7 @@ function getHtml(): string {
     function toCsv(sessions) {
       var rows = sessions.map(function(s) {
         return [
-          s.sessionId, s.traceId, s.source, s.model, joinList(s.models), s.startTime,
+          s.sessionId, s.traceId, s.source, s.dataSource || 'otel', s.model, joinList(s.models), s.startTime,
           String(s.durationMs), String(s.turns), String(s.totalToolCalls), String(s.inputTokens),
           String(s.outputTokens), String(s.cacheReadTokens), String(s.cacheCreateTokens),
           (s.cacheHitRate || 0).toFixed(4), String(s.errors), s.outcome,
@@ -785,7 +785,7 @@ function getHtml(): string {
         parts.push('## ' + (s.model || 'unknown model') + ' — ' + (s.startTime || 'unknown time'));
         parts.push('');
         parts.push('- **Session ID:** ' + s.sessionId);
-        parts.push('- **Source:** ' + s.source);
+        parts.push('- **Source:** ' + s.source + ' (' + (s.dataSource === 'log' ? 'log file' : 'OTEL') + ')');
         if (s.models && s.models.length > 1) parts.push('- **Models used:** ' + joinList(s.models));
         parts.push('- **Duration:** ' + s.durationMs + 'ms');
         parts.push('- **Turns:** ' + s.turns + ' · **Tool calls:** ' + s.totalToolCalls + ' · **Errors:** ' + s.errors);
@@ -798,6 +798,10 @@ function getHtml(): string {
         }
         if (s.loopSignals && s.loopSignals.length > 0) {
           parts.push('- **Loop signals:** ' + joinLoopSignals(s.loopSignals));
+        }
+        if (s.filesRead && s.filesRead.length > 0) {
+          parts.push('', '**Files read:**', '');
+          s.filesRead.forEach(function(f) { parts.push('- \`' + mdEscape(f) + '\`'); });
         }
         if (s.filesChanged && s.filesChanged.length > 0) {
           parts.push('', '**Files changed:**', '');
@@ -950,6 +954,7 @@ function getHtml(): string {
                 sessionId:         s.sessionId,
                 traceId:           s.traceId,
                 source:            s.source,
+                dataSource:        s.dataSource || 'otel',
                 model:             s.model,
                 models:            s.models || [s.model],
                 startTime:         s.startTime,
