@@ -3,11 +3,13 @@
  * MCP-compatible agents so they can query their own past work.
  *
  * Tools:
- *   get_recent_sessions      — recent session summaries, newest-first
- *   get_workspace_patterns   — aggregate patterns across all sessions
- *   get_session_detail       — full timeline for one session
- *   find_relevant_context    — files and patterns relevant to a task description
- *   get_efficiency_report    — trends and recurring efficiency problems
+ *   get_recent_sessions        — recent session summaries, newest-first
+ *   get_workspace_patterns     — aggregate patterns across all sessions
+ *   get_session_detail         — full timeline for one session
+ *   find_relevant_context      — files and patterns relevant to a task description
+ *   get_efficiency_report      — trends and recurring efficiency problems
+ *   get_instruction_suggestions — pending Advisor suggestions for one workspace
+ *   check_automation_triggers  — currently-triggered stuck-agent corrections for one workspace
  *
  * Transport: Streamable HTTP — expose via a route on an existing http.Server
  * or start a dedicated server with startMcpHttpServer().
@@ -21,9 +23,10 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 import { calcTokenCostUsd } from './pricing'
-import type { SessionSummaryCard } from './summarizers/summarizerTypes'
+import type { SessionSummaryCard, TimelineEntry } from './summarizers/summarizerTypes'
 import { generateSuggestions } from './instructionAdvisor'
 import { readAllInstructionContent } from './instructionFiles'
+import { checkAutomationTriggers } from './automationEngine'
 
 // ── Session accessor ──────────────────────────────────────────────────────────
 
@@ -126,6 +129,26 @@ const TOOLS = [
       'for the specified workspace. Suggestions are derived from patterns in past sessions and include ' +
       'ready-to-paste text. Use this at the start of a session to check for improvements before beginning work. ' +
       'workspace is REQUIRED — cross-workspace suggestions are not meaningful.',
+    inputSchema: {
+      type: 'object' as const,
+      required: ['workspace'],
+      properties: {
+        workspace: { type: 'string', description: 'Absolute path of the workspace root (required)' },
+      },
+    },
+  },
+  {
+    name: 'check_automation_triggers',
+    description:
+      'Checks the four built-in stuck-agent automations (Context Compaction, Loop Breaker, ' +
+      'Error Cascade Stop, Turn Limit Wrap-up) against the workspace\'s current in-progress, ' +
+      'recently-active session(s), and returns any that are currently triggered with ready-to-use ' +
+      'correction prompt text. Evaluated against AgentLens\'s default thresholds, not any ' +
+      'per-user customization made in the Settings panel (that lives only in the dashboard\'s ' +
+      'browser storage, not reachable from MCP). Read-only — safe to call repeatedly; a trigger ' +
+      'is only returned once per session until its underlying condition changes, so calling this ' +
+      'periodically during a long task and following whatever it returns is a reasonable ' +
+      'self-check pattern. workspace is REQUIRED.',
     inputSchema: {
       type: 'object' as const,
       required: ['workspace'],
@@ -418,6 +441,26 @@ function handleGetInstructionSuggestions(
   }))
 }
 
+function handleCheckAutomationTriggers(
+  sessions: SessionSummaryCard[],
+  getTimeline: ((id: string) => unknown[]) | null,
+  args: { workspace?: string },
+) {
+  const workspace = args.workspace?.trim()
+  if (!workspace) {
+    return { error: 'workspace is required — automation triggers are project-scoped.' }
+  }
+  const timelineFor = (id: string): TimelineEntry[] => {
+    if (getTimeline) return getTimeline(id) as TimelineEntry[]
+    return sessions.find(s => s.sessionId === id)?.timeline ?? []
+  }
+  const triggers = checkAutomationTriggers(sessions, workspace, timelineFor)
+  if (triggers.length === 0) {
+    return { message: `No triggered automations for workspace "${workspace}".`, triggers: [] }
+  }
+  return { triggers }
+}
+
 // ── MCP Server factory ────────────────────────────────────────────────────────
 
 export interface McpServerOptions {
@@ -458,6 +501,9 @@ export function createMcpServer(opts: McpServerOptions): Server {
         break
       case 'get_instruction_suggestions':
         result = handleGetInstructionSuggestions(sessions, args as { workspace?: string })
+        break
+      case 'check_automation_triggers':
+        result = handleCheckAutomationTriggers(sessions, opts.getTimeline ?? null, args as { workspace?: string })
         break
       default:
         return { content: [{ type: 'text', text: `Unknown tool: ${req.params.name}` }], isError: true }

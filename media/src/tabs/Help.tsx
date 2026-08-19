@@ -716,7 +716,7 @@ function SettingsSection() {
         </div>
 
         <h4 id="help-automation" style={subHeadStyle}>Automation</h4>
-        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Automations watch live sessions and fire a correction prompt when a session crosses a threshold — but AgentLens never sends that prompt to the agent process itself, and there's no live channel (MCP included) that pushes it in automatically. Delivery is one of two things, per automation, controlled by its <strong>Write prompts file</strong> toggle in Settings: by default, a notification appears (VS Code warning notification, or an in-page notification in standalone/npx mode) with a <strong>Copy Prompt</strong> button — you copy it and paste it into the agent yourself. With <strong>Write prompts file</strong> enabled instead, AgentLens appends the prompt to <code style={codeStyle}>agentlens-prompts-&#123;agent&#125;.md</code> in the workspace root rather than showing a notification; nothing reads that file back to the agent automatically — it only helps if you (or an instruction you've added to CLAUDE.md/AGENTS.md) has the agent check it. Each automation can be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex.</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Automations watch live sessions and fire a correction prompt when a session crosses a threshold — but AgentLens never sends that prompt to the agent process itself; nothing pushes it in without something on the agent's side asking for it. There are three ways it reaches you, per automation, controlled by its <strong>Write prompts file</strong> toggle in Settings, plus an always-on MCP path: by default, a notification appears (VS Code warning notification, or an in-page notification in standalone/npx mode) with a <strong>Copy Prompt</strong> button — you copy it and paste it into the agent yourself. With <strong>Write prompts file</strong> enabled instead, AgentLens appends the prompt to <code style={codeStyle}>agentlens-prompts-&#123;agent&#125;.md</code> in the workspace root rather than showing a notification; nothing reads that file back to the agent automatically — it only helps if you (or an instruction you've added to CLAUDE.md/AGENTS.md) has the agent check it. Third, the MCP tool <code style={codeStyle}>check_automation_triggers</code> (see <a href="#help-mcp">Agent Integration</a>) lets an agent poll for its own triggers directly — but it always evaluates against AgentLens's default thresholds, not any per-agent customization made here in Settings, since that customization lives only in the dashboard's browser storage. Each automation shown below can still be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex for the notification/file delivery paths.</p>
         <div class="glossary">
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Context Compaction</dt>
@@ -801,6 +801,10 @@ Only use find_relevant_context if your task closely matches past prompts by keyw
             <dt class="glossary-term"><code style={codeStyle}>get_instruction_suggestions</code></dt>
             <dd class="glossary-def" style="display:block">Returns pending Advisor suggestions for improving the agent instruction file (CLAUDE.md, AGENTS.md, etc.) for the specified workspace — the same ready-to-paste text shown in the Advisor tab's Instructions File section. Use at the start of a session to check for improvements before beginning work. Requires <code style={codeStyle}>workspace</code> (absolute path) — cross-workspace suggestions aren't meaningful.</dd>
           </div>
+          <div class="glossary-item" style="flex-direction:column;gap:2px">
+            <dt class="glossary-term"><code style={codeStyle}>check_automation_triggers</code></dt>
+            <dd class="glossary-def" style="display:block">Checks the four built-in automations (Context Compaction, Loop Breaker, Error Cascade Stop, Turn Limit Wrap-up — see <a href="#help-automation">Automation</a> above) against the workspace's current in-progress, recently-active session(s), and returns any that are currently triggered with ready-to-use correction prompt text. Uses AgentLens's default thresholds only, not per-agent customization made in Settings. Read-only and safe to call repeatedly — a given trigger is only returned once until its underlying condition changes, so an agent can poll this periodically during a long task as a self-check. Requires <code style={codeStyle}>workspace</code> (absolute path).</dd>
+          </div>
         </div>
 
         <h4 style={subHeadStyle}>Example prompts</h4>
@@ -819,7 +823,11 @@ less expensive, and which loop signals keep recurring.
 
 # Before starting work — check for open Advisor suggestions:
 Use agentlens get_instruction_suggestions with workspace="/absolute/path/to/project"
-to see pending instruction-file suggestions before beginning work.`}</pre>
+to see pending instruction-file suggestions before beginning work.
+
+# Periodically during a long task — self-check for stuck-agent patterns:
+Use agentlens check_automation_triggers with workspace="/absolute/path/to/project"
+and follow any correction prompt it returns before continuing.`}</pre>
 
       </div>
     </div>
