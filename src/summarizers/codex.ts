@@ -150,6 +150,22 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
         if (argsStr) {
           try {
             const args = JSON.parse(argsStr) as Record<string, unknown>
+            // apply_patch is Codex's standard file-editing tool — its edit is a unified-diff-style
+            // patch string (args.input/patch/command), not a filePath/path key, so it needs its
+            // own parse: pull the file path out of each "*** Update/Add/Delete File: <path>" header.
+            if (toolName === 'apply_patch') {
+              const patchContent = String(args.input || args.patch || args.command || args.cmd || '')
+              for (const line of patchContent.split('\n')) {
+                const m = line.match(/^\*\*\*\s+(?:Update File:|Add File:|Delete File:)?\s*(.+)/)
+                if (m) {
+                  const patchFp = m[1].trim()
+                  if (patchFp && patchFp.includes('/')) {
+                    filesChanged.add(patchFp)
+                    foundFilePath = true
+                  }
+                }
+              }
+            }
             const fp = args.filePath || args.file_path || args.path
             if (fp) {
               foundFilePath = true
@@ -157,7 +173,7 @@ export function buildCodexSessions(spans: Span[]): SessionSummaryCard[] {
                 filesRead.add(String(fp).split('/').pop() || String(fp))
               } else if (toolName === 'grep_search' || toolName === 'file_search' || toolName === 'Glob' || toolName === 'Grep') {
                 filesSearched.add(String(args.query || args.pattern || fp))
-              } else {
+              } else if (toolName !== 'apply_patch') {
                 filesChanged.add(String(fp))
               }
             }
