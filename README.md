@@ -41,7 +41,7 @@ The extension receives OTEL traces in real time **and** reads local session log 
 Works in **VS Code, Cursor, Windsurf, VSCodium, Trae, and Kiro** — install from your IDE's extension marketplace or from the VS Code Marketplace directly.
 
 1. **[Install from the VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=agentlens.agentlens-dashboard)**
-2. Open the **AgentLens** view from the Activity Bar
+2. Open the **AgentLens** view from the Activity Bar — this opens a dashboard panel inside your IDE, not a browser tab, so there's no localhost URL to visit for this mode
 3. AgentLens auto-configures OTEL telemetry for Copilot, Claude Code, and Codex — restart any running agent sessions to start streaming traces
 4. Past session history loads automatically from local log files — no extra setup needed
 
@@ -129,6 +129,8 @@ Loading is incremental and runs in the background, sorted newest-first so recent
 **What log data does not include:** time-to-first-token, per-tool execution timing, streaming speed, loop detection signals, or structured error telemetry. Enable OTEL for those. OpenCode sessions show a blue info banner in the Session Overview noting that OTEL traces and TTFT are not available.
 
 To disable log ingestion: set `agentLens.enableLogIngestion` to `false` in VS Code settings.
+
+**Clear All Data** (Settings) only deletes AgentLens' own stored copy — it never touches these source log files, and log-sourced sessions will simply be re-read on the next scan. AgentLens has no way to delete the log files themselves; do that directly at the paths above if you want them gone.
 
 ## Cost Estimation
 
