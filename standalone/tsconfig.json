@@ -4,6 +4,6 @@
     "rootDir": "..",
     "outDir": "../out/standalone"
   },
-  "include": ["server.ts", "../src/**/*.ts"],
+  "include": ["server.ts", "cli.ts", "service/**/*.ts", "../src/**/*.ts"],
   "exclude": ["../src/test", "../media"]
 }

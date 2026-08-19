@@ -10,7 +10,6 @@
 import * as http from 'http'
 import * as fs from 'fs'
 import * as path from 'path'
-import * as os from 'os'
 import { exec } from 'child_process'
 import { summarizeSpans } from '../src/spanSummarizer'
 import { calcTokenCostUsd } from '../src/pricing'
@@ -25,16 +24,23 @@ import { detectInstructionFiles, appendSuggestion } from '../src/instructionFile
 import type { Span } from '../src/types'
 import type { SessionSummaryCard } from '../src/summarizers/summarizerTypes'
 import { pruneSpans, DEFAULT_MAX_SPANS } from '../src/spanStore'
+import { readServiceConfig } from '../src/serviceConfig'
 
-const OTLP_PORT  = parseInt(process.env.OTLP_PORT  ?? '4318')
-const UI_PORT    = parseInt(process.env.UI_PORT    ?? '3000')
-const MCP_PORT   = parseInt(process.env.MCP_PORT   ?? '4316')
-const BIND_HOST  = process.env.BIND_HOST ?? '127.0.0.1'
+// `agentlens service install` persists its port/host/data-dir choices to
+// ~/.agentlens/config.json (see src/serviceConfig.ts) so a background-service install and an
+// ad-hoc `npx`/`node standalone/server.js` run share one config story. Env vars still win when
+// set, matching this server's behavior before the config file existed.
+const fileConfig = readServiceConfig()
+
+const OTLP_PORT  = parseInt(process.env.OTLP_PORT  ?? String(fileConfig.otlpPort))
+const UI_PORT    = parseInt(process.env.UI_PORT    ?? String(fileConfig.uiPort))
+const MCP_PORT   = parseInt(process.env.MCP_PORT   ?? String(fileConfig.mcpPort))
+const BIND_HOST  = process.env.BIND_HOST ?? fileConfig.bindHost
 const parsedMaxSpans = parseInt(process.env.AGENTLENS_MAX_SPANS ?? '', 10)
 const MAX_SPANS  = Number.isNaN(parsedMaxSpans) ? DEFAULT_MAX_SPANS : parsedMaxSpans
 
 const mediaDir  = path.join(__dirname, '..', 'media')
-const DATA_DIR  = process.env.DATA_DIR ?? path.join(os.homedir(), '.agentlens')
+const DATA_DIR  = process.env.DATA_DIR ?? fileConfig.dataDir
 const DATA_FILE = path.join(DATA_DIR, 'spans.json')
 
 // ── Span store with file persistence ─────────────────────────────────────────
@@ -155,7 +161,7 @@ let logReader = new LogReader()
 // ── MCP server ────────────────────────────────────────────────────────────────
 
 // Dedicated server on MCP_PORT (default 4316) — same port as the VS Code extension.
-const mcpHttpServer = startMcpHttpServer({
+startMcpHttpServer({
   getSessions: () => {
     const summary = buildSessionSummary()
     return summary?.sessions ?? []

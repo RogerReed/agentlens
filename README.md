@@ -33,6 +33,8 @@ agentlens
 Open <http://localhost:3000> after the server starts. The OTLP receiver listens on port `4318`. Configure agents to point at `http://localhost:4318` (see [Manual Configuration](#manual-configuration)).
 
 > **Log file ingestion** reads local session files from `~/.claude/`, `~/.codex/`, `~/.copilot/`, and OpenCode's SQLite database at `~/.local/share/opencode/` directly. See [Local Mode Options](#local-mode-options) for environment variables.
+>
+> **Running this in a terminal only lasts until you close it.** If AgentLens isn't running when an agent sends OTEL data, that data is lost — see [Background Service](#background-service-macos--windows--linux) to keep it running automatically.
 
 ### VS Code Extension (OTEL and log files)
 
@@ -298,6 +300,47 @@ The local server uses the same port as the VS Code extension — only one can ru
 ```bash
 OTLP_PORT=4319 UI_PORT=3001 bunx agentlens-dashboard
 ```
+
+### Background Service (macOS / Windows / Linux)
+
+> **If AgentLens isn't running, incoming OTEL data has nowhere to go and is lost** — agents don't
+> queue or retry failed exports. A terminal you forgot to reopen, a closed laptop lid, or a reboot
+> all mean a gap in your session history. Running AgentLens as a background service avoids this:
+> it starts automatically and keeps running without a terminal open.
+
+```bash
+# One command — works whether or not agentlens-dashboard is already installed globally
+npx agentlens-dashboard service install
+
+agentlens service status      # check whether it's running and reachable
+agentlens service logs        # print the service's log file
+agentlens service logs --follow
+agentlens service stop        # stop it
+agentlens service start       # start it again
+agentlens service uninstall   # remove it (your data in ~/.agentlens is untouched)
+```
+
+`service install` uses whichever OS-native mechanism fits your platform, all installed per-user
+with no admin/root privileges required:
+
+| Platform | Mechanism |
+| --- | --- |
+| macOS | `launchd` LaunchAgent — starts at login, restarts automatically if it crashes |
+| Linux | `systemd --user` unit — starts at login; add `loginctl enable-linger $USER` if you want it to keep running even when logged out (e.g. a headless box) |
+| Windows | Scheduled Task at logon — starts when you log in. (Windows has no simple no-admin equivalent to launchd/systemd's crash-restart; a true Windows Service is a heavier install requiring elevation and wasn't worth the extra friction for a per-user local tool) |
+
+Ports and data directory can be customized at install time, and are remembered across
+restarts in `~/.agentlens/config.json`:
+
+```bash
+agentlens service install --ui-port 3001 --otlp-port 4319 --data-dir ~/agentlens-data
+```
+
+Since `npx` always runs from a temporary cache with no stable path to launch from, running
+`service install` under `npx` installs `agentlens-dashboard` globally first (equivalent to
+`npm install -g agentlens-dashboard`) so the service definition has something fixed to point at.
+That also means the service runs whatever version was installed at that point — update it later
+with `npm install -g agentlens-dashboard@latest` followed by `agentlens service restart`.
 
 ### Docker (OTEL only)
 

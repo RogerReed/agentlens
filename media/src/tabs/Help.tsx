@@ -235,7 +235,7 @@ chmod +x scripts/configure-agents.sh
 .\\scripts\\configure-agents.ps1 -Agent claude
 .\\scripts\\configure-agents.ps1 -Agent codex
 .\\scripts\\configure-agents.ps1 -Agent copilot`}</pre>
-      <p style="font-size:12px;color:var(--muted);margin:0 0 0">Prefer not to run the script? Use <strong>Configure OTEL</strong> in Settings to re-apply it manually. Check the server terminal or AgentLens Output channel for configuration messages.</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 0">Prefer not to run the script? Use <strong>Configure OTEL</strong> in Settings to re-apply it manually. Check the server terminal or AgentLens Output channel for configuration messages. If the server itself isn't running, data has nowhere to go — see <a href="#help-config">Run as a Background Service</a> below to keep it running automatically.</p>
     </div>
   ) : (
     <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--warning,#ffb74d);border-radius:4px;padding:10px 14px">
@@ -342,10 +342,42 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
     <h4 style="font-size:13px;font-weight:600;margin:20px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border);color:var(--fg)">Manual Configuration</h4>
   )
 
+  const backgroundServiceNote = standalone ? (
+    <div style="margin-bottom:20px;background:var(--hover);border:1px solid var(--border);border-left:3px solid var(--accent,#42a5f5);border-radius:4px;padding:10px 14px">
+      <p style="font-size:12px;font-weight:600;margin:0 0 8px;color:var(--foreground)">Run as a Background Service</p>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        If AgentLens isn't running, incoming OTEL data has nowhere to go and is lost — agents don't queue
+        or retry failed exports. Running it in a terminal only lasts until that terminal closes, so a forgotten
+        window, a closed laptop lid, or a reboot means a gap in your session history. Installing it as a
+        background service keeps it running automatically instead:
+      </p>
+      <pre style="font-size:12px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre">{`npx agentlens-dashboard service install`}</pre>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
+        Works as a single command whether or not <code style={codeStyle}>agentlens-dashboard</code> is
+        already installed — if it's running via <code style={codeStyle}>npx</code>, which has no stable
+        location to launch from later, it installs the package globally first (visibly, printing what
+        it's doing) and then continues. On macOS this registers a <code style={codeStyle}>launchd</code> LaunchAgent,
+        on Linux a <code style={codeStyle}>systemd --user</code> unit, and on Windows a Scheduled Task —
+        all per-user, no admin/root privileges needed. Once installed, it starts automatically at login
+        (and immediately on install) and restarts itself if it crashes.
+      </p>
+      <p style="font-size:12px;color:var(--muted);margin:0">
+        <code style={codeStyle}>agentlens service status</code> checks whether it's running,{' '}
+        <code style={codeStyle}>logs</code> (or <code style={codeStyle}>logs --follow</code>) shows its
+        output, <code style={codeStyle}>stop</code>/<code style={codeStyle}>start</code>/<code style={codeStyle}>restart</code> control
+        it, and <code style={codeStyle}>uninstall</code> removes it — your data in{' '}
+        <code style={codeStyle}>~/.agentlens</code> is untouched either way. See{' '}
+        <a href="https://github.com/RogerReed/agentlens#background-service-macos--windows--linux" target="_blank" rel="noreferrer">the README</a> for
+        the full command reference and custom port/data-dir options.
+      </p>
+    </div>
+  ) : null
+
   return (
     <div class="help-section" id="help-config">
       <h3 class="help-heading">{HELP_SECTIONS.config.heading}</h3>
       {callout}
+      {backgroundServiceNote}
       {manualHeading}
       {portNote}
       {copilotSection}
