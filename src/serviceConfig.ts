@@ -103,6 +103,30 @@ export function isRunningFromNpx(userAgent: string | undefined, scriptPath: stri
   return /[\\/]_npx[\\/]/.test(scriptPath) || /[\\/]\.npm[\\/]_npx[\\/]/.test(scriptPath)
 }
 
+// ── npx-bootstrap re-exec guard ──────────────────────────────────────────────
+//
+// `child_process.execFileSync` inherits the parent's environment by default. Without this,
+// re-invoking `agentlens service install` after the global-install bootstrap would still carry
+// the original npm_config_user_agent (containing "npx/...") into the child — isRunningFromNpx
+// would see that stale value and bootstrap again, forever, even though the child is by then
+// correctly running from the global install. childEnvForReexec strips it (so the child's own
+// npx check gets an honest read) and stamps a marker; shouldBlockRepeatedBootstrap checks that
+// marker so any *other* undiscovered path to the same failure mode fails loudly instead of
+// looping.
+
+export const REEXEC_GUARD_ENV = 'AGENTLENS_SERVICE_BOOTSTRAPPED'
+
+export function shouldBlockRepeatedBootstrap(env: NodeJS.ProcessEnv): boolean {
+  return env[REEXEC_GUARD_ENV] === '1'
+}
+
+export function childEnvForReexec(parentEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const env = { ...parentEnv }
+  delete env.npm_config_user_agent
+  env[REEXEC_GUARD_ENV] = '1'
+  return env
+}
+
 // ── Service-definition generators (pure string builders) ────────────────────
 
 export interface ServiceProgram {
