@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.12.1] — 2026-08-18
+
+### Fixed
+
+- **`agentlens service install` looped forever reinstalling itself when run via `npx`**, introduced in v0.12.0's background-service feature — after bootstrapping a global install, it re-invoked itself to continue, but that re-exec inherited the parent process's environment, including the original `npx`-flavored `npm_config_user_agent`, so the freshly-installed child still looked like it was running via `npx` and bootstrapped again, endlessly, until manually interrupted. Now strips that stale environment variable before the re-exec and adds a hard recursion guard so any other undiscovered path to the same failure mode fails loudly instead of looping (#208)
+
+---
+
 ## [0.12.0] — 2026-08-18
 
 ### Added
