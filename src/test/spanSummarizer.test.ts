@@ -543,6 +543,77 @@ suite('SpanSummarizer', () => {
       assert.deepStrictEqual(codex?.filesChanged.sort(), ['src/newThing.ts', 'src/summarizers/codex.ts'])
     })
 
+    test('treats a read-only shell command as a file read, not a change', () => {
+      const spans: Span[] = [
+        makeSpan({
+          traceId: 'codex-shell-read-trace',
+          name: 'codex.user_message',
+          attributes: [makeAttr('user_prompt', 'Where is dispose() defined?')],
+        }),
+        makeSpan({
+          traceId: 'codex-shell-read-trace',
+          name: 'codex.tool_result',
+          attributes: [
+            makeAttr('tool_name', 'exec_command'),
+            makeAttr('arguments', JSON.stringify({ cmd: 'rg -n "dispose\\(\\)" src/foo.ts' })),
+          ],
+        }),
+      ]
+
+      const result = summarizeSpans(spans)
+      const codex = result.sessions.find(s => s.source === 'codex')
+      assert.ok(codex)
+      assert.deepStrictEqual(codex?.filesChanged, [])
+      assert.ok(codex?.filesRead.includes('foo.ts'))
+    })
+
+    test('treats a shell command with an explicit write signal as a file change', () => {
+      const spans: Span[] = [
+        makeSpan({
+          traceId: 'codex-shell-write-trace',
+          name: 'codex.user_message',
+          attributes: [makeAttr('user_prompt', 'Fix the typo in-place')],
+        }),
+        makeSpan({
+          traceId: 'codex-shell-write-trace',
+          name: 'codex.tool_result',
+          attributes: [
+            makeAttr('tool_name', 'exec_command'),
+            makeAttr('arguments', JSON.stringify({ cmd: "sed -i 's/teh/the/' src/foo.ts" })),
+          ],
+        }),
+      ]
+
+      const result = summarizeSpans(spans)
+      const codex = result.sessions.find(s => s.source === 'codex')
+      assert.ok(codex)
+      assert.deepStrictEqual(codex?.filesChanged, ['src/foo.ts'])
+      assert.deepStrictEqual(codex?.filesRead, [])
+    })
+
+    test('treats output redirection into a file as a change', () => {
+      const spans: Span[] = [
+        makeSpan({
+          traceId: 'codex-shell-redirect-trace',
+          name: 'codex.user_message',
+          attributes: [makeAttr('user_prompt', 'Write the log to a file')],
+        }),
+        makeSpan({
+          traceId: 'codex-shell-redirect-trace',
+          name: 'codex.tool_result',
+          attributes: [
+            makeAttr('tool_name', 'exec_command'),
+            makeAttr('arguments', JSON.stringify({ cmd: 'echo "done" > src/status.txt' })),
+          ],
+        }),
+      ]
+
+      const result = summarizeSpans(spans)
+      const codex = result.sessions.find(s => s.source === 'codex')
+      assert.ok(codex)
+      assert.deepStrictEqual(codex?.filesChanged, ['src/status.txt'])
+    })
+
     test('shows Codex tool_result output on the summary tool step', () => {
       const spans: Span[] = [
         makeSpan({
