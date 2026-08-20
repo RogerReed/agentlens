@@ -614,6 +614,36 @@ suite('SpanSummarizer', () => {
       assert.deepStrictEqual(codex?.filesChanged, ['src/status.txt'])
     })
 
+    test('treats "git add && git commit" as a file change, not a read', () => {
+      // Regression: git add/commit don't rewrite the file's bytes, but they're exactly how an
+      // agent finalizes an already-edited file, and are frequently the only shell evidence of a
+      // touched file when the tool call that actually wrote it didn't parse cleanly. Real-world
+      // command captured from a user report of files wrongly showing up as reads.
+      const spans: Span[] = [
+        makeSpan({
+          traceId: 'codex-shell-git-commit-trace',
+          name: 'codex.user_message',
+          attributes: [makeAttr('user_prompt', 'Commit the fix')],
+        }),
+        makeSpan({
+          traceId: 'codex-shell-git-commit-trace',
+          name: 'codex.tool_result',
+          attributes: [
+            makeAttr('tool_name', 'exec_command'),
+            makeAttr('arguments', JSON.stringify({
+              cmd: 'git add src/foo.ts && git commit --amend --no-edit && git status --short',
+            })),
+          ],
+        }),
+      ]
+
+      const result = summarizeSpans(spans)
+      const codex = result.sessions.find(s => s.source === 'codex')
+      assert.ok(codex)
+      assert.deepStrictEqual(codex?.filesChanged, ['src/foo.ts'])
+      assert.deepStrictEqual(codex?.filesRead, [])
+    })
+
     test('shows Codex tool_result output on the summary tool step', () => {
       const spans: Span[] = [
         makeSpan({
