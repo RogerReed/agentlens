@@ -2,6 +2,15 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.12.3] — 2026-08-23
+
+### Added
+
+- **`agentlens service update`** — the background service (installed via `agentlens service install`) never auto-updates; it keeps running whatever version was installed until updated manually. Previously that required two separate commands (`npm install -g agentlens-dashboard@latest` then `agentlens service restart`) documented only in a single README sentence, with no mention in the CLI's own `--help` text or the in-app Help page. The new command does both steps together, reports the before/after version, and is now surfaced in all three places (#212)
+- **Version number shown at startup and on the Help page** — the VS Code extension's output channel and the standalone server's startup banner now log the running version as their first line, and the in-app Help page shows it in the upper-right corner of its navigation bar, in both VS Code and standalone/npx mode (#211)
+
+---
+
 ## [0.12.2] — 2026-08-23
 
 ### Fixed
