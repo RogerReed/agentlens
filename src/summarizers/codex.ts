@@ -17,7 +17,12 @@ const SHELL_WRITE_SIGNS = [
   /\btee\b/,
   /\bsed\b.*(^|\s)-i\b/,     // sed -i: in-place edit (plain `sed` without -i only prints to stdout)
   /\b(mv|cp|rm|rmdir|mkdir|touch|chmod|ln)\b/,
-  /\bgit\s+apply\b/,
+  // git subcommands that finalize a file's state as part of the agent's work — `git add`/`commit`
+  // don't rewrite the file's bytes themselves, but from a "what did this session touch" view they're
+  // exactly how an edited file gets wrapped up, and are frequently the ONLY shell evidence of a file
+  // touched by a tool call whose own arguments didn't carry a usable file path (e.g. a failed/atypical
+  // apply_patch parse). Without these, "git add foo.ts && git commit" reads as a no-op.
+  /\bgit\s+(apply|add|commit|rm|mv|restore|checkout|cherry-pick|revert|merge|rebase|stash)\b/,
   /\bpatch\b/,
   /--write\b|--fix\b/,       // prettier --write, eslint --fix, etc.
 ]
