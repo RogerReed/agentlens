@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.12.2] — 2026-08-23
+
+### Fixed
+
+- **Codex sessions that finalized an edit via `git add`/`git commit` (or other git write/history-rewriting subcommands run through the shell) weren't counted as file changes** — a regression from v0.12.0's read-vs-write shell-command classification fix (#205), which only recognized a narrow set of write signals (redirection, `sed -i`, `mv`/`cp`/`rm`, `git apply`) and missed the common workflow of `git add <file> && git commit`, so every file staged/committed via shell was misclassified as merely read instead of changed. Added `add`, `commit`, `rm`, `mv`, `restore`, `checkout`, `cherry-pick`, `revert`, `merge`, `rebase`, and `stash` to the write-signal list (#210)
+
+---
+
 ## [0.12.1] — 2026-08-18
 
 ### Fixed
