@@ -87,7 +87,7 @@ async function detectPortOwner(port: number): Promise<'plugin' | 'standalone' | 
 export async function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel('AgentLens')
   context.subscriptions.push(outputChannel)
-  outputChannel.appendLine('AgentLens activating…')
+  outputChannel.appendLine(`AgentLens activating… (v${context.extension.packageJSON.version})`)
 
   // ── Database ────────────────────────────────────────────────────────────────
   try {

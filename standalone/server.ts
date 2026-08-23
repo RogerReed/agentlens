@@ -39,6 +39,9 @@ const BIND_HOST  = process.env.BIND_HOST ?? fileConfig.bindHost
 const parsedMaxSpans = parseInt(process.env.AGENTLENS_MAX_SPANS ?? '', 10)
 const MAX_SPANS  = Number.isNaN(parsedMaxSpans) ? DEFAULT_MAX_SPANS : parsedMaxSpans
 
+const PACKAGE_VERSION: string = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')).version
+console.log(`[AgentLens] Version         ${PACKAGE_VERSION}`)
+
 const mediaDir  = path.join(__dirname, '..', 'media')
 const DATA_DIR  = process.env.DATA_DIR ?? fileConfig.dataDir
 const DATA_FILE = path.join(DATA_DIR, 'spans.json')
@@ -726,6 +729,7 @@ function getHtml(): string {
     window.__INITIAL_SESSION_SUMMARY__ = ${sessionSummaryJson};
     window.__MASCOT_URI__ = '/help-mascot.png';
     window.__STANDALONE__ = true;
+    window.__VERSION__ = ${JSON.stringify(PACKAGE_VERSION)};
 
     // ── Client-side search support ────────────────────────────────────────────
     var __latestSessions__ = (window.__INITIAL_SESSION_SUMMARY__ && window.__INITIAL_SESSION_SUMMARY__.sessions) || [];
