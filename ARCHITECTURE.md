@@ -959,7 +959,18 @@ flowchart TD
     CFG --> LOG[All 3 platforms redirect stdout/stderr<br/>to dataDir/logs/service.log]
 
     STATUS["agentlens service status"] --> PROBE["HTTP GET http://bindHost:uiPort/<br/>(same convention as the Dockerfile HEALTHCHECK)"]
+
+    UPDATE["agentlens service update"] --> NPMLATEST["npm install -g agentlens-dashboard@latest"]
+    NPMLATEST --> RESTART["platformService.restart&#40;&#41;<br/>(re-execs whatever now sits at the same install path)"]
 ```
+
+A global install pins a version — unlike `npx`, which always resolves latest, a service definition
+points at a fixed on-disk path that only changes when something overwrites it. `update` is that
+"something": it shells out to `npm install -g agentlens-dashboard@latest` (overwriting the files at
+the path already baked into the service definition) and then restarts, so no service definition
+rewrite is needed. `standalone/service/index.ts`'s `readGlobalVersion()` reads the installed
+package's `package.json` before and after so the command can report what actually changed (or that
+it was already current).
 
 `standalone/server.ts` reads `~/.agentlens/config.json` at startup as a fallback underneath the
 existing `OTLP_PORT`/`UI_PORT`/`MCP_PORT`/`BIND_HOST`/`DATA_DIR` env vars (env var still wins if
