@@ -317,8 +317,13 @@ agentlens service logs        # print the service's log file
 agentlens service logs --follow
 agentlens service stop        # stop it
 agentlens service start       # start it again
+agentlens service update      # upgrade to the latest version and restart on it
 agentlens service uninstall   # remove it (your data in ~/.agentlens is untouched)
 ```
+
+> **Installing the background service does not make it auto-update.** It keeps running whatever
+> version was installed until you run `agentlens service update` yourself — that pulls the latest
+> `agentlens-dashboard` from npm and restarts the service on it.
 
 `service install` uses whichever OS-native mechanism fits your platform, all installed per-user
 with no admin/root privileges required:
@@ -339,8 +344,6 @@ agentlens service install --ui-port 3001 --otlp-port 4319 --data-dir ~/agentlens
 Since `npx` always runs from a temporary cache with no stable path to launch from, running
 `service install` under `npx` installs `agentlens-dashboard` globally first (equivalent to
 `npm install -g agentlens-dashboard`) so the service definition has something fixed to point at.
-That also means the service runs whatever version was installed at that point — update it later
-with `npm install -g agentlens-dashboard@latest` followed by `agentlens service restart`.
 
 ### Docker (OTEL only)
 

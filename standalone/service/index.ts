@@ -49,6 +49,10 @@ Commands:
   start             Start the installed service.
   stop              Stop the installed service.
   restart           Restart the installed service.
+  update            Install the latest agentlens-dashboard from npm and restart
+                    the service on it. This is how you upgrade — installing a
+                    background service does NOT auto-update; it keeps running
+                    whatever version was installed until you run this.
   status            Check whether the service is running and reachable.
   logs [--follow]   Print (or tail) the service's log file.
 
@@ -66,6 +70,20 @@ terminal, or a reboot.`)
 function resolveGlobalCliPath(): string {
   const globalRoot = execFileSync('npm', ['root', '-g'], { encoding: 'utf-8' }).trim()
   return path.join(globalRoot, 'agentlens-dashboard', 'standalone', 'cli.js')
+}
+
+/** Reads the version of the globally-installed package straight off disk — used to report what
+ *  `service update` actually changed, since `npm install -g` prints its own noisy log rather than
+ *  a clean before/after. */
+function readGlobalVersion(): string | undefined {
+  try {
+    const globalRoot = execFileSync('npm', ['root', '-g'], { encoding: 'utf-8' }).trim()
+    const pkgPath = path.join(globalRoot, 'agentlens-dashboard', 'package.json')
+    if (!fs.existsSync(pkgPath)) return undefined
+    return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version
+  } catch {
+    return undefined
+  }
 }
 
 /** npx runs from an ephemeral cache with no stable path a service definition can point
@@ -164,6 +182,21 @@ export async function runServiceCli(args: string[]): Promise<number> {
     case 'restart':
       platformService.restart()
       return 0
+    case 'update': {
+      const before = readGlobalVersion()
+      console.log('[AgentLens] Updating agentlens-dashboard to the latest version:')
+      console.log('  npm install -g agentlens-dashboard@latest')
+      execFileSync('npm', ['install', '-g', 'agentlens-dashboard@latest'], { stdio: 'inherit' })
+      const after = readGlobalVersion()
+      if (before && after && before === after) {
+        console.log(`[AgentLens] Already up to date (v${after}) — no restart needed.`)
+        return 0
+      }
+      console.log(`[AgentLens] Updated${before ? ` v${before} →` : ''} v${after ?? '(unknown)'}. Restarting the background service...`)
+      platformService.restart()
+      console.log('[AgentLens] Background service restarted on the new version.')
+      return 0
+    }
     case 'status': {
       const config = readServiceConfig()
       const running = await platformService.status(config.uiPort, config.bindHost)

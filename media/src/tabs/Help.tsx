@@ -366,7 +366,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
         all per-user, no admin/root privileges needed. Once installed, it starts automatically at login
         (and immediately on install) and restarts itself if it crashes.
       </p>
-      <p style="font-size:12px;color:var(--muted);margin:0">
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
         <code style={codeStyle}>agentlens service status</code> checks whether it's running,{' '}
         <code style={codeStyle}>logs</code> (or <code style={codeStyle}>logs --follow</code>) shows its
         output, <code style={codeStyle}>stop</code>/<code style={codeStyle}>start</code>/<code style={codeStyle}>restart</code> control
@@ -374,6 +374,12 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
         <code style={codeStyle}>~/.agentlens</code> is untouched either way. See{' '}
         <a href="https://github.com/RogerReed/agentlens#background-service-macos--windows--linux" target="_blank" rel="noreferrer">the README</a> for
         the full command reference and custom port/data-dir options.
+      </p>
+      <p style="font-size:12px;color:var(--muted);margin:0;background:var(--panel-bg);border-radius:3px;padding:8px 10px">
+        <strong style="color:var(--fg)">The background service does not auto-update.</strong> It keeps
+        running whatever version was installed until you run{' '}
+        <code style={codeStyle}>agentlens service update</code>, which installs the latest{' '}
+        <code style={codeStyle}>agentlens-dashboard</code> from npm and restarts the service on it.
       </p>
     </div>
   ) : null
