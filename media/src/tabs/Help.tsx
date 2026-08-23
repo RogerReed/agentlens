@@ -1018,9 +1018,14 @@ export function Help() {
       <ImportSection />
       <BadgesSection />
       <GlossarySection />
-      <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">
-        <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
-      </p>
+      <div style="margin-top:24px;padding-top:12px;border-top:1px solid var(--border)">
+        {window.__VERSION__ && (
+          <p style="font-size:11px;color:var(--muted);margin:0 0 8px">AgentLens v{window.__VERSION__}</p>
+        )}
+        <p style="font-size:11px;color:var(--muted);margin:0;line-height:1.6">
+          <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
+        </p>
+      </div>
     </div>
   )
 }
