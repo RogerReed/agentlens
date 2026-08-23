@@ -138,8 +138,13 @@ function Toc() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: 'html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc a{display:inline-block;padding:3px 11px;border-radius:12px;font-size:11px;font-weight:500;color:var(--muted);text-decoration:none;border:1px solid var(--border);transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover);border-color:var(--fg)}' }} />
-      <nav class="help-toc" aria-label="Help sections" style="position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 0 8px;margin:0 -16px 20px -12px;padding-left:12px;display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">
-        {TOC_SECTIONS.map(s => <a href={s.href}>{s.heading}</a>)}
+      <nav class="help-toc" aria-label="Help sections" style="position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 12px 8px 0;margin:0 -16px 20px -12px;display:flex;align-items:center;gap:12px">
+        <div style="display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;padding-left:12px">
+          {TOC_SECTIONS.map(s => <a href={s.href}>{s.heading}</a>)}
+        </div>
+        {window.__VERSION__ && (
+          <span style="font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0">v{window.__VERSION__}</span>
+        )}
       </nav>
     </>
   )
@@ -1018,14 +1023,9 @@ export function Help() {
       <ImportSection />
       <BadgesSection />
       <GlossarySection />
-      <div style="margin-top:24px;padding-top:12px;border-top:1px solid var(--border)">
-        {window.__VERSION__ && (
-          <p style="font-size:11px;color:var(--muted);margin:0 0 8px">AgentLens v{window.__VERSION__}</p>
-        )}
-        <p style="font-size:11px;color:var(--muted);margin:0;line-height:1.6">
-          <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
-        </p>
-      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">
+        <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
+      </p>
     </div>
   )
 }
