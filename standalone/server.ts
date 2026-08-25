@@ -19,6 +19,7 @@ import { startMcpHttpServer } from '../src/mcpServer'
 import { LogReader, type OpenCodeSqlFactory } from '../src/logReader'
 import { computeOneShotStats } from '../src/oneShotRate'
 import { classifySessionOutcome, type GitOutcome } from '../src/gitOutcome'
+import { detectSessionRiskSignals } from '../src/sessionRiskSignals'
 import { generateSuggestions } from '../src/instructionAdvisor'
 import { detectInstructionFiles, appendSuggestion } from '../src/instructionFiles'
 import type { Span } from '../src/types'
@@ -1474,8 +1475,13 @@ const uiServer = http.createServer((req, res) => {
           )
           gitOutcomeCache.set(sessionId, outcome)
         }
+        // Post-hoc risk signals (hallucinated import, submitted-despite-a-failing-check) are only
+        // knowable once the session is complete, same lifecycle as git-outcome classification —
+        // computed here rather than eagerly for every session. See sessionRiskSignals.ts.
+        const card = buildSessionSummary()?.sessions.find(s => s.sessionId === sessionId) ?? null
+        const riskSignals = card ? detectSessionRiskSignals(card, body.workspace ?? '') : []
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ sessionId, outcome }))
+        res.end(JSON.stringify({ sessionId, outcome, riskSignals }))
       } catch (e) {
         console.warn('[AgentLens] Malformed /api/git-outcome body:', e)
         res.writeHead(400); res.end()
