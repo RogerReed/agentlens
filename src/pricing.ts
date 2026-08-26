@@ -1,6 +1,6 @@
 // Pricing data for extension-host cost computation (cost_usd stored in sessions table).
 // Rate table is kept in sync with media/src/pricing.ts — update both when rates change.
-// PRICING_LAST_UPDATED: 2026-08-12
+// PRICING_LAST_UPDATED: 2026-08-26
 
 export interface ModelRates {
   inputPerMTok: number
@@ -62,15 +62,36 @@ const RATES: Record<string, ModelRates> = {
   'gpt-5.6-terra':      { inputPerMTok: 2.00,  cacheReadPerMTok: 0.20,   cacheWritePerMTok: 2.50, outputPerMTok: 12.00, contextWindowTokens: 256_000,
                           longContextThresholdTokens: 272_000,
                           inputAboveThresholdPerMTok: 4.00, cacheReadAboveThresholdPerMTok: 0.40, cacheWriteAboveThresholdPerMTok: 5.00, outputAboveThresholdPerMTok: 18.00 },
-  'gpt-5.6-sol':        { inputPerMTok: 5.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 6.25, outputPerMTok: 30.00, contextWindowTokens: 256_000,
+  // gpt-5.6-sol: corrected 2026-08-26 — OpenAI's own API page dropped this from $5.00/$0.50/$6.25/$30.00 to
+  // $4.00/$0.40/$5.00/$20.00 (long-context tier $10.00/$1.00/$12.50/$45.00 → $8.00/$0.80/$10.00/$30.00), noted on
+  // the source page as "promotional pricing... at least through November 21, 2026" — re-check sooner than usual.
+  // Copilot additionally layers its own extra 50% promotional discount on top of this for Copilot-sourced sessions
+  // specifically ($2.00/$0.20/$2.50/$10.00) — not modeled here, since RATES has one shared rate per model
+  // regardless of source agent; see PRICING_SOURCES.md Known gaps. Codex/API-sourced sessions price correctly;
+  // Copilot-sourced sessions using this model will show roughly 2x their actual cost until that discount ends.
+  'gpt-5.6-sol':        { inputPerMTok: 4.00,  cacheReadPerMTok: 0.40,   cacheWritePerMTok: 5.00, outputPerMTok: 20.00, contextWindowTokens: 256_000,
                           longContextThresholdTokens: 272_000,
-                          inputAboveThresholdPerMTok: 10.00, cacheReadAboveThresholdPerMTok: 1.00, cacheWriteAboveThresholdPerMTok: 12.50, outputAboveThresholdPerMTok: 45.00 },
+                          inputAboveThresholdPerMTok: 8.00, cacheReadAboveThresholdPerMTok: 0.80, cacheWriteAboveThresholdPerMTok: 10.00, outputAboveThresholdPerMTok: 30.00 },
+  // gpt-5.6-cyber: added 2026-08-26 — new on OpenAI's API pricing page. Short-context only; no long-context tier
+  // listed on the source page (unlike the rest of the 5.6 family).
+  'gpt-5.6-cyber':      { inputPerMTok: 12.50, cacheReadPerMTok: 1.25,   cacheWritePerMTok: 15.625, outputPerMTok: 75.00, contextWindowTokens: 0 },
+  // gpt-4.1-nano, gpt-5-nano, gpt-5 (base): added 2026-08-26 — confirmed on OpenAI's general API pricing page, but
+  // not independently confirmed as reachable through Copilot or Codex CLI specifically (neither's own docs
+  // mentioned them this pass). Added on this file's existing philosophy that a model which never appears in
+  // telemetry costs nothing to have listed, while one that does and isn't listed silently shows ~$?.
+  'gpt-4.1-nano':       { inputPerMTok: 0.10,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 0.40,  contextWindowTokens: 1_000_000 },
+  'gpt-5-nano':         { inputPerMTok: 0.05,  cacheReadPerMTok: 0.005,  cacheWritePerMTok: 0, outputPerMTok: 0.40,  contextWindowTokens: 0 },
+  'gpt-5':              { inputPerMTok: 1.25,  cacheReadPerMTok: 0.125,  cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 0 },
   // ── Copilot marketplace third-party models ──────────────────────────────────
   // These four were already present in media/src/pricing.ts (browser-side) but missing here — a real sync gap
   // that made cost_usd store as 0 (not ~$?) for any Copilot session using them, silently under-reporting rather
   // than flagging as unknown. Added 2026-08-12 to restore parity; rates confirmed against the Copilot pricing page.
   // grok-4.5: long-context surcharge above 200K tokens/call confirmed 2026-08-12 (2x input/cache-read, 1.5x output).
   'grok-4.5':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 0,
+                          longContextThresholdTokens: 200_000,
+                          inputAboveThresholdPerMTok: 4.00, cacheReadAboveThresholdPerMTok: 1.00, outputAboveThresholdPerMTok: 12.00 },
+  // grok-4.6: added 2026-08-26 — new on the Copilot pricing page, same rate structure as grok-4.5.
+  'grok-4.6':           { inputPerMTok: 2.00,  cacheReadPerMTok: 0.50,   cacheWritePerMTok: 0, outputPerMTok: 6.00,  contextWindowTokens: 0,
                           longContextThresholdTokens: 200_000,
                           inputAboveThresholdPerMTok: 4.00, cacheReadAboveThresholdPerMTok: 1.00, outputAboveThresholdPerMTok: 12.00 },
   'kimi-k3':            { inputPerMTok: 3.00,  cacheReadPerMTok: 0.30,   cacheWritePerMTok: 0, outputPerMTok: 15.00, contextWindowTokens: 0 },
@@ -121,8 +142,11 @@ const RATES: Record<string, ModelRates> = {
                        longContextThresholdTokens: 200_000,
                        inputAboveThresholdPerMTok: 4.00, cacheReadAboveThresholdPerMTok: 0.40, outputAboveThresholdPerMTok: 18.00 },
   'gemini-3.5-flash':{ inputPerMTok: 1.50, cacheReadPerMTok: 0.15,  cacheWritePerMTok: 0, outputPerMTok:  9.00, contextWindowTokens: 1_000_000 },
-  // gemini-3.6-flash: added 2026-08-07, new on the Copilot pricing page.
-  'gemini-3.6-flash':{ inputPerMTok: 1.50, cacheReadPerMTok: 0.15,  cacheWritePerMTok: 0, outputPerMTok:  7.50, contextWindowTokens: 1_000_000 },
+  // gemini-3.6-flash: corrected 2026-08-26 — was $1.50/$0.15/$7.50, Copilot's pricing page now shows
+  // $0.75/$0.075/$3.75, labeled "promotional pricing through Dec 31, 2026."
+  'gemini-3.6-flash':{ inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok:  3.75, contextWindowTokens: 1_000_000 },
+  // gemini-3.7-flash: added 2026-08-26 — new on the Copilot pricing page, same promotional rate as 3.6-flash above.
+  'gemini-3.7-flash':{ inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok:  3.75, contextWindowTokens: 1_000_000 },
   // ── Fine-tuned ─────────────────────────────────────────────────────────────
   // raptor-mini: no longer an included/$0 model as of the 2026-07-19 Copilot pricing page — now billed at standard rates.
   'raptor-mini': { inputPerMTok: 0.25, cacheReadPerMTok: 0.025, cacheWritePerMTok: 0, outputPerMTok:  2.00,  contextWindowTokens: 0 },
