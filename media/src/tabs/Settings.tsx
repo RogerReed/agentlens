@@ -40,10 +40,46 @@ function ToggleRow({ label, description, checked, onChange }: {
   )
 }
 
-const THEME_OPTIONS: Array<{ value: ThemePreference; label: string }> = [
-  { value: 'system', label: 'System' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'light', label: 'Light' },
+// Matches the stroke-icon style already used for the settings/bell/refresh icons in App.tsx
+// (24x24 viewBox, stroke-width 2, currentColor) rather than introducing a second icon convention.
+function IconMonitor() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="17" x2="12" y2="21" />
+    </svg>
+  )
+}
+
+function IconMoon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  )
+}
+
+function IconSun() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block">
+      <circle cx="12" cy="12" r="4" />
+      <line x1="12" y1="2" x2="12" y2="4" />
+      <line x1="12" y1="20" x2="12" y2="22" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="2" y1="12" x2="4" y2="12" />
+      <line x1="20" y1="12" x2="22" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  )
+}
+
+const THEME_OPTIONS: Array<{ value: ThemePreference; label: string; Icon: () => preact.JSX.Element }> = [
+  { value: 'system', label: 'System', Icon: IconMonitor },
+  { value: 'dark', label: 'Dark', Icon: IconMoon },
+  { value: 'light', label: 'Light', Icon: IconSun },
 ]
 
 // Standalone only — the VS Code webview always follows the IDE's own theme (VS Code already has
@@ -61,8 +97,9 @@ export function ThemeToggle() {
             key={opt.value}
             onClick={() => setThemePreference(opt.value)}
             aria-pressed={current === opt.value}
-            style={`flex:1;padding:5px 8px;font-size:11px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:${current === opt.value ? 'var(--accent)' : 'transparent'};color:${current === opt.value ? '#fff' : 'var(--fg)'}`}
+            style={`flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:5px 8px;font-size:11px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:${current === opt.value ? 'var(--accent)' : 'transparent'};color:${current === opt.value ? '#fff' : 'var(--fg)'}`}
           >
+            <opt.Icon />
             {opt.label}
           </button>
         ))}

@@ -678,8 +678,13 @@ function getHtml(): string {
        Not used in the VS Code webview at all — that has its own HTML in
        src/dashboardPanel.ts and always inherits the IDE's real --vscode-* values. ── */
 
-    /* Light palette — the default, before any media query or explicit override applies. */
+    /* Light palette — the default, before any media query or explicit override applies.
+       color-scheme tells the browser which mode *native* form control chrome (dropdowns,
+       checkboxes, date pickers) should render in — without it, those follow the OS/browser's own
+       dark-mode detection independently of the custom colors above, which is why they kept
+       rendering dark even when everything else correctly switched to light. */
     :root {
+      color-scheme: light;
       --vscode-editor-background:       #ffffff;
       --vscode-foreground:              #1f2328;
       --vscode-panel-border:            #d0d7de;
@@ -701,6 +706,7 @@ function getHtml(): string {
     /* System preference is dark, and the user hasn't explicitly forced Light. */
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
+        color-scheme: dark;
         --vscode-editor-background:       #1e1e1e;
         --vscode-foreground:              #cccccc;
         --vscode-panel-border:            #3e3e42;
@@ -721,6 +727,7 @@ function getHtml(): string {
 
     /* Explicit Dark override, regardless of system preference. */
     :root[data-theme="dark"] {
+      color-scheme: dark;
       --vscode-editor-background:       #1e1e1e;
       --vscode-foreground:              #cccccc;
       --vscode-panel-border:            #3e3e42;

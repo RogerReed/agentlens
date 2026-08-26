@@ -103,7 +103,7 @@ function ConfigPanel() {
           title="Close (Esc)"
         >×</button>
       </div>
-      {!vscode && <ThemeToggle />}
+      {window.__STANDALONE__ === true && <ThemeToggle />}
       <IngestionToggles />
       <OtelReconfigureButton />
       <McpToggle />
