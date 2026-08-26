@@ -1,13 +1,21 @@
 /**
  * Loop and malfunction detector for agent sessions.
  *
- * Detects 5 signal types that indicate an agent is stuck in a loop or spiraling:
+ * Detects 8 signal types that indicate an agent is stuck, spiraling, or working unreliably:
  *
- *   1. exact_tool_repeat  — identical tool call (by label) executed 3+ times
- *   2. edit_revert_cycle  — a file was edited then reverted to a prior state
- *   3. error_recurrence   — the same error message appearing 3+ times
- *   4. runaway_steps      — too many steps relative to inferred task complexity
- *   5. token_runaway      — context growing rapidly while output stays flat/declines
+ *   1. exact_tool_repeat     — identical tool call (by label) executed 3+ times
+ *   2. edit_revert_cycle     — a file was edited then reverted to a prior state
+ *   3. error_recurrence      — the same error message appearing 3+ times
+ *   4. runaway_steps         — too many steps relative to inferred task complexity
+ *   5. token_runaway         — context growing rapidly while output stays flat/declines
+ *   6. chronic_tool_failures — an unusually high share of tool calls in the session failed
+ *   7. context_flooding_risk — a tool call returned a result too large for the model to use well
+ *   8. malformed_tool_call   — the agent's own harness rejected a call before it even executed
+ *
+ * The last 3 started as ad-hoc frontend-only checks (media/src/tabs/Insights.tsx) and a new
+ * pattern found during a later failure-mode review, promoted here so MCP tools and the
+ * Instruction Advisor's cross-session aggregation — everything that reads session.loopSignals —
+ * can see them too, not just the Insights tab.
  *
  * Each detector is exported individually so tests can exercise them in isolation.
  */
@@ -17,12 +25,15 @@ import { SessionSummaryCard } from './spanSummarizer'
 
 // ── Pattern taxonomy names ───────────────────────────────────────────────────
 
-const PATTERN_NAMES: Record<LoopSignalType, string> = {
+export const PATTERN_NAMES: Record<LoopSignalType, string> = {
   exact_tool_repeat: 'Tool Call Deadlock',
   edit_revert_cycle: 'State Corruption Spiral',
   error_recurrence:  'Hallucination Amplification Loop',
   runaway_steps:     'Ambiguous Success / Escalating Scope',
   token_runaway:     'Infinite Loop — Context Accumulation',
+  chronic_tool_failures: 'Chronic Tool Unreliability',
+  context_flooding_risk: 'Context Flooding Risk',
+  malformed_tool_call:   'Malformed Tool Call',
 }
 
 // ── Actionable recommendations per signal type ──────────────────────────────
@@ -53,6 +64,20 @@ export const LOOP_SIGNAL_ACTIONS: Record<LoopSignalType, string> = {
     'Input context is growing rapidly while useful output is declining — the agent is accumulating context without making forward progress. '
     + 'This pattern often accompanies tool-call loops or repeated failed fixes. '
     + 'Start a fresh session with a focused prompt, or explicitly tell the agent what it has already tried and what to do differently.',
+
+  chronic_tool_failures:
+    'A high share of this session\'s tool calls failed — well above the ordinary rate of an occasional wrong path corrected along the way. '
+    + 'Be explicit in your prompt about file locations, available commands, and the runtime/package manager in use. '
+    + 'Verify paths and commands exist before asking the agent to use them.',
+
+  context_flooding_risk:
+    'One or more tool calls returned a very large result, which gets appended to context in full and crowds out everything else for the rest of the session. '
+    + 'Use narrower reads — specify line ranges instead of whole files, tighten search patterns, or pipe command output through something that limits it.',
+
+  malformed_tool_call:
+    'The agent\'s own harness rejected a tool call before it ran — a wrong argument name, an unknown tool, or malformed arguments. '
+    + 'This is different from a normal runtime failure: it means the agent\'s call didn\'t match what the tool expected, not that the codebase has a problem. '
+    + 'If this recurs, the agent may be working from an outdated or incorrect idea of what tools are available.',
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -64,6 +89,9 @@ export function detectLoopSignals(session: SessionSummaryCard): LoopSignal[] {
   detectErrorRecurrence(session, signals)
   detectRunawaySteps(session, signals)
   detectTokenRunaway(session, signals)
+  detectChronicToolFailures(session, signals)
+  detectContextFloodingRisk(session, signals)
+  detectMalformedToolCall(session, signals)
   return signals
 }
 
@@ -334,5 +362,123 @@ export function detectTokenRunaway(session: SessionSummaryCard, signals: LoopSig
     ],
     patternName: PATTERN_NAMES.token_runaway,
     action: LOOP_SIGNAL_ACTIONS.token_runaway,
+  })
+}
+
+// ── Detector 6: Chronic tool failures ────────────────────────────────────────
+
+// Below this, an occasional wrong path corrected along the way is normal exploratory behavior,
+// not a reliability problem — the threshold needs to sit clearly above that ambient baseline.
+// Guessed at 20%/40% pending real calibration against labeled sessions (see
+// .staged-issues/tool-reliability-signals.md's open questions) — not measured.
+const CHRONIC_FAILURE_WARNING_RATE = 0.2
+const CHRONIC_FAILURE_CRITICAL_RATE = 0.4
+const CHRONIC_FAILURE_MIN_SAMPLE = 5
+
+/**
+ * Promoted from an ad-hoc frontend-only check in Insights.tsx. Unlike error_recurrence (which
+ * only fires when the *same* error recurs 3+ times), this catches a session with many different
+ * one-off tool failures — a real gap the recurrence-based detector can't see, since nothing here
+ * has to repeat.
+ *
+ * Requires at least 5 tool calls before evaluating, so a 2-of-3 session doesn't read the same as
+ * a 20-of-50 one.
+ */
+export function detectChronicToolFailures(session: SessionSummaryCard, signals: LoopSignal[]): void {
+  const toolEntries = session.timeline.filter(e => e.type === 'tool')
+  if (toolEntries.length < CHRONIC_FAILURE_MIN_SAMPLE) { return }
+
+  const failedByLabel: Record<string, number> = {}
+  let failedCount = 0
+  for (const entry of toolEntries) {
+    if (!entry.isError) { continue }
+    failedCount++
+    const key = (entry.label || '').split(' ')[0] || 'unknown'
+    failedByLabel[key] = (failedByLabel[key] || 0) + 1
+  }
+  if (failedCount === 0) { return }
+
+  const rate = failedCount / toolEntries.length
+  if (rate < CHRONIC_FAILURE_WARNING_RATE) { return }
+
+  const topFailing = Object.entries(failedByLabel).sort((a, b) => b[1] - a[1])
+
+  signals.push({
+    type: 'chronic_tool_failures',
+    severity: rate >= CHRONIC_FAILURE_CRITICAL_RATE ? 'critical' : 'warning',
+    evidence: `${failedCount} of ${toolEntries.length} tool calls failed (${(rate * 100).toFixed(0)}%)`,
+    count: failedCount,
+    examples: topFailing.slice(0, 3).map(([tool, n]) => `${tool} ×${n}`),
+    patternName: PATTERN_NAMES.chronic_tool_failures,
+    action: LOOP_SIGNAL_ACTIONS.chronic_tool_failures,
+  })
+}
+
+// ── Detector 7: Context flooding risk ────────────────────────────────────────
+
+const LARGE_RESULT_CHARS = 10_000
+const LARGE_RESULT_CRITICAL_KB = 300
+
+/**
+ * Promoted from an ad-hoc frontend-only check in Insights.tsx — same underlying threshold
+ * (10,000 characters per result). Worth confirming during rollout whether fullResult is already
+ * truncated somewhere upstream in the capture pipeline before this check runs on it; if so this
+ * threshold needs to be checked against whatever that cap actually is.
+ */
+export function detectContextFloodingRisk(session: SessionSummaryCard, signals: LoopSignal[]): void {
+  const largeResults: Array<{ tool: string; size: number }> = []
+  for (const entry of session.timeline) {
+    if (entry.type !== 'tool' || !entry.fullResult) { continue }
+    if (entry.fullResult.length <= LARGE_RESULT_CHARS) { continue }
+    largeResults.push({ tool: (entry.label || '').split(' ')[0] || 'unknown', size: entry.fullResult.length })
+  }
+  if (largeResults.length === 0) { return }
+
+  largeResults.sort((a, b) => b.size - a.size)
+  const totalKb = largeResults.reduce((s, r) => s + r.size, 0) / 1024
+
+  signals.push({
+    type: 'context_flooding_risk',
+    severity: totalKb >= LARGE_RESULT_CRITICAL_KB ? 'critical' : 'warning',
+    evidence: `${largeResults.length} tool call(s) returned large results (${totalKb.toFixed(0)}KB total)`,
+    count: largeResults.length,
+    examples: largeResults.slice(0, 3).map(r => `${r.tool} (${(r.size / 1024).toFixed(1)}KB)`),
+    patternName: PATTERN_NAMES.context_flooding_risk,
+    action: LOOP_SIGNAL_ACTIONS.context_flooding_risk,
+  })
+}
+
+// ── Detector 8: Malformed tool call ──────────────────────────────────────────
+
+// Matches an agent harness rejecting a call before execution, not a normal runtime failure.
+// Best-guess wording, not verified against real session text from each agent (Claude Code, Codex,
+// and Copilot each have their own harness and error format) — see this signal's open question in
+// .staged-issues/tool-reliability-signals.md before trusting this in production.
+const MALFORMED_CALL_PATTERN =
+  /\b(invalid tool call|unknown tool|unrecognized tool|missing required (parameter|argument|field)|failed to parse (arguments|input)|invalid (arguments|argument|parameters)|unrecognized (field|argument|parameter)|tool .* not found|no such tool)\b/i
+
+/**
+ * Unlike error_recurrence, this doesn't need 3+ occurrences to fire — a single rejected call
+ * already means the agent's call didn't match what the tool expected, which is categorically more
+ * certain than an arbitrary runtime error (a failing grep or a broken build is often legitimate
+ * signal about the codebase, not the agent).
+ */
+export function detectMalformedToolCall(session: SessionSummaryCard, signals: LoopSignal[]): void {
+  const matches: string[] = []
+  for (const entry of session.timeline) {
+    if (entry.type !== 'tool' || !entry.isError) { continue }
+    const text = entry.errorMessage || entry.label || ''
+    if (MALFORMED_CALL_PATTERN.test(text)) { matches.push(text.slice(0, 100)) }
+  }
+  if (matches.length === 0) { return }
+
+  signals.push({
+    type: 'malformed_tool_call',
+    severity: matches.length >= 3 ? 'critical' : 'warning',
+    evidence: `${matches.length} tool call(s) rejected by the agent's own harness before executing`,
+    count: matches.length,
+    examples: matches.slice(0, 3),
+    patternName: PATTERN_NAMES.malformed_tool_call,
+    action: LOOP_SIGNAL_ACTIONS.malformed_tool_call,
   })
 }

@@ -26,6 +26,11 @@ function noActiveTakeawayText(filter: InsightFilter): string {
   return 'No significant inefficiencies detected. Token usage looks healthy.'
 }
 
+// Promoted to the backend taxonomy (src/loopDetector.ts) — matched by _loopType here rather than
+// title text, since their titles are now "patternName — evidence" instead of the old ad-hoc
+// "N tool failure(s)" / "Large tool results" wording that the title-matching below used to catch.
+const TOOL_ISSUE_LOOP_TYPES = new Set(['chronic_tool_failures', 'context_flooding_risk', 'malformed_tool_call'])
+
 function summarizeTakeaways(insights: Insight[]): InsightTakeaways {
   const summary: InsightTakeaways = {
     loopCount: 0,
@@ -40,7 +45,7 @@ function summarizeTakeaways(insights: Insight[]): InsightTakeaways {
     if (insight.category === 'loop') summary.loopCount++
     if (title.includes('context grew') || title.includes('starts with')) summary.hasContextBloat = true
     if (title.includes('cache hit')) summary.hasCacheIssue = true
-    if (title.includes('tool failure') || title.includes('tool definitions') || title.includes('large tool')) summary.hasToolIssue = true
+    if (title.includes('tool definitions') || (insight._loopType && TOOL_ISSUE_LOOP_TYPES.has(insight._loopType))) summary.hasToolIssue = true
     if (title.includes('files read multiple') || title.includes('duplicate searches') || title.includes('files appear')) summary.hasRepeatedOperations = true
   }
 
@@ -64,6 +69,9 @@ const HELP_WHY: Record<string, string> = {
   'help-hallucination':        'Each failed fix attempt adds the error to context, which anchors the model further from the real solution — the longer it runs, the harder it self-corrects.',
   'help-runaway-steps':        'Scope creep compounds: each extra step the agent takes grows context for all future steps. 90-step sessions can cost 10–20× a well-scoped 5-step equivalent.',
   'help-context-accumulation': 'Input tokens are growing while output shrinks — cost per call is compounding with diminishing returns. Continuing will likely hit the context limit with nothing saved.',
+  'help-chronic-tool-unreliability': 'Each failure adds error text to context and forces a recovery turn. A cascade of 3 failures can waste 30,000+ tokens before a single useful edit is made.',
+  'help-context-flooding-risk': 'Tool results are appended to context in full. A 50 KB file read adds ~12,500 tokens to every subsequent call in that session — not just the call that read it.',
+  'help-malformed-tool-call':  'A rejected call means the round-trip to the model happened for nothing — no result, just an error to recover from. Unlike a runtime failure, this is unambiguously the agent\'s call not matching what the tool expected.',
 }
 
 // ── Insight generation ────────────────────────────────────────────────────────
@@ -184,64 +192,20 @@ export function generateInsights(
       })
     }
 
-    // Tool failures
-    const failedTools: Record<string, number> = {}
-    ;(sess.timeline ?? []).forEach(e => {
-      if (e.type === 'tool' && e.isError) {
-        const t = (e.label ?? '').split(' ')[0]; failedTools[t] = (failedTools[t] ?? 0) + 1
-      }
-    })
-    const failedEntries = Object.keys(failedTools)
-    if (failedEntries.length > 0) {
-      const totalFails = failedEntries.reduce((s, t) => s + failedTools[t], 0)
-      const toolAdvice = failedEntries.slice(0, 3).map(t => {
-        const n = failedTools[t]
-        if (t === 'bash' || t === 'run_command') return t + ' ×' + n + ' (check the command exists in your environment)'
-        if (t === 'read_file' || t === 'view') return t + ' ×' + n + ' (verify file paths are correct)'
-        if (t === 'grep_search' || t === 'search_files') return t + ' ×' + n + ' (use more specific patterns)'
-        return t + ' ×' + n
-      }).join('; ')
-      insights.push({
-        severity: totalFails > 2 ? 'warning' : 'info', category: 'efficiency', sessionIdx: idx,
-        helpId: 'help-tool-failures',
-        title: '[Session ' + globalNum + '] ' + totalFails + ' tool failure(s)',
-        detail: 'Failed: ' + toolAdvice + '. Each failure forces an extra LLM call to recover.',
-        action: 'Tool failures happen when the agent guesses paths or uses incorrect arguments. '
-          + 'Be explicit in your prompt about file locations and command availability.',
-      })
-    }
-
-    // Large tool results
-    const largeResults: Array<{ tool: string; size: number }> = []
-    ;(sess.timeline ?? []).forEach(e => {
-      if (e.type === 'tool' && e.fullResult && e.fullResult.length > 10000) {
-        largeResults.push({ tool: (e.label ?? '').split(' ')[0], size: e.fullResult.length })
-      }
-    })
-    if (largeResults.length > 0) {
-      largeResults.sort((a, b) => b.size - a.size)
-      const totalKb = largeResults.reduce((s, r) => s + r.size, 0) / 1024
-      const topResult = largeResults[0]
-      insights.push({
-        severity: totalKb > 100 ? 'warning' : 'info', category: 'efficiency', sessionIdx: idx,
-        helpId: 'help-large-results',
-        title: '[Session ' + globalNum + '] Large tool results (' + totalKb.toFixed(0) + 'KB)',
-        detail: largeResults.length + ' tool call(s) returned large results: '
-          + largeResults.slice(0, 3).map(r => r.tool + ' (' + (r.size / 1024).toFixed(1) + 'KB)').join(', ') + '.',
-        action: topResult.tool.includes('read')
-          ? 'Use narrower reads — specify line ranges (e.g. read_file src/app.ts L1-50) instead of reading whole files.'
-          : 'The largest result came from ' + topResult.tool + ' (' + (topResult.size / 1024).toFixed(0) + 'KB). '
-            + 'Use more targeted reads — specify line ranges with read_file, or tighter grep patterns.',
-      })
-    }
-
-    // Loop signals
+    // Loop signals — includes chronic_tool_failures and context_flooding_risk, which used to be
+    // computed here as separate ad-hoc "Tool failures" / "Large tool results" checks. Promoted
+    // into the shared backend taxonomy (src/loopDetector.ts) so MCP tools and the Instruction
+    // Advisor's cross-session aggregation can see them too, not just this tab — removed the
+    // duplicate local computation rather than compute the same thing twice.
     const loopHelpIds: Record<string, string> = {
       exact_tool_repeat:  'help-tool-deadlock',
       edit_revert_cycle:  'help-state-spiral',
       error_recurrence:   'help-hallucination',
       runaway_steps:      'help-runaway-steps',
       token_runaway:      'help-context-accumulation',
+      chronic_tool_failures: 'help-chronic-tool-unreliability',
+      context_flooding_risk: 'help-context-flooding-risk',
+      malformed_tool_call:   'help-malformed-tool-call',
     }
     ;(sess.loopSignals ?? []).forEach(sig => {
       const examplesText = sig.examples?.length > 0 ? '\n\nExamples: ' + sig.examples.join(' · ') : ''
