@@ -37,6 +37,7 @@ function SourceLinks({ sources }: { sources: { label: string; url: string }[] })
 function RatesTable({ modelKeys }: { modelKeys: string[] }) {
   const hasTier = (r: ModelRates) => r.inputAbove200kPerMTok !== undefined
   const anyTiered = modelKeys.some(k => RATES[k] && hasTier(RATES[k]))
+  const anyPromo = modelKeys.some(k => RATES[k] && RATES[k].promoNote)
 
   return (
     <>
@@ -58,7 +59,11 @@ function RatesTable({ modelKeys }: { modelKeys: string[] }) {
             if (!r) return null
             return (
               <tr key={key}>
-                <td style={tdBold}>{key}{hasTier(r) ? <sup style="margin-left:2px;color:var(--muted)">†</sup> : null}</td>
+                <td style={tdBold}>
+                  {key}
+                  {hasTier(r) ? <sup style="margin-left:2px;color:var(--muted)">†</sup> : null}
+                  {r.promoNote ? <sup title={r.promoNote} style="margin-left:2px;color:var(--muted);cursor:help">‡</sup> : null}
+                </td>
                 <td style={tdNum}>{fmtRate(r.inputPerMTok)}</td>
                 <td style={tdNum}>{fmtRate(r.cacheReadPerMTok)}</td>
                 <td style={tdNum}>{fmtRate(r.cacheWritePerMTok)}</td>
@@ -73,6 +78,11 @@ function RatesTable({ modelKeys }: { modelKeys: string[] }) {
       {anyTiered && (
         <div style="font-size:10px;color:var(--muted);margin:-4px 0 12px">
           † Tiered — a higher rate applies above 200K tokens in a single call. Not broken out in this table; see <code>PRICING_SOURCES.md</code> for the full tier.
+        </div>
+      )}
+      {anyPromo && (
+        <div style="font-size:10px;color:var(--muted);margin:-4px 0 12px">
+          ‡ Promotional pricing — hover the marker for the vendor's own note on the rate and its stated window. Not guaranteed permanent; see <code>PRICING_SOURCES.md</code> for details.
         </div>
       )}
     </>

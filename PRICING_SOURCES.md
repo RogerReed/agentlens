@@ -30,8 +30,18 @@ and revert independently if a source turns out to have been misread.
      sections below and drive the "verified `<date>`" text shown on the in-app Pricing page itself
    - `ARCHITECTURE.md`'s "Cost Calculation" section — it has its own "Last updated: `<date>`" line
      independent of the two constants above (found missed once already; check it every time)
-5. Run `tsc --noEmit` (both configs), `eslint src media/src`, and `mocha` to confirm nothing broke.
-6. If a rate or model can't be confirmed from a source, add it to that section's "Known gaps"
+5. If a source explicitly labels a rate as promotional/temporary (its own wording, not your
+   inference), set `promoNote` on that model's entry in `media/src/pricing.ts` — free text, quote
+   or closely paraphrase the source's own wording including any stated end date (e.g. `'OpenAI:
+   promotional pricing, at least through Nov 21, 2026'`). This surfaces as a hover-note `‡` marker
+   next to the model name on the in-app Pricing page. Deliberately not a computed
+   expiration/start-stop date — vendors don't reliably honor their own stated windows, so don't
+   build logic that treats the note as expired once its date passes; just re-verify the rate (and
+   the note) at the next refresh like any other rate, regardless of whether the stated window has
+   technically ended. Clear `promoNote` only once a source confirms the rate is no longer
+   promotional (folded into the standard rate, or reverted).
+6. Run `tsc --noEmit` (both configs), `eslint src media/src`, and `mocha` to confirm nothing broke.
+7. If a rate or model can't be confirmed from a source, add it to that section's "Known gaps"
    instead of guessing.
 
 ---

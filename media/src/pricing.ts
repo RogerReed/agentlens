@@ -24,6 +24,13 @@ export interface ModelRates {
   outputAbove200kPerMTok?: number
   cacheReadAbove200kPerMTok?: number
   cacheWriteAbove200kPerMTok?: number
+  // Set when a source explicitly labels this rate as temporary/promotional rather than the vendor's
+  // standard price. Free-text, vendor's own wording — deliberately NOT a machine-checked expiration
+  // date. Vendors don't reliably honor their own stated end dates (see claude-sonnet-5's cancelled
+  // Sept 1 2026 increase below), so computing "is this still active" would assert a certainty the
+  // refresh process can't back up. Displayed as-is on the in-app Pricing page; re-verify promotional
+  // rates at the next refresh regardless of whether their stated window has technically passed.
+  promoNote?: string
 }
 
 // Keyed by normalized model ID (lowercase, no date suffix).
@@ -71,7 +78,8 @@ export const RATES: Record<string, ModelRates> = {
   // 2026." Copilot additionally layers its own extra 50% promotional discount on top of this for Copilot-sourced
   // sessions specifically ($2.00/$0.20/$2.50/$10.00) — not modeled here (one shared rate per model regardless of
   // source agent, same as everywhere else in this file); see PRICING_SOURCES.md Known gaps.
-  'gpt-5.6-sol':         { inputPerMTok: 4.00,  cacheReadPerMTok: 0.40,   cacheWritePerMTok: 5.00, outputPerMTok: 20.00, multiplier: 0,    multiplierAnnualPostJun1: 0 },
+  'gpt-5.6-sol':         { inputPerMTok: 4.00,  cacheReadPerMTok: 0.40,   cacheWritePerMTok: 5.00, outputPerMTok: 20.00, multiplier: 0,    multiplierAnnualPostJun1: 0,
+                           promoNote: 'OpenAI: promotional pricing, at least through Nov 21, 2026' },
   // gpt-5.6-cyber: added 2026-08-26 — new on OpenAI's API pricing page.
   'gpt-5.6-cyber':       { inputPerMTok: 12.50, cacheReadPerMTok: 1.25,   cacheWritePerMTok: 15.625, outputPerMTok: 75.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },
   // gpt-4.1-nano, gpt-5-nano, gpt-5 (base): added 2026-08-26 — confirmed on OpenAI's general API pricing page, not
@@ -128,9 +136,11 @@ export const RATES: Record<string, ModelRates> = {
   'gemini-3.5-flash': { inputPerMTok: 1.50, cacheReadPerMTok: 0.15,  cacheWritePerMTok: 0, outputPerMTok: 9.00,  multiplier: 14,   multiplierAnnualPostJun1: 14 },
   // gemini-3.6-flash: corrected 2026-08-26 — was $1.50/$0.15/$7.50, Copilot's pricing page now shows
   // $0.75/$0.075/$3.75, labeled "promotional pricing through Dec 31, 2026."
-  'gemini-3.6-flash': { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 3.75,  multiplier: 0,    multiplierAnnualPostJun1: 0 },
+  'gemini-3.6-flash': { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 3.75,  multiplier: 0,    multiplierAnnualPostJun1: 0,
+                        promoNote: 'Copilot: promotional pricing through Dec 31, 2026' },
   // gemini-3.7-flash: added 2026-08-26 — new on the Copilot pricing page, same promotional rate as 3.6-flash above.
-  'gemini-3.7-flash': { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 3.75,  multiplier: 0,    multiplierAnnualPostJun1: 0 },
+  'gemini-3.7-flash': { inputPerMTok: 0.75, cacheReadPerMTok: 0.075, cacheWritePerMTok: 0, outputPerMTok: 3.75,  multiplier: 0,    multiplierAnnualPostJun1: 0,
+                        promoNote: 'Copilot: promotional pricing through Dec 31, 2026' },
   // ── Fine-tuned ─────────────────────────────────────────────────────────────────────────────────
   // raptor-mini: no longer included/$0 as of 2026-07-19 — now billed at the same standard rate as gpt-5-mini.
   'raptor-mini': { inputPerMTok: 0.25, cacheReadPerMTok: 0.025, cacheWritePerMTok: 0, outputPerMTok: 2.00,  multiplier: 0, multiplierAnnualPostJun1: 0.33 },
