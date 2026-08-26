@@ -463,12 +463,16 @@ export function App() {
   )
 }
 
+// `color` (and `activeColor`) doubles as the pill's border in both states and, historically, its
+// active-state text — 'all' and 'opencode' used a literal #ffffff for a neutral "pop" look, which
+// is invisible (white border/text on a white page) in light mode. var(--fg) gives the same neutral
+// look correctly in both themes instead of a color that only worked against a dark background.
 const AGENT_FILTER_OPTIONS: Array<{ value: AgentFilter; label: string; color: string; activeColor?: string }> = [
-  { value: 'all',        label: 'All',      color: 'var(--vscode-descriptionForeground,#888)', activeColor: '#ffffff' },
+  { value: 'all',        label: 'All',      color: 'var(--vscode-descriptionForeground,#888)', activeColor: 'var(--fg)' },
   { value: 'copilot',    label: 'Copilot',  color: '#00EAFF' },
   { value: 'claude_code',label: 'Claude',   color: '#FFB085' },
   { value: 'codex',      label: 'Codex',    color: '#F0FF42' },
-  { value: 'opencode',   label: 'OpenCode', color: '#FFFFFF' },
+  { value: 'opencode',   label: 'OpenCode', color: 'var(--fg)' },
 ]
 
 function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolean }) {
@@ -586,6 +590,11 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
           {AGENT_FILTER_OPTIONS.map(o => {
             const active = agent === o.value
             const displayColor = (active && o.activeColor) ? o.activeColor : o.color
+            // The 20%-alpha-blend background trick below only works on a literal hex color — it's
+            // invalid CSS appended to a var() reference (var(--fg)33 isn't a thing). The 'all' and
+            // 'opencode' pills use var(--fg) as their neutral color, so they fall back to the same
+            // highlight color used for hover states elsewhere instead.
+            const activeBg = displayColor.startsWith('#') ? `${displayColor}33` : 'var(--hover)'
             return (
               <button
                 key={o.value}
@@ -594,7 +603,12 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
                   'padding:2px 9px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;',
                   `border:1.5px solid ${displayColor};`,
                   active
-                    ? `background:${displayColor}33;color:${displayColor};font-weight:600`
+                    // Text always follows the theme's own foreground color rather than the agent's
+                    // brand color — several of those (codex's yellow, opencode's neutral) only have
+                    // readable contrast against a dark background; against light, brand-color-on-
+                    // brand-color-tinted-background is illegible. The border still carries the
+                    // per-agent identity color.
+                    ? `background:${activeBg};color:var(--fg);font-weight:600`
                     : 'background:transparent;color:var(--muted)',
                 ].join('')}
               >{o.label}</button>

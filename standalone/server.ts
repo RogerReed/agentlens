@@ -701,6 +701,32 @@ function getHtml(): string {
       --vscode-button-background:       #0969da;
       --vscode-button-foreground:       #ffffff;
       --vscode-button-hoverBackground:  #0860ca;
+
+      /* Aliases for --vscode-* names real VS Code exposes that this shim otherwise never defined —
+         components referencing them (input fields, list selection highlight) were silently falling
+         back to their hardcoded (dark) fallback value in every theme, since an undefined custom
+         property with a var() fallback ignores the current theme entirely. Defined once here rather
+         than duplicated into the dark blocks below — custom property resolution follows the cascade
+         at use time, so these keep tracking whatever --vscode-dropdown-*/-list-hoverBackground
+         currently resolve to in each theme without needing to be redeclared per theme. */
+      --vscode-input-background:              var(--vscode-dropdown-background);
+      --vscode-input-border:                  var(--vscode-dropdown-border);
+      --vscode-input-foreground:              var(--vscode-dropdown-foreground);
+      --vscode-list-activeSelectionBackground: var(--vscode-list-hoverBackground);
+      --vscode-focusBorder:                   var(--vscode-textLink-foreground);
+
+      /* Status/chart colors — semantic accents that don't need to invert with theme (these stay
+         legible against both a white and a dark background at these saturations). Values match the
+         one fallback each call site already used consistently, so defining these doesn't also
+         change how they've looked in dark mode all along — it only fixes light mode, which
+         previously got the same dark-tuned fallback since the variable itself was never defined. */
+      --vscode-editorInfo-foreground:    #4fc3f7;
+      --vscode-editorWarning-foreground: #cca700;
+      --vscode-errorForeground:          #f48771;
+      --vscode-charts-blue:              #4fc3f7;
+      --vscode-charts-green:             #81c784;
+      --vscode-charts-red:               #e57373;
+      --vscode-charts-yellow:            #ffb74d;
     }
 
     /* System preference is dark, and the user hasn't explicitly forced Light. */
