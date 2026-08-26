@@ -707,8 +707,9 @@ function getHtml(): string {
          back to their hardcoded (dark) fallback value in every theme, since an undefined custom
          property with a var() fallback ignores the current theme entirely. Defined once here rather
          than duplicated into the dark blocks below — custom property resolution follows the cascade
-         at use time, so these keep tracking whatever --vscode-dropdown-*/-list-hoverBackground
-         currently resolve to in each theme without needing to be redeclared per theme. */
+         at use time, so these keep tracking whatever --vscode-dropdown-background (etc.) and
+         --vscode-list-hoverBackground currently resolve to in each theme, without needing to be
+         redeclared per theme. */
       --vscode-input-background:              var(--vscode-dropdown-background);
       --vscode-input-border:                  var(--vscode-dropdown-border);
       --vscode-input-foreground:              var(--vscode-dropdown-foreground);
