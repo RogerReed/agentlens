@@ -25,7 +25,7 @@ import { Pricing } from './tabs/Pricing'
 import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
 import { instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instructions'
-import { IngestionToggles, McpToggle, OtelReconfigureButton } from './tabs/Settings'
+import { IngestionToggles, McpToggle, OtelReconfigureButton, ThemeToggle } from './tabs/Settings'
 
 
 // Standalone opens with the left activity sidebar collapsed by default, since it
@@ -103,6 +103,7 @@ function ConfigPanel() {
           title="Close (Esc)"
         >×</button>
       </div>
+      {!vscode && <ThemeToggle />}
       <IngestionToggles />
       <OtelReconfigureButton />
       <McpToggle />

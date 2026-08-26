@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks'
-import { enableOtelIngestion, enableLogIngestion, otlpPort, vscode, otelReconfigureResult, type OtelReconfigureResult } from '../state'
+import { enableOtelIngestion, enableLogIngestion, otlpPort, vscode, otelReconfigureResult, type OtelReconfigureResult, themePreference, setThemePreference, type ThemePreference } from '../state'
 
 function sendConfig(key: string, value: boolean) {
   if (vscode) {
@@ -36,6 +36,37 @@ function ToggleRow({ label, description, checked, onChange }: {
         <span class="toggle-track"><span class="toggle-thumb" /></span>
         <span class={'toggle-label' + (checked ? ' on' : '')}>{checked ? 'Enabled' : 'Disabled'}</span>
       </label>
+    </div>
+  )
+}
+
+const THEME_OPTIONS: Array<{ value: ThemePreference; label: string }> = [
+  { value: 'system', label: 'System' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'light', label: 'Light' },
+]
+
+// Standalone only — the VS Code webview always follows the IDE's own theme (VS Code already has
+// its own system/dark/light/high-contrast picker), so this is never rendered there. See
+// .staged-issues/theme-toggle.md.
+export function ThemeToggle() {
+  const current = themePreference.value
+
+  return (
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:600;color:var(--fg);margin-bottom:6px">Appearance</div>
+      <div style="display:flex;gap:4px">
+        {THEME_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => setThemePreference(opt.value)}
+            aria-pressed={current === opt.value}
+            style={`flex:1;padding:5px 8px;font-size:11px;cursor:pointer;border:1px solid var(--border);border-radius:3px;background:${current === opt.value ? 'var(--accent)' : 'transparent'};color:${current === opt.value ? '#fff' : 'var(--fg)'}`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

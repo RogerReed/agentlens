@@ -651,13 +651,76 @@ function getHtml(): string {
 <html>
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Applies a stored dark/light override before first paint, so the page never flashes the
+    // wrong theme for a frame — must run before the <style> block below resolves the CSS custom
+    // properties it depends on. No entry (or "system") means no attribute: the prefers-color-scheme
+    // media query in that block handles it instead. See media/src/state.ts's setThemePreference,
+    // which is the only other writer of this key.
+    (function () {
+      try {
+        var t = localStorage.getItem('agentlens-theme');
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) { /* localStorage unavailable — falls back to system preference below */ }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AgentLens</title>
   <link rel="icon" href="/mascot.png" type="image/png">
   <link rel="stylesheet" href="/dashboard.css">
   <style>
-    /* ── VS Code theme variable shim ─────────────────────────────────────── */
+    /* ── VS Code theme variable shim ─────────────────────────────────────────
+       Standalone has no real VS Code host to supply --vscode-* variables, so this
+       defines them directly. Three states: System (default — follows
+       prefers-color-scheme), Dark, Light (explicit override via the [data-theme]
+       attribute the script above sets). Toggle lives in Settings — see
+       media/src/tabs/Settings.tsx's ThemeToggle and .staged-issues/theme-toggle.md.
+       Not used in the VS Code webview at all — that has its own HTML in
+       src/dashboardPanel.ts and always inherits the IDE's real --vscode-* values. ── */
+
+    /* Light palette — the default, before any media query or explicit override applies. */
     :root {
+      --vscode-editor-background:       #ffffff;
+      --vscode-foreground:              #1f2328;
+      --vscode-panel-border:            #d0d7de;
+      --vscode-textLink-foreground:     #0969da;
+      --vscode-descriptionForeground:   #656d76;
+      --vscode-list-hoverBackground:    #f3f4f6;
+      --vscode-editorWidget-background: #f6f8fa;
+      --vscode-testing-iconFailed:      #cf222e;
+      --vscode-testing-iconPassed:      #1a7f37;
+      --vscode-font-family:             -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --vscode-dropdown-background:     #ffffff;
+      --vscode-dropdown-border:         #d0d7de;
+      --vscode-dropdown-foreground:     #1f2328;
+      --vscode-button-background:       #0969da;
+      --vscode-button-foreground:       #ffffff;
+      --vscode-button-hoverBackground:  #0860ca;
+    }
+
+    /* System preference is dark, and the user hasn't explicitly forced Light. */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --vscode-editor-background:       #1e1e1e;
+        --vscode-foreground:              #cccccc;
+        --vscode-panel-border:            #3e3e42;
+        --vscode-textLink-foreground:     #4fc3f7;
+        --vscode-descriptionForeground:   #9d9d9d;
+        --vscode-list-hoverBackground:    #2a2d2e;
+        --vscode-editorWidget-background: #252526;
+        --vscode-testing-iconFailed:      #f44747;
+        --vscode-testing-iconPassed:      #4ec994;
+        --vscode-dropdown-background:     #3c3c3c;
+        --vscode-dropdown-border:         #616161;
+        --vscode-dropdown-foreground:     #f0f0f0;
+        --vscode-button-background:       #0e639c;
+        --vscode-button-foreground:       #ffffff;
+        --vscode-button-hoverBackground:  #1177bb;
+      }
+    }
+
+    /* Explicit Dark override, regardless of system preference. */
+    :root[data-theme="dark"] {
       --vscode-editor-background:       #1e1e1e;
       --vscode-foreground:              #cccccc;
       --vscode-panel-border:            #3e3e42;
@@ -667,7 +730,6 @@ function getHtml(): string {
       --vscode-editorWidget-background: #252526;
       --vscode-testing-iconFailed:      #f44747;
       --vscode-testing-iconPassed:      #4ec994;
-      --vscode-font-family:             -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       --vscode-dropdown-background:     #3c3c3c;
       --vscode-dropdown-border:         #616161;
       --vscode-dropdown-foreground:     #f0f0f0;
