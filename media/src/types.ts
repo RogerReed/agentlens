@@ -36,6 +36,9 @@ export type LoopSignalType =
   | 'error_recurrence'
   | 'runaway_steps'
   | 'token_runaway'
+  | 'chronic_tool_failures'
+  | 'context_flooding_risk'
+  | 'malformed_tool_call'
   | 'hallucinated_import'
   | 'failed_check_submission'
 

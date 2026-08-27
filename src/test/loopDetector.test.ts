@@ -6,6 +6,9 @@ import {
   detectErrorRecurrence,
   detectRunawaySteps,
   detectTokenRunaway,
+  detectChronicToolFailures,
+  detectContextFloodingRisk,
+  detectMalformedToolCall,
   inferTaskComplexity,
   getFileEditCounts,
   temperLoopSignalSeverity,
@@ -90,6 +93,18 @@ function makeEdit(filePath: string, oldString: string, newString: string): Timel
 
 function makeErrorTool(label: string, errorMessage: string): TimelineEntry {
   return makeTool(label, true, errorMessage)
+}
+
+function makeResultTool(label: string, fullResult: string): TimelineEntry {
+  return {
+    type: 'tool',
+    spanId: 'span-' + Math.random().toString(36).slice(2, 8),
+    label,
+    durationMs: 100,
+    isError: false,
+    fullResult,
+    timestamp: new Date().toISOString(),
+  }
 }
 
 // ── inferTaskComplexity ───────────────────────────────────────────────────────
@@ -731,6 +746,150 @@ suite('detectTokenRunaway', () => {
   })
 })
 
+// ── detectChronicToolFailures ───────────────────────────────────────────────
+
+suite('detectChronicToolFailures', () => {
+  test('no signal below the minimum sample size, even at 100% failure', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({ timeline: [makeTool('bash', true), makeTool('bash', true)] })
+    detectChronicToolFailures(session, signals)
+    assert.strictEqual(signals.length, 0)
+  })
+
+  test('no signal for a normal, low ambient failure rate (1/6 ≈ 17%, under the 20% floor)', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeTool('bash', true), makeTool('bash'), makeTool('bash'),
+        makeTool('bash'), makeTool('bash'), makeTool('bash'),
+      ],
+    })
+    detectChronicToolFailures(session, signals)
+    assert.strictEqual(signals.length, 0)
+  })
+
+  test('warning at a rate between the two thresholds (2/7 ≈ 29%)', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeTool('bash', true), makeTool('bash', true),
+        makeTool('read_file'), makeTool('read_file'), makeTool('read_file'),
+        makeTool('read_file'), makeTool('read_file'),
+      ],
+    })
+    detectChronicToolFailures(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].type, 'chronic_tool_failures')
+    assert.strictEqual(signals[0].severity, 'warning')
+    assert.strictEqual(signals[0].count, 2)
+  })
+
+  test('critical at a very high failure rate', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeTool('bash', true), makeTool('bash', true), makeTool('bash', true),
+        makeTool('read_file'), makeTool('read_file'),
+      ],
+    })
+    detectChronicToolFailures(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].severity, 'critical')
+  })
+
+  test('ignores llm entries when counting the sample size', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [makeLlm(100, 50), makeLlm(100, 50), makeLlm(100, 50), makeTool('bash', true), makeTool('bash')],
+    })
+    detectChronicToolFailures(session, signals)
+    assert.strictEqual(signals.length, 0) // only 2 tool entries, below the 5-call minimum
+  })
+})
+
+// ── detectContextFloodingRisk ───────────────────────────────────────────────
+
+suite('detectContextFloodingRisk', () => {
+  test('no signal when no result exceeds the size threshold', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({ timeline: [makeResultTool('read_file', 'x'.repeat(500))] })
+    detectContextFloodingRisk(session, signals)
+    assert.strictEqual(signals.length, 0)
+  })
+
+  test('warning when a result exceeds the threshold but total stays under the critical size', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({ timeline: [makeResultTool('read_file', 'x'.repeat(15_000))] })
+    detectContextFloodingRisk(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].type, 'context_flooding_risk')
+    assert.strictEqual(signals[0].severity, 'warning')
+  })
+
+  test('critical when the total accumulated size crosses the critical threshold', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeResultTool('read_file', 'x'.repeat(200_000)),
+        makeResultTool('grep', 'x'.repeat(150_000)),
+      ],
+    })
+    detectContextFloodingRisk(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].severity, 'critical')
+    assert.strictEqual(signals[0].count, 2)
+  })
+
+  test('ignores entries without fullResult', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({ timeline: [makeTool('read_file')] })
+    detectContextFloodingRisk(session, signals)
+    assert.strictEqual(signals.length, 0)
+  })
+})
+
+// ── detectMalformedToolCall ─────────────────────────────────────────────────
+
+suite('detectMalformedToolCall', () => {
+  test('no signal for a normal runtime error', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({ timeline: [makeErrorTool('bash', 'command failed with exit code 1')] })
+    detectMalformedToolCall(session, signals)
+    assert.strictEqual(signals.length, 0)
+  })
+
+  test('fires on a single rejected call, unlike error_recurrence', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({ timeline: [makeErrorTool('bash', 'Invalid tool call: missing required parameter "path"')] })
+    detectMalformedToolCall(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].type, 'malformed_tool_call')
+    assert.strictEqual(signals[0].severity, 'warning')
+    assert.strictEqual(signals[0].count, 1)
+  })
+
+  test('critical at 3 or more rejected calls', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeErrorTool('bash', 'unknown tool "run_shell"'),
+        makeErrorTool('bash', 'unknown tool "run_shell"'),
+        makeErrorTool('bash', 'unknown tool "run_shell"'),
+      ],
+    })
+    detectMalformedToolCall(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].severity, 'critical')
+  })
+
+  test('ignores non-error entries', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({ timeline: [makeTool('bash')] })
+    detectMalformedToolCall(session, signals)
+    assert.strictEqual(signals.length, 0)
+  })
+})
+
 // ── detectLoopSignals (integration) ─────────────────────────────────────────
 
 suite('detectLoopSignals', () => {
@@ -796,6 +955,9 @@ suite('LOOP_SIGNAL_ACTIONS', () => {
     'error_recurrence',
     'runaway_steps',
     'token_runaway',
+    'chronic_tool_failures',
+    'context_flooding_risk',
+    'malformed_tool_call',
   ]
 
   test('has an action string for every signal type', () => {

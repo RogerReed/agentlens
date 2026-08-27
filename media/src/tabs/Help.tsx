@@ -182,13 +182,16 @@ function OverviewSection() {
       <h3 class="help-heading">{HELP_SECTIONS.overview.heading}</h3>
       <div class="help-overview-body">
         <p><strong>AgentLens</strong> is a local observability tool that makes AI <a href="#gl-agent">agent</a> sessions more transparent — see what's happening inside each run. Available as a VS Code-family IDE extension (VS Code, Cursor, Windsurf, VSCodium, Trae, Kiro), a local web app (npx), or Docker, with no data leaving your machine. It captures <a href="#gl-otlp">OpenTelemetry</a> <a href="#gl-trace">traces</a> from GitHub Copilot, Claude Code, and Codex, and also reads <strong>local session files and databases</strong> written automatically by each agent as a zero-config fallback — including OpenCode's local SQLite database — so history loads even without OTEL configured. Both sources feed one unified dashboard and surface efficiency metrics, session cost estimates, human-readable summaries, and actionable insights in real time.</p>
-        <p style="font-size:13px;margin:10px 0 4px"><strong>AgentLens detects five loop / malfunction patterns</strong> — each with a ready-to-paste correction prompt (see <a href="#help-loops">Loop Detection</a> below for details):</p>
+        <p style="font-size:13px;margin:10px 0 4px"><strong>AgentLens detects eight loop / malfunction patterns</strong> — each with a ready-to-paste correction prompt (see <a href="#help-loops">Loop Detection</a> below for details):</p>
         <ul style="margin:0 0 0 18px;padding:0;font-size:13px;color:var(--muted);line-height:1.75">
           <li><a href="#help-tool-deadlock">Tool Call Deadlock</a> — the same tool call repeated 5+ times</li>
           <li><a href="#help-state-spiral">State Corruption Spiral</a> — a file edited then reverted, oscillating</li>
           <li><a href="#help-hallucination">Hallucination Amplification Loop</a> — the same error recurring 3+ times</li>
           <li><a href="#help-runaway-steps">Ambiguous Success / Escalating Scope</a> — runaway step count, no stopping condition</li>
           <li><a href="#help-context-accumulation">Infinite Loop — Context Accumulation</a> — input tokens growing while output collapses</li>
+          <li><a href="#help-chronic-tool-unreliability">Chronic Tool Unreliability</a> — an unusually high share of tool calls failing</li>
+          <li><a href="#help-context-flooding-risk">Context Flooding Risk</a> — a tool result too large for the model to use well</li>
+          <li><a href="#help-malformed-tool-call">Malformed Tool Call</a> — the agent's own harness rejected a call before it ran</li>
         </ul>
       </div>
     </div>
@@ -557,6 +560,24 @@ function SessionsSection() {
             example="First call: 8K in → 600 out (7.5%). Last call: 65K in → 80 out (0.12%). Five turns reading the same files without edits."
             steps={`<li>Stop immediately — cost compounds with no progress.</li><li>Start fresh with a focused prompt stating what was already read.</li><li>Include the specific target state, not just the problem.</li><li>Use the Traces tab to review what was accomplished.</li>`}
             impact="Catching at 4 calls instead of 10 saves ~390,000 input tokens at peak context size."
+          />
+          <LoopBlock id="help-chronic-tool-unreliability" title="Chronic Tool Unreliability"
+            why="An unusually high share of this session's tool calls failed — 20%+ with at least 5 calls made, well above the ordinary rate of an occasional wrong path corrected along the way. Unlike the Hallucination Amplification Loop above, this doesn't require the same error to repeat — it catches a session with many different one-off failures."
+            example="7 of 12 tool calls failed (58%): bash ×4 (command not found), read_file ×3 (path guessed incorrectly)."
+            steps={`<li>Be explicit about file locations and the exact commands available.</li><li>State the package manager and runtime in use.</li><li>Verify paths and commands exist before prompting.</li>`}
+            impact="Each eliminated failure saves a full LLM recovery turn — roughly 30,000 wasted tokens per cascade."
+          />
+          <LoopBlock id="help-context-flooding-risk" title="Context Flooding Risk"
+            why="A tool call returned a result over 10,000 characters, which gets appended to context in full and crowds out everything else for the rest of the session."
+            example="A read_file call on a 300-line file added 45KB (~11,000 tokens) to every subsequent call in the session."
+            steps={`<li>Use line-range reads instead of whole files.</li><li>Tighten search patterns.</li><li>Pipe command output through something that limits it.</li>`}
+            impact="Replacing a 300-line read with a 30-line read saves ~2,700 tokens per turn for the rest of the session."
+          />
+          <LoopBlock id="help-malformed-tool-call" title="Malformed Tool Call"
+            why="The agent's own harness rejected a call before it ran — a wrong argument name, an unknown tool, or malformed arguments. This is different from a normal runtime failure (a grep that finds nothing, a build that fails on real code): it means the agent's call didn't match what the tool expected, not that the codebase has a problem. Fires on a single occurrence, unlike the other signals here."
+            example={`<code style="font-size:10px;background:var(--panel-bg);padding:1px 3px;border-radius:2px">Invalid tool call: missing required parameter "path"</code>`}
+            steps={`<li>If this recurs, the agent may be working from an outdated or incorrect idea of what tools are available.</li><li>Check whether a tool definition changed recently.</li>`}
+            impact="Each rejected call is a full round-trip to the model that produced nothing but an error to recover from."
           />
         </div>
         <p style="margin-top:16px;font-size:12px;color:var(--muted)">Loop signals appear in the Insights panel inside the <strong>Overview</strong> sub-tab of each session, sorted by severity. Use the <strong>Loops</strong> filter pill to view only malfunction signals. Use <strong>Ignore</strong> to dismiss a signal if it was intentional behavior.</p>
