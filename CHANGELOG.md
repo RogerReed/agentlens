@@ -2,6 +2,27 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.13.0] — 2026-08-27
+
+### Added
+
+- **Local auth token and Host-header validation for the standalone servers** — the UI, OTLP, and MCP servers were previously reachable by any process or web page on the machine with zero access control once `BIND_HOST` was set non-loopback. Adds a bearer token generated at first run, Host-header validation against the DNS-rebinding vector, and a startup refusal if a non-loopback bind somehow has no token in place. Also adds an unauthenticated `/health` endpoint for liveness checks, since `agentlens service status` and the Dockerfile healthcheck previously probed the now-gated `/` (#214)
+- **System/Dark/Light theme toggle for the standalone dashboard** — standalone previously hardcoded a single dark palette with no light option and no OS/browser preference detection. New three-state toggle at the top of Settings, persisted across reloads; the VS Code webview is unaffected and continues to follow the IDE's own theme as before (#218, #222)
+- **Three new loop/malfunction signals**: `chronic_tool_failures` (an unusually high share of a session's tool calls failed), `context_flooding_risk` (a tool result too large for the model to use well), and `malformed_tool_call` (the agent's own harness rejected a call before it even ran). The first two are promoted from ad-hoc checks that existed only in the Insights tab, invisible to MCP tools and the Instruction Advisor's cross-session aggregation; the third is new. Extends the loop-signal taxonomy from 5 to 8 (#217)
+- **Two new post-hoc malfunction detectors**: `hallucinated_import` (an edit imports a package absent from the project's manifest and unresolvable on disk) and `failed_check_submission` (the session's last tool call was a failing test/build run with no further fix attempt before the session ended) (#216, #221)
+- **Promotional-pricing note on the Pricing page** — a `‡` marker and hover note when a source explicitly labels a rate as promotional/temporary, using the vendor's own wording rather than a computed expiration date (#219)
+
+### Fixed
+
+- **Loop/malfunction detector accuracy** — `exact_tool_repeat` no longer treats a repeated verification command (tests, lint) run after each fix as a stuck loop; `edit_revert_cycle` only flags critical when the revert is still the file's final state when the session ends; `error_recurrence` normalizes dynamic substrings (temp paths, timestamps, hex ids) before grouping and caps less-certain label-fallback groupings below critical; `runaway_steps` weighs debugging/investigation language into its complexity estimate. All five existing signals are now tempered by a session's actual git outcome — a mid-session rough patch that recovered no longer reads at the same severity as one that never did (#215)
+- **OTEL badge unreadable in light mode** — the per-session "OTEL" badge and the SOURCE filter bar's OTEL pill used a hardcoded white color, readable only against a dark background (#222)
+
+### Changed
+
+- **Model pricing refreshed** — `gpt-5.6-sol` and `gemini-3.6-flash` corrected for vendor price drops (both now labeled promotional, see above), several new models added (`gpt-5.6-cyber`, `gemini-3.7-flash`, `grok-4.6`, `gpt-4.1-nano`, `gpt-5-nano`, `gpt-5`), verified against each vendor's current pricing page (#219)
+
+---
+
 ## [0.12.3] — 2026-08-23
 
 ### Added
