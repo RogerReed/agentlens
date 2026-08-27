@@ -20,23 +20,42 @@ import { LogReader, type OpenCodeSqlFactory } from '../src/logReader'
 import { computeOneShotStats } from '../src/oneShotRate'
 import { classifySessionOutcome, type GitOutcome } from '../src/gitOutcome'
 import { detectSessionRiskSignals } from '../src/sessionRiskSignals'
+import { temperLoopSignalSeverity } from '../src/loopDetector'
 import { generateSuggestions } from '../src/instructionAdvisor'
 import { detectInstructionFiles, appendSuggestion } from '../src/instructionFiles'
 import type { Span } from '../src/types'
 import type { SessionSummaryCard } from '../src/summarizers/summarizerTypes'
 import { pruneSpans, DEFAULT_MAX_SPANS } from '../src/spanStore'
-import { readServiceConfig } from '../src/serviceConfig'
+import { readServiceConfig, ensureAuthToken } from '../src/serviceConfig'
+import { isAllowedHostHeader, isAuthorized, isLoopbackHost, extractCookieToken, authCookieHeader } from '../src/httpSecurity'
 
 // `agentlens service install` persists its port/host/data-dir choices to
 // ~/.agentlens/config.json (see src/serviceConfig.ts) so a background-service install and an
 // ad-hoc `npx`/`node standalone/server.js` run share one config story. Env vars still win when
-// set, matching this server's behavior before the config file existed.
-const fileConfig = readServiceConfig()
+// set, matching this server's behavior before the config file existed. ensureAuthToken generates
+// and persists a bearer token the first time this runs with none set yet.
+const fileConfig = ensureAuthToken(readServiceConfig())
 
 const OTLP_PORT  = parseInt(process.env.OTLP_PORT  ?? String(fileConfig.otlpPort))
 const UI_PORT    = parseInt(process.env.UI_PORT    ?? String(fileConfig.uiPort))
 const MCP_PORT   = parseInt(process.env.MCP_PORT   ?? String(fileConfig.mcpPort))
 const BIND_HOST  = process.env.BIND_HOST ?? fileConfig.bindHost
+const AUTH_TOKEN = fileConfig.authToken
+
+// Turns the "BIND_HOST=0.0.0.0 ships with zero access control" footgun into a startup error:
+// once bindHost is exposed beyond loopback, a token must actually be in place (it always will
+// be, barring a disk-write failure in ensureAuthToken) before any server is allowed to listen.
+if (!isLoopbackHost(BIND_HOST) && !AUTH_TOKEN) {
+  console.error(`[AgentLens] Refusing to start: BIND_HOST=${BIND_HOST} exposes AgentLens beyond localhost, but no auth token could be generated or persisted (check that the data directory is writable). Fix that, or set BIND_HOST back to 127.0.0.1.`)
+  process.exit(1)
+}
+// OTLP and MCP only require the token once bound beyond loopback, so today's default setup and
+// existing agent auto-configuration keep working unauthenticated exactly as before. The UI
+// server (below) always requires it — the CLI hands the token to the browser on open.
+const REQUIRE_TOKEN_EVERYWHERE = !isLoopbackHost(BIND_HOST)
+if (REQUIRE_TOKEN_EVERYWHERE) {
+  console.log('[AgentLens] BIND_HOST is not loopback — OTLP and MCP now require Authorization: Bearer <token> (or ?token=) too. Configure agents accordingly.')
+}
 const parsedMaxSpans = parseInt(process.env.AGENTLENS_MAX_SPANS ?? '', 10)
 const MAX_SPANS  = Number.isNaN(parsedMaxSpans) ? DEFAULT_MAX_SPANS : parsedMaxSpans
 
@@ -170,7 +189,7 @@ startMcpHttpServer({
     const summary = buildSessionSummary()
     return summary?.sessions ?? []
   },
-}, MCP_PORT, BIND_HOST)
+}, MCP_PORT, BIND_HOST, AUTH_TOKEN)
 
 function runLogScan() {
   const results = logReader.scan()
@@ -1261,7 +1280,27 @@ const MIME: Record<string, string> = {
 // ── UI server ─────────────────────────────────────────────────────────────────
 
 const uiServer = http.createServer((req, res) => {
+  if (!isAllowedHostHeader(req.headers.host, BIND_HOST)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' }); res.end('Forbidden — invalid Host header'); return
+  }
   const url = (req.url ?? '/').split('?')[0]
+
+  // Unauthenticated liveness probe — `agentlens service status` and the Dockerfile HEALTHCHECK
+  // both poll this and need a plain 200, not a 401.
+  if (url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ status: 'ok' })); return
+  }
+
+  if (!isAuthorized(req, AUTH_TOKEN)) {
+    res.writeHead(401, { 'Content-Type': 'text/plain' })
+    res.end('Unauthorized — open the dashboard via the URL AgentLens printed at startup (it includes an access token).')
+    return
+  }
+  // First request authenticated via ?token= or an Authorization header rather than an existing
+  // cookie — hand the browser a cookie so every subsequent asset/API/SSE request just works.
+  if (extractCookieToken(req) !== AUTH_TOKEN) {
+    res.setHeader('Set-Cookie', authCookieHeader(AUTH_TOKEN))
+  }
   res.setHeader('Access-Control-Allow-Origin', '*')
 
   if (url === '/events') {
@@ -1475,13 +1514,15 @@ const uiServer = http.createServer((req, res) => {
           )
           gitOutcomeCache.set(sessionId, outcome)
         }
-        // Post-hoc risk signals (hallucinated import, submitted-despite-a-failing-check) are only
-        // knowable once the session is complete, same lifecycle as git-outcome classification —
-        // computed here rather than eagerly for every session. See sessionRiskSignals.ts.
+        // Post-hoc risk signals (hallucinated import, submitted-despite-a-failing-check) and
+        // re-tempered loop-signal severity are both only knowable once the session's outcome is
+        // known, same lifecycle as git-outcome classification — computed here rather than eagerly
+        // for every session. See sessionRiskSignals.ts and temperLoopSignalSeverity's docstring.
         const card = buildSessionSummary()?.sessions.find(s => s.sessionId === sessionId) ?? null
         const riskSignals = card ? detectSessionRiskSignals(card, body.workspace ?? '') : []
+        const temperedLoopSignals = card ? temperLoopSignalSeverity(card.loopSignals ?? [], outcome) : null
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ sessionId, outcome, riskSignals }))
+        res.end(JSON.stringify({ sessionId, outcome, riskSignals, temperedLoopSignals }))
       } catch (e) {
         console.warn('[AgentLens] Malformed /api/git-outcome body:', e)
         res.writeHead(400); res.end()
@@ -1511,10 +1552,18 @@ const uiServer = http.createServer((req, res) => {
 // ── OTLP server ───────────────────────────────────────────────────────────────
 
 const otlpServer = http.createServer((req, res) => {
+  if (!isAllowedHostHeader(req.headers.host, BIND_HOST)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' }); res.end('Forbidden — invalid Host header'); return
+  }
+  // Unauthenticated identify probe (the VS Code extension uses this to detect a standalone
+  // server already running before starting its own collector) — same reasoning as /health above.
   if (req.method === 'GET' && req.url === '/agentlens/standalone') {
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ agentlens: true, kind: 'standalone' }))
     return
+  }
+  if (REQUIRE_TOKEN_EVERYWHERE && !isAuthorized(req, AUTH_TOKEN)) {
+    res.writeHead(401, { 'Content-Type': 'text/plain' }); res.end('Unauthorized'); return
   }
   if (req.method !== 'POST') { res.writeHead(200); res.end(); return }
   const chunks: Buffer[] = []
@@ -1592,11 +1641,14 @@ uiServer.on('error', (err: NodeJS.ErrnoException) => {
 })
 
 uiServer.listen(UI_PORT, BIND_HOST, () => {
-  const url = `http://localhost:${UI_PORT}`
+  const plainUrl = `http://localhost:${UI_PORT}`
+  const url = `${plainUrl}/?token=${AUTH_TOKEN}`
   console.log(`[AgentLens] Dashboard      → ${url}`)
   console.log(`[AgentLens] MCP server     → http://localhost:${MCP_PORT}/mcp`)
 
-  // Auto-open browser
+  // Auto-open browser — includes the access token so the browser gets its auth cookie on
+  // first load; the printed URL above is the fallback if auto-open fails or you're opening on
+  // another device.
   const cmd = process.platform === 'darwin' ? `open "${url}"`
             : process.platform === 'win32'  ? `start "" "${url}"`
             : `xdg-open "${url}"`

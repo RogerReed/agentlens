@@ -27,6 +27,7 @@ import type { SessionSummaryCard, TimelineEntry } from './summarizers/summarizer
 import { generateSuggestions } from './instructionAdvisor'
 import { readAllInstructionContent } from './instructionFiles'
 import { checkAutomationTriggers } from './automationEngine'
+import { isAllowedHostHeader, isAuthorized, isLoopbackHost } from './httpSecurity'
 
 // ── Session accessor ──────────────────────────────────────────────────────────
 
@@ -565,13 +566,24 @@ export function startMcpHttpServer(
   opts: McpServerOptions,
   port: number,
   bindHost = '127.0.0.1',
+  authToken = '',
 ): http.Server {
   const server = createMcpServer(opts)
+  // Only enforced once bindHost is exposed beyond loopback — the default local setup and
+  // existing MCP clients (this repo's own Claude Code / editor integrations) point at
+  // 127.0.0.1 with no way to supply a token, so they must keep working unauthenticated.
+  const requireToken = !isLoopbackHost(bindHost)
   const httpServer = http.createServer((req, res) => {
+    if (!isAllowedHostHeader(req.headers.host, bindHost)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain' }); res.end('Forbidden — invalid Host header'); return
+    }
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, mcp-session-id')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, mcp-session-id, Authorization')
     if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return }
+    if (requireToken && !isAuthorized(req, authToken)) {
+      res.writeHead(401, { 'Content-Type': 'text/plain' }); res.end('Unauthorized'); return
+    }
     handleMcpRequest(server, req, res)
   })
   httpServer.on('error', (err: NodeJS.ErrnoException) => {
