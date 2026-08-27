@@ -671,13 +671,110 @@ function getHtml(): string {
 <html>
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Applies a stored dark/light override before first paint, so the page never flashes the
+    // wrong theme for a frame — must run before the <style> block below resolves the CSS custom
+    // properties it depends on. No entry (or "system") means no attribute: the prefers-color-scheme
+    // media query in that block handles it instead. See media/src/state.ts's setThemePreference,
+    // which is the only other writer of this key.
+    (function () {
+      try {
+        var t = localStorage.getItem('agentlens-theme');
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) { /* localStorage unavailable — falls back to system preference below */ }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AgentLens</title>
   <link rel="icon" href="/mascot.png" type="image/png">
   <link rel="stylesheet" href="/dashboard.css">
   <style>
-    /* ── VS Code theme variable shim ─────────────────────────────────────── */
+    /* ── VS Code theme variable shim ─────────────────────────────────────────
+       Standalone has no real VS Code host to supply --vscode-* variables, so this
+       defines them directly. Three states: System (default — follows
+       prefers-color-scheme), Dark, Light (explicit override via the [data-theme]
+       attribute the script above sets). Toggle lives in Settings — see
+       media/src/tabs/Settings.tsx's ThemeToggle and .staged-issues/theme-toggle.md.
+       Not used in the VS Code webview at all — that has its own HTML in
+       src/dashboardPanel.ts and always inherits the IDE's real --vscode-* values. ── */
+
+    /* Light palette — the default, before any media query or explicit override applies.
+       color-scheme tells the browser which mode *native* form control chrome (dropdowns,
+       checkboxes, date pickers) should render in — without it, those follow the OS/browser's own
+       dark-mode detection independently of the custom colors above, which is why they kept
+       rendering dark even when everything else correctly switched to light. */
     :root {
+      color-scheme: light;
+      --vscode-editor-background:       #ffffff;
+      --vscode-foreground:              #1f2328;
+      --vscode-panel-border:            #d0d7de;
+      --vscode-textLink-foreground:     #0969da;
+      --vscode-descriptionForeground:   #656d76;
+      --vscode-list-hoverBackground:    #f3f4f6;
+      --vscode-editorWidget-background: #f6f8fa;
+      --vscode-testing-iconFailed:      #cf222e;
+      --vscode-testing-iconPassed:      #1a7f37;
+      --vscode-font-family:             -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --vscode-dropdown-background:     #ffffff;
+      --vscode-dropdown-border:         #d0d7de;
+      --vscode-dropdown-foreground:     #1f2328;
+      --vscode-button-background:       #0969da;
+      --vscode-button-foreground:       #ffffff;
+      --vscode-button-hoverBackground:  #0860ca;
+
+      /* Aliases for --vscode-* names real VS Code exposes that this shim otherwise never defined —
+         components referencing them (input fields, list selection highlight) were silently falling
+         back to their hardcoded (dark) fallback value in every theme, since an undefined custom
+         property with a var() fallback ignores the current theme entirely. Defined once here rather
+         than duplicated into the dark blocks below — custom property resolution follows the cascade
+         at use time, so these keep tracking whatever --vscode-dropdown-background (etc.) and
+         --vscode-list-hoverBackground currently resolve to in each theme, without needing to be
+         redeclared per theme. */
+      --vscode-input-background:              var(--vscode-dropdown-background);
+      --vscode-input-border:                  var(--vscode-dropdown-border);
+      --vscode-input-foreground:              var(--vscode-dropdown-foreground);
+      --vscode-list-activeSelectionBackground: var(--vscode-list-hoverBackground);
+      --vscode-focusBorder:                   var(--vscode-textLink-foreground);
+
+      /* Status/chart colors — semantic accents that don't need to invert with theme (these stay
+         legible against both a white and a dark background at these saturations). Values match the
+         one fallback each call site already used consistently, so defining these doesn't also
+         change how they've looked in dark mode all along — it only fixes light mode, which
+         previously got the same dark-tuned fallback since the variable itself was never defined. */
+      --vscode-editorInfo-foreground:    #4fc3f7;
+      --vscode-editorWarning-foreground: #cca700;
+      --vscode-errorForeground:          #f48771;
+      --vscode-charts-blue:              #4fc3f7;
+      --vscode-charts-green:             #81c784;
+      --vscode-charts-red:               #e57373;
+      --vscode-charts-yellow:            #ffb74d;
+    }
+
+    /* System preference is dark, and the user hasn't explicitly forced Light. */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --vscode-editor-background:       #1e1e1e;
+        --vscode-foreground:              #cccccc;
+        --vscode-panel-border:            #3e3e42;
+        --vscode-textLink-foreground:     #4fc3f7;
+        --vscode-descriptionForeground:   #9d9d9d;
+        --vscode-list-hoverBackground:    #2a2d2e;
+        --vscode-editorWidget-background: #252526;
+        --vscode-testing-iconFailed:      #f44747;
+        --vscode-testing-iconPassed:      #4ec994;
+        --vscode-dropdown-background:     #3c3c3c;
+        --vscode-dropdown-border:         #616161;
+        --vscode-dropdown-foreground:     #f0f0f0;
+        --vscode-button-background:       #0e639c;
+        --vscode-button-foreground:       #ffffff;
+        --vscode-button-hoverBackground:  #1177bb;
+      }
+    }
+
+    /* Explicit Dark override, regardless of system preference. */
+    :root[data-theme="dark"] {
+      color-scheme: dark;
       --vscode-editor-background:       #1e1e1e;
       --vscode-foreground:              #cccccc;
       --vscode-panel-border:            #3e3e42;
@@ -687,7 +784,6 @@ function getHtml(): string {
       --vscode-editorWidget-background: #252526;
       --vscode-testing-iconFailed:      #f44747;
       --vscode-testing-iconPassed:      #4ec994;
-      --vscode-font-family:             -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       --vscode-dropdown-background:     #3c3c3c;
       --vscode-dropdown-border:         #616161;
       --vscode-dropdown-foreground:     #f0f0f0;

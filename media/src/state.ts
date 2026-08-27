@@ -150,6 +150,42 @@ export const ignoredInsightKeys = makeSetSignal<string>()
 export let vscode: VsCodeApi | null = null
 export function setVscode(api: VsCodeApi): void { vscode = api }
 
+// ── Theme preference (standalone only — the VS Code webview always follows the
+//    IDE's own theme, so this signal/attribute is simply never touched there) ──
+
+export type ThemePreference = 'system' | 'dark' | 'light'
+
+const THEME_STORAGE_KEY = 'agentlens-theme'
+
+function readStoredTheme(): ThemePreference {
+  try {
+    const v = localStorage.getItem(THEME_STORAGE_KEY)
+    if (v === 'dark' || v === 'light' || v === 'system') return v
+  } catch { /* localStorage unavailable (private browsing, blocked) — fall back to system */ }
+  return 'system'
+}
+
+function applyThemeAttribute(pref: ThemePreference): void {
+  const root = document.documentElement
+  if (pref === 'system') root.removeAttribute('data-theme')
+  else root.setAttribute('data-theme', pref)
+}
+
+export const themePreference = signal<ThemePreference>(readStoredTheme())
+
+// Mirrors the anti-flash inline script in standalone/server.ts's <head> — that script sets the
+// attribute before first paint using the same localStorage key; this keeps the signal (and any
+// future change via setThemePreference) in sync with it rather than a second, divergent source.
+applyThemeAttribute(themePreference.value)
+
+export function setThemePreference(pref: ThemePreference): void {
+  themePreference.value = pref
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, pref)
+  } catch { /* localStorage unavailable — preference just won't survive a reload */ }
+  applyThemeAttribute(pref)
+}
+
 // ── Navigation helpers ────────────────────────────────────────────────────────
 
 export function goToHelp(anchor: string): void {
