@@ -2,6 +2,20 @@
 
 Thank you for your interest in contributing.
 
+## Project scope
+
+AgentLens the local agent — everything in this repo — is MIT-licensed and stays that way. Features
+that make it more useful for a single developer watching their own sessions belong here, and PRs
+for them are welcome.
+
+A few features are out of scope for this repo, reserved for a separate, source-available team
+server built on top of the local agent: cross-machine session aggregation, SSO/SCIM, RBAC,
+multi-team rollup views, extended retention and audit export, and license-key issuance. That's the
+boundary that funds the project's continued development — not a hedge against contributions, and
+not a signal that those features are unwanted in general. If you'd like to work on something in
+that list, open an issue first so we can talk about where it should live before you spend time on
+the PR.
+
 ## Reporting bugs
 
 Open an issue at <https://github.com/rogerreed/agentlens/issues> and use the bug report template. Include:
@@ -60,6 +74,10 @@ node esbuild.js        # Bundle — outputs to dist/ and media/
 4. Open a PR with a clear description of what changed and why; the PR title should follow Conventional Commits format
 
 Please keep PRs focused on a single change. Large refactors should be discussed in an issue first.
+
+**Contributor License Agreement:** a bot will ask you to sign the
+[CLA](.github/CLA.md) on your first pull request — a one-time comment, no account or
+external service needed. PRs can't be merged until it's signed.
 
 ## Demo data and fixtures
 
