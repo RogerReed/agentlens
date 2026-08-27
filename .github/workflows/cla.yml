@@ -28,7 +28,9 @@ jobs:
         with:
           path-to-signatures: signatures/cla.json
           path-to-document: https://github.com/RogerReed/agentlens/blob/main/.github/CLA.md
-          branch: main
+          # Dedicated, unprotected branch for signature storage — main requires PRs, so the
+          # action's own commit of the signature record can't land there directly.
+          branch: cla-signatures
           allowlist: RogerReed
           custom-notsigned-prcomment: |
             Thanks for this contribution! Before it can be merged, please read the
