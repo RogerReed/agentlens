@@ -646,13 +646,13 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
 }
 
 const DATA_SOURCE_FILTER_OPTIONS: Array<{ value: DataSourceFilter; label: string; color: string; activeColor?: string }> = [
-  { value: 'all',  label: 'All',  color: 'var(--vscode-descriptionForeground,#888)', activeColor: '#ffffff' },
-  { value: 'otel', label: 'OTEL', color: '#ffffff' },
+  { value: 'all',  label: 'All',  color: 'var(--vscode-descriptionForeground,#888)', activeColor: 'var(--fg)' },
+  { value: 'otel', label: 'OTEL', color: 'var(--fg)' },
   { value: 'log',  label: 'Log',  color: '#90a4ae' },
 ]
 
 const INITIATOR_FILTER_OPTIONS: Array<{ value: InitiatorFilter; label: string; color: string; activeColor?: string }> = [
-  { value: 'all',   label: 'All',   color: 'var(--vscode-descriptionForeground,#888)', activeColor: '#ffffff' },
+  { value: 'all',   label: 'All',   color: 'var(--vscode-descriptionForeground,#888)', activeColor: 'var(--fg)' },
   { value: 'user',  label: 'User',  color: '#4a90d9' },
   { value: 'agent', label: 'Agent', color: '#b0bec5' },
   { value: 'api',   label: 'API',   color: '#90a4ae' },
@@ -668,6 +668,11 @@ function FilterPills<T extends string>({ options, value, onChange }: {
       {options.map(o => {
         const active = value === o.value
         const displayColor = (active && o.activeColor) ? o.activeColor : o.color
+        // Same fix as AGENT_FILTER_OPTIONS below: the alpha-blend trick only works on a literal
+        // hex color, and active text needs to follow the theme's own foreground rather than the
+        // option's own color, since a neutral var(--fg)/white color is illegible against a
+        // same-color-tinted background in light mode.
+        const activeBg = displayColor.startsWith('#') ? `${displayColor}33` : 'var(--hover)'
         return (
           <button
             key={o.value}
@@ -676,7 +681,7 @@ function FilterPills<T extends string>({ options, value, onChange }: {
               'padding:2px 7px;font-size:11px;cursor:pointer;border-radius:10px;transition:all 0.1s;',
               `border:1.5px solid ${displayColor};`,
               active
-                ? `background:${displayColor}33;color:${displayColor};font-weight:600`
+                ? `background:${activeBg};color:var(--fg);font-weight:600`
                 : 'background:transparent;color:var(--muted)',
             ].join('')}
             title={o.title}

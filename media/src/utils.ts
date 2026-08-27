@@ -371,7 +371,7 @@ const DATA_SOURCE_TOOLTIP = {
 export function getDataSourceBadgeHtml(dataSource: 'otel' | 'log' | undefined): string {
   const ds = dataSource ?? 'otel'
   const label = ds === 'log' ? 'Log' : 'OTEL'
-  const color = ds === 'log' ? '#90a4ae' : '#ffffff'
+  const color = ds === 'log' ? '#90a4ae' : 'var(--fg)'
   const tooltip = DATA_SOURCE_TOOLTIP[ds]
   return `<span style="font-size:9px;font-weight:600;padding:1px 4px;border-radius:2px;border:1px solid ${color};color:${color};letter-spacing:0.03em;vertical-align:middle;cursor:default" title="${tooltip}">${label}</span>`
 }
