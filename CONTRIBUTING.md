@@ -75,6 +75,10 @@ node esbuild.js        # Bundle — outputs to dist/ and media/
 
 Please keep PRs focused on a single change. Large refactors should be discussed in an issue first.
 
+**Contributor License Agreement:** a bot will ask you to sign the
+[CLA](.github/CLA.md) on your first pull request — a one-time comment, no account or
+external service needed. PRs can't be merged until it's signed.
+
 ## Demo data and fixtures
 
 See [DEMO.md](DEMO.md) for generating synthetic demo sessions, capturing real telemetry as a fixture, and the redaction step required before committing any fixture file.
