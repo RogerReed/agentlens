@@ -10,6 +10,13 @@
  *   5. token_runaway      — context growing rapidly while output stays flat/declines
  *
  * Each detector is exported individually so tests can exercise them in isolation.
+ *
+ * Two more signal types (hallucinated_import, failed_check_submission) share this file's
+ * PATTERN_NAMES/LOOP_SIGNAL_ACTIONS taxonomy but are detected elsewhere, by
+ * src/sessionRiskSignals.ts — they're post-hoc checks (only knowable once a session, or at least
+ * an edit, is complete) rather than the real-time in-session signals this file computes, so they
+ * live in a separate on-demand module instead of detectLoopSignals below. See that file's
+ * docstring for why.
  */
 
 import { LoopSignal, LoopSignalType } from './types'
@@ -18,12 +25,14 @@ import type { GitOutcome } from './gitOutcome'
 
 // ── Pattern taxonomy names ───────────────────────────────────────────────────
 
-const PATTERN_NAMES: Record<LoopSignalType, string> = {
+export const PATTERN_NAMES: Record<LoopSignalType, string> = {
   exact_tool_repeat: 'Tool Call Deadlock',
   edit_revert_cycle: 'State Corruption Spiral',
   error_recurrence:  'Hallucination Amplification Loop',
   runaway_steps:     'Ambiguous Success / Escalating Scope',
   token_runaway:     'Infinite Loop — Context Accumulation',
+  hallucinated_import:     'Fabricated Dependency',
+  failed_check_submission: 'Unverified Submission',
 }
 
 // ── Actionable recommendations per signal type ──────────────────────────────
@@ -54,6 +63,15 @@ export const LOOP_SIGNAL_ACTIONS: Record<LoopSignalType, string> = {
     'Input context is growing rapidly while useful output is declining — the agent is accumulating context without making forward progress. '
     + 'This pattern often accompanies tool-call loops or repeated failed fixes. '
     + 'Start a fresh session with a focused prompt, or explicitly tell the agent what it has already tried and what to do differently.',
+
+  hallucinated_import:
+    'An edit imports a package that is not declared in the project\'s manifest (package.json, requirements.txt) and does not resolve on disk — '
+    + 'a likely hallucinated dependency that will fail at install or runtime. '
+    + 'Verify the package actually exists and is spelled correctly before asking the agent to use it, or add it to the manifest yourself if it is intentional.',
+
+  failed_check_submission:
+    'The last test/build check run in this session reported a failure, with no further fix attempt before the session ended. '
+    + 'Ask the agent to re-run the check and confirm it passes before considering the task done, or review the failure yourself before accepting the change.',
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────

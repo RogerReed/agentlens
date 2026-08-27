@@ -36,6 +36,8 @@ export type LoopSignalType =
   | 'error_recurrence'
   | 'runaway_steps'
   | 'token_runaway'
+  | 'hallucinated_import'
+  | 'failed_check_submission'
 
 export interface LoopSignal {
   type: LoopSignalType

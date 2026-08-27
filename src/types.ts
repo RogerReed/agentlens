@@ -36,6 +36,11 @@ export type LoopSignalType =
   | 'error_recurrence'
   | 'runaway_steps'
   | 'token_runaway'
+  // Detected post-hoc by src/sessionRiskSignals.ts, not by the real-time loopDetector.ts — a
+  // session completing cleanly doesn't rule out these two, so they're checked on demand alongside
+  // git-outcome classification rather than eagerly for every session. See that file's docstring.
+  | 'hallucinated_import'
+  | 'failed_check_submission'
 
 export interface LoopSignal {
   type: LoopSignalType

@@ -7,6 +7,7 @@ import { computeBaseline } from './instructionEffectiveness'
 import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } from './autoConfig'
 import { serializeExport, exportFileExtension, type ExportFormat } from './exportFormats'
 import { classifySessionOutcome, type GitOutcome } from './gitOutcome'
+import { detectSessionRiskSignals } from './sessionRiskSignals'
 import { temperLoopSignalSeverity } from './loopDetector'
 
 function isExportFormat(value: unknown): value is ExportFormat {
@@ -289,12 +290,14 @@ export class DashboardPanel {
       outcome = await classifySessionOutcome(workspace, filesChanged, startTime, endTime)
       this.gitOutcomeCache.set(sessionId, outcome)
     }
-    // Re-temper this session's already-computed loop signals now that its outcome is known — see
-    // temperLoopSignalSeverity's docstring for why this happens here rather than in the eager
-    // per-card computation everywhere else.
+    // Post-hoc risk signals (hallucinated import, submitted-despite-a-failing-check) and
+    // re-tempered loop-signal severity are both only knowable once the session's outcome is
+    // known, same lifecycle as git-outcome classification — computed here rather than eagerly
+    // for every session. See sessionRiskSignals.ts and temperLoopSignalSeverity's docstring.
     const card = this.repo.listSessions().find(s => s.sessionId === sessionId) ?? null
+    const riskSignals = card ? detectSessionRiskSignals(card, workspace) : []
     const temperedLoopSignals = card ? temperLoopSignalSeverity(card.loopSignals ?? [], outcome) : null
-    this.panel.webview.postMessage({ type: 'gitOutcome', sessionId, outcome, temperedLoopSignals })
+    this.panel.webview.postMessage({ type: 'gitOutcome', sessionId, outcome, riskSignals, temperedLoopSignals })
   }
 
   private async exportSessions(redact: boolean, ids: Set<string> | null = null, format: ExportFormat = 'json'): Promise<void> {
