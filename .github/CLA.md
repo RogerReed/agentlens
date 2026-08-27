@@ -59,9 +59,3 @@ applicable law.
 
 You agree to notify the Maintainer if you become aware that any of the representations in Section 4
 are inaccurate for a Contribution you've already submitted.
-
----
-
-*This document is a template, not a substitute for legal advice. It has not been reviewed by a
-lawyer. If you have questions about how it applies to you (particularly around employer IP rights),
-consult your own counsel before signing.*
