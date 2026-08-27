@@ -8,10 +8,12 @@ import {
   detectTokenRunaway,
   inferTaskComplexity,
   getFileEditCounts,
+  temperLoopSignalSeverity,
   LOOP_SIGNAL_ACTIONS,
 } from '../loopDetector'
 import { SessionSummaryCard, TimelineEntry } from '../spanSummarizer'
 import { LoopSignal } from '../types'
+import type { GitOutcome } from '../gitOutcome'
 
 // ── Factories ────────────────────────────────────────────────────────────────
 
@@ -124,6 +126,11 @@ suite('inferTaskComplexity', () => {
     assert.strictEqual(inferTaskComplexity('build a helper for parsing JSON'), 'medium')
   })
 
+  test('debug/investigate keywords count as complex even without many files touched', () => {
+    const result = inferTaskComplexity('investigate why checkout occasionally fails and find the root cause')
+    assert.strictEqual(result, 'complex')
+  })
+
   test('very short request with no keywords → simple', () => {
     assert.strictEqual(inferTaskComplexity('hi'), 'simple')
   })
@@ -188,6 +195,36 @@ suite('detectExactToolRepeat', () => {
         makeLlm(1000, 200),
         makeLlm(1200, 210),
         makeLlm(1400, 220),
+      ],
+    })
+    detectExactToolRepeat(session, signals)
+    assert.strictEqual(signals.length, 0)
+  })
+
+  test('resets the streak when a file is edited between repeats', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeTool('run_tests'),
+        makeEdit('src/a.ts', 'x', 'y'),
+        makeTool('run_tests'),
+        makeEdit('src/a.ts', 'y', 'z'),
+        makeTool('run_tests'),
+      ],
+    })
+    detectExactToolRepeat(session, signals)
+    assert.strictEqual(signals.length, 0)
+  })
+
+  test('does not sum partial streaks across an edit boundary', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeTool('run_tests'),
+        makeTool('run_tests'),
+        makeEdit('src/a.ts', 'x', 'y'),
+        makeTool('run_tests'),
+        makeTool('run_tests'),
       ],
     })
     detectExactToolRepeat(session, signals)
@@ -294,6 +331,39 @@ suite('detectEditRevertCycle', () => {
     })
     detectEditRevertCycle(session, signals)
     assert.strictEqual(signals.length, 0)
+  })
+
+  test('downgrades to warning when the file is edited again after the revert', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeEdit('src/app.ts', 'const x = 1', 'const x = 2'),
+        makeEdit('src/app.ts', 'const x = 2', 'const x = 1'), // reverts the first edit
+        makeEdit('src/app.ts', 'const x = 1', 'const x = 3'), // agent moved on afterward
+      ],
+    })
+    detectEditRevertCycle(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].severity, 'warning')
+  })
+
+  test('stays critical overall if at least one reverted file never recovered, even if another did', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        // a.ts recovers after its revert
+        makeEdit('a.ts', 'x', 'y'),
+        makeEdit('a.ts', 'y', 'x'),
+        makeEdit('a.ts', 'x', 'z'),
+        // b.ts stays reverted — this is still the last edit to b.ts
+        makeEdit('b.ts', '1', '2'),
+        makeEdit('b.ts', '2', '1'),
+      ],
+    })
+    detectEditRevertCycle(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].severity, 'critical')
+    assert.strictEqual(signals[0].count, 2)
   })
 })
 
@@ -413,6 +483,50 @@ suite('detectErrorRecurrence', () => {
     detectErrorRecurrence(session, signals)
     assert.strictEqual(signals.length, 1)
     assert.ok(signals[0].examples[0].includes('bash'))
+  })
+
+  test('label-fallback grouping is capped at warning even with 5+ occurrences', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      // isError with no errorMessage falls back to the tool label for grouping
+      timeline: [
+        makeTool('run_build', true),
+        makeTool('run_build', true),
+        makeTool('run_build', true),
+        makeTool('run_build', true),
+        makeTool('run_build', true),
+      ],
+    })
+    detectErrorRecurrence(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].severity, 'warning')
+  })
+
+  test('normalizes tmp paths and timestamps so the same underlying error still groups', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeErrorTool('bash', 'ENOENT: /tmp/agentlens-abc123/build.log not found at 2026-01-01T10:00:00.000Z'),
+        makeErrorTool('bash', 'ENOENT: /tmp/agentlens-xyz789/build.log not found at 2026-01-01T10:05:12.500Z'),
+        makeErrorTool('bash', 'ENOENT: /tmp/agentlens-qqq111/build.log not found at 2026-01-01T10:11:47.100Z'),
+      ],
+    })
+    detectErrorRecurrence(session, signals)
+    assert.strictEqual(signals.length, 1)
+    assert.strictEqual(signals[0].count, 3)
+  })
+
+  test('does not merge different line numbers into the same error', () => {
+    const signals: LoopSignal[] = []
+    const session = makeSession({
+      timeline: [
+        makeErrorTool('bash', 'SyntaxError at line 42'),
+        makeErrorTool('bash', 'SyntaxError at line 43'),
+        makeErrorTool('bash', 'SyntaxError at line 44'),
+      ],
+    })
+    detectErrorRecurrence(session, signals)
+    assert.strictEqual(signals.length, 0)
   })
 
   test('ignores non-error entries', () => {
@@ -689,5 +803,46 @@ suite('LOOP_SIGNAL_ACTIONS', () => {
       assert.ok(LOOP_SIGNAL_ACTIONS[t], `missing action for ${t}`)
       assert.ok(LOOP_SIGNAL_ACTIONS[t].length > 20, `action too short for ${t}`)
     }
+  })
+})
+
+// ── temperLoopSignalSeverity ─────────────────────────────────────────────────
+
+suite('temperLoopSignalSeverity', () => {
+  const criticalSignal: LoopSignal = {
+    type: 'exact_tool_repeat', severity: 'critical', evidence: 'e', count: 5, examples: [], patternName: 'p', action: 'a',
+  }
+  const warningSignal: LoopSignal = { ...criticalSignal, severity: 'warning' }
+
+  function outcome(overall: GitOutcome['overall']): GitOutcome {
+    return { overall, files: {}, reason: 'test' }
+  }
+
+  test('downgrades critical to warning when outcome is productive', () => {
+    const result = temperLoopSignalSeverity([criticalSignal], outcome('productive'))
+    assert.strictEqual(result[0].severity, 'warning')
+  })
+
+  test('leaves warnings alone when outcome is productive', () => {
+    const result = temperLoopSignalSeverity([warningSignal], outcome('productive'))
+    assert.strictEqual(result[0].severity, 'warning')
+  })
+
+  test('leaves signals unchanged when outcome is null', () => {
+    const result = temperLoopSignalSeverity([criticalSignal], null)
+    assert.strictEqual(result[0].severity, 'critical')
+  })
+
+  test('leaves signals unchanged for reverted/abandoned/ambiguous outcomes', () => {
+    for (const overall of ['reverted', 'abandoned', 'ambiguous'] as const) {
+      const result = temperLoopSignalSeverity([criticalSignal], outcome(overall))
+      assert.strictEqual(result[0].severity, 'critical')
+    }
+  })
+
+  test('does not mutate the original signal objects', () => {
+    const result = temperLoopSignalSeverity([criticalSignal], outcome('productive'))
+    assert.strictEqual(criticalSignal.severity, 'critical')
+    assert.notStrictEqual(result[0], criticalSignal)
   })
 })

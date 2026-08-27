@@ -19,6 +19,7 @@ import { startMcpHttpServer } from '../src/mcpServer'
 import { LogReader, type OpenCodeSqlFactory } from '../src/logReader'
 import { computeOneShotStats } from '../src/oneShotRate'
 import { classifySessionOutcome, type GitOutcome } from '../src/gitOutcome'
+import { temperLoopSignalSeverity } from '../src/loopDetector'
 import { generateSuggestions } from '../src/instructionAdvisor'
 import { detectInstructionFiles, appendSuggestion } from '../src/instructionFiles'
 import type { Span } from '../src/types'
@@ -1512,8 +1513,13 @@ const uiServer = http.createServer((req, res) => {
           )
           gitOutcomeCache.set(sessionId, outcome)
         }
+        // Re-temper this session's already-computed loop signals now that its outcome is known —
+        // see temperLoopSignalSeverity's docstring for why this happens here (on demand, alongside
+        // the outcome it needs) rather than in the eager per-card computation everywhere else.
+        const card = buildSessionSummary()?.sessions.find(s => s.sessionId === sessionId) ?? null
+        const temperedLoopSignals = card ? temperLoopSignalSeverity(card.loopSignals ?? [], outcome) : null
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ sessionId, outcome }))
+        res.end(JSON.stringify({ sessionId, outcome, temperedLoopSignals }))
       } catch (e) {
         console.warn('[AgentLens] Malformed /api/git-outcome body:', e)
         res.writeHead(400); res.end()

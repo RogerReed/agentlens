@@ -3,7 +3,7 @@
  *
  * Detects 5 signal types that indicate an agent is stuck in a loop or spiraling:
  *
- *   1. exact_tool_repeat  — identical tool call (by label) executed 3+ times
+ *   1. exact_tool_repeat  — identical tool call (by label) executed 3+ times with no edit in between
  *   2. edit_revert_cycle  — a file was edited then reverted to a prior state
  *   3. error_recurrence   — the same error message appearing 3+ times
  *   4. runaway_steps      — too many steps relative to inferred task complexity
@@ -14,6 +14,7 @@
 
 import { LoopSignal, LoopSignalType } from './types'
 import { SessionSummaryCard } from './spanSummarizer'
+import type { GitOutcome } from './gitOutcome'
 
 // ── Pattern taxonomy names ───────────────────────────────────────────────────
 
@@ -67,6 +68,26 @@ export function detectLoopSignals(session: SessionSummaryCard): LoopSignal[] {
   return signals
 }
 
+/**
+ * Tempers already-computed signal severity using a session's eventual git outcome, when known.
+ * None of the 5 detectors above check whether a session ultimately succeeded — a session that
+ * tripped a critical signal mid-session and then recovered gets the same alarm level as one that
+ * never did. Deliberately conservative: only ever downgrades (a confirmed-productive outcome softens
+ * a critical signal to a warning), never upgrades — a clean signal list on a session with a bad
+ * outcome isn't evidence this function should invent one.
+ *
+ * Not wired into the eager per-session-card computation in spanSummarizer.ts/extension.ts.
+ * `GitOutcome` is deliberately computed on demand (see gitOutcome.ts) because it shells out to git
+ * per session — running it eagerly for every session on a dashboard load would reintroduce exactly
+ * the cost that lazy computation exists to avoid. Call this instead wherever a `GitOutcome` is
+ * already being computed on demand (session detail view) to get outcome-aware severity there
+ * specifically, without changing how signals are computed for the session list.
+ */
+export function temperLoopSignalSeverity(signals: LoopSignal[], outcome: GitOutcome | null): LoopSignal[] {
+  if (!outcome || outcome.overall !== 'productive') { return signals }
+  return signals.map(s => s.severity === 'critical' ? { ...s, severity: 'warning' as const } : s)
+}
+
 // ── Detector 1: Exact tool repeat ────────────────────────────────────────────
 
 /**
@@ -74,18 +95,29 @@ export function detectLoopSignals(session: SessionSummaryCard): LoopSignal[] {
  * arguments (e.g. "read_file types.ts L1-50"), so an identical label means
  * the agent is making the exact same call again.
  *
- * Thresholds: 3+ occurrences → warning, 5+ → critical.
+ * A streak only counts toward the threshold if nothing changed between repeats — any file edit
+ * anywhere in the session resets every label's streak, since that's forward progress, not
+ * redundancy. Without this, re-running a verification command (tests, lint) after each fix looks
+ * identical to an agent re-issuing the same call because it isn't retaining results.
+ *
+ * Thresholds: 3+ occurrences in a row with no intervening edit → warning, 5+ → critical.
  */
 export function detectExactToolRepeat(session: SessionSummaryCard, signals: LoopSignal[]): void {
-  const counts: Record<string, number> = {}
+  const streaks: Record<string, number> = {}
+  const maxStreaks: Record<string, number> = {}
+
   for (const entry of session.timeline) {
+    if (entry.editDetails && entry.editDetails.length > 0) {
+      for (const key of Object.keys(streaks)) { streaks[key] = 0 }
+    }
     if (entry.type !== 'tool') { continue }
     const key = (entry.label || '').trim()
     if (!key) { continue }
-    counts[key] = (counts[key] || 0) + 1
+    streaks[key] = (streaks[key] || 0) + 1
+    maxStreaks[key] = Math.max(maxStreaks[key] || 0, streaks[key])
   }
 
-  const repeated = Object.entries(counts)
+  const repeated = Object.entries(maxStreaks)
     .filter(([, n]) => n >= 3)
     .sort((a, b) => b[1] - a[1])
 
@@ -95,7 +127,7 @@ export function detectExactToolRepeat(session: SessionSummaryCard, signals: Loop
   signals.push({
     type: 'exact_tool_repeat',
     severity: topCount >= 5 ? 'critical' : 'warning',
-    evidence: `${repeated.length} tool call(s) executed identically 3+ times`,
+    evidence: `${repeated.length} tool call(s) executed identically 3+ times with no edit in between`,
     count: topCount,
     examples: repeated.slice(0, 3).map(([label, n]) => `"${label.slice(0, 60)}" ×${n}`),
     patternName: PATTERN_NAMES.exact_tool_repeat,
@@ -147,34 +179,36 @@ export function getFileEditCounts(session: SessionSummaryCard): Record<string, A
  * Detects when a file is edited (A→B) and later reverted to its prior state
  * (B→A). Checks every pair of edits on the same file for exact string reversal.
  *
- * Always critical when detected — there is no legitimate reason for an agent to
- * undo its own edit unless it is oscillating.
+ * Critical only if at least one reverted file's revert was still its *final* edit when the session
+ * ended — a revert followed by further edits to that file means the agent reconsidered and moved on,
+ * not that it's still stuck. Downgraded to a warning otherwise: the pattern happened, but the
+ * session recovered from it.
  */
 export function detectEditRevertCycle(session: SessionSummaryCard, signals: LoopSignal[]): void {
   const fileEdits = getFileEditCounts(session)
 
   const revertedFiles: string[] = []
+  let anyStillReverted = false
 
   for (const [file, edits] of Object.entries(fileEdits)) {
     if (edits.length < 2) { continue }
-    let reverted = false
     outer:
     for (let j = 1; j < edits.length; j++) {
       for (let i = 0; i < j; i++) {
         if (edits[j].old === edits[i].new && edits[j].new === edits[i].old) {
-          reverted = true
+          revertedFiles.push(file)
+          if (j === edits.length - 1) { anyStillReverted = true }
           break outer
         }
       }
     }
-    if (reverted) { revertedFiles.push(file) }
   }
 
   if (revertedFiles.length === 0) { return }
 
   signals.push({
     type: 'edit_revert_cycle',
-    severity: 'critical',
+    severity: anyStillReverted ? 'critical' : 'warning',
     evidence: `${revertedFiles.length} file(s) were edited then reverted to a prior state`,
     count: revertedFiles.length,
     examples: revertedFiles.slice(0, 3).map(f => f.split('/').pop() || f),
@@ -186,32 +220,51 @@ export function detectEditRevertCycle(session: SessionSummaryCard, signals: Loop
 // ── Detector 3: Error recurrence ─────────────────────────────────────────────
 
 /**
- * Groups error timeline entries by errorMessage content. Falls back to tool
- * label when errorMessage is absent.
+ * Strips the specific patterns that make an otherwise-identical error message look unique each
+ * time it recurs — a temp-file path, an ISO timestamp, a long hex id/hash. Deliberately does NOT
+ * touch plain short numbers (line numbers, counts, error codes): those usually distinguish
+ * genuinely different errors, and stripping them would trade one false-positive-merge problem
+ * ("line 42" and "line 43" treated as the same error) for another.
+ */
+const DYNAMIC_TOKEN_PATTERN = /\/tmp\/\S+|\b\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?\b|\b[0-9a-f]{8,}\b/gi
+
+function normalizeErrorMessage(msg: string): string {
+  return msg.replace(DYNAMIC_TOKEN_PATTERN, '<var>')
+}
+
+/**
+ * Groups error timeline entries by normalized errorMessage content. Falls back to tool label when
+ * errorMessage is absent — but a label-fallback grouping can merge unrelated errors that happen to
+ * share a tool (three different Bash failures, say), so it's inherently less certain than a real
+ * errorMessage match and is capped below critical regardless of count.
  *
- * Thresholds: 3+ occurrences → warning, 5+ → critical.
+ * Thresholds: 3+ occurrences → warning, 5+ (with a real errorMessage match) → critical.
  */
 export function detectErrorRecurrence(session: SessionSummaryCard, signals: LoopSignal[]): void {
-  const counts: Record<string, number> = {}
+  const groups: Record<string, { count: number; example: string; fromFallback: boolean }> = {}
   for (const entry of session.timeline) {
     if (!entry.isError) { continue }
-    const key = ((entry.errorMessage || entry.label || 'unknown error').trim()).slice(0, 200)
-    counts[key] = (counts[key] || 0) + 1
+    const raw = (entry.errorMessage || entry.label || 'unknown error').trim()
+    const fromFallback = !entry.errorMessage
+    const key = normalizeErrorMessage(raw).slice(0, 200)
+    if (!groups[key]) { groups[key] = { count: 0, example: raw.slice(0, 200), fromFallback } }
+    groups[key].count++
+    if (fromFallback) { groups[key].fromFallback = true }
   }
 
-  const recurring = Object.entries(counts)
-    .filter(([, n]) => n >= 3)
-    .sort((a, b) => b[1] - a[1])
+  const recurring = Object.entries(groups)
+    .filter(([, g]) => g.count >= 3)
+    .sort((a, b) => b[1].count - a[1].count)
 
   if (recurring.length === 0) { return }
 
-  const topCount = recurring[0][1]
+  const top = recurring[0][1]
   signals.push({
     type: 'error_recurrence',
-    severity: topCount >= 5 ? 'critical' : 'warning',
+    severity: top.count >= 5 && !top.fromFallback ? 'critical' : 'warning',
     evidence: `${recurring.length} error(s) recurring 3+ times`,
-    count: recurring.reduce((s, [, n]) => s + n, 0),
-    examples: recurring.slice(0, 3).map(([msg, n]) => `"${msg.slice(0, 60)}" ×${n}`),
+    count: recurring.reduce((s, [, g]) => s + g.count, 0),
+    examples: recurring.slice(0, 3).map(([, g]) => `"${g.example.slice(0, 60)}" ×${g.count}`),
     patternName: PATTERN_NAMES.error_recurrence,
     action: LOOP_SIGNAL_ACTIONS.error_recurrence,
   })
@@ -222,6 +275,10 @@ export function detectErrorRecurrence(session: SessionSummaryCard, signals: Loop
 const COMPLEX_KEYWORDS = [
   'implement', 'refactor', 'build', 'design', 'migrate', 'convert',
   'rewrite', 'integrate', 'architect', 'scaffold', 'rework',
+  // Debugging/investigation tasks are often exploration-heavy without touching many files (many
+  // iterations against one stubborn file), so the files-touched behavioral override below doesn't
+  // reliably catch them — they need to be recognized from the prompt text too.
+  'debug', 'investigate', 'diagnose', 'root cause', 'flaky', 'intermittent',
 ]
 const SIMPLE_KEYWORDS = [
   'fix typo', 'rename', 'delete', 'move file', 'add comment',
@@ -301,6 +358,15 @@ export function detectRunawaySteps(session: SessionSummaryCard, signals: LoopSig
  *
  * Triggers when input grew >15k tokens AND output ratio collapsed to <30% of
  * its starting value (a 70% drop is a strong signal of a stuck agent).
+ *
+ * A windowed/median baseline (first 2-3 calls instead of literally the first) was tried here to
+ * guard against a single atypical opening exchange skewing the comparison, but the existing test
+ * suite caught it doing more harm than good: in a genuine runaway, the 2nd/3rd calls are often
+ * already mid-decline, so blending them into the baseline drags it down and suppresses detection
+ * exactly when it should fire (see `existing-detection-accuracy.md`'s open question about needing
+ * real session data — this is exactly the kind of threshold change that needs it before shipping).
+ * Reverted to the literal first-call baseline rather than ship a change proven worse by the tests
+ * already in place.
  */
 export function detectTokenRunaway(session: SessionSummaryCard, signals: LoopSignal[]): void {
   const llmCalls = session.timeline.filter(
