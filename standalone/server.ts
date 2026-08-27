@@ -1187,7 +1187,7 @@ function getHtml(): string {
               .then(function(r) { return r.json(); })
               .then(function(data) {
                 window.dispatchEvent(new MessageEvent('message', {
-                  data: { type: 'gitOutcome', sessionId: data.sessionId, outcome: data.outcome }
+                  data: { type: 'gitOutcome', sessionId: data.sessionId, outcome: data.outcome, riskSignals: data.riskSignals, temperedLoopSignals: data.temperedLoopSignals }
                 }));
               })
               .catch(function(e) { console.warn('[AgentLens] git outcome fetch failed', e); });
