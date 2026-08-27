@@ -4,7 +4,7 @@ import * as path from 'path'
 import { execFileSync, spawn } from 'child_process'
 import {
   parseServiceInstallFlags, isRunningFromNpx, writeServiceConfig, readServiceConfig,
-  shouldBlockRepeatedBootstrap, childEnvForReexec,
+  shouldBlockRepeatedBootstrap, childEnvForReexec, serviceConfigPath,
   type ServiceConfig, type ServiceProgram,
 } from '../../src/serviceConfig'
 import * as macos from './macos'
@@ -166,7 +166,7 @@ export async function runServiceCli(args: string[]): Promise<number> {
       const config = parseServiceInstallFlags(rest)
       writeServiceConfig(config)
       platformService.install(buildProgram(config))
-      console.log(`[AgentLens] Background service installed and started — dashboard at http://${config.bindHost}:${config.uiPort}`)
+      console.log(`[AgentLens] Background service installed and started. The dashboard now requires an access token — run \`agentlens service status\` once it's up for the URL to open (its first startup generates and persists the token to ${serviceConfigPath()}).`)
       return 0
     }
     case 'uninstall':
@@ -200,8 +200,9 @@ export async function runServiceCli(args: string[]): Promise<number> {
     case 'status': {
       const config = readServiceConfig()
       const running = await platformService.status(config.uiPort, config.bindHost)
+      const dashboardUrl = `http://${config.bindHost}:${config.uiPort}` + (config.authToken ? `/?token=${config.authToken}` : '')
       console.log(running
-        ? `[AgentLens] Running — dashboard reachable at http://${config.bindHost}:${config.uiPort}`
+        ? `[AgentLens] Running — dashboard reachable at ${dashboardUrl}`
         : '[AgentLens] Not reachable. Run `agentlens service logs` to check for errors, or `agentlens service start`.')
       return running ? 0 : 1
     }

@@ -39,6 +39,8 @@ export type LoopSignalType =
   | 'chronic_tool_failures'
   | 'context_flooding_risk'
   | 'malformed_tool_call'
+  | 'hallucinated_import'
+  | 'failed_check_submission'
 
 export interface LoopSignal {
   type: LoopSignalType

@@ -7,6 +7,8 @@ import { computeBaseline } from './instructionEffectiveness'
 import { autoConfigureCopilot, autoConfigureClaudeCode, autoConfigureCodex } from './autoConfig'
 import { serializeExport, exportFileExtension, type ExportFormat } from './exportFormats'
 import { classifySessionOutcome, type GitOutcome } from './gitOutcome'
+import { detectSessionRiskSignals } from './sessionRiskSignals'
+import { temperLoopSignalSeverity } from './loopDetector'
 
 function isExportFormat(value: unknown): value is ExportFormat {
   return value === 'json' || value === 'csv' || value === 'markdown'
@@ -281,13 +283,21 @@ export class DashboardPanel {
   }
 
   private async sendGitOutcome(sessionId: string, workspace: string, filesChanged: string[], startTime: string, endTime: string): Promise<void> {
+    let outcome: GitOutcome | null
     if (this.gitOutcomeCache.has(sessionId)) {
-      this.panel.webview.postMessage({ type: 'gitOutcome', sessionId, outcome: this.gitOutcomeCache.get(sessionId) })
-      return
+      outcome = this.gitOutcomeCache.get(sessionId) ?? null
+    } else {
+      outcome = await classifySessionOutcome(workspace, filesChanged, startTime, endTime)
+      this.gitOutcomeCache.set(sessionId, outcome)
     }
-    const outcome = await classifySessionOutcome(workspace, filesChanged, startTime, endTime)
-    this.gitOutcomeCache.set(sessionId, outcome)
-    this.panel.webview.postMessage({ type: 'gitOutcome', sessionId, outcome })
+    // Post-hoc risk signals (hallucinated import, submitted-despite-a-failing-check) and
+    // re-tempered loop-signal severity are both only knowable once the session's outcome is
+    // known, same lifecycle as git-outcome classification — computed here rather than eagerly
+    // for every session. See sessionRiskSignals.ts and temperLoopSignalSeverity's docstring.
+    const card = this.repo.listSessions().find(s => s.sessionId === sessionId) ?? null
+    const riskSignals = card ? detectSessionRiskSignals(card, workspace) : []
+    const temperedLoopSignals = card ? temperLoopSignalSeverity(card.loopSignals ?? [], outcome) : null
+    this.panel.webview.postMessage({ type: 'gitOutcome', sessionId, outcome, riskSignals, temperedLoopSignals })
   }
 
   private async exportSessions(redact: boolean, ids: Set<string> | null = null, format: ExportFormat = 'json'): Promise<void> {
