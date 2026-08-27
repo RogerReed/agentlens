@@ -8,6 +8,7 @@ import {
   childEnvForReexec, shouldBlockRepeatedBootstrap, REEXEC_GUARD_ENV,
   generateLaunchdPlist, generateSystemdUnit, generateWindowsWrapperScript,
   launchdLabel, SYSTEMD_UNIT_NAME, WINDOWS_TASK_NAME,
+  generateAuthToken, ensureAuthToken,
   type ServiceProgram,
 } from '../serviceConfig'
 
@@ -57,6 +58,43 @@ suite('serviceConfig', () => {
       fs.mkdirSync(path.dirname(serviceConfigPath(home)), { recursive: true })
       fs.writeFileSync(serviceConfigPath(home), 'not valid json{{{', 'utf-8')
       assert.deepStrictEqual(readServiceConfig(home), defaultServiceConfig(home))
+    })
+  })
+
+  suite('generateAuthToken', () => {
+    test('generates a non-empty, sufficiently long token', () => {
+      const token = generateAuthToken()
+      assert.ok(token.length >= 32)
+    })
+
+    test('generates a different token each call', () => {
+      assert.notStrictEqual(generateAuthToken(), generateAuthToken())
+    })
+  })
+
+  suite('ensureAuthToken', () => {
+    test('generates and persists a token when the config has none', () => {
+      const home = tmpHome()
+      const config = defaultServiceConfig(home)
+      assert.strictEqual(config.authToken, '')
+      const updated = ensureAuthToken(config, home)
+      assert.ok(updated.authToken.length > 0)
+      assert.deepStrictEqual(readServiceConfig(home).authToken, updated.authToken)
+    })
+
+    test('leaves an existing token untouched', () => {
+      const home = tmpHome()
+      const withToken = { ...defaultServiceConfig(home), authToken: 'already-set' }
+      writeServiceConfig(withToken, home)
+      const result = ensureAuthToken(withToken, home)
+      assert.strictEqual(result.authToken, 'already-set')
+    })
+
+    test('a restart reuses the persisted token instead of generating a new one', () => {
+      const home = tmpHome()
+      const first = ensureAuthToken(readServiceConfig(home), home)
+      const second = ensureAuthToken(readServiceConfig(home), home)
+      assert.strictEqual(first.authToken, second.authToken)
     })
   })
 

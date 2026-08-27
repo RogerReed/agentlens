@@ -9,6 +9,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import * as crypto from 'crypto'
 
 export interface ServiceConfig {
   uiPort: number
@@ -16,6 +17,10 @@ export interface ServiceConfig {
   mcpPort: number
   bindHost: string
   dataDir: string
+  /** Bearer token guarding the UI/OTLP/MCP servers. Empty until `ensureAuthToken` generates
+   *  and persists one on first run — kept out of `defaultServiceConfig` so that function stays
+   *  pure and deterministic for tests. */
+  authToken: string
 }
 
 // `baseHome` defaults to the real home directory in production; tests pass a temp directory
@@ -32,6 +37,7 @@ export function defaultServiceConfig(baseHome?: string): ServiceConfig {
     mcpPort: 4316,
     bindHost: '127.0.0.1',
     dataDir: defaultDataDir(baseHome),
+    authToken: '',
   }
 }
 
@@ -59,6 +65,23 @@ export function writeServiceConfig(config: ServiceConfig, baseHome?: string): vo
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8')
 }
 
+/** Generates a fresh bearer token for the UI/OTLP/MCP servers. */
+export function generateAuthToken(): string {
+  return crypto.randomBytes(24).toString('hex')
+}
+
+/** Returns `config` unchanged if it already has an auth token; otherwise generates one,
+ *  persists it to disk immediately (so a restart reuses the same token instead of
+ *  invalidating every open browser tab / configured agent), and returns the updated config.
+ *  Called once at server startup — not from `readServiceConfig` itself — so that function can
+ *  stay a pure read with no side effects. */
+export function ensureAuthToken(config: ServiceConfig, baseHome?: string): ServiceConfig {
+  if (config.authToken) return config
+  const withToken = { ...config, authToken: generateAuthToken() }
+  writeServiceConfig(withToken, baseHome)
+  return withToken
+}
+
 export function serviceLogPath(config: ServiceConfig): string {
   return path.join(config.dataDir, 'logs', 'service.log')
 }
@@ -82,7 +105,7 @@ export function parseServiceInstallFlags(args: string[]): ServiceConfig {
     const value = args[i + 1]
     if (value === undefined) { continue }
     i++
-    if (key === 'bindHost' || key === 'dataDir') {
+    if (key === 'bindHost' || key === 'dataDir' || key === 'authToken') {
       config[key] = value
     } else {
       const n = parseInt(value, 10)

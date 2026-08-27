@@ -41,6 +41,6 @@ ENV OTLP_PORT=4318 \
 EXPOSE 4318 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD wget -qO- http://localhost:3000/ || exit 1
+  CMD wget -qO- http://localhost:3000/health || exit 1
 
 CMD ["node", "standalone/server.js"]
