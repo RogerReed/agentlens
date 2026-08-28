@@ -172,6 +172,12 @@ export interface LogSessionResult {
   workspace: string
 }
 
+/** Wraps a single-or-null result as an array, for parsers that only ever produce one session
+ *  per file (everything except Claude Code — see splitClaudeLinesOnPromptGaps). */
+function _single(result: LogSessionResult | null): LogSessionResult[] {
+  return result ? [result] : []
+}
+
 export class LogReader {
   private readonly log: (msg: string) => void
   private readonly sqlFactory: OpenCodeSqlFactory | undefined
@@ -254,10 +260,12 @@ export class LogReader {
   }
 
   /**
-   * Parses a single file identified by collectFileMeta() and returns a result if
-   * the file is new or has grown since the last scan. Returns null if unchanged.
+   * Parses a single file identified by collectFileMeta() and returns any results if the file is
+   * new or has grown since the last scan (usually one; Claude Code transcripts can yield more
+   * than one when a large gap between prompts splits the file into multiple sessions — see
+   * splitClaudeLinesOnPromptGaps). Returns [] if unchanged.
    */
-  parseFile(filePath: string, agentKey: string): LogSessionResult | null {
+  parseFile(filePath: string, agentKey: string): LogSessionResult[] {
     const sessionId = agentKey === 'copilot'
       ? path.basename(path.dirname(filePath))  // directory name is session UUID
       : agentKey === 'copilot_vscode_json'
@@ -265,13 +273,13 @@ export class LogReader {
         : path.basename(filePath, '.jsonl')
 
     switch (agentKey) {
-      case 'claude':              return this._processFile(filePath, () => this._parseClaudeFile(filePath))
-      case 'codex':               return this._processFile(filePath, () => this._parseCodexFile(filePath, ''))
-      case 'copilot':             return this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId))
-      case 'copilot_vscode':      return this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId))
-      case 'copilot_vscode_json': return this._processFile(filePath, () => this._parseCopilotVSCodeJsonFile(filePath, sessionId))
-      case 'opencode':            return null  // OpenCode DB returns multiple sessions; use _scanOpenCode
-      default:                    return null
+      case 'claude':              return this._processFileMulti(filePath, () => this._parseClaudeFile(filePath))
+      case 'codex':               return _single(this._processFile(filePath, () => this._parseCodexFile(filePath, '')))
+      case 'copilot':             return _single(this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId)))
+      case 'copilot_vscode':      return _single(this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId)))
+      case 'copilot_vscode_json': return _single(this._processFile(filePath, () => this._parseCopilotVSCodeJsonFile(filePath, sessionId)))
+      case 'opencode':            return []  // OpenCode DB returns multiple sessions; use _scanOpenCode
+      default:                    return []
     }
   }
 
@@ -306,19 +314,31 @@ export class LogReader {
     const results: LogSessionResult[] = []
     for (const projectsDir of claudeProjectsDirs()) {
       this._collectJsonlFiles(projectsDir).forEach(filePath => {
-        const result = this._processFile(filePath, () => this._parseClaudeFile(filePath))
-        if (result) results.push(result)
+        results.push(...this._processFileMulti(filePath, () => this._parseClaudeFile(filePath)))
       })
     }
     return results
   }
 
-  private _parseClaudeFile(filePath: string): LogSessionResult | null {
-    const lines = this._readNewLines(filePath)
-    if (!lines) return null
+  /** Reads a Claude Code transcript and splits it into one or more session results — see
+   *  splitClaudeLinesOnPromptGaps for why a single file can yield more than one session, and
+   *  dedupeByUuid for why duplicate lines are dropped before any of that runs. */
+  private _parseClaudeFile(filePath: string): LogSessionResult[] {
+    const rawLines = this._readNewLines(filePath)
+    if (!rawLines) return []
+    const lines = dedupeByUuid(rawLines)
 
-    const sessionId = path.basename(filePath, '.jsonl')
+    const baseSessionId = path.basename(filePath, '.jsonl')
+    const segments = splitClaudeLinesOnPromptGaps(lines)
+    const results: LogSessionResult[] = []
+    segments.forEach((segmentLines, segmentIndex) => {
+      const result = this._parseClaudeSegment(segmentLines, claudeSegmentSessionId(baseSessionId, segmentIndex))
+      if (result) results.push(result)
+    })
+    return results
+  }
 
+  private _parseClaudeSegment(lines: string[], sessionId: string): LogSessionResult | null {
     let workspace = ''
     let model = ''
     let firstTimestamp = ''
@@ -1384,6 +1404,22 @@ export class LogReader {
       return null
     }
   }
+
+  /** Same change-detection as _processFile, for parsers that can return multiple session results
+   *  from one file (currently only Claude Code). */
+  private _processFileMulti(
+    filePath: string,
+    parseFn: () => LogSessionResult[],
+  ): LogSessionResult[] {
+    try {
+      const stat = fs.statSync(filePath)
+      const prev = this.fileState.get(filePath)
+      if (prev && stat.mtimeMs === prev.mtimeMs && stat.size === prev.bytesRead) return []
+      return parseFn()
+    } catch {
+      return []
+    }
+  }
 }
 
 // ── Shared card builder ───────────────────────────────────────────────────────
@@ -1404,6 +1440,102 @@ interface CardAccum {
   userRequest: string
   timeline: TimelineEntry[]
   initiator: 'user' | 'agent' | 'api'
+}
+
+// ── Session splitting on prompt boundaries ──────────────────────────────────
+//
+// A Claude Code CLI transcript file is one continuous JSONL log for as long as the terminal
+// session stays open — which can span real days if the user leaves it running, comes back later,
+// and keeps typing prompts into the same window. Treating that whole file as one "session" is
+// what made session duration read as wildly inflated (see .staged-issues/
+// split-sessions-on-prompt-boundaries.md for the empirical data that proved a smaller idle-gap-
+// capping fix wasn't enough on its own). This splits the file into segments at a genuinely large
+// gap between two consecutive user prompts — never mid-turn — so each segment is a complete,
+// coherent chunk of work rather than an arbitrarily severed one.
+
+/**
+ * Drops any line whose `uuid` was already seen earlier in the file, keeping the first
+ * occurrence. Confirmed on real transcript data: Claude Code can re-serialize and re-append a
+ * large block of earlier conversation history into the same file — observed as a ~466-entry
+ * (user/assistant/attachment) block sharing exact uuids and timestamps with much earlier entries,
+ * differing only by one added field, plausibly a resume-across-version artifact rather than
+ * anything this tool controls. Left uncaught, that block's old timestamps land late in the file
+ * and get read as real new activity, and its content gets double-counted into turns/tokens/tool
+ * calls. Lines with no `uuid` at all (session_meta, turn_context, and other non-message event
+ * types) are never deduplicated — there's no reliable key to dedupe them by, and they're not
+ * the source of this problem.
+ */
+export function dedupeByUuid(lines: string[]): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+  for (const line of lines) {
+    let entry: Record<string, unknown>
+    try { entry = JSON.parse(line) as Record<string, unknown> } catch { result.push(line); continue }
+    const uuid = entry['uuid']
+    if (typeof uuid !== 'string') { result.push(line); continue }
+    if (seen.has(uuid)) continue
+    seen.add(uuid)
+    result.push(line)
+  }
+  return result
+}
+
+// A gap between two consecutive user prompts longer than this starts a new session segment.
+// Deliberately larger than summarizers/helpers.ts's IDLE_GAP_THRESHOLD_MS (10 min) — that one
+// answers "was this pause part of active work within one sitting," this one answers "is this
+// genuinely a different sitting." 30 minutes is a first-pass guess, not a calibrated value — same
+// honesty standard as every other threshold in this project. See the staged issue for the open
+// question on whether to also force a split at real calendar-day boundaries.
+export const SESSION_SPLIT_GAP_MS = 30 * 60_000
+
+/**
+ * Splits a Claude Code JSONL transcript's lines into segments, one per group of consecutive user
+ * prompts with no gap between them exceeding SESSION_SPLIT_GAP_MS. A split point always falls
+ * immediately before a `type: 'user'` line — a segment's tool calls and assistant responses
+ * always stay grouped with the prompt that triggered them, never split mid-turn.
+ *
+ * Pure and independently testable on purpose: this only needs the raw lines and produces raw
+ * line groups, so it can be verified against real transcript data without touching any of the
+ * token/tool/file accounting in _parseClaudeSegment.
+ */
+export function splitClaudeLinesOnPromptGaps(lines: string[]): string[][] {
+  if (lines.length === 0) return []
+
+  const boundaries: number[] = [0]
+  // Tracks the highest user-prompt timestamp seen so far, not just the most recently seen one —
+  // real transcripts can contain an isolated out-of-order timestamp (confirmed on real data: one
+  // entry mid-file stamped a full day earlier than its neighbors, apparently from Claude Code's
+  // own resume/continuation handling). Comparing against the max rather than the last value keeps
+  // a single such anomaly from corrupting the gap baseline for every comparison after it.
+  let maxUserTs: number | null = null
+  for (let i = 0; i < lines.length; i++) {
+    let entry: Record<string, unknown>
+    try { entry = JSON.parse(lines[i]) as Record<string, unknown> } catch { continue }
+    if (entry['type'] !== 'user') continue
+
+    const ts = entry['timestamp'] as string | undefined
+    const tsMs = ts ? Date.parse(ts) : NaN
+    if (!Number.isFinite(tsMs)) continue
+
+    if (maxUserTs !== null && tsMs - maxUserTs > SESSION_SPLIT_GAP_MS) {
+      boundaries.push(i)
+    }
+    maxUserTs = Math.max(maxUserTs ?? tsMs, tsMs)
+  }
+
+  const segments: string[][] = []
+  for (let b = 0; b < boundaries.length; b++) {
+    const start = boundaries[b]
+    const end = b + 1 < boundaries.length ? boundaries[b + 1] : lines.length
+    segments.push(lines.slice(start, end))
+  }
+  return segments
+}
+
+/** Segment 0 keeps the file's own session ID unchanged — the common case (a file that never
+ *  needs splitting) gets no ID churn at all. Later segments get a stable, deterministic suffix. */
+export function claudeSegmentSessionId(baseSessionId: string, segmentIndex: number): string {
+  return segmentIndex === 0 ? baseSessionId : `${baseSessionId}#${segmentIndex}`
 }
 
 function _buildCard(
