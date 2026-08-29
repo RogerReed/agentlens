@@ -407,6 +407,25 @@ export function getAgentColor(source: string | null | undefined): string {
   return '#90a4ae'
 }
 
+// Fixed, visually distinct palette for coloring conversation groups (see getConversationColor) —
+// deliberately disjoint from the agent-source colors above so the two don't read as related.
+const CONVERSATION_COLORS = [
+  '#4dd0e1', '#ba68c8', '#81c784', '#ffb74d', '#e57373',
+  '#7986cb', '#a1887f', '#4db6ac', '#f06292', '#9575cd',
+] as const
+
+/** Deterministically maps a conversationId to one of a fixed set of colors, so a given split
+ *  conversation always gets the same color across reloads with nothing persisted — same idea as
+ *  hashing to a palette index. Used to color-code Sessions rows that are really one conversation
+ *  split across multiple session cards (see .staged-issues/color-code-multi-segment-conversations.md). */
+export function getConversationColor(conversationId: string): string {
+  let hash = 0
+  for (let i = 0; i < conversationId.length; i++) {
+    hash = (hash * 31 + conversationId.charCodeAt(i)) | 0
+  }
+  return CONVERSATION_COLORS[Math.abs(hash) % CONVERSATION_COLORS.length]
+}
+
 export function getAgentShortLabel(source: string | null | undefined): string {
   if (source === 'claude_code') return 'CL'
   if (source === 'codex') return 'CX'

@@ -140,6 +140,7 @@ suite('LogReader — Codex session splitting (integration)', () => {
     const results = new LogReader().parseFile(filePath, 'codex')
     assert.strictEqual(results.length, 1)
     assert.strictEqual(results[0].card.sessionId, 'sess-normal')
+    assert.strictEqual(results[0].card.conversationId, undefined, 'a file that never split has no group to color-code')
   })
 
   test('a real multi-day gap splits into two sessions, each reporting only its own token delta', () => {
@@ -172,6 +173,11 @@ suite('LogReader — Codex session splitting (integration)', () => {
     assert.strictEqual(results[1].card.inputTokens, 500 + (33700 - 500 - 16000), 'cacheReadTokens + raw input delta')
     assert.strictEqual(results[1].card.cacheReadTokens, 500)
     assert.strictEqual(results[1].card.outputTokens, 2200 - 150)
+
+    // Both segments came from the same file, so the Sessions table can color-code them as one
+    // conversation split apart — see .staged-issues/color-code-multi-segment-conversations.md.
+    assert.strictEqual(results[0].card.conversationId, 'sess-gapped')
+    assert.strictEqual(results[1].card.conversationId, 'sess-gapped')
   })
 
   test('a segment with no token_count events of its own inherits (does not reset) the running baseline for the next segment', () => {

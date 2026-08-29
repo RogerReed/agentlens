@@ -335,6 +335,13 @@ export class LogReader {
       const result = this._parseClaudeSegment(segmentLines, claudeSegmentSessionId(baseSessionId, segmentIndex))
       if (result) results.push(result)
     })
+    // Tag every segment with the file they came from, but only when the file actually split into
+    // more than one — a lone segment's conversationId equal to its own sessionId is meaningless.
+    // The frontend uses this to group and color-code rows that are really one conversation split
+    // across multiple session cards.
+    if (results.length > 1) {
+      for (const r of results) r.card.conversationId = baseSessionId
+    }
     return results
   }
 
@@ -533,6 +540,10 @@ export class LogReader {
       if (parsed.result) results.push(parsed.result)
       if (parsed.cumulativeUsage) runningTotalTokenUsage = parsed.cumulativeUsage
     })
+    // See the matching comment in _parseClaudeFile — same conversationId tagging, same reason.
+    if (results.length > 1) {
+      for (const r of results) r.card.conversationId = baseSessionId
+    }
     return results
   }
 
@@ -845,6 +856,10 @@ export class LogReader {
       if (parsed.result) results.push(parsed.result)
       startingTurnIndex += parsed.turnsPushed
     })
+    // See the matching comment in _parseClaudeFile — same conversationId tagging, same reason.
+    if (results.length > 1) {
+      for (const r of results) r.card.conversationId = baseSessionId
+    }
     return results
   }
 
