@@ -226,6 +226,17 @@ export function setSessionsPageSize(size: number): void {
 // changes shape, rather than leaving the user stranded on a now-out-of-range page.
 export const sessionsPage = signal(0)
 
+/** Shared by Sessions.tsx (the table itself) and App.tsx's SearchFilterBar (the compact Prev/Next
+ *  next to the filter row) so both always agree on the current page and page count — clamps
+ *  locally rather than writing back into the signal, so loosening a filter later makes a
+ *  previously out-of-range page valid again on its own. */
+export function getSessionsPagination(totalCount: number): { page: number; totalPages: number; pageSize: number } {
+  const pageSize = sessionsPageSize.value
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const page = Math.min(sessionsPage.value, totalPages - 1)
+  return { page, totalPages, pageSize }
+}
+
 // ── Navigation helpers ────────────────────────────────────────────────────────
 
 export function goToHelp(anchor: string): void {

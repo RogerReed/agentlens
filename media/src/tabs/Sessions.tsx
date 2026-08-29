@@ -4,7 +4,7 @@ import {
   focusedSessionId, vscode, ignoredInsightKeys,
   sessionSortKey, sessionSortDir, type SortKey,
   workspaceFilter, shortWorkspaceName, goToHelp,
-  sessionsPageSize, sessionsPage,
+  sessionsPage, getSessionsPagination,
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
@@ -471,12 +471,9 @@ export function Sessions() {
   const thMuted = thBase + ';color:var(--muted);font-weight:500'
 
   // Rendering every matching session as its own live component with no cap was the mechanism
-  // behind .staged-issues/session-list-scaling.md — clamped locally rather than writing the
-  // clamp back into the signal, so loosening a filter later makes a previously out-of-range page
-  // valid again on its own, with no separate reset needed.
-  const pageSize = sessionsPageSize.value
-  const totalPages = Math.max(1, Math.ceil(sessions.length / pageSize))
-  const page = Math.min(sessionsPage.value, totalPages - 1)
+  // behind .staged-issues/session-list-scaling.md — see getSessionsPagination's own doc comment
+  // for why the clamping happens there rather than here.
+  const { page, totalPages, pageSize } = getSessionsPagination(sessions.length)
   const pageSessions = sessions.slice(page * pageSize, (page + 1) * pageSize)
   const rangeStart = sessions.length === 0 ? 0 : page * pageSize + 1
   const rangeEnd = Math.min((page + 1) * pageSize, sessions.length)
