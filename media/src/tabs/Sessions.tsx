@@ -350,6 +350,13 @@ function buildConversationInfo(sessions: SessionSummaryCard[]): Map<string, { co
   return info
 }
 
+// Whether evidenceSessionIds is currently isolated to exactly this conversation's members — used
+// to render the active marker as "you are here" and to make clicking it again a toggle-off,
+// rather than the only way out being the filter banner's separate "×" elsewhere on the page.
+function isSameIdSet(current: Set<string> | null, ids: string[]): boolean {
+  return current !== null && current.size === ids.length && ids.every(id => current.has(id))
+}
+
 // ── Table row ─────────────────────────────────────────────────────────────────
 
 function SessionRow({ sess, showWorkspace, conversation }: {
@@ -362,6 +369,7 @@ function SessionRow({ sess, showWorkspace, conversation }: {
   const cost = calcSessionCost(sess, 'token')
   const color = getAgentColor(sess.source)
   const prompt = sess.userRequest ?? ''
+  const isIsolatedToThisGroup = conversation ? isSameIdSet(evidenceSessionIds.value, conversation.memberIds) : false
 
   useEffect(() => {
     if (focusedSessionId.value === sess.sessionId) {
@@ -389,19 +397,29 @@ function SessionRow({ sess, showWorkspace, conversation }: {
             split into multiple cards by a long gap (see buildConversationInfo above). An empty
             <td> collapses to zero width under table-layout:auto regardless of the width style, so
             the bar is a real child element instead of a background painted on the cell itself.
-            Clicking it isolates the conversation's sessions (stopPropagation so it doesn't also
-            trigger the row's own expand-on-click) via the same evidenceSessionIds filter the
-            Advisor tab's "View sessions" button already uses. */}
+            Clicking it toggles isolating the conversation's sessions (stopPropagation so it
+            doesn't also trigger the row's own expand-on-click) via the same evidenceSessionIds
+            filter the Advisor tab's "View sessions" button already uses — click again (same
+            gesture, same spot) to clear it, same as the banner's "×" but without needing to look
+            away to find it. A currently-active bar renders wider as a visible "you are here." */}
         <td
-          style={`padding:0;width:4px${conversation ? ';cursor:pointer' : ''}`}
-          title={conversation ? `Part ${conversation.index} of ${conversation.total} of the same conversation — split into separate sessions by a long gap. Click to show just this conversation.` : undefined}
+          style={`padding:0;width:${isIsolatedToThisGroup ? 6 : 4}px${conversation ? ';cursor:pointer' : ''}`}
+          title={conversation
+            ? isIsolatedToThisGroup
+              ? `Part ${conversation.index} of ${conversation.total} — showing just this conversation. Click again to clear.`
+              : `Part ${conversation.index} of ${conversation.total} of the same conversation — split into separate sessions by a long gap. Click to show just this conversation.`
+            : undefined}
           onClick={conversation ? (e: MouseEvent) => {
             e.stopPropagation()
-            evidenceSessionIds.value = new Set(conversation.memberIds)
-            evidenceSessionLabel.value = 'from this conversation'
+            if (isIsolatedToThisGroup) {
+              evidenceSessionIds.value = null
+            } else {
+              evidenceSessionIds.value = new Set(conversation.memberIds)
+              evidenceSessionLabel.value = 'from this conversation'
+            }
           } : undefined}
         >
-          <div style={`width:4px;height:100%;min-height:20px;background:${conversation ? conversation.color : 'transparent'}`} />
+          <div style={`width:${isIsolatedToThisGroup ? 6 : 4}px;height:100%;min-height:20px;background:${conversation ? conversation.color : 'transparent'}`} />
         </td>
 
         {/* Chevron */}
