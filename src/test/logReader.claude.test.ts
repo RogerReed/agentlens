@@ -42,9 +42,9 @@ suite('LogReader — Claude Code edit details', () => {
     ])
 
     const reader = new LogReader()
-    const result = reader.parseFile(filePath, 'claude')
-    assert.ok(result, 'expected a parsed session')
-    const card = result!.card
+    const results = reader.parseFile(filePath, 'claude')
+    assert.strictEqual(results.length, 1, 'expected one parsed session')
+    const card = results[0].card
 
     const toolEntry = card.timeline.find(e => e.type === 'tool')
     assert.ok(toolEntry, 'expected a tool timeline entry')
@@ -88,12 +88,14 @@ suite('LogReader — Claude Code edit details', () => {
     ])
 
     const reader = new LogReader()
-    const result = reader.parseFile(filePath, 'claude')
-    const toolEntry = result!.card.timeline.find(e => e.type === 'tool')
+    const results = reader.parseFile(filePath, 'claude')
+    assert.strictEqual(results.length, 1)
+    const card = results[0].card
+    const toolEntry = card.timeline.find(e => e.type === 'tool')
     assert.strictEqual(toolEntry!.editDetails?.length, 2)
     assert.ok(toolEntry!.editDetails!.every(ed => ed.filePath === '/workspace/b.ts'))
 
-    const counts = getFileEditCounts(result!.card)
+    const counts = getFileEditCounts(card)
     assert.strictEqual(counts['/workspace/b.ts'].length, 2)
   })
 
@@ -115,11 +117,13 @@ suite('LogReader — Claude Code edit details', () => {
     ])
 
     const reader = new LogReader()
-    const result = reader.parseFile(filePath, 'claude')
-    const toolEntry = result!.card.timeline.find(e => e.type === 'tool')
+    const results = reader.parseFile(filePath, 'claude')
+    assert.strictEqual(results.length, 1)
+    const card = results[0].card
+    const toolEntry = card.timeline.find(e => e.type === 'tool')
     assert.strictEqual(toolEntry!.editDetails, undefined)
 
-    const stats = computeOneShotStats(result!.card)
+    const stats = computeOneShotStats(card)
     assert.strictEqual(stats.filesConsidered, 0)
   })
 })

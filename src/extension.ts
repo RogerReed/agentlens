@@ -293,8 +293,10 @@ export async function activate(context: vscode.ExtensionContext) {
           let written = 0
           for (let i = idx; i < Math.min(idx + batchSize, files.length); i++) {
             try {
-              const result = lr.parseFile(files[i].filePath, files[i].agentKey)
-              if (result) {
+              // Usually one result; a Claude Code transcript split by a large gap between
+              // prompts (see splitClaudeLinesOnPromptGaps) can yield more than one.
+              const results = lr.parseFile(files[i].filePath, files[i].agentKey)
+              for (const result of results) {
                 result.card.loopSignals = detectLoopSignals(result.card)
                 result.card.oneShotStats = computeOneShotStats(result.card)
                 writer!.enqueue(result.card, result.workspace || ws)

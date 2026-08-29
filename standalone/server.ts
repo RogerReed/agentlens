@@ -270,8 +270,10 @@ async function startLogIngestion() {
   for (const file of files) {
     if (file.agentKey === 'opencode') continue  // already handled above
     try {
-      const result = logReader.parseFile(file.filePath, file.agentKey)
-      if (result) {
+      // Usually one result; a Claude Code transcript split by a large gap between prompts
+      // (see splitClaudeLinesOnPromptGaps) can yield more than one.
+      const results = logReader.parseFile(file.filePath, file.agentKey)
+      for (const result of results) {
         result.card.oneShotStats = computeOneShotStats(result.card)
         logSessions.set(result.card.sessionId, result.card)
         countByKey.set(file.agentKey, (countByKey.get(file.agentKey) ?? 0) + 1)
