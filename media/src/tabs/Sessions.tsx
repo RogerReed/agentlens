@@ -5,6 +5,7 @@ import {
   sessionSortKey, sessionSortDir, type SortKey,
   workspaceFilter, shortWorkspaceName, goToHelp,
   sessionsPage, getSessionsPagination,
+  evidenceSessionIds, evidenceSessionLabel,
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
@@ -330,7 +331,7 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
 // filtered list (not just the current page) so a group's color/labels stay consistent regardless
 // of which page a sibling happens to land on; a sibling hidden by an active filter just means that
 // group won't be colored at all here (nothing misleading — no "phantom" sibling implied).
-function buildConversationInfo(sessions: SessionSummaryCard[]): Map<string, { color: string; index: number; total: number }> {
+function buildConversationInfo(sessions: SessionSummaryCard[]): Map<string, { color: string; index: number; total: number; memberIds: string[] }> {
   const byConversation = new Map<string, SessionSummaryCard[]>()
   for (const s of sessions) {
     if (!s.conversationId) continue
@@ -338,12 +339,13 @@ function buildConversationInfo(sessions: SessionSummaryCard[]): Map<string, { co
     if (group) group.push(s)
     else byConversation.set(s.conversationId, [s])
   }
-  const info = new Map<string, { color: string; index: number; total: number }>()
+  const info = new Map<string, { color: string; index: number; total: number; memberIds: string[] }>()
   for (const [conversationId, members] of byConversation) {
     if (members.length < 2) continue
     const color = getConversationColor(conversationId)
     const ordered = [...members].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-    ordered.forEach((m, i) => info.set(m.sessionId, { color, index: i + 1, total: ordered.length }))
+    const memberIds = ordered.map(m => m.sessionId)
+    ordered.forEach((m, i) => info.set(m.sessionId, { color, index: i + 1, total: ordered.length, memberIds }))
   }
   return info
 }
@@ -352,7 +354,7 @@ function buildConversationInfo(sessions: SessionSummaryCard[]): Map<string, { co
 
 function SessionRow({ sess, showWorkspace, conversation }: {
   sess: SessionSummaryCard; showWorkspace: boolean
-  conversation?: { color: string; index: number; total: number }
+  conversation?: { color: string; index: number; total: number; memberIds: string[] }
 }) {
   const [expanded, setExpanded] = useState(false)
   const isFocused = focusedSessionId.value === sess.sessionId
@@ -386,10 +388,18 @@ function SessionRow({ sess, showWorkspace, conversation }: {
         {/* Conversation-group marker — colored bar for sessions that are really one conversation
             split into multiple cards by a long gap (see buildConversationInfo above). An empty
             <td> collapses to zero width under table-layout:auto regardless of the width style, so
-            the bar is a real child element instead of a background painted on the cell itself. */}
+            the bar is a real child element instead of a background painted on the cell itself.
+            Clicking it isolates the conversation's sessions (stopPropagation so it doesn't also
+            trigger the row's own expand-on-click) via the same evidenceSessionIds filter the
+            Advisor tab's "View sessions" button already uses. */}
         <td
-          style="padding:0;width:4px"
-          title={conversation ? `Part ${conversation.index} of ${conversation.total} of the same conversation — split into separate sessions by a long gap` : undefined}
+          style={`padding:0;width:4px${conversation ? ';cursor:pointer' : ''}`}
+          title={conversation ? `Part ${conversation.index} of ${conversation.total} of the same conversation — split into separate sessions by a long gap. Click to show just this conversation.` : undefined}
+          onClick={conversation ? (e: MouseEvent) => {
+            e.stopPropagation()
+            evidenceSessionIds.value = new Set(conversation.memberIds)
+            evidenceSessionLabel.value = 'from this conversation'
+          } : undefined}
         >
           <div style={`width:4px;height:100%;min-height:20px;background:${conversation ? conversation.color : 'transparent'}`} />
         </td>

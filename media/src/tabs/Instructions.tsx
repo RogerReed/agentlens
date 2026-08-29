@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks'
 import { signal } from '@preact/signals'
 import {
-  workspaceFilter, filteredSessions, activeTab, evidenceSessionIds, vscode,
+  workspaceFilter, filteredSessions, activeTab, evidenceSessionIds, evidenceSessionLabel, vscode,
 } from '../state'
 import { calcSessionCost } from '../sessionMetrics'
 import type { SessionSummaryCard } from '../types'
@@ -502,6 +502,7 @@ function SuggestionCardView({
           <button
             onClick={() => {
               evidenceSessionIds.value = new Set(card.evidenceSessions)
+              evidenceSessionLabel.value = 'from instruction suggestion'
               activeTab.value = 'sessions'
             }}
             style="padding:2px 8px;font-size:10px;border-radius:3px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap"
@@ -836,8 +837,8 @@ export function Instructions() {
                 record={rec}
                 sessions={wsSessions}
                 onRemove={handleRemove}
-                onViewBefore={ids => { evidenceSessionIds.value = ids; activeTab.value = 'sessions' }}
-                onViewAfter={ids => { evidenceSessionIds.value = ids; activeTab.value = 'sessions' }}
+                onViewBefore={ids => { evidenceSessionIds.value = ids; evidenceSessionLabel.value = 'from instruction suggestion'; activeTab.value = 'sessions' }}
+                onViewAfter={ids => { evidenceSessionIds.value = ids; evidenceSessionLabel.value = 'from instruction suggestion'; activeTab.value = 'sessions' }}
               />
             ))}
           </div>

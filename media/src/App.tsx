@@ -7,7 +7,7 @@ import {
   dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults, exportSearchResults,
   timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
   vscode, displaySessions, rangedSessions,
-  sessionTextFilter, filteredSessions, evidenceSessionIds,
+  sessionTextFilter, filteredSessions, evidenceSessionIds, evidenceSessionLabel,
   sessionSortKey, sessionSortDir,
   workspaceFilter, availableWorkspaces, shortWorkspaceName,
   enableOtelIngestion, enableLogIngestion, otlpPort, otelReconfigureResult, type OtelReconfigureResult,
@@ -770,7 +770,7 @@ function SearchFilterBar() {
     <div style="display:flex;flex-direction:column;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0">
       {evIds !== null && (
         <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#4fc3f711;border-bottom:1px solid #4fc3f733">
-          <span style="font-size:10px;color:#4fc3f7">Showing {evIds.size} session{evIds.size !== 1 ? 's' : ''} from instruction suggestion</span>
+          <span style="font-size:10px;color:#4fc3f7">Showing {evIds.size} session{evIds.size !== 1 ? 's' : ''} {evidenceSessionLabel.value}</span>
           <button
             onClick={() => { evidenceSessionIds.value = null }}
             style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px;line-height:1"
