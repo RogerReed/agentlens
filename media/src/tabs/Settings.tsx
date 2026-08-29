@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks'
-import { enableOtelIngestion, enableLogIngestion, otlpPort, vscode, otelReconfigureResult, type OtelReconfigureResult, themePreference, setThemePreference, type ThemePreference } from '../state'
+import { enableOtelIngestion, enableLogIngestion, otlpPort, vscode, otelReconfigureResult, type OtelReconfigureResult, themePreference, setThemePreference, type ThemePreference, sessionsPageSize, setSessionsPageSize, SESSIONS_PAGE_SIZE_OPTIONS } from '../state'
 
 function sendConfig(key: string, value: boolean) {
   if (vscode) {
@@ -104,6 +104,28 @@ export function ThemeToggle() {
           </button>
         ))}
       </div>
+    </div>
+  )
+}
+
+// Both VS Code and standalone — unlike theme, there's no IDE-native equivalent to defer to. See
+// .staged-issues/session-list-scaling.md for why this exists: the Sessions table rendered every
+// matching session as its own component with no cap, and the most common view ("All" time) had no
+// limit applied at all.
+export function SessionsPageSizeControl() {
+  const current = sessionsPageSize.value
+
+  return (
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:600;color:var(--fg);margin-bottom:2px">Sessions per page</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">How many sessions the Sessions tab renders at once, with paging for the rest.</div>
+      <select
+        value={current}
+        onChange={e => setSessionsPageSize(Number((e.target as HTMLSelectElement).value))}
+        style="width:100%;padding:4px 6px;font-size:12px;border:1px solid var(--border);border-radius:3px;background:var(--vscode-dropdown-background,var(--card-bg));color:var(--fg)"
+      >
+        {SESSIONS_PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n} per page</option>)}
+      </select>
     </div>
   )
 }

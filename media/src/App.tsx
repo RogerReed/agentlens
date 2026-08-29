@@ -11,6 +11,7 @@ import {
   sessionSortKey, sessionSortDir,
   workspaceFilter, availableWorkspaces, shortWorkspaceName,
   enableOtelIngestion, enableLogIngestion, otlpPort, otelReconfigureResult, type OtelReconfigureResult,
+  sessionsPage, getSessionsPagination,
 } from './state'
 import type { TimelineEntry, AgentFilter, InitiatorFilter, DataSourceFilter, WorkspaceFilter, DailyStatRow, LifetimeStats, BurnRate, Projection, SessionSummaryCard, GitOutcome } from './types'
 
@@ -25,7 +26,7 @@ import { Pricing } from './tabs/Pricing'
 import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
 import { instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instructions'
-import { IngestionToggles, McpToggle, OtelReconfigureButton, ThemeToggle } from './tabs/Settings'
+import { IngestionToggles, McpToggle, OtelReconfigureButton, ThemeToggle, SessionsPageSizeControl } from './tabs/Settings'
 
 
 // Standalone opens with the left activity sidebar collapsed by default, since it
@@ -104,6 +105,7 @@ function ConfigPanel() {
         >×</button>
       </div>
       {window.__STANDALONE__ === true && <ThemeToggle />}
+      <SessionsPageSizeControl />
       <IngestionToggles />
       <OtelReconfigureButton />
       <McpToggle />
@@ -484,6 +486,12 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   const [searchError, setSearchError] = useState<string | null>(null)
   const tab = normalizeTabId(activeTab.value)
   const showReset = tab !== 'help'
+  // Pagination only makes sense for the Sessions tab's own table — every other tab sharing this
+  // row has no notion of "pages." Mirrors the bottom footer's own controls in Sessions.tsx exactly
+  // (same styling, same sessionsPage signal) so the two never disagree.
+  const showPaging = tab === 'sessions'
+  const sessionCount = filteredSessions.value.length
+  const { page: sessPage, totalPages: sessTotalPages } = showPaging ? getSessionsPagination(sessionCount) : { page: 0, totalPages: 1 }
 
   const isFiltered = sessionTextFilter.value !== '' ||
     evidenceSessionIds.value !== null ||
@@ -640,6 +648,24 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
           onClick={() => { const r = makeTimeRange(range.preset); timeRange.value = r; fireSearch(r) }}
           title="Refresh this time range"
         ><IconRefresh /></button>
+      )}
+
+      {/* Session paging — same controls, same styling, same signal as the table's own footer in
+          Sessions.tsx, just also reachable without scrolling down first. */}
+      {showPaging && sessTotalPages > 1 && (
+        <span style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);white-space:nowrap">
+          <button
+            onClick={() => sessionsPage.value = Math.max(0, sessPage - 1)}
+            disabled={sessPage === 0}
+            style={`padding:2px 8px;font-size:11px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--fg);cursor:${sessPage === 0 ? 'default' : 'pointer'};opacity:${sessPage === 0 ? 0.4 : 1}`}
+          >‹ Prev</button>
+          <span>Page {sessPage + 1} of {sessTotalPages}</span>
+          <button
+            onClick={() => sessionsPage.value = Math.min(sessTotalPages - 1, sessPage + 1)}
+            disabled={sessPage >= sessTotalPages - 1}
+            style={`padding:2px 8px;font-size:11px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--fg);cursor:${sessPage >= sessTotalPages - 1 ? 'default' : 'pointer'};opacity:${sessPage >= sessTotalPages - 1 ? 0.4 : 1}`}
+          >Next ›</button>
+        </span>
       )}
     </div>
   )

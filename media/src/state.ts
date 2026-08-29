@@ -113,6 +113,10 @@ export const gitOutcomes = signal<Record<string, GitOutcome | null>>({})
 // Traces and Flow auto-open to it; a context bar shows it across all tabs.
 export const focusedSessionId = signal<string | null>(null)
 
+// sessionLimit scopes how many recent sessions feed Alerts/Charts/Cost/Automation's analysis
+// (see displaySessions below) — a data-scoping concept, unrelated to the Sessions table's own
+// pagination (sessionsPageSize/sessionsPage, defined further down), which only controls how many
+// rows render at once and never excludes a session from any other tab's analysis.
 export const sessionLimit = signal(25)
 export const selectedAgentFilter = signal<AgentFilter>('all')
 export const initiatorFilter = signal<InitiatorFilter>('all')
@@ -184,6 +188,53 @@ export function setThemePreference(pref: ThemePreference): void {
     localStorage.setItem(THEME_STORAGE_KEY, pref)
   } catch { /* localStorage unavailable — preference just won't survive a reload */ }
   applyThemeAttribute(pref)
+}
+
+// ── Sessions table pagination (both VS Code and standalone — no built-in equivalent to defer to
+//    in either context, unlike theme) ──────────────────────────────────────────
+
+// Rendering every matching session as its own live component with no cap was the mechanism behind
+// .staged-issues/session-list-scaling.md — fine at hundreds, unbounded past that, and the one time
+// range ("All") most likely to be selected had no cap at all. 50 is picked as a reasonable
+// default — enough to browse a full day or two of normal usage on one page without constant
+// clicking, small enough to keep the DOM light — not a measured number, same honesty standard as
+// every other threshold in this project; adjustable in Settings for anyone who wants it larger.
+export const SESSIONS_PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500] as const
+const DEFAULT_SESSIONS_PAGE_SIZE = 50
+const SESSIONS_PAGE_SIZE_STORAGE_KEY = 'agentlens-sessions-page-size'
+
+function readStoredSessionsPageSize(): number {
+  try {
+    const v = Number(localStorage.getItem(SESSIONS_PAGE_SIZE_STORAGE_KEY))
+    if (SESSIONS_PAGE_SIZE_OPTIONS.includes(v as typeof SESSIONS_PAGE_SIZE_OPTIONS[number])) return v
+  } catch { /* localStorage unavailable — fall back to the default every load */ }
+  return DEFAULT_SESSIONS_PAGE_SIZE
+}
+
+export const sessionsPageSize = signal<number>(readStoredSessionsPageSize())
+
+export function setSessionsPageSize(size: number): void {
+  sessionsPageSize.value = size
+  sessionsPage.value = 0  // changing page size mid-browse would otherwise land on a confusing offset
+  try {
+    localStorage.setItem(SESSIONS_PAGE_SIZE_STORAGE_KEY, String(size))
+  } catch { /* localStorage unavailable — preference just won't survive a reload */ }
+}
+
+// Current page, 0-indexed. Deliberately not persisted — always start back at the most recent
+// sessions on reload, and reset it (see Sessions.tsx) whenever the underlying filtered list
+// changes shape, rather than leaving the user stranded on a now-out-of-range page.
+export const sessionsPage = signal(0)
+
+/** Shared by Sessions.tsx (the table itself) and App.tsx's SearchFilterBar (the compact Prev/Next
+ *  next to the filter row) so both always agree on the current page and page count — clamps
+ *  locally rather than writing back into the signal, so loosening a filter later makes a
+ *  previously out-of-range page valid again on its own. */
+export function getSessionsPagination(totalCount: number): { page: number; totalPages: number; pageSize: number } {
+  const pageSize = sessionsPageSize.value
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const page = Math.min(sessionsPage.value, totalPages - 1)
+  return { page, totalPages, pageSize }
 }
 
 // ── Navigation helpers ────────────────────────────────────────────────────────
