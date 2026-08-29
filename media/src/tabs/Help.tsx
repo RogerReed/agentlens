@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'preact/hooks'
 import { esc } from '../utils'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -50,7 +51,7 @@ const HELP_SECTIONS = {
   patterns:   { href: '#help-advisor',    heading: 'Advisor' },
   costs:      { href: '#help-costs',      heading: 'Costs' },
   settings:   { href: '#help-settings',   heading: 'Settings' },
-  mcp:        { href: '#help-mcp',        heading: 'Agent Integration' },
+  mcp:        { href: '#help-mcp',        heading: 'MCP' },
   export:     { href: '#help-export',     heading: 'Export' },
   import:     { href: '#help-import',     heading: 'Import' },
   badges:     { href: '#help-badges',     heading: 'Badges' },
@@ -135,13 +136,35 @@ function LoopBlock({ id, title, why, example, steps, impact }: {
 // ── Section components ────────────────────────────────────────────────────────
 
 function Toc() {
+  const [activeHref, setActiveHref] = useState<string>(TOC_SECTIONS[0]?.href ?? '')
+
+  // Highlight whichever section is nearest the top of the viewport as the page scrolls,
+  // so the sidebar always shows roughly where you are — standard for a docs-style left rail.
+  useEffect(() => {
+    const targets = TOC_SECTIONS
+      .map(s => document.querySelector(s.href))
+      .filter((el): el is Element => el !== null)
+    if (targets.length === 0) return
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries.filter(e => e.isIntersecting)
+        if (visible.length === 0) return
+        const topMost = visible.reduce((a, b) => (a.boundingClientRect.top <= b.boundingClientRect.top ? a : b))
+        setActiveHref('#' + topMost.target.id)
+      },
+      { rootMargin: '-44px 0px -70% 0px', threshold: 0 }
+    )
+    targets.forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: 'html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc a{display:inline-block;padding:3px 11px;border-radius:12px;font-size:11px;font-weight:500;color:var(--muted);text-decoration:none;border:1px solid var(--border);transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover);border-color:var(--fg)}' }} />
-      <nav class="help-toc" aria-label="Help sections" style="position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 12px 8px 0;margin:0 -16px 20px -12px;display:flex;align-items:center;gap:12px">
-        <div style="display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;padding-left:12px">
-          {TOC_SECTIONS.map(s => <a href={s.href}>{s.heading}</a>)}
-        </div>
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc{position:sticky;top:44px;flex:0 0 116px;display:flex;flex-direction:column;gap:1px;max-height:calc(100vh - 60px);overflow-y:auto}.help-toc a{display:block;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;line-height:1.4;border-left:2px solid transparent;transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover)}.help-toc a.active{color:var(--fg);background:var(--hover);border-left-color:var(--accent);font-weight:600}' }} />
+      <nav class="help-toc" aria-label="Help sections">
+        {TOC_SECTIONS.map(s => (
+          <a href={s.href} class={s.href === activeHref ? 'active' : undefined}>{s.heading}</a>
+        ))}
       </nav>
     </>
   )
@@ -778,7 +801,7 @@ function SettingsSection() {
         </div>
 
         <h4 id="help-automation" style={subHeadStyle}>Automation</h4>
-        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Automations watch live sessions and fire a correction prompt when a session crosses a threshold — but AgentLens never sends that prompt to the agent process itself; nothing pushes it in without something on the agent's side asking for it. There are three ways it reaches you, per automation, controlled by its <strong>Write prompts file</strong> toggle in Settings, plus an always-on MCP path: by default, a notification appears (VS Code warning notification, or an in-page notification in standalone/npx mode) with a <strong>Copy Prompt</strong> button — you copy it and paste it into the agent yourself. With <strong>Write prompts file</strong> enabled instead, AgentLens appends the prompt to <code style={codeStyle}>agentlens-prompts-&#123;agent&#125;.md</code> in the workspace root rather than showing a notification; nothing reads that file back to the agent automatically — it only helps if you (or an instruction you've added to CLAUDE.md/AGENTS.md) has the agent check it. Third, the MCP tool <code style={codeStyle}>check_automation_triggers</code> (see <a href="#help-mcp">Agent Integration</a>) lets an agent poll for its own triggers directly — but it always evaluates against AgentLens's default thresholds, not any per-agent customization made here in Settings, since that customization lives only in the dashboard's browser storage. Each automation shown below can still be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex for the notification/file delivery paths.</p>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Automations watch live sessions and fire a correction prompt when a session crosses a threshold — but AgentLens never sends that prompt to the agent process itself; nothing pushes it in without something on the agent's side asking for it. There are three ways it reaches you, per automation, controlled by its <strong>Write prompts file</strong> toggle in Settings, plus an always-on MCP path: by default, a notification appears (VS Code warning notification, or an in-page notification in standalone/npx mode) with a <strong>Copy Prompt</strong> button — you copy it and paste it into the agent yourself. With <strong>Write prompts file</strong> enabled instead, AgentLens appends the prompt to <code style={codeStyle}>agentlens-prompts-&#123;agent&#125;.md</code> in the workspace root rather than showing a notification; nothing reads that file back to the agent automatically — it only helps if you (or an instruction you've added to CLAUDE.md/AGENTS.md) has the agent check it. Third, the MCP tool <code style={codeStyle}>check_automation_triggers</code> (see <a href="#help-mcp">MCP</a>) lets an agent poll for its own triggers directly — but it always evaluates against AgentLens's default thresholds, not any per-agent customization made here in Settings, since that customization lives only in the dashboard's browser storage. Each automation shown below can still be enabled per-agent with independent thresholds for Claude Code, Copilot, and Codex for the notification/file delivery paths.</p>
         <div class="glossary">
           <div class="glossary-item" style="flex-direction:column;gap:4px">
             <dt class="glossary-term">Context Compaction</dt>
@@ -1032,24 +1055,26 @@ function GlossarySection() {
 
 export function Help() {
   return (
-    <div id="help-content">
+    <div id="help-content" style="display:flex;align-items:flex-start;gap:20px">
       <Toc />
-      <OverviewSection />
-      <ConfigSection />
-      <AgentOtelSection />
-      <SessionsSection />
-      <AnalyticsSection />
-      <PatternsSection />
-      <CostSection />
-      <SettingsSection />
-      <McpSection />
-      <ExportSection />
-      <ImportSection />
-      <BadgesSection />
-      <GlossarySection />
-      <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">
-        <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
-      </p>
+      <div style="flex:1;min-width:0">
+        <OverviewSection />
+        <ConfigSection />
+        <AgentOtelSection />
+        <SessionsSection />
+        <AnalyticsSection />
+        <PatternsSection />
+        <CostSection />
+        <SettingsSection />
+        <McpSection />
+        <ExportSection />
+        <ImportSection />
+        <BadgesSection />
+        <GlossarySection />
+        <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">
+          <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
+        </p>
+      </div>
     </div>
   )
 }

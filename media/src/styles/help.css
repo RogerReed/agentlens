@@ -1,9 +1,4 @@
 /* Help & Glossary */
-.help-toc { margin-bottom: 24px; }
-.help-toc-list { list-style: none; padding: 0; margin: 0; }
-.help-toc-list li { padding: 4px 0; }
-.help-toc-list a { color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 500; }
-.help-toc-list a:hover { text-decoration: underline; }
 .help-overview-body { max-width: 720px; font-size: 13px; line-height: 1.6; color: var(--fg); }
 .help-overview-body p { margin: 0 0 10px 0; }
 .help-overview-body ul { margin: 0 0 10px 0; padding-left: 20px; }
