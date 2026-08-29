@@ -160,7 +160,7 @@ function Toc() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: 'html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc{position:sticky;top:44px;flex:0 0 148px;display:flex;flex-direction:column;gap:1px;max-height:calc(100vh - 60px);overflow-y:auto}.help-toc a{display:block;padding:5px 10px;border-radius:4px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;line-height:1.4;border-left:2px solid transparent;transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover)}.help-toc a.active{color:var(--fg);background:var(--hover);border-left-color:var(--accent);font-weight:600}' }} />
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc{position:sticky;top:44px;flex:0 0 116px;display:flex;flex-direction:column;gap:1px;max-height:calc(100vh - 60px);overflow-y:auto}.help-toc a{display:block;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;line-height:1.4;border-left:2px solid transparent;transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover)}.help-toc a.active{color:var(--fg);background:var(--hover);border-left-color:var(--accent);font-weight:600}' }} />
       <nav class="help-toc" aria-label="Help sections">
         {TOC_SECTIONS.map(s => (
           <a href={s.href} class={s.href === activeHref ? 'active' : undefined}>{s.heading}</a>
@@ -1055,7 +1055,7 @@ function GlossarySection() {
 
 export function Help() {
   return (
-    <div id="help-content" style="display:flex;align-items:flex-start;gap:28px">
+    <div id="help-content" style="display:flex;align-items:flex-start;gap:20px">
       <Toc />
       <div style="flex:1;min-width:0">
         <OverviewSection />
