@@ -4,6 +4,7 @@ import {
   focusedSessionId, vscode, ignoredInsightKeys,
   sessionSortKey, sessionSortDir, type SortKey,
   workspaceFilter, shortWorkspaceName, goToHelp,
+  sessionsPageSize, sessionsPage,
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
@@ -469,6 +470,17 @@ export function Sessions() {
   const thSort = thBase + ';cursor:pointer;color:var(--fg)'
   const thMuted = thBase + ';color:var(--muted);font-weight:500'
 
+  // Rendering every matching session as its own live component with no cap was the mechanism
+  // behind .staged-issues/session-list-scaling.md — clamped locally rather than writing the
+  // clamp back into the signal, so loosening a filter later makes a previously out-of-range page
+  // valid again on its own, with no separate reset needed.
+  const pageSize = sessionsPageSize.value
+  const totalPages = Math.max(1, Math.ceil(sessions.length / pageSize))
+  const page = Math.min(sessionsPage.value, totalPages - 1)
+  const pageSessions = sessions.slice(page * pageSize, (page + 1) * pageSize)
+  const rangeStart = sessions.length === 0 ? 0 : page * pageSize + 1
+  const rangeEnd = Math.min((page + 1) * pageSize, sessions.length)
+
   return (
     <div id="sessions-content" style="padding-top:8px">
       <div class="h-scroll-hint">
@@ -486,14 +498,30 @@ export function Sessions() {
           </tr>
         </thead>
         <tbody>
-          {sessions.map(sess => (
+          {pageSessions.map(sess => (
             <SessionRow key={sess.sessionId} sess={sess} showWorkspace={showWorkspace} />
           ))}
         </tbody>
       </table>
       </div>
-      <div style="padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border)">
+      <div style="padding:6px 8px;font-size:11px;color:var(--muted);border-top:1px solid var(--vscode-panel-border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <span>{(sessionSummary.value?.sessions?.length ?? 0)} sessions stored — managed by retention policy</span>
+        {totalPages > 1 && (
+          <span style="display:flex;align-items:center;gap:8px">
+            <span>Showing {rangeStart}–{rangeEnd} of {sessions.length}</span>
+            <button
+              onClick={() => sessionsPage.value = Math.max(0, page - 1)}
+              disabled={page === 0}
+              style={`padding:2px 8px;font-size:11px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--fg);cursor:${page === 0 ? 'default' : 'pointer'};opacity:${page === 0 ? 0.4 : 1}`}
+            >‹ Prev</button>
+            <span>Page {page + 1} of {totalPages}</span>
+            <button
+              onClick={() => sessionsPage.value = Math.min(totalPages - 1, page + 1)}
+              disabled={page >= totalPages - 1}
+              style={`padding:2px 8px;font-size:11px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--fg);cursor:${page >= totalPages - 1 ? 'default' : 'pointer'};opacity:${page >= totalPages - 1 ? 0.4 : 1}`}
+            >Next ›</button>
+          </span>
+        )}
       </div>
     </div>
   )

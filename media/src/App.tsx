@@ -25,7 +25,7 @@ import { Pricing } from './tabs/Pricing'
 import { Patterns } from './tabs/Patterns'
 import { Automation, checkAutomations } from './tabs/Automation'
 import { instructionFiles, appliedSuggestions, dismissedIds } from './tabs/Instructions'
-import { IngestionToggles, McpToggle, OtelReconfigureButton, ThemeToggle } from './tabs/Settings'
+import { IngestionToggles, McpToggle, OtelReconfigureButton, ThemeToggle, SessionsPageSizeControl } from './tabs/Settings'
 
 
 // Standalone opens with the left activity sidebar collapsed by default, since it
@@ -104,6 +104,7 @@ function ConfigPanel() {
         >×</button>
       </div>
       {window.__STANDALONE__ === true && <ThemeToggle />}
+      <SessionsPageSizeControl />
       <IngestionToggles />
       <OtelReconfigureButton />
       <McpToggle />
