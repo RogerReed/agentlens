@@ -2,6 +2,23 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.14.0] — 2026-08-28
+
+### Added
+
+- **Configurable Sessions list pagination** — the Sessions table previously rendered its entire matching list with no cap for the "All time" view and no way to limit how many rows render at once, with total session counts only likely to grow given the prompt-boundary splitting below (one log file can now yield many session cards instead of one). Adds a page size setting (25/50/100/250/500, default 50, persisted across reloads) with Prev/Next controls shown both in the table's own footer and alongside the Time/Agent filters at the top (#226)
+
+### Fixed
+
+- **Log-sourced sessions merged an entire day's (or longer) work into one card instead of splitting on actual conversation boundaries** — Claude Code, Codex, and Copilot VS Code each write one log file per work session on disk, but a single file can span many genuinely separate prompts/conversations hours or days apart; AgentLens treated the whole file as one session, producing durations of 50+ hours that weren't real. Sessions are now split on prompt gaps (a 30+ minute idle gap between turns) for all three log-sourced formats, so each card reflects one actual interaction (#225)
+- **Help page section nav wrapped tall and clipped off the right edge at narrower widths** — the horizontal pill row grew multi-line for longer labels and hid overflowing pills with no visible way to reach them. Replaced with a sticky sidebar list that highlights the current section as you scroll (#228)
+
+### Changed
+
+- **Sessions table footer** — dropped the "N sessions stored — managed by retention policy" line (redundant with the filter row's own session count) and shows the running AgentLens version there instead; removed the now-duplicate version display from the Help page nav (#227)
+
+---
+
 ## [0.13.0] — 2026-08-27
 
 ### Added
