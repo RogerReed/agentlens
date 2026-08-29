@@ -76,6 +76,7 @@ suite('LogReader — Copilot VS Code chat session splitting (integration)', () =
     const results = new LogReader().parseFile(filePath, 'copilot_vscode')
     assert.strictEqual(results.length, 1)
     assert.strictEqual(results[0].card.sessionId, 'sess-normal')
+    assert.strictEqual(results[0].card.conversationId, undefined, 'a file that never split has no group to color-code')
   })
 
   test('a real multi-hour gap splits into two sessions, each with its own prompt', () => {
@@ -94,6 +95,11 @@ suite('LogReader — Copilot VS Code chat session splitting (integration)', () =
     assert.strictEqual(results[0].card.userRequest, 'day one work')
     assert.strictEqual(results[1].card.sessionId, 'sess-gapped#1')
     assert.strictEqual(results[1].card.userRequest, 'day two work')
+
+    // Both segments came from the same file, so the Sessions table can color-code them as one
+    // conversation split apart — see .staged-issues/color-code-multi-segment-conversations.md.
+    assert.strictEqual(results[0].card.conversationId, 'sess-gapped')
+    assert.strictEqual(results[1].card.conversationId, 'sess-gapped')
   })
 
   test('segment 0 uses its own first turn\'s timestamp, not the chat panel\'s creation time, as its start', () => {

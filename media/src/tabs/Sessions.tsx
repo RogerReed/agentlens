@@ -8,7 +8,7 @@ import {
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
-  getDataSourceBadgeHtml, getInitiatorBadgeHtml,
+  getDataSourceBadgeHtml, getInitiatorBadgeHtml, getConversationColor,
 } from '../utils'
 import { calcSessionCost, oneShotRate, avgEditsPerFile } from '../sessionMetrics'
 import { fmtUsd } from './Cost'
@@ -322,9 +322,38 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
   )
 }
 
+// A log file can now split into several session cards when a large idle gap separates two real
+// conversations within it (see splitLinesOnPromptGaps in logReader.ts) — those cards share a
+// conversationId. Builds a per-sessionId lookup (color + "part X of Y") for every session that
+// still has 2+ siblings visible in the given list, so the Sessions table can color-code and label
+// rows that are really one conversation split across multiple cards. Computed over the full
+// filtered list (not just the current page) so a group's color/labels stay consistent regardless
+// of which page a sibling happens to land on; a sibling hidden by an active filter just means that
+// group won't be colored at all here (nothing misleading — no "phantom" sibling implied).
+function buildConversationInfo(sessions: SessionSummaryCard[]): Map<string, { color: string; index: number; total: number }> {
+  const byConversation = new Map<string, SessionSummaryCard[]>()
+  for (const s of sessions) {
+    if (!s.conversationId) continue
+    const group = byConversation.get(s.conversationId)
+    if (group) group.push(s)
+    else byConversation.set(s.conversationId, [s])
+  }
+  const info = new Map<string, { color: string; index: number; total: number }>()
+  for (const [conversationId, members] of byConversation) {
+    if (members.length < 2) continue
+    const color = getConversationColor(conversationId)
+    const ordered = [...members].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+    ordered.forEach((m, i) => info.set(m.sessionId, { color, index: i + 1, total: ordered.length }))
+  }
+  return info
+}
+
 // ── Table row ─────────────────────────────────────────────────────────────────
 
-function SessionRow({ sess, showWorkspace }: { sess: SessionSummaryCard; showWorkspace: boolean }) {
+function SessionRow({ sess, showWorkspace, conversation }: {
+  sess: SessionSummaryCard; showWorkspace: boolean
+  conversation?: { color: string; index: number; total: number }
+}) {
   const [expanded, setExpanded] = useState(false)
   const isFocused = focusedSessionId.value === sess.sessionId
   const rowRef = useRef<HTMLTableRowElement>(null)
@@ -354,6 +383,17 @@ function SessionRow({ sess, showWorkspace }: { sess: SessionSummaryCard; showWor
         onClick={toggle}
         style={`cursor:pointer;background:${rowBg};border-bottom:1px solid var(--vscode-panel-border)`}
       >
+        {/* Conversation-group marker — colored bar for sessions that are really one conversation
+            split into multiple cards by a long gap (see buildConversationInfo above). An empty
+            <td> collapses to zero width under table-layout:auto regardless of the width style, so
+            the bar is a real child element instead of a background painted on the cell itself. */}
+        <td
+          style="padding:0;width:4px"
+          title={conversation ? `Part ${conversation.index} of ${conversation.total} of the same conversation — split into separate sessions by a long gap` : undefined}
+        >
+          <div style={`width:4px;height:100%;min-height:20px;background:${conversation ? conversation.color : 'transparent'}`} />
+        </td>
+
         {/* Chevron */}
         <td style="padding:4px 4px 4px 8px;width:16px;color:var(--muted);font-size:9px;white-space:nowrap">
           {expanded ? '▼' : '▶'}
@@ -423,7 +463,7 @@ function SessionRow({ sess, showWorkspace }: { sess: SessionSummaryCard; showWor
 
       {expanded && (
         <tr style="border-bottom:1px solid var(--vscode-panel-border)">
-          <td colspan={8} style="padding:0">
+          <td colspan={9} style="padding:0">
             <SessionDetail sess={sess} />
           </td>
         </tr>
@@ -477,6 +517,7 @@ export function Sessions() {
   const pageSessions = sessions.slice(page * pageSize, (page + 1) * pageSize)
   const rangeStart = sessions.length === 0 ? 0 : page * pageSize + 1
   const rangeEnd = Math.min((page + 1) * pageSize, sessions.length)
+  const conversationInfo = buildConversationInfo(sessions)
 
   return (
     <div id="sessions-content" style="padding-top:8px">
@@ -484,6 +525,7 @@ export function Sessions() {
       <table style="width:100%;border-collapse:collapse;font-size:11px">
         <thead>
           <tr style="border-bottom:2px solid var(--vscode-panel-border)">
+            <th style="width:4px;padding:0" title="A colored bar marks sessions that are really one conversation split into multiple cards by a long gap between them." />
             <th style="width:16px;padding:3px 4px 3px 8px" />
             <th style={'width:10px;padding:3px 4px;' + thSort} onClick={() => onSortClick('source')} title="Sort by agent">{sortArrow('source')}</th>
             <th style={'text-align:left;' + thSort} onClick={() => onSortClick('start_time')}>Time{sortArrow('start_time')}</th>
@@ -496,7 +538,7 @@ export function Sessions() {
         </thead>
         <tbody>
           {pageSessions.map(sess => (
-            <SessionRow key={sess.sessionId} sess={sess} showWorkspace={showWorkspace} />
+            <SessionRow key={sess.sessionId} sess={sess} showWorkspace={showWorkspace} conversation={conversationInfo.get(sess.sessionId)} />
           ))}
         </tbody>
       </table>

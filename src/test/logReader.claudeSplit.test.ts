@@ -179,6 +179,7 @@ suite('LogReader — Claude Code session splitting (integration)', () => {
     assert.strictEqual(results.length, 1)
     assert.strictEqual(results[0].card.sessionId, 'sess-normal')
     assert.strictEqual(results[0].card.userRequest, 'first thing')
+    assert.strictEqual(results[0].card.conversationId, undefined, 'a file that never split has no group to color-code')
   })
 
   test('a session with a real multi-hour gap between prompts splits into two sessions, each with its own prompt and totals', () => {
@@ -209,6 +210,11 @@ suite('LogReader — Claude Code session splitting (integration)', () => {
     // used to be baked into one session's durationMs before this fix.
     assert.ok(results[0].card.durationMs < 60_000)
     assert.ok(results[1].card.durationMs < 60_000)
+
+    // Both segments came from the same file, so the Sessions table can color-code them as one
+    // conversation split apart — see .staged-issues/color-code-multi-segment-conversations.md.
+    assert.strictEqual(results[0].card.conversationId, 'sess-gapped')
+    assert.strictEqual(results[1].card.conversationId, 'sess-gapped')
   })
 
   test('re-scanning an unchanged split file returns no results (cache behavior preserved)', () => {
