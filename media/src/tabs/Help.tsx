@@ -142,9 +142,6 @@ function Toc() {
         <div style="display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;padding-left:12px">
           {TOC_SECTIONS.map(s => <a href={s.href}>{s.heading}</a>)}
         </div>
-        {window.__VERSION__ && (
-          <span style="font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0">v{window.__VERSION__}</span>
-        )}
       </nav>
     </>
   )
