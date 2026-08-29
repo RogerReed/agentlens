@@ -274,7 +274,7 @@ export class LogReader {
 
     switch (agentKey) {
       case 'claude':              return this._processFileMulti(filePath, () => this._parseClaudeFile(filePath))
-      case 'codex':               return _single(this._processFile(filePath, () => this._parseCodexFile(filePath, '')))
+      case 'codex':               return this._processFileMulti(filePath, () => this._parseCodexFile(filePath))
       case 'copilot':             return _single(this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId)))
       case 'copilot_vscode':      return _single(this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId)))
       case 'copilot_vscode_json': return _single(this._processFile(filePath, () => this._parseCopilotVSCodeJsonFile(filePath, sessionId)))
@@ -497,18 +497,50 @@ export class LogReader {
     const results: LogSessionResult[] = []
     for (const sessionsDir of codexSessionsDirs()) {
       this._collectJsonlFiles(sessionsDir).forEach(filePath => {
-        const result = this._processFile(filePath, () => this._parseCodexFile(filePath, sessionsDir))
-        if (result) results.push(result)
+        results.push(...this._processFileMulti(filePath, () => this._parseCodexFile(filePath)))
       })
     }
     return results
   }
 
-  private _parseCodexFile(filePath: string, _sessionsDir: string): LogSessionResult | null {
+  /** Reads a Codex CLI transcript and splits it into one or more session results — same
+   *  one-file-can-span-real-days problem as Claude Code (confirmed on real data: files spanning
+   *  two real weeks with multi-day gaps between prompts), same fix. See
+   *  splitCodexLinesOnPromptGaps for what counts as a new prompt in this format. No duplicate-uuid
+   *  issue found in Codex's format during validation (unlike Claude Code's — see dedupeByUuid),
+   *  so no dedup step here; revisit if real data ever shows otherwise.
+   *
+   *  One thing splitting alone doesn't handle: Codex's token_count events report a
+   *  total_token_usage that's cumulative for the *entire file*, not per-turn — confirmed on real
+   *  data (input_tokens climbing 16k → 33k → ... → 489k monotonically across an 8-day span with
+   *  no resets). Slicing lines into segments without accounting for this would give every segment
+   *  after the first the *entire session's* running total, not its own — segment 3 would report
+   *  segments 0+1+2+3's combined tokens as if they were its own. _parseCodexSegment takes the
+   *  previous segment's ending cumulative usage as a baseline and subtracts it, so each segment
+   *  reports only its own delta; running_totalTokenUsage carries that baseline forward across
+   *  segments (including ones with no token_count events of their own, which must inherit the
+   *  prior segment's cumulative value unchanged, not reset to zero). */
+  private _parseCodexFile(filePath: string): LogSessionResult[] {
     const lines = this._readNewLines(filePath)
-    if (!lines) return null
+    if (!lines) return []
 
-    const sessionId = path.basename(filePath, '.jsonl')
+    const baseSessionId = path.basename(filePath, '.jsonl')
+    const segments = splitCodexLinesOnPromptGaps(lines)
+    const results: LogSessionResult[] = []
+    let runningTotalTokenUsage: Record<string, number> | undefined
+    segments.forEach((segmentLines, segmentIndex) => {
+      const parsed = this._parseCodexSegment(segmentLines, claudeSegmentSessionId(baseSessionId, segmentIndex), runningTotalTokenUsage)
+      if (parsed.result) results.push(parsed.result)
+      if (parsed.cumulativeUsage) runningTotalTokenUsage = parsed.cumulativeUsage
+    })
+    return results
+  }
+
+  private _parseCodexSegment(
+    lines: string[],
+    sessionId: string,
+    baselineUsage: Record<string, number> | undefined,
+  ): { result: LogSessionResult | null; cumulativeUsage: Record<string, number> | undefined } {
     let workspace = ''
 
     let model = ''
@@ -563,19 +595,35 @@ export class LogReader {
       }
     }
 
-    if (!firstTimestamp) return null
+    if (!firstTimestamp) return { result: null, cumulativeUsage: undefined }
 
-    // Use final total_token_usage; input_tokens includes cached, so subtract to get
-    // the raw (non-cached) portion that _buildCard will re-add alongside cacheRead.
-    const totalCacheRead  = lastTotalUsage?.['cached_input_tokens']    ?? 0
-    const totalInput      = Math.max(0, (lastTotalUsage?.['input_tokens'] ?? 0) - totalCacheRead)
-    // Include reasoning tokens in output — they're billed at the output rate for o-series.
-    const totalOutput     = (lastTotalUsage?.['output_tokens'] ?? 0)
-                          + (lastTotalUsage?.['reasoning_output_tokens'] ?? 0)
+    // total_token_usage is cumulative for the whole file — this segment's own contribution is
+    // the delta from the previous segment's ending cumulative value (0 for segment 0). A segment
+    // with no token_count events of its own (lastTotalUsage undefined) contributed nothing new.
+    let totalCacheRead = 0, totalInput = 0, totalOutput = 0
+    if (lastTotalUsage) {
+      const baseCacheRead = baselineUsage?.['cached_input_tokens'] ?? 0
+      const baseInputRaw  = Math.max(0, (baselineUsage?.['input_tokens'] ?? 0) - baseCacheRead)
+      const baseOutput    = (baselineUsage?.['output_tokens'] ?? 0) + (baselineUsage?.['reasoning_output_tokens'] ?? 0)
+
+      const curCacheRead = lastTotalUsage['cached_input_tokens'] ?? 0
+      // input_tokens includes cached, so subtract to get the raw (non-cached) portion that
+      // _buildCard will re-add alongside cacheRead.
+      const curInputRaw  = Math.max(0, (lastTotalUsage['input_tokens'] ?? 0) - curCacheRead)
+      // Include reasoning tokens in output — they're billed at the output rate for o-series.
+      const curOutput    = (lastTotalUsage['output_tokens'] ?? 0) + (lastTotalUsage['reasoning_output_tokens'] ?? 0)
+
+      totalCacheRead = Math.max(0, curCacheRead - baseCacheRead)
+      totalInput     = Math.max(0, curInputRaw - baseInputRaw)
+      totalOutput    = Math.max(0, curOutput - baseOutput)
+    }
 
     return {
-      workspace,
-      card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, peakContextPerTurn: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesWritten: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }, workspace),
+      result: {
+        workspace,
+        card: _buildCard(sessionId, 'codex', model || 'codex', firstTimestamp, lastTimestamp, { totalInput, totalOutput, totalCacheRead, totalCacheCreate: 0, peakContextPerTurn: 0, turns, totalToolCalls: 0, toolCounts: {}, filesRead: new Set(), filesChanged: new Set(), filesWritten: new Set(), filesSearched: new Set(), userRequest: userRequest.slice(0, 500), timeline: [], initiator: 'user' }, workspace),
+      },
+      cumulativeUsage: lastTotalUsage,
     }
   }
 
@@ -1488,39 +1536,82 @@ export function dedupeByUuid(lines: string[]): string[] {
 // question on whether to also force a split at real calendar-day boundaries.
 export const SESSION_SPLIT_GAP_MS = 30 * 60_000
 
+// A chain of bookkeeping events immediately preceding a real prompt (Codex: thread_settings_
+// applied, task_started, and — only discovered by checking a second real file, after task_started
+// alone turned out to have exactly the same problem as user_message — turn_aborted when the prior
+// turn was interrupted rather than completed cleanly) all get logged within milliseconds of the
+// new turn's own timestamp, arriving *before* the actual prompt-boundary line in file order.
+// Anchoring the split purely on a fixed set of named event types is a losing game — every real
+// file checked so far has turned up one more type in the cluster. WALKBACK_EPSILON_MS instead
+// walks the boundary backward over *any* immediately-preceding lines within this tight a gap of
+// each other, regardless of type, so an unrecognized future bookkeeping event is handled the same
+// way as the ones already found rather than needing its own name added to a list.
+const WALKBACK_EPSILON_MS = 2000
+
 /**
- * Splits a Claude Code JSONL transcript's lines into segments, one per group of consecutive user
- * prompts with no gap between them exceeding SESSION_SPLIT_GAP_MS. A split point always falls
- * immediately before a `type: 'user'` line — a segment's tool calls and assistant responses
- * always stay grouped with the prompt that triggered them, never split mid-turn.
+ * Splits a log's lines into segments, one per group of consecutive prompts with no gap between
+ * them exceeding SESSION_SPLIT_GAP_MS. A split point always falls before a line isPromptBoundary
+ * identifies as a new prompt, walked back over any immediately-preceding near-simultaneous
+ * bookkeeping lines (see WALKBACK_EPSILON_MS) — a segment's tool calls and assistant responses
+ * always stay grouped with the prompt that triggered them, never split mid-turn. What counts as
+ * "a new prompt" differs per log format (Claude Code: `type: 'user'`; Codex: an `event_msg` whose
+ * payload type is `user_message`), so each format gets its own thin wrapper below rather than
+ * sharing one predicate — this function holds only the boundary/gap algorithm itself, tested once
+ * and reused by all of them.
  *
  * Pure and independently testable on purpose: this only needs the raw lines and produces raw
  * line groups, so it can be verified against real transcript data without touching any of the
- * token/tool/file accounting in _parseClaudeSegment.
+ * token/tool/file accounting in each format's own per-segment parser.
  */
-export function splitClaudeLinesOnPromptGaps(lines: string[]): string[][] {
+function splitLinesOnPromptGaps(
+  lines: string[],
+  isPromptBoundary: (entry: Record<string, unknown>) => boolean,
+): string[][] {
   if (lines.length === 0) return []
 
+  const timestamps: Array<number | null> = lines.map(line => {
+    try {
+      const entry = JSON.parse(line) as Record<string, unknown>
+      const ts = entry['timestamp'] as string | undefined
+      const tsMs = ts ? Date.parse(ts) : NaN
+      return Number.isFinite(tsMs) ? tsMs : null
+    } catch {
+      return null
+    }
+  })
+
   const boundaries: number[] = [0]
-  // Tracks the highest user-prompt timestamp seen so far, not just the most recently seen one —
-  // real transcripts can contain an isolated out-of-order timestamp (confirmed on real data: one
-  // entry mid-file stamped a full day earlier than its neighbors, apparently from Claude Code's
-  // own resume/continuation handling). Comparing against the max rather than the last value keeps
-  // a single such anomaly from corrupting the gap baseline for every comparison after it.
-  let maxUserTs: number | null = null
+  // Tracks the highest prompt timestamp seen so far, not just the most recently seen one — real
+  // transcripts can contain an isolated out-of-order timestamp (confirmed on real Claude Code
+  // data: one entry mid-file stamped a full day earlier than its neighbors, apparently from
+  // Claude Code's own resume/continuation handling). Comparing against the max rather than the
+  // last value keeps a single such anomaly from corrupting the gap baseline for every comparison
+  // after it.
+  let maxTs: number | null = null
   for (let i = 0; i < lines.length; i++) {
     let entry: Record<string, unknown>
     try { entry = JSON.parse(lines[i]) as Record<string, unknown> } catch { continue }
-    if (entry['type'] !== 'user') continue
+    if (!isPromptBoundary(entry)) continue
 
-    const ts = entry['timestamp'] as string | undefined
-    const tsMs = ts ? Date.parse(ts) : NaN
-    if (!Number.isFinite(tsMs)) continue
+    const tsMs = timestamps[i]
+    if (tsMs === null) continue
 
-    if (maxUserTs !== null && tsMs - maxUserTs > SESSION_SPLIT_GAP_MS) {
-      boundaries.push(i)
+    if (maxTs !== null && tsMs - maxTs > SESSION_SPLIT_GAP_MS) {
+      let boundary = i
+      while (boundary > 0) {
+        const prevTs = timestamps[boundary - 1]
+        const curTs = timestamps[boundary]
+        if (prevTs === null || curTs === null) break
+        const delta = curTs - prevTs
+        if (delta < 0 || delta > WALKBACK_EPSILON_MS) break
+        boundary--
+      }
+      // Never walk back past (or onto) the previous boundary — a segment must keep at least one
+      // line, and the previous segment's own real content must stay its own.
+      const prevBoundary = boundaries[boundaries.length - 1]
+      boundaries.push(Math.max(boundary, prevBoundary + 1))
     }
-    maxUserTs = Math.max(maxUserTs ?? tsMs, tsMs)
+    maxTs = Math.max(maxTs ?? tsMs, tsMs)
   }
 
   const segments: string[][] = []
@@ -1532,8 +1623,30 @@ export function splitClaudeLinesOnPromptGaps(lines: string[]): string[][] {
   return segments
 }
 
+export function splitClaudeLinesOnPromptGaps(lines: string[]): string[][] {
+  return splitLinesOnPromptGaps(lines, entry => entry['type'] === 'user')
+}
+
+// Also treats turn_aborted as a boundary trigger, not just user_message. Confirmed on real data:
+// when a turn was left incomplete and the user comes back later, Codex logs turn_aborted stamped
+// with the *resumption* time — but the delta from turn_aborted to the following turn's
+// thread_settings_applied/task_started varies too widely (0.1s to 31s across 7 real occurrences
+// in one file) for WALKBACK_EPSILON_MS to reliably absorb it into the same cluster. turn_aborted
+// needs to trigger gap detection on its own rather than relying on being swept in by a later
+// anchor — unlike thread_settings_applied/task_started, which are reliably near-simultaneous with
+// their user_message and are handled by the walkback instead.
+export function splitCodexLinesOnPromptGaps(lines: string[]): string[][] {
+  return splitLinesOnPromptGaps(lines, entry => {
+    if (entry['type'] !== 'event_msg') return false
+    const payload = entry['payload'] as Record<string, unknown> | undefined
+    return payload?.['type'] === 'user_message' || payload?.['type'] === 'turn_aborted'
+  })
+}
+
 /** Segment 0 keeps the file's own session ID unchanged — the common case (a file that never
- *  needs splitting) gets no ID churn at all. Later segments get a stable, deterministic suffix. */
+ *  needs splitting) gets no ID churn at all. Later segments get a stable, deterministic suffix.
+ *  Shared by every log format's splitting — the naming is Claude-specific only because it shipped
+ *  first; the logic itself is format-agnostic. */
 export function claudeSegmentSessionId(baseSessionId: string, segmentIndex: number): string {
   return segmentIndex === 0 ? baseSessionId : `${baseSessionId}#${segmentIndex}`
 }
