@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'preact/hooks'
 import { esc } from '../utils'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -135,13 +136,35 @@ function LoopBlock({ id, title, why, example, steps, impact }: {
 // ── Section components ────────────────────────────────────────────────────────
 
 function Toc() {
+  const [activeHref, setActiveHref] = useState<string>(TOC_SECTIONS[0]?.href ?? '')
+
+  // Highlight whichever section is nearest the top of the viewport as the page scrolls,
+  // so the sidebar always shows roughly where you are — standard for a docs-style left rail.
+  useEffect(() => {
+    const targets = TOC_SECTIONS
+      .map(s => document.querySelector(s.href))
+      .filter((el): el is Element => el !== null)
+    if (targets.length === 0) return
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries.filter(e => e.isIntersecting)
+        if (visible.length === 0) return
+        const topMost = visible.reduce((a, b) => (a.boundingClientRect.top <= b.boundingClientRect.top ? a : b))
+        setActiveHref('#' + topMost.target.id)
+      },
+      { rootMargin: '-44px 0px -70% 0px', threshold: 0 }
+    )
+    targets.forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: 'html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc a{display:inline-block;padding:3px 11px;border-radius:12px;font-size:11px;font-weight:500;color:var(--muted);text-decoration:none;border:1px solid var(--border);transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover);border-color:var(--fg)}' }} />
-      <nav class="help-toc" aria-label="Help sections" style="position:sticky;top:0;z-index:20;background:var(--vscode-editorWidget-background,var(--bg));border-bottom:1px solid var(--border);padding:7px 12px 8px 0;margin:0 -16px 20px -12px;display:flex;align-items:center;gap:12px">
-        <div style="display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;padding-left:12px">
-          {TOC_SECTIONS.map(s => <a href={s.href}>{s.heading}</a>)}
-        </div>
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{scroll-behavior:smooth}.help-section{scroll-margin-top:44px}.glossary-item[id]{scroll-margin-top:44px}.help-toc{position:sticky;top:44px;flex:0 0 148px;display:flex;flex-direction:column;gap:1px;max-height:calc(100vh - 60px);overflow-y:auto}.help-toc a{display:block;padding:5px 10px;border-radius:4px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;line-height:1.4;border-left:2px solid transparent;transition:color .1s,background .1s}.help-toc a:hover{color:var(--fg);background:var(--hover)}.help-toc a.active{color:var(--fg);background:var(--hover);border-left-color:var(--accent);font-weight:600}' }} />
+      <nav class="help-toc" aria-label="Help sections">
+        {TOC_SECTIONS.map(s => (
+          <a href={s.href} class={s.href === activeHref ? 'active' : undefined}>{s.heading}</a>
+        ))}
       </nav>
     </>
   )
@@ -1032,24 +1055,26 @@ function GlossarySection() {
 
 export function Help() {
   return (
-    <div id="help-content">
+    <div id="help-content" style="display:flex;align-items:flex-start;gap:28px">
       <Toc />
-      <OverviewSection />
-      <ConfigSection />
-      <AgentOtelSection />
-      <SessionsSection />
-      <AnalyticsSection />
-      <PatternsSection />
-      <CostSection />
-      <SettingsSection />
-      <McpSection />
-      <ExportSection />
-      <ImportSection />
-      <BadgesSection />
-      <GlossarySection />
-      <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">
-        <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
-      </p>
+      <div style="flex:1;min-width:0">
+        <OverviewSection />
+        <ConfigSection />
+        <AgentOtelSection />
+        <SessionsSection />
+        <AnalyticsSection />
+        <PatternsSection />
+        <CostSection />
+        <SettingsSection />
+        <McpSection />
+        <ExportSection />
+        <ImportSection />
+        <BadgesSection />
+        <GlossarySection />
+        <p style="font-size:11px;color:var(--muted);margin-top:24px;padding-top:12px;border-top:1px solid var(--border);line-height:1.6">
+          <strong>Disclaimer:</strong> AgentLens is an independent open-source project and is not affiliated with, endorsed by, or associated with GitHub, Inc. or Microsoft Corporation (GitHub Copilot); Anthropic, PBC (Claude / Claude Code); or OpenAI, LLC (Codex / Codex CLI). All product names, trademarks, and registered trademarks are the property of their respective owners. AgentLens interacts with these products solely through their publicly documented OpenTelemetry telemetry interfaces.
+        </p>
+      </div>
     </div>
   )
 }
