@@ -486,6 +486,12 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   const [searchError, setSearchError] = useState<string | null>(null)
   const tab = normalizeTabId(activeTab.value)
   const showReset = tab !== 'help'
+  // Pagination only makes sense for the Sessions tab's own table — every other tab sharing this
+  // row has no notion of "pages." Mirrors the bottom footer's own controls in Sessions.tsx exactly
+  // (same styling, same sessionsPage signal) so the two never disagree.
+  const showPaging = tab === 'sessions'
+  const sessionCount = filteredSessions.value.length
+  const { page: sessPage, totalPages: sessTotalPages } = showPaging ? getSessionsPagination(sessionCount) : { page: 0, totalPages: 1 }
 
   const isFiltered = sessionTextFilter.value !== '' ||
     evidenceSessionIds.value !== null ||
@@ -643,6 +649,24 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
           title="Refresh this time range"
         ><IconRefresh /></button>
       )}
+
+      {/* Session paging — same controls, same styling, same signal as the table's own footer in
+          Sessions.tsx, just also reachable without scrolling down first. */}
+      {showPaging && sessTotalPages > 1 && (
+        <span style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);white-space:nowrap">
+          <button
+            onClick={() => sessionsPage.value = Math.max(0, sessPage - 1)}
+            disabled={sessPage === 0}
+            style={`padding:2px 8px;font-size:11px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--fg);cursor:${sessPage === 0 ? 'default' : 'pointer'};opacity:${sessPage === 0 ? 0.4 : 1}`}
+          >‹ Prev</button>
+          <span>Page {sessPage + 1} of {sessTotalPages}</span>
+          <button
+            onClick={() => sessionsPage.value = Math.min(sessTotalPages - 1, sessPage + 1)}
+            disabled={sessPage >= sessTotalPages - 1}
+            style={`padding:2px 8px;font-size:11px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--fg);cursor:${sessPage >= sessTotalPages - 1 ? 'default' : 'pointer'};opacity:${sessPage >= sessTotalPages - 1 ? 0.4 : 1}`}
+          >Next ›</button>
+        </span>
+      )}
     </div>
   )
 }
@@ -741,11 +765,6 @@ function SearchFilterBar() {
   const iFilter = initiatorFilter.value
   const dsFilter = dataSourceFilter.value
   const evIds = evidenceSessionIds.value
-  // Pagination only makes sense for the Sessions tab's own table — every other tab that shares
-  // this filter bar has no notion of "pages."
-  const showPaging = normalizeTabId(activeTab.value) === 'sessions'
-  const sessionCount = filteredSessions.value.length
-  const { page, totalPages } = showPaging ? getSessionsPagination(sessionCount) : { page: 0, totalPages: 1 }
 
   return (
     <div style="display:flex;flex-direction:column;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0">
@@ -780,24 +799,7 @@ function SearchFilterBar() {
         value={dsFilter}
         onChange={v => { dataSourceFilter.value = v }}
       />
-      <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{sessionCount} sessions</span>
-      {showPaging && totalPages > 1 && (
-        <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);white-space:nowrap">
-          <button
-            onClick={() => sessionsPage.value = Math.max(0, page - 1)}
-            disabled={page === 0}
-            title="Previous page"
-            style={`padding:1px 6px;font-size:10px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--fg);cursor:${page === 0 ? 'default' : 'pointer'};opacity:${page === 0 ? 0.4 : 1}`}
-          >‹</button>
-          <span>{page + 1}/{totalPages}</span>
-          <button
-            onClick={() => sessionsPage.value = Math.min(totalPages - 1, page + 1)}
-            disabled={page >= totalPages - 1}
-            title="Next page"
-            style={`padding:1px 6px;font-size:10px;border:1px solid var(--border);border-radius:3px;background:transparent;color:var(--fg);cursor:${page >= totalPages - 1 ? 'default' : 'pointer'};opacity:${page >= totalPages - 1 ? 0.4 : 1}`}
-          >›</button>
-        </span>
-      )}
+      <span style="margin-left:auto;font-size:10px;color:var(--muted);white-space:nowrap;padding-right:2px">{filteredSessions.value.length} sessions</span>
       </div>
     </div>
   )
