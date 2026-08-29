@@ -276,7 +276,7 @@ export class LogReader {
       case 'claude':              return this._processFileMulti(filePath, () => this._parseClaudeFile(filePath))
       case 'codex':               return this._processFileMulti(filePath, () => this._parseCodexFile(filePath))
       case 'copilot':             return _single(this._processFile(filePath, () => this._parseCopilotFile(filePath, sessionId)))
-      case 'copilot_vscode':      return _single(this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId)))
+      case 'copilot_vscode':      return this._processFileMulti(filePath, () => this._parseCopilotVSCodeFile(filePath))
       case 'copilot_vscode_json': return _single(this._processFile(filePath, () => this._parseCopilotVSCodeJsonFile(filePath, sessionId)))
       case 'opencode':            return []  // OpenCode DB returns multiple sessions; use _scanOpenCode
       default:                    return []
@@ -785,9 +785,7 @@ export class LogReader {
           for (const name of names) {
             if (name.endsWith('.jsonl')) {
               const filePath = path.join(chatDir, name)
-              const sessionId = path.basename(filePath, '.jsonl')
-              const result = this._processFile(filePath, () => this._parseCopilotVSCodeFile(filePath, sessionId))
-              if (result) results.push(result)
+              results.push(...this._processFileMulti(filePath, () => this._parseCopilotVSCodeFile(filePath)))
             } else if (name.endsWith('.json') && !jsonlIds.has(name.slice(0, -5))) {
               const filePath = path.join(chatDir, name)
               const sessionId = path.basename(filePath, '.json')
@@ -801,11 +799,25 @@ export class LogReader {
     return results
   }
 
-  private _parseCopilotVSCodeFile(filePath: string, sessionId: string): LogSessionResult | null {
+  /** Reads a Copilot Chat (VS Code) transcript and splits it into one or more session results —
+   *  same one-file-can-span-real-days problem as Claude Code and Codex (confirmed on real data:
+   *  files spanning up to 121.7 real hours, one gap alone 61.5 hours). See
+   *  splitCopilotVSCodeLinesOnPromptGaps for what counts as a new prompt in this format. No
+   *  cumulative-counter issue like Codex's (this format's token counts are already keyed per-turn
+   *  index, not a running total) and no duplicate-uuid issue like Claude Code's found in this
+   *  format during validation — but a different wrinkle unique to this format: a `kind: 1` update
+   *  (e.g. `k: ["requests", N, "completionTokens"]`) addresses request N by its position in the
+   *  *whole session's* requests array, not a position relative to whichever segment it happens to
+   *  fall in. Re-parsing each segment's lines starting a local turn counter at 0 would misalign
+   *  every kind=1 update after the first segment. _parseCopilotVSCodeSegment takes the number of
+   *  requests already pushed by prior segments as startingTurnIndex and continues counting from
+   *  there, so a segment's own turn-index keys line up with what kind=1 updates actually address. */
+  private _parseCopilotVSCodeFile(filePath: string): LogSessionResult[] {
     const lines = this._readNewLines(filePath)
-    if (!lines) return null
+    if (!lines) return []
 
     // Workspace from sibling workspace.json two levels up (workspaceStorage/<hash>/workspace.json)
+    // — read once per file, not per segment, since it's the same for every segment in this file.
     const workspaceJsonPath = path.join(path.dirname(filePath), '..', 'workspace.json')
     let workspace = ''
     try {
@@ -819,6 +831,29 @@ export class LogReader {
       }
     } catch { /* no workspace.json — no-folder or untitled window */ }
 
+    const baseSessionId = path.basename(filePath, '.jsonl')
+    const segments = splitCopilotVSCodeLinesOnPromptGaps(lines)
+    const results: LogSessionResult[] = []
+    let startingTurnIndex = 0
+    segments.forEach((segmentLines, segmentIndex) => {
+      const parsed = this._parseCopilotVSCodeSegment(
+        segmentLines,
+        claudeSegmentSessionId(baseSessionId, segmentIndex),
+        workspace,
+        startingTurnIndex,
+      )
+      if (parsed.result) results.push(parsed.result)
+      startingTurnIndex += parsed.turnsPushed
+    })
+    return results
+  }
+
+  private _parseCopilotVSCodeSegment(
+    lines: string[],
+    sessionId: string,
+    workspace: string,
+    startingTurnIndex: number,
+  ): { result: LogSessionResult | null; turnsPushed: number } {
     let sessionCreatedMs = 0
     let model = ''
     let userRequest = ''
@@ -834,7 +869,9 @@ export class LogReader {
     const turnCompletionTokens = new Map<number, number>()
     const turnPromptTokens = new Map<number, number>()  // Format C only
     const turnTimestamps: number[] = []
-    let requestPushCount = 0  // tracks implicit turn index for kind=2 pushes
+    // Continues the whole session's turn numbering rather than starting at 0 — see this method's
+    // own doc comment on _parseCopilotVSCodeFile for why.
+    let requestPushCount = startingTurnIndex
 
     for (const line of lines) {
       let entry: Record<string, unknown>
@@ -867,8 +904,11 @@ export class LogReader {
           if (typeof req['completionTokens'] === 'number' && !turnCompletionTokens.has(turnIdx)) {
             turnCompletionTokens.set(turnIdx, req['completionTokens'])
           }
-          // Format B: message.text is the raw user prompt — much cleaner than renderedUserMessage
-          if (turnIdx === 0 && !userRequest) {
+          // Format B: message.text is the raw user prompt — much cleaner than renderedUserMessage.
+          // Checks against this *segment's* own first turn (startingTurnIndex), not the whole
+          // session's global turn 0 — every segment after the first needs its own prompt captured
+          // from its own first turn, not just the file's very first one.
+          if (turnIdx === startingTurnIndex && !userRequest) {
             const msg = req['message'] as Record<string, unknown> | undefined
             if (typeof msg?.['text'] === 'string' && (msg['text'] as string).trim()) {
               userRequest = (msg['text'] as string).trim()
@@ -922,16 +962,26 @@ export class LogReader {
     let totalInput = 0
     for (const tokens of turnPromptTokens.values()) totalInput += tokens
     const turns = turnCompletionTokens.size
-    if (turns === 0 || sessionCreatedMs === 0) return null
-
-    const startTs = new Date(sessionCreatedMs).toISOString()
     const validTs = turnTimestamps.filter((n): n is number => n !== undefined)
-    const lastTurnMs = validTs.length > 0 ? Math.max(...validTs) : sessionCreatedMs
+    if (turns === 0) return { result: null, turnsPushed: 0 }
+
+    // Prefers the earliest real turn timestamp over sessionCreatedMs (the kind=0 snapshot, when
+    // the chat panel itself was first created) for two reasons: it's only present in whichever
+    // segment happens to contain the file's very first line, so every later segment needs a
+    // fallback anyway — and confirmed on real data, even segment 0 needs it: a chat panel can sit
+    // open for many hours before its first real message, which made sessionCreatedMs alone show a
+    // 66-73 hour "duration" for sessions whose actual turns spanned well under 90 minutes.
+    const startMs = validTs.length > 0 ? Math.min(...validTs) : sessionCreatedMs
+    if (startMs === 0) return { result: null, turnsPushed: 0 }
+    const startTs = new Date(startMs).toISOString()
+    const lastTurnMs = validTs.length > 0 ? Math.max(...validTs) : startMs
     const endTs = new Date(lastTurnMs).toISOString()
 
     return {
-      workspace,
-      card: _buildCard(sessionId, 'copilot', model || 'copilot', startTs, endTs, {
+      turnsPushed: requestPushCount - startingTurnIndex,
+      result: {
+        workspace,
+        card: _buildCard(sessionId, 'copilot', model || 'copilot', startTs, endTs, {
         totalInput,
         totalOutput,
         totalCacheRead: 0,
@@ -947,7 +997,8 @@ export class LogReader {
         userRequest: userRequest.slice(0, 500),
         timeline: [],
         initiator: 'user',
-      }, workspace),
+        }, workspace),
+      },
     }
   }
 
@@ -1554,30 +1605,37 @@ const WALKBACK_EPSILON_MS = 2000
  * identifies as a new prompt, walked back over any immediately-preceding near-simultaneous
  * bookkeeping lines (see WALKBACK_EPSILON_MS) — a segment's tool calls and assistant responses
  * always stay grouped with the prompt that triggered them, never split mid-turn. What counts as
- * "a new prompt" differs per log format (Claude Code: `type: 'user'`; Codex: an `event_msg` whose
- * payload type is `user_message`), so each format gets its own thin wrapper below rather than
- * sharing one predicate — this function holds only the boundary/gap algorithm itself, tested once
- * and reused by all of them.
+ * "a new prompt," and where its timestamp lives, differs per log format (Claude Code: `type:
+ * 'user'`, top-level `timestamp` string; Codex: an `event_msg` whose payload type is
+ * `user_message`/`turn_aborted`, same top-level string; Copilot VS Code chat: a `kind: 2` push to
+ * `requests`, numeric epoch-ms nested inside `v[0].timestamp`), so each format gets its own thin
+ * wrapper below rather than sharing one predicate — this function holds only the boundary/gap
+ * algorithm itself, tested once and reused by all of them. getBoundaryTimestampMs defaults to the
+ * top-level-string extraction (Claude/Codex); Copilot VS Code's wrapper overrides it. The
+ * walkback's own per-line timestamps always use the top-level-string form regardless — no format
+ * checked so far has shown a bookkeeping-cluster-bleed issue whose fix needs anything else, and a
+ * format where most lines simply lack a top-level timestamp (Copilot VS Code) makes the walkback a
+ * natural no-op rather than needing its own special-casing.
  *
  * Pure and independently testable on purpose: this only needs the raw lines and produces raw
  * line groups, so it can be verified against real transcript data without touching any of the
  * token/tool/file accounting in each format's own per-segment parser.
  */
+function defaultLineTimestampMs(entry: Record<string, unknown>): number | null {
+  const ts = entry['timestamp'] as string | undefined
+  const tsMs = ts ? Date.parse(ts) : NaN
+  return Number.isFinite(tsMs) ? tsMs : null
+}
+
 function splitLinesOnPromptGaps(
   lines: string[],
   isPromptBoundary: (entry: Record<string, unknown>) => boolean,
+  getBoundaryTimestampMs: (entry: Record<string, unknown>) => number | null = defaultLineTimestampMs,
 ): string[][] {
   if (lines.length === 0) return []
 
   const timestamps: Array<number | null> = lines.map(line => {
-    try {
-      const entry = JSON.parse(line) as Record<string, unknown>
-      const ts = entry['timestamp'] as string | undefined
-      const tsMs = ts ? Date.parse(ts) : NaN
-      return Number.isFinite(tsMs) ? tsMs : null
-    } catch {
-      return null
-    }
+    try { return defaultLineTimestampMs(JSON.parse(line) as Record<string, unknown>) } catch { return null }
   })
 
   const boundaries: number[] = [0]
@@ -1593,7 +1651,7 @@ function splitLinesOnPromptGaps(
     try { entry = JSON.parse(lines[i]) as Record<string, unknown> } catch { continue }
     if (!isPromptBoundary(entry)) continue
 
-    const tsMs = timestamps[i]
+    const tsMs = getBoundaryTimestampMs(entry)
     if (tsMs === null) continue
 
     if (maxTs !== null && tsMs - maxTs > SESSION_SPLIT_GAP_MS) {
@@ -1641,6 +1699,34 @@ export function splitCodexLinesOnPromptGaps(lines: string[]): string[][] {
     const payload = entry['payload'] as Record<string, unknown> | undefined
     return payload?.['type'] === 'user_message' || payload?.['type'] === 'turn_aborted'
   })
+}
+
+function isCopilotVSCodeRequestsPush(entry: Record<string, unknown>): boolean {
+  const k = entry['k']
+  return entry['kind'] === 2 && Array.isArray(k) && k.length === 1 && k[0] === 'requests'
+    && Array.isArray(entry['v']) && (entry['v'] as unknown[]).length > 0
+}
+
+// A `kind: 2` push to `requests` is how VS Code's delta-log format for the Copilot Chat panel
+// records a new turn — timestamp is numeric epoch-ms nested at v[0].timestamp, not a top-level
+// ISO string (this format's own convention, confirmed against real transcripts, unlike Claude
+// Code's/Codex's). A push can batch more than one new request at once (confirmed on real data —
+// rare, ~6% of pushes in one file, but real); since a single line can't be split, this uses the
+// batch's first request's timestamp for gap detection, which is the earliest new activity in it.
+// Token/turn accounting for this format is already keyed per-turn-index rather than a cumulative
+// running total (unlike Codex's total_token_usage), so — unlike Codex — no baseline-diffing is
+// needed between segments; each segment's own per-line accumulation over just its own lines is
+// already correct on its own.
+export function splitCopilotVSCodeLinesOnPromptGaps(lines: string[]): string[][] {
+  return splitLinesOnPromptGaps(
+    lines,
+    isCopilotVSCodeRequestsPush,
+    entry => {
+      const first = (entry['v'] as Array<Record<string, unknown>>)[0]
+      const ts = first?.['timestamp']
+      return typeof ts === 'number' ? ts : null
+    },
+  )
 }
 
 /** Segment 0 keeps the file's own session ID unchanged — the common case (a file that never
