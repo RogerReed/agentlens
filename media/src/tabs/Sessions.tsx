@@ -5,7 +5,7 @@ import {
   sessionSortKey, sessionSortDir, type SortKey,
   workspaceFilter, shortWorkspaceName, goToHelp,
   sessionsPage, getSessionsPagination,
-  evidenceSessionIds, evidenceSessionLabel,
+  evidenceSessionIds, evidenceSessionLabel, evidenceSessionPrompt,
 } from '../state'
 import {
   getAgentColor, getAgentSourceLabel, formatMs, formatCompact, formatSessionTime,
@@ -331,7 +331,7 @@ function SessionDetail({ sess }: { sess: SessionSummaryCard }) {
 // filtered list (not just the current page) so a group's color/labels stay consistent regardless
 // of which page a sibling happens to land on; a sibling hidden by an active filter just means that
 // group won't be colored at all here (nothing misleading — no "phantom" sibling implied).
-function buildConversationInfo(sessions: SessionSummaryCard[]): Map<string, { color: string; index: number; total: number; memberIds: string[] }> {
+function buildConversationInfo(sessions: SessionSummaryCard[]): Map<string, { color: string; index: number; total: number; memberIds: string[]; firstPrompt: string }> {
   const byConversation = new Map<string, SessionSummaryCard[]>()
   for (const s of sessions) {
     if (!s.conversationId) continue
@@ -339,13 +339,14 @@ function buildConversationInfo(sessions: SessionSummaryCard[]): Map<string, { co
     if (group) group.push(s)
     else byConversation.set(s.conversationId, [s])
   }
-  const info = new Map<string, { color: string; index: number; total: number; memberIds: string[] }>()
+  const info = new Map<string, { color: string; index: number; total: number; memberIds: string[]; firstPrompt: string }>()
   for (const [conversationId, members] of byConversation) {
     if (members.length < 2) continue
     const color = getConversationColor(conversationId)
     const ordered = [...members].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     const memberIds = ordered.map(m => m.sessionId)
-    ordered.forEach((m, i) => info.set(m.sessionId, { color, index: i + 1, total: ordered.length, memberIds }))
+    const firstPrompt = ordered[0].userRequest ?? ''
+    ordered.forEach((m, i) => info.set(m.sessionId, { color, index: i + 1, total: ordered.length, memberIds, firstPrompt }))
   }
   return info
 }
@@ -361,7 +362,7 @@ function isSameIdSet(current: Set<string> | null, ids: string[]): boolean {
 
 function SessionRow({ sess, showWorkspace, conversation }: {
   sess: SessionSummaryCard; showWorkspace: boolean
-  conversation?: { color: string; index: number; total: number; memberIds: string[] }
+  conversation?: { color: string; index: number; total: number; memberIds: string[]; firstPrompt: string }
 }) {
   const [expanded, setExpanded] = useState(false)
   const isFocused = focusedSessionId.value === sess.sessionId
@@ -413,9 +414,11 @@ function SessionRow({ sess, showWorkspace, conversation }: {
             e.stopPropagation()
             if (isIsolatedToThisGroup) {
               evidenceSessionIds.value = null
+              evidenceSessionPrompt.value = null
             } else {
               evidenceSessionIds.value = new Set(conversation.memberIds)
               evidenceSessionLabel.value = 'from this conversation'
+              evidenceSessionPrompt.value = conversation.firstPrompt || null
             }
           } : undefined}
         >
