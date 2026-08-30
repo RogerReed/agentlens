@@ -7,7 +7,7 @@ import {
   dailyStats, lifetimeStats, burnRateData, searchResults, rangedSearchResults, exportSearchResults,
   timeRange, makeTimeRange, TIME_PRESETS, CHART_MAX,
   vscode, displaySessions, rangedSessions,
-  sessionTextFilter, filteredSessions, evidenceSessionIds,
+  sessionTextFilter, filteredSessions, evidenceSessionIds, evidenceSessionLabel, evidenceSessionPrompt,
   sessionSortKey, sessionSortDir,
   workspaceFilter, availableWorkspaces, shortWorkspaceName,
   enableOtelIngestion, enableLogIngestion, otlpPort, otelReconfigureResult, type OtelReconfigureResult,
@@ -507,6 +507,7 @@ function TimeRangePicker({ hideAgentFilter = false }: { hideAgentFilter?: boolea
   function resetFilters() {
     sessionTextFilter.value = ''
     evidenceSessionIds.value = null
+    evidenceSessionPrompt.value = null
     selectedAgentFilter.value = 'all'
     initiatorFilter.value = 'all'
     dataSourceFilter.value = 'all'
@@ -770,12 +771,17 @@ function SearchFilterBar() {
     <div style="display:flex;flex-direction:column;background:var(--vscode-editor-background);border-bottom:1px solid var(--vscode-panel-border);flex-shrink:0">
       {evIds !== null && (
         <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#4fc3f711;border-bottom:1px solid #4fc3f733">
-          <span style="font-size:10px;color:#4fc3f7">Showing {evIds.size} session{evIds.size !== 1 ? 's' : ''} from instruction suggestion</span>
+          <span style="font-size:10px;color:#4fc3f7;white-space:nowrap;flex-shrink:0">Showing {evIds.size} session{evIds.size !== 1 ? 's' : ''} {evidenceSessionLabel.value}</span>
+          {evidenceSessionPrompt.value && (
+            <span
+              style="font-size:10px;color:#4fc3f7;opacity:0.75;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0"
+              title={evidenceSessionPrompt.value}
+            >— "{evidenceSessionPrompt.value}"</span>
+          )}
           <button
-            onClick={() => { evidenceSessionIds.value = null }}
-            style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px;line-height:1"
-            title="Clear suggestion filter"
-          >×</button>
+            onClick={() => { evidenceSessionIds.value = null; evidenceSessionPrompt.value = null }}
+            style="margin-left:auto;flex-shrink:0;background:none;border:1px solid #4fc3f766;border-radius:3px;color:#4fc3f7;cursor:pointer;font-size:10px;padding:2px 8px;white-space:nowrap"
+          >Show all sessions</button>
         </div>
       )}
       <div style="display:flex;align-items:center;gap:5px;padding:4px 8px 6px;flex-wrap:wrap">
@@ -783,7 +789,7 @@ function SearchFilterBar() {
         type="text"
         placeholder="Filter sessions…"
         value={text}
-        onInput={e => { evidenceSessionIds.value = null; sessionTextFilter.value = (e.target as HTMLInputElement).value }}
+        onInput={e => { evidenceSessionIds.value = null; evidenceSessionPrompt.value = null; sessionTextFilter.value = (e.target as HTMLInputElement).value }}
         style="flex:1;min-width:100px;max-width:200px;padding:3px 7px;font-size:11px;background:var(--vscode-input-background,#3c3c3c);color:var(--vscode-input-foreground,#ccc);border:1px solid var(--vscode-input-border,#555);border-radius:3px;outline:none"
       />
       <WorkspaceDropdown />

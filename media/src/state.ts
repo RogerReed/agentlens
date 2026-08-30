@@ -72,8 +72,17 @@ export const sessionTextFilter = signal('')
 export const sessionSortKey = signal<SortKey>('start_time')
 export const sessionSortDir = signal<'asc' | 'desc'>('desc')
 
-// When set, Sessions tab shows only these session IDs (used by Instructions "View sessions" button).
+// When set, Sessions tab shows only these session IDs (used by Instructions "View sessions" button
+// and by clicking a conversation's colored bar in the Sessions table). evidenceSessionLabel
+// describes the reason, shown in the filter banner (e.g. "from instruction suggestion", "from this
+// conversation") — set both together; a caller that doesn't set the label falls back to the
+// original instruction-suggestion wording, the mechanism's first and, until now, only use.
+// evidenceSessionPrompt is optional extra context shown after the label (currently just the
+// isolated conversation's first prompt) — null for callers with no single representative prompt
+// (e.g. instruction-suggestion evidence, which spans unrelated sessions).
 export const evidenceSessionIds = signal<Set<string> | null>(null)
+export const evidenceSessionLabel = signal('from instruction suggestion')
+export const evidenceSessionPrompt = signal<string | null>(null)
 
 // ── Set signal helper ─────────────────────────────────────────────────────────
 
