@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.15.0] — 2026-08-29
+
+### Added
+
+- **Sessions table marks and lets you isolate conversations split across multiple cards** — splitting log-sourced sessions on prompt boundaries means one real conversation with an agent can now show up as several separate rows, often far apart since the list is time-sorted and unrelated sessions land between them. A colored bar on the left edge of a row now marks sessions that share an originating log file, with a hover tooltip giving its position (e.g. "Part 2 of 5"). Clicking the bar isolates the table to just that conversation — a banner names the conversation's first prompt with a "Show all sessions" button to clear it, or click the same bar again to toggle off. Added a "Conversation" glossary term explaining the concept (#229, #230)
+
+---
+
 ## [0.14.0] — 2026-08-28
 
 ### Added
