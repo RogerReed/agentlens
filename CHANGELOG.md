@@ -2,6 +2,23 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.15.1] — 2026-09-01
+
+### Added
+
+- **`agentlens service install` now moves the background service to the latest published version** — the service definition points at a fixed path to whatever `cli.js` launched `service install`, and nothing ever refreshed it, so an older global install already on `PATH` (or a stale npx cache) could leave the background service a release or more behind with nothing said. When run from a global install, `service install` now fetches `agentlens-dashboard@latest` first and points the service at that copy, so re-running it is a supported way to upgrade alongside `service update`. If the download fails (offline, registry down) it prints a clear one-line notice naming the likely cause and continues on the version already installed rather than aborting. A dev checkout is left untouched. The documented command is now `npx agentlens-dashboard@latest service install` (#234)
+
+### Fixed
+
+- **Imported Copilot VS Code sessions on dotted-version Claude models were costed at $0.00** — Copilot VS Code emits model IDs like `claude-opus-4.8`, while the rate table keys them `claude-opus-4-8`. The pricing lookup normalized only case and a trailing date suffix, then did an exact match, so the dotted ID missed, no rate was found, and the session's `cost_usd` computed as zero despite real token usage on a known, priced model. Lookup now collapses `.`, whitespace, and `_` to `-` on both the incoming ID and every rate-table key, so the two spellings resolve to the same rate in either direction. Affected sessions re-price themselves on the next log rescan — no manual action needed (#233)
+
+### Changed
+
+- **Model pricing refreshed** — added Claude Fable 5.1 and Claude Mythos 5.1 (new on Anthropic's pricing page; cache reads billed at 0.025x base input rather than the usual 0.1x) and two new free OpenCode Zen evaluation models. All existing rates re-verified against each vendor's current pricing page and unchanged (#235)
+- **Stopped tracking the generated `media/dashboard.css` bundle** — it is a build artifact regenerated on every build and had drifted from source in the repo; no user-facing change, the published package and extension always ship the freshly built file (#232)
+
+---
+
 ## [0.15.0] — 2026-08-29
 
 ### Added
