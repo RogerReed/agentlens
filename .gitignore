@@ -10,6 +10,7 @@ standalone/cli.js
 standalone/cli.js.map
 media/dashboard.js
 media/dashboard.js.map
+media/dashboard.css
 media/dashboard.css.map
 media/sidebar.js
 media/sidebar.js.map
