@@ -389,8 +389,18 @@ OpenCode uses token-based pricing for third-party models (routed through its pro
 ## Notes for maintainers
 
 - The `PRICING_LAST_UPDATED` constant in `media/src/pricing.ts` surfaces in the UI. Update it whenever rates change.
-- Model IDs in telemetry often include date suffixes (e.g. `claude-sonnet-4-6-20260501`).
-  `normalizeModelId()` in `pricing.ts` strips these before table lookup.
+- **Model-ID normalization for lookup (`normalizeCostKey()` in both `pricing.ts` files, kept in sync):**
+  a lookup key is derived by lowercasing, stripping a trailing date suffix (e.g.
+  `claude-sonnet-4-6-20260501`), then collapsing `.`, whitespace, and `_` to `-`. **Every `RATES`
+  key is run through the same function**, so it does not matter whether you write a new key with a
+  dot or a hyphen (`claude-opus-4-8` and `claude-opus-4.8` resolve identically) — pick whatever
+  matches the vendor's own spelling. This is why the old `'gpt-5 mini'` space-variant alias key
+  could be deleted. Normalization is lookup-only; the raw model ID from telemetry is what gets
+  stored and shown. (Fixes GH #231, where dotted Copilot IDs missed the hyphenated Claude keys.)
+- **Collision guard:** `RATES_BY_COST_KEY` is built at module load and *throws* if two distinct
+  `RATES` keys collapse to the same normalized key with different rate objects. If you add a key
+  that trips this, the tests (`src/test/pricing.test.ts`) and `tsc`/`mocha` will fail loudly —
+  rename one of the two so they don't collide.
 - If a model appears in telemetry but is missing from the rate table, the UI shows `~$?` rather than $0
   to avoid silently under-reporting cost. Add the model to `RATES` in `pricing.ts` to resolve.
 - Pricing corrections that change displayed cost for real sessions (not just new-model additions)
