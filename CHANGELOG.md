@@ -2,6 +2,14 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.15.2] — 2026-09-01
+
+### Fixed
+
+- **`npx` / `bunx` instructions now pin `@latest`, so a stale cache can't silently keep you on an old version** — a bare `npx agentlens-dashboard` re-runs whatever version npx cached the first time it was invoked and never revalidates against npm, so you could stay on an old release for weeks while `npm view` still reported the new one (the README's quick-start comment even claimed the bare form always used the latest). Every documented `npx`/`bunx` command and the global `npm install -g` now use `@latest`, with a note on clearing the npx cache (`rm -rf ~/.npm/_npx`), and the standalone server now prints a one-line reminder at startup when it detects it was launched via `npx` that the running version may be a cached copy (#236)
+
+---
+
 ## [0.15.1] — 2026-09-01
 
 ### Added
