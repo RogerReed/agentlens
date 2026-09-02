@@ -150,6 +150,35 @@ export function childEnvForReexec(parentEnv: NodeJS.ProcessEnv): NodeJS.ProcessE
   return env
 }
 
+// ── `service install` / `service update` npm-fetch messaging ────────────────
+//
+// `service install` and `service update` shell out to `npm install -g agentlens-dashboard@latest`
+// so the background service always lands on the newest published version rather than pinning
+// whatever copy happened to launch it. When that download can't happen (offline, npm registry
+// unreachable, npm missing, a permissions error) the service still starts on whatever version is
+// already installed — these pure helpers build the warning so that path is loud instead of silent.
+
+/** Condenses whatever `child_process` threw when `npm install -g` failed into one short clause
+ *  for the "couldn't download" warning. */
+export function describeNpmFailure(err: unknown): string {
+  const e = (err ?? {}) as { code?: string; status?: number; message?: string }
+  if (e.code === 'ENOENT') { return 'npm was not found on your PATH' }
+  if (typeof e.status === 'number') { return `npm exited with code ${e.status} — see its output above` }
+  if (e.code) { return `npm could not be run (${e.code})` }
+  return e.message ? e.message.split('\n')[0] : 'unknown error'
+}
+
+/** Warning shown when the latest agentlens-dashboard can't be fetched. `fallbackVersion` is the
+ *  version already on disk that the service will run instead (undefined if there is none). Not
+ *  fatal on its own — callers that truly have nothing to fall back on report that separately. */
+export function couldNotDownloadMessage(reason: string, fallbackVersion: string | undefined): string {
+  const head = `[AgentLens] Couldn't download the latest agentlens-dashboard from npm: ${reason}.`
+  const tail = fallbackVersion
+    ? `Keeping the version already installed (v${fallbackVersion}) — run \`agentlens service update\` later to retry.`
+    : 'Nothing is installed to fall back on.'
+  return `${head}\n[AgentLens] ${tail}`
+}
+
 // ── Service-definition generators (pure string builders) ────────────────────
 
 export interface ServiceProgram {
