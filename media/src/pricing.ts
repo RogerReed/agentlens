@@ -44,8 +44,8 @@ export const RATES: Record<string, ModelRates> = {
   // model list or the annual multiplier page yet — multiplierAnnualPostJun1 set to 0 until published.
   'gpt-4.1-mini':        { inputPerMTok: 0.40,  cacheReadPerMTok: 0.10,   cacheWritePerMTok: 0, outputPerMTok: 1.60,  multiplier: 0,    multiplierAnnualPostJun1: 0 },
   // gpt-5-mini: no longer included/$0 as of 2026-07-19 — now billed at standard token rates.
+  // (The old `'gpt-5 mini'` space-variant alias key is gone — normalizeCostKey collapses the space to a hyphen.)
   'gpt-5-mini':          { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
-  'gpt-5 mini':          { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
   // older included models kept for historical sessions
   'gpt-4o':              { inputPerMTok: 2.50,  cacheReadPerMTok: 1.25,   cacheWritePerMTok: 0, outputPerMTok: 10.00, multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
   'gpt-4o-mini':         { inputPerMTok: 0.15,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 0.60,  multiplier: 0,    multiplierAnnualPostJun1: 0.33 },
@@ -197,7 +197,7 @@ export const PRICING_SECTIONS: PricingSection[] = [
       { label: 'Codex CLI pricing', url: 'https://learn.chatgpt.com/docs/pricing' },
     ],
     modelKeys: [
-      'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-5', 'gpt-5-nano', 'gpt-5-mini', 'gpt-5 mini', 'gpt-4o', 'gpt-4o-mini',
+      'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-5', 'gpt-5-nano', 'gpt-5-mini', 'gpt-4o', 'gpt-4o-mini',
       'gpt-5.1', 'gpt-5.1-codex', 'gpt-5.1-codex-mini', 'gpt-5.1-codex-max',
       'gpt-5.2', 'gpt-5.2-codex', 'gpt-5.3-codex', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano',
       'gpt-5.5', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.6-cyber', 'codex-mini-latest',
@@ -255,13 +255,39 @@ export const REQUEST_BILLING_SOURCES = [
   { label: 'Legacy request multipliers (pre-Jun 1, 2026, historical)', url: 'https://docs.github.com/en/copilot/concepts/billing/copilot-requests' },
 ]
 
-function normalizeModelId(modelId: string): string {
+// Normalizes a model ID to the key used for rate lookup. Vendors and telemetry sources disagree on
+// whether a minor version is punctuated with a dot or a hyphen: Copilot VS Code emits
+// `claude-opus-4.8` while this table keys that model `claude-opus-4-8`; OpenAI IDs like `gpt-5.4`
+// run the other way. Collapsing `.`, whitespace, and `_` to `-` — applied to BOTH the incoming ID
+// and every RATES key (see RATES_BY_COST_KEY) — makes the two representations meet. Lookup only;
+// the raw model ID is still what gets stored and displayed. Kept in sync with src/pricing.ts. See GH #231.
+export function normalizeCostKey(modelId: string): string {
   return modelId
     .toLowerCase()
     .replace(/-\d{4}-\d{2}-\d{2}$/, '')  // strip date suffix e.g. -2025-04-14
     .replace(/-\d{8}$/, '')               // strip YYYYMMDD suffix e.g. -20260501
     .trim()
+    .replace(/[.\s_]+/g, '-')
 }
+
+// RATES re-keyed by normalizeCostKey, built once at module load. If two distinct RATES keys
+// collapse to the same cost key with *different* rates, that's a table-authoring mistake that would
+// otherwise let one silently shadow the other — fail loudly instead.
+const RATES_BY_COST_KEY: Map<string, ModelRates> = (() => {
+  const map = new Map<string, ModelRates>()
+  for (const [modelId, rates] of Object.entries(RATES)) {
+    const key = normalizeCostKey(modelId)
+    const existing = map.get(key)
+    if (existing && JSON.stringify(existing) !== JSON.stringify(rates)) {
+      throw new Error(
+        `pricing: RATES key "${modelId}" collapses to cost key "${key}", which another key ` +
+        `already maps to with different rates — rename one so they don't collide under normalizeCostKey`,
+      )
+    }
+    map.set(key, rates)
+  }
+  return map
+})()
 
 // Exact match only, after normalization — no prefix-matching fallback. A previous
 // version fell back to substring-prefix matching ("versioned or aliased model IDs"),
@@ -274,8 +300,7 @@ function normalizeModelId(modelId: string): string {
 // visible gap. Kept in sync with the same fix in src/pricing.ts.
 export function lookupRates(modelId: string): ModelRates | null {
   if (!modelId) return null
-  const normalized = normalizeModelId(modelId)
-  return RATES[normalized] ?? null
+  return RATES_BY_COST_KEY.get(normalizeCostKey(modelId)) ?? null
 }
 
 // Token-based cost: the new Copilot AI Credits model (Jun 2026+).

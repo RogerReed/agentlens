@@ -27,8 +27,8 @@ const RATES: Record<string, ModelRates> = {
   // gpt-4.1-mini: added 2026-08-12 — confirmed on OpenAI's general API pricing page.
   'gpt-4.1-mini':       { inputPerMTok: 0.40,  cacheReadPerMTok: 0.10,   cacheWritePerMTok: 0, outputPerMTok: 1.60,  contextWindowTokens: 0 },
   // gpt-5-mini: no longer an included/$0 model as of the 2026-07-19 pricing page — now billed at standard rates.
+  // (The old `'gpt-5 mini'` space-variant alias key is gone — normalizeCostKey collapses the space to a hyphen.)
   'gpt-5-mini':         { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  contextWindowTokens: 200_000 },
-  'gpt-5 mini':         { inputPerMTok: 0.25,  cacheReadPerMTok: 0.025,  cacheWritePerMTok: 0, outputPerMTok: 2.00,  contextWindowTokens: 200_000 },
   'gpt-4o':             { inputPerMTok: 2.50,  cacheReadPerMTok: 1.25,   cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 128_000 },
   'gpt-4o-mini':        { inputPerMTok: 0.15,  cacheReadPerMTok: 0.075,  cacheWritePerMTok: 0, outputPerMTok: 0.60,  contextWindowTokens: 128_000 },
   // gpt-5.1: corrected 2026-08-07 — was $1.75/$14.00, live API pricing page now shows $1.25/$10.00 (older-gen
@@ -170,16 +170,43 @@ const RATES: Record<string, ModelRates> = {
 // logReader.ts's fast-mode `-fast` marker) can strip a trailing date first — a raw
 // model string can be date-suffixed (e.g. claude-opus-4-7-20260315), and appending
 // another suffix afterward moves the date off the end, out of reach of the
-// date-stripping regex normalizeModelId() applies below.
+// date-stripping regex normalizeCostKey() applies below.
 export function stripDateSuffix(modelId: string): string {
   return modelId
     .replace(/-\d{4}-\d{2}-\d{2}$/, '')  // strip date suffix e.g. -2025-04-14
     .replace(/-\d{8}$/, '')               // strip YYYYMMDD suffix e.g. -20260501
 }
 
-function normalizeModelId(modelId: string): string {
-  return stripDateSuffix(modelId.toLowerCase()).trim()
+// Normalizes a model ID to the key used for rate lookup. Vendors and telemetry sources disagree on
+// whether a minor version is punctuated with a dot or a hyphen: Copilot VS Code emits
+// `claude-opus-4.8` while this table keys that model `claude-opus-4-8`; OpenAI IDs like `gpt-5.4`
+// run the other way. Collapsing `.`, whitespace, and `_` to `-` — applied to BOTH the incoming ID
+// and every RATES key (see RATES_BY_COST_KEY) — makes the two representations meet. Lookup only;
+// the raw model ID is still what gets stored and displayed. See GH #231.
+export function normalizeCostKey(modelId: string): string {
+  return stripDateSuffix(modelId.toLowerCase())
+    .trim()
+    .replace(/[.\s_]+/g, '-')
 }
+
+// RATES re-keyed by normalizeCostKey, built once at module load. If two distinct RATES keys
+// collapse to the same cost key with *different* rates, that's a table-authoring mistake that would
+// otherwise let one silently shadow the other — fail loudly instead.
+const RATES_BY_COST_KEY: Map<string, ModelRates> = (() => {
+  const map = new Map<string, ModelRates>()
+  for (const [modelId, rates] of Object.entries(RATES)) {
+    const key = normalizeCostKey(modelId)
+    const existing = map.get(key)
+    if (existing && JSON.stringify(existing) !== JSON.stringify(rates)) {
+      throw new Error(
+        `pricing: RATES key "${modelId}" collapses to cost key "${key}", which another key ` +
+        `already maps to with different rates — rename one so they don't collide under normalizeCostKey`,
+      )
+    }
+    map.set(key, rates)
+  }
+  return map
+})()
 
 // Exact match only, after normalization — no prefix-matching fallback. A previous
 // version fell back to substring-prefix matching ("versioned or aliased model IDs"),
@@ -192,8 +219,7 @@ function normalizeModelId(modelId: string): string {
 // visible gap.
 export function lookupRates(modelId: string): ModelRates | null {
   if (!modelId) return null
-  const normalized = normalizeModelId(modelId)
-  return RATES[normalized] ?? null
+  return RATES_BY_COST_KEY.get(normalizeCostKey(modelId)) ?? null
 }
 
 // Applies two-tier pricing: tokens up to the threshold at baseRate, remainder at aboveRate.

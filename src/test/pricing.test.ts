@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { lookupRates, calcTokenCostUsd, stripDateSuffix } from '../pricing'
+import { lookupRates, calcTokenCostUsd, stripDateSuffix, normalizeCostKey } from '../pricing'
 
 suite('pricing', () => {
   test('lookupRates returns rates for known model', () => {
@@ -143,5 +143,70 @@ suite('pricing', () => {
     const cost = calcTokenCostUsd(0, 300_000, 50_000, 0, 'grok-4.5')
     const expectedCacheRead = (200_000 / 1_000_000) * 0.50 + (100_000 / 1_000_000) * 1.00
     assert.ok(Math.abs(cost - expectedCacheRead) < 0.0001, `Expected $${expectedCacheRead}, got $${cost}`)
+  })
+
+  // ── dot-vs-hyphen model IDs (GH #231) ──────────────────────────────────────
+
+  test('lookupRates resolves a dotted Claude model ID onto its hyphenated rate key', () => {
+    // Copilot VS Code imports these with dotted minor versions; RATES keys them with hyphens.
+    for (const dotted of ['claude-opus-4.8', 'claude-opus-4.6', 'claude-sonnet-4.6']) {
+      const rates = lookupRates(dotted)
+      assert.ok(rates !== null, `${dotted} should resolve`)
+      assert.strictEqual(rates, lookupRates(dotted.replace(/\./g, '-')), `${dotted} should match its hyphenated key`)
+    }
+  })
+
+  test('calcTokenCostUsd returns a non-zero cost for a dotted Claude model ID with real tokens', () => {
+    // The exact #231 symptom: non-zero output tokens on a known model, but cost_usd = 0.
+    const cost = calcTokenCostUsd(0, 0, 0, 1_000_000, 'claude-opus-4.8')
+    assert.ok(cost > 0, `Expected non-zero cost, got $${cost}`)
+    assert.strictEqual(cost, calcTokenCostUsd(0, 0, 0, 1_000_000, 'claude-opus-4-8'))
+  })
+
+  test('lookupRates resolves a hyphenated GPT model ID onto its dotted rate key', () => {
+    // The reverse direction: RATES keys GPT models with dots, so a hyphenated telemetry ID must
+    // still resolve (and a naive input-only `.`→`-` replace would have broken this).
+    assert.strictEqual(lookupRates('gpt-5-4'), lookupRates('gpt-5.4'))
+    assert.ok(lookupRates('gpt-5-4') !== null)
+  })
+
+  test('lookupRates resolves a dotted ID that is also date-suffixed', () => {
+    assert.strictEqual(lookupRates('claude-opus-4.8-20260101'), lookupRates('claude-opus-4-8'))
+    assert.strictEqual(lookupRates('claude-opus-4.8-2026-01-01'), lookupRates('claude-opus-4-8'))
+  })
+
+  test('lookupRates resolves a dotted fast-mode ID (logReader base + "-fast" pattern)', () => {
+    const rates = lookupRates('claude-opus-4.8-fast')
+    assert.ok(rates !== null)
+    assert.strictEqual(rates, lookupRates('claude-opus-4-8-fast'))
+  })
+
+  test('lookupRates resolves the retired "gpt-5 mini" space-variant onto gpt-5-mini', () => {
+    assert.strictEqual(lookupRates('gpt-5 mini'), lookupRates('gpt-5-mini'))
+    assert.ok(lookupRates('gpt-5 mini') !== null)
+  })
+
+  test('normalization does not resurrect prefix-matching: unknown newer/aliased models stay null', () => {
+    assert.strictEqual(lookupRates('claude-opus-4-9'), null)
+    assert.strictEqual(lookupRates('claude-opus-4.9'), null)
+    assert.strictEqual(lookupRates('gpt-4.1-turbo'), null)
+  })
+
+  test('normalizeCostKey collapses dots, spaces, and underscores to hyphens after date-stripping', () => {
+    assert.strictEqual(normalizeCostKey('Claude-Opus-4.8'), 'claude-opus-4-8')
+    assert.strictEqual(normalizeCostKey('gpt-5.4'), 'gpt-5-4')
+    assert.strictEqual(normalizeCostKey('gpt-5 mini'), 'gpt-5-mini')
+    assert.strictEqual(normalizeCostKey('gpt_5_mini'), 'gpt-5-mini')
+    assert.strictEqual(normalizeCostKey('claude-opus-4.8-20260101'), 'claude-opus-4-8')
+  })
+
+  test('the RATES cost-key index builds without a collision (guard in pricing.ts did not throw on import)', () => {
+    // If two RATES keys collapsed to one cost key with different rates, importing ../pricing above
+    // would already have thrown. This asserts the observable consequence: every known model still
+    // resolves to a rate, and a couple of near-miss pairs resolve independently.
+    assert.ok(lookupRates('gpt-5.4') !== null && lookupRates('gpt-5.4-mini') !== null)
+    assert.notStrictEqual(lookupRates('gpt-5.4'), lookupRates('gpt-5.4-mini'))
+    assert.ok(lookupRates('mai-code-1-flash') !== null && lookupRates('mai-code-1.1-flash') !== null)
+    assert.notStrictEqual(lookupRates('mai-code-1-flash'), lookupRates('mai-code-1.1-flash'))
   })
 })
