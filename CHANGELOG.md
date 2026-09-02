@@ -2,6 +2,18 @@
 
 All notable changes to AgentLens are documented here.
 
+## [0.15.3] — 2026-09-01
+
+### Fixed
+
+- **`agentlens service install` on an already-installed service printed a raw error the first time and only succeeded on a re-run** — on macOS `launchctl bootout` returns before the old service has finished unloading, so the immediate re-`bootstrap` raced it, failed with `Bootstrap failed: 5: Input/output error`, and surfaced as an uncaught stack trace. `install` now waits for the old service to fully unload before re-registering (with a bounded retry for the residual race); on Windows it stops any running instance and waits for it to release its ports before recreating the task (#237)
+
+### Changed
+
+- **`agentlens service install` output is more informative** — it now prints the AgentLens version, says when it's replacing an existing service, keeps the existing dashboard access token across a reinstall instead of rotating it (so bookmarked `?token=…` URLs keep working), waits for a health check before reporting success and printing the dashboard URL, and on failure prints a one-line reason and rolls back the partial install rather than dumping a stack trace. `service status` now distinguishes "installed but not reachable" from "nothing installed" (#237)
+
+---
+
 ## [0.15.2] — 2026-09-01
 
 ### Fixed
