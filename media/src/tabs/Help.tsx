@@ -380,7 +380,7 @@ trace_exporter = { otlp-http = { endpoint = "http://localhost:4318", protocol = 
         window, a closed laptop lid, or a reboot means a gap in your session history. Installing it as a
         background service keeps it running automatically instead:
       </p>
-      <pre style="font-size:12px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre">{`npx agentlens-dashboard service install`}</pre>
+      <pre style="font-size:12px;background:var(--panel-bg);border:1px solid var(--border);border-radius:3px;padding:6px 10px;margin:0 0 8px;overflow-x:auto;white-space:pre">{`npx agentlens-dashboard@latest service install`}</pre>
       <p style="font-size:12px;color:var(--muted);margin:0 0 8px">
         Works as a single command whether or not <code style={codeStyle}>agentlens-dashboard</code> is
         already installed — if it's running via <code style={codeStyle}>npx</code>, which has no stable

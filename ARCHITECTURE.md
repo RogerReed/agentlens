@@ -945,7 +945,7 @@ the actual `fs`/`child_process` calls for their platform.
 flowchart TD
     CLI["agentlens service install<br/>(standalone/cli.ts)"] --> NPX{Running via npx?}
 
-    NPX -- yes --> BOOT["npm install -g agentlens-dashboard<br/>(visible, not silent)"]
+    NPX -- yes --> BOOT["npm install -g agentlens-dashboard@latest<br/>(visible, not silent)"]
     BOOT --> REEXEC[Re-invoke as the now-globally-linked<br/>`agentlens service install`]
     REEXEC --> DISPATCH
 
@@ -964,8 +964,11 @@ flowchart TD
     NPMLATEST --> RESTART["platformService.restart&#40;&#41;<br/>(re-execs whatever now sits at the same install path)"]
 ```
 
-A global install pins a version — unlike `npx`, which always resolves latest, a service definition
-points at a fixed on-disk path that only changes when something overwrites it. `update` is that
+A global install pins a version — and so does `npx` in practice: a bare `npx agentlens-dashboard`
+re-runs whatever npx cached without revalidating against the registry, so only `npx …@latest`
+reliably resolves the newest release (the user-facing docs say `@latest` everywhere for this
+reason). Either way a service definition points at a fixed on-disk path that only changes when
+something overwrites it. `update` is that
 "something": it shells out to `npm install -g agentlens-dashboard@latest` (overwriting the files at
 the path already baked into the service definition) and then restarts, so no service definition
 rewrite is needed. `standalone/service/index.ts`'s `readGlobalVersion()` reads the installed
