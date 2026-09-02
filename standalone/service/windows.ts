@@ -19,18 +19,43 @@ export function isInstalled(): boolean {
   }
 }
 
+/** `schtasks /end` returns before the task's process has fully exited and released its sockets,
+ *  so a reinstall that immediately `/run`s a fresh instance can hit the old one still holding the
+ *  UI/OTLP ports. Poll `schtasks /query` until the task reports it's no longer Running (bounded
+ *  ~5s). This is the Windows analogue of macОS's bootout-and-wait. */
+function endRunningInstanceAndWait(): void {
+  try { execFileSync('schtasks', ['/query', '/tn', WINDOWS_TASK_NAME], { stdio: 'ignore' }) }
+  catch { return }  // task doesn't exist yet — nothing to stop
+  try { execFileSync('schtasks', ['/end', '/tn', WINDOWS_TASK_NAME], { stdio: 'ignore' }) } catch { /* wasn't running */ }
+  for (let i = 0; i < 50; i++) {
+    let out = ''
+    try { out = execFileSync('schtasks', ['/query', '/tn', WINDOWS_TASK_NAME, '/fo', 'list'], { encoding: 'utf-8' }) }
+    catch { return }
+    if (!/status:\s*running/i.test(out)) { return }
+    sleepSync(100)
+  }
+}
+
+function sleepSync(ms: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+}
+
 export function install(program: ServiceProgram): void {
   const scriptPath = wrapperScriptPath(program)
   fs.mkdirSync(path.dirname(scriptPath), { recursive: true })
   fs.mkdirSync(path.dirname(serviceLogPath(program.config)), { recursive: true })
   fs.writeFileSync(scriptPath, generateWindowsWrapperScript(program), 'utf-8')
+  // Stop a running instance from a previous install first, so it releases the ports before the
+  // fresh instance (started by /run below) tries to bind them.
+  endRunningInstanceAndWait()
   // /f overwrites a pre-existing task of the same name (re-running install to change ports).
+  // Capture stderr (rather than inherit) so index.ts's describeServiceManagerFailure can quote it.
   execFileSync('schtasks', [
     '/create', '/tn', WINDOWS_TASK_NAME, '/tr', `"${scriptPath}"`,
     '/sc', 'onlogon', '/rl', 'limited', '/f',
-  ], { stdio: 'inherit' })
+  ], { stdio: ['ignore', 'ignore', 'pipe'] })
   // The logon trigger won't fire until next login — start it now too, for immediate feedback.
-  try { execFileSync('schtasks', ['/run', '/tn', WINDOWS_TASK_NAME], { stdio: 'inherit' }) } catch { /* best effort */ }
+  try { execFileSync('schtasks', ['/run', '/tn', WINDOWS_TASK_NAME], { stdio: 'ignore' }) } catch { /* best effort */ }
 }
 
 export function uninstall(): void {
@@ -47,7 +72,7 @@ export function stop(): void {
 }
 
 export function restart(): void {
-  try { stop() } catch { /* wasn't running */ }
+  endRunningInstanceAndWait()  // wait for the old instance to release its ports before /run
   start()
 }
 

@@ -63,11 +63,9 @@ function bootstrapWithRetry(): void {
         sleepSync(600)
         continue
       }
-      const wrapped = new Error(stderr.trim() || (e as Error).message)
-      ;(wrapped as { code?: string; status?: number }).code = (e as { code?: string }).code
-      ;(wrapped as { code?: string; status?: number }).status = (e as { status?: number }).status
-      ;(wrapped as { stderr?: string }).stderr = stderr
-      throw wrapped
+      // execFileSync's error already carries .stderr (Buffer), .status and .code —
+      // describeServiceManagerFailure() in index.ts reads all three.
+      throw e
     }
   }
 }
