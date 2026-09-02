@@ -21,16 +21,23 @@ Two things it does that a usage dashboard doesn't:
 The fastest way to get started — run directly on your machine with no install required. Because it runs natively it has full access to your local session log files.
 
 ```bash
-# One-off — always uses the latest published version
-npx agentlens-dashboard
-bunx agentlens-dashboard
+# One-off — the @latest tag forces a fresh fetch (see note below)
+npx agentlens-dashboard@latest
+bunx agentlens-dashboard@latest
 
 # Or install globally and run by command name
-npm install -g agentlens-dashboard
+npm install -g agentlens-dashboard@latest
 agentlens
 ```
 
 Open <http://localhost:3000> after the server starts. The OTLP receiver listens on port `4318`. Configure agents to point at `http://localhost:4318` (see [Manual Configuration](#manual-configuration)).
+
+> **Always include `@latest`.** A bare `npx agentlens-dashboard` (or `bunx`) re-runs whatever
+> version npx cached the first time you ran it — it does **not** check npm for a newer release, so
+> you can silently stay on an old version for weeks. `@latest` forces npx to resolve against the
+> registry. If a bare run already cached an old copy, clear it with `rm -rf ~/.npm/_npx` (npx) or
+> `npm cache clean --force`. A global install (`npm install -g`) has the same trap — re-run it with
+> `@latest`, or `npm update -g agentlens-dashboard`, to move forward.
 
 > **Log file ingestion** reads local session files from `~/.claude/`, `~/.codex/`, `~/.copilot/`, and OpenCode's SQLite database at `~/.local/share/opencode/` directly. See [Local Mode Options](#local-mode-options) for environment variables.
 >
@@ -298,7 +305,7 @@ Environment variables:
 The local server uses the same port as the VS Code extension — only one can run at a time. To run both simultaneously, use different ports:
 
 ```bash
-OTLP_PORT=4319 UI_PORT=3001 bunx agentlens-dashboard
+OTLP_PORT=4319 UI_PORT=3001 bunx agentlens-dashboard@latest
 ```
 
 ### Background Service (macOS / Windows / Linux)

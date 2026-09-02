@@ -169,9 +169,10 @@ function ensureLatestGlobalInstall(): GlobalInstallOutcome | null {
 }
 
 /** npx runs from an ephemeral cache with no stable path a service definition can point
- *  at, so a first-time `npx agentlens-dashboard service install` bootstraps a real global
+ *  at, so a first-time `npx agentlens-dashboard@latest service install` bootstraps a real global
  *  install for the user (visibly, not silently — this touches global npm state) and then
- *  re-invokes the newly-installed copy directly to continue. */
+ *  re-invokes the newly-installed copy directly to continue. ensureLatestGlobalInstall() below
+ *  always installs `@latest`, so this is safe even when the npx cache itself is stale. */
 function bootstrapGlobalInstall(remainingArgs: string[]): number {
   if (shouldBlockRepeatedBootstrap(process.env)) {
     console.error(
