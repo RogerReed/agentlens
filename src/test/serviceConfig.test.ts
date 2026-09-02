@@ -9,7 +9,7 @@ import {
   generateLaunchdPlist, generateSystemdUnit, generateWindowsWrapperScript,
   launchdLabel, SYSTEMD_UNIT_NAME, WINDOWS_TASK_NAME,
   generateAuthToken, ensureAuthToken,
-  describeNpmFailure, couldNotDownloadMessage,
+  describeNpmFailure, couldNotDownloadMessage, describeServiceManagerFailure,
   type ServiceProgram,
 } from '../serviceConfig'
 
@@ -272,6 +272,42 @@ suite('serviceConfig', () => {
     test('handles a thrown non-object', () => {
       assert.strictEqual(describeNpmFailure(undefined), 'unknown error')
       assert.strictEqual(describeNpmFailure('boom'), 'unknown error')
+    })
+  })
+
+  suite('describeServiceManagerFailure', () => {
+    test('names a missing service-manager binary explicitly', () => {
+      assert.strictEqual(
+        describeServiceManagerFailure({ code: 'ENOENT' }, 'launchctl'),
+        'launchctl command was not found on your PATH',
+      )
+    })
+
+    test('prefers the first non-empty line of captured stderr over an exit code', () => {
+      assert.strictEqual(
+        describeServiceManagerFailure({ status: 5, stderr: '\nBootstrap failed: 5: Input/output error\n' }, 'launchctl'),
+        'Bootstrap failed: 5: Input/output error',
+      )
+    })
+
+    test('accepts stderr as a Buffer', () => {
+      assert.strictEqual(
+        describeServiceManagerFailure({ stderr: Buffer.from('Load failed: 37: Operation already in progress') }, 'launchctl'),
+        'Load failed: 37: Operation already in progress',
+      )
+    })
+
+    test('reports a non-zero exit code when there is no stderr', () => {
+      assert.strictEqual(
+        describeServiceManagerFailure({ status: 1 }, 'systemctl'),
+        'systemctl exited with code 1',
+      )
+    })
+
+    test('falls back to a non-ENOENT error code, then the message, then a default', () => {
+      assert.strictEqual(describeServiceManagerFailure({ code: 'EPERM' }, 'schtasks'), 'schtasks could not be run (EPERM)')
+      assert.strictEqual(describeServiceManagerFailure({ message: 'access denied\n at x' }, 'schtasks'), 'access denied')
+      assert.strictEqual(describeServiceManagerFailure(undefined), 'unknown error')
     })
   })
 

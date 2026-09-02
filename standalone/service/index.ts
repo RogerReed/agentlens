@@ -4,10 +4,11 @@ import * as path from 'path'
 import { execFileSync, spawn } from 'child_process'
 import {
   parseServiceInstallFlags, isRunningFromNpx, writeServiceConfig, readServiceConfig,
-  shouldBlockRepeatedBootstrap, childEnvForReexec, serviceConfigPath,
-  describeNpmFailure, couldNotDownloadMessage,
+  shouldBlockRepeatedBootstrap, childEnvForReexec,
+  describeNpmFailure, couldNotDownloadMessage, describeServiceManagerFailure,
   type ServiceConfig, type ServiceProgram,
 } from '../../src/serviceConfig'
+import { waitForServiceHealth } from './health'
 import * as macos from './macos'
 import * as linux from './linux'
 import * as windows from './windows'
@@ -20,6 +21,39 @@ interface PlatformService {
   restart(): void
   status(uiPort: number, bindHost: string): Promise<boolean>
   logsPath(program: ServiceProgram): string
+  isInstalled(): boolean
+}
+
+/** Name of the OS service manager `install` shells out to — used only for error messages. */
+function serviceManagerName(): string {
+  switch (os.platform()) {
+    case 'darwin': return 'launchctl'
+    case 'linux':  return 'systemctl'
+    case 'win32':  return 'schtasks'
+    default:       return 'the service manager'
+  }
+}
+
+/** Version of the running agentlens-dashboard, read from its own package.json. Bundled output
+ *  lives at <pkg>/standalone/cli.js, so `../package.json` from here; the extra `../../` fallback
+ *  covers running the un-bundled source from standalone/service/. */
+function readRunningVersion(): string | undefined {
+  for (const rel of [['..', 'package.json'], ['..', '..', 'package.json']]) {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(__dirname, ...rel), 'utf-8')).version as string
+    } catch { /* try the next candidate */ }
+  }
+  return undefined
+}
+
+/** `platformService.isInstalled()` can itself shell out (schtasks on Windows); never let a probe
+ *  failure derail the actual install. */
+function safeIsInstalled(platformService: PlatformService): boolean {
+  try { return platformService.isInstalled() } catch { return false }
+}
+
+function dashboardUrl(config: ServiceConfig): string {
+  return `http://${config.bindHost}:${config.uiPort}` + (config.authToken ? `/?token=${config.authToken}` : '')
 }
 
 function getPlatformService(): PlatformService {
@@ -253,10 +287,44 @@ export async function runServiceCli(args: string[]): Promise<number> {
 
   switch (subcommand) {
     case 'install': {
+      const version = readRunningVersion()
+      console.log(`[AgentLens] service install${version ? ` — v${version}` : ''}`)
       const config = parseServiceInstallFlags(rest)
+      // Carry the existing access token across a reinstall so bookmarked dashboard URLs keep working
+      // — parseServiceInstallFlags starts from a blank token and the server would otherwise mint a
+      // fresh one on next start.
+      const existingToken = readServiceConfig().authToken
+      if (existingToken) { config.authToken = existingToken }
+      const program = resolveInstallProgram(config)
+
+      if (safeIsInstalled(platformService)) {
+        console.log('[AgentLens] An existing background service was found — replacing it (ports/data-dir updated, access token kept).')
+      }
       writeServiceConfig(config)
-      platformService.install(resolveInstallProgram(config))
-      console.log(`[AgentLens] Background service installed and started. The dashboard now requires an access token — run \`agentlens service status\` once it's up for the URL to open (its first startup generates and persists the token to ${serviceConfigPath()}).`)
+
+      try {
+        platformService.install(program)
+      } catch (e) {
+        // install() writes the service-definition file before registering it, so a failure here
+        // can leave that file orphaned — roll it back so `service status` doesn't report a
+        // service that was never actually started.
+        try { platformService.uninstall() } catch { /* best effort */ }
+        console.error(`[AgentLens] Couldn't register the background service with ${serviceManagerName()}: ${describeServiceManagerFailure(e, serviceManagerName())}`)
+        console.error('[AgentLens] Rolled back — nothing is left half-installed. Fix the cause above, then re-run `agentlens service install`.')
+        return 1
+      }
+
+      // Don't claim success blindly — wait for the server to actually answer a health check.
+      const healthy = await waitForServiceHealth(config.uiPort, config.bindHost, 15_000)
+      const fresh = readServiceConfig()  // re-read: the server persists the auth token on first start
+      if (healthy) {
+        console.log(`[AgentLens] Background service is running${version ? ` (v${version})` : ''}. Open the dashboard at:`)
+        console.log(`  ${dashboardUrl(fresh)}`)
+        console.log('[AgentLens] It starts at login and restarts if it crashes. `agentlens service status` re-prints this URL; `agentlens service uninstall` removes it (your data in ~/.agentlens stays).')
+      } else {
+        console.log(`[AgentLens] Service registered, but it hasn't answered a health check on port ${config.uiPort} yet.`)
+        console.log('[AgentLens] Give it a few seconds, then run `agentlens service status`. If it stays down, `agentlens service logs` has the reason.')
+      }
       return 0
     }
     case 'uninstall':
@@ -273,6 +341,7 @@ export async function runServiceCli(args: string[]): Promise<number> {
       platformService.restart()
       return 0
     case 'update': {
+      console.log(`[AgentLens] service update${readRunningVersion() ? ` — currently v${readRunningVersion()}` : ''}`)
       const outcome = ensureLatestGlobalInstall()
       if (!outcome || !outcome.downloaded) {
         // ensureLatestGlobalInstall already printed why; the service keeps running its current
@@ -290,12 +359,15 @@ export async function runServiceCli(args: string[]): Promise<number> {
       return 0
     }
     case 'status': {
+      const version = readRunningVersion()
       const config = readServiceConfig()
       const running = await platformService.status(config.uiPort, config.bindHost)
-      const dashboardUrl = `http://${config.bindHost}:${config.uiPort}` + (config.authToken ? `/?token=${config.authToken}` : '')
+      const installed = safeIsInstalled(platformService)
       console.log(running
-        ? `[AgentLens] Running — dashboard reachable at ${dashboardUrl}`
-        : '[AgentLens] Not reachable. Run `agentlens service logs` to check for errors, or `agentlens service start`.')
+        ? `[AgentLens] Running${version ? ` (v${version})` : ''} — dashboard reachable at ${dashboardUrl(config)}`
+        : installed
+          ? '[AgentLens] Installed but not reachable. Run `agentlens service logs` to check for errors, or `agentlens service start`.'
+          : '[AgentLens] No background service is installed. Run `agentlens service install` to set one up.')
       return running ? 0 : 1
     }
     case 'logs': {

@@ -19,13 +19,67 @@ function serviceTarget(): string {
   return `${guiTarget()}/${launchdLabel()}`
 }
 
+/** launchd domains have no synchronous "is it gone yet" — `launchctl print <target>` exits 0
+ *  while the service is still registered and non-zero once it's fully unloaded. */
+function serviceLoaded(): boolean {
+  try {
+    execFileSync('launchctl', ['print', serviceTarget()], { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
+
+function sleepSync(ms: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+}
+
+/** `launchctl bootout` returns before the domain finishes tearing the service down, so a
+ *  `bootstrap` fired immediately after races the teardown and fails with
+ *  `Bootstrap failed: 5: Input/output error`. Boot it out, then wait until `launchctl print`
+ *  confirms it's actually gone (bounded ~5s) before the caller re-bootstraps. */
+function bootOutAndWait(): void {
+  if (!serviceLoaded()) { return }
+  try { execFileSync('launchctl', ['bootout', serviceTarget()], { stdio: 'ignore' }) } catch { /* already going */ }
+  for (let i = 0; i < 50 && serviceLoaded(); i++) { sleepSync(100) }
+}
+
+/** Bootstraps the plist, tolerating the two transient failures a reinstall can still hit even
+ *  after `bootOutAndWait`: a lingering `Input/output error` (retry after a short pause) and
+ *  `service already loaded` (something re-registered it in the gap — `kickstart -k` to make sure
+ *  it's running the plist we just wrote). Any other failure is thrown for index.ts to format. */
+function bootstrapWithRetry(): void {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      execFileSync('launchctl', ['bootstrap', guiTarget(), plistPath()], { stdio: ['ignore', 'ignore', 'pipe'] })
+      return
+    } catch (e) {
+      const stderr = String((e as { stderr?: unknown }).stderr ?? '')
+      if (/already (loaded|bootstrapped)/i.test(stderr)) {
+        try { execFileSync('launchctl', ['kickstart', '-k', serviceTarget()], { stdio: 'ignore' }) } catch { /* best effort */ }
+        return
+      }
+      if (attempt < 3 && /input\/output error|operation now in progress|deadline/i.test(stderr)) {
+        sleepSync(600)
+        continue
+      }
+      // execFileSync's error already carries .stderr (Buffer), .status and .code —
+      // describeServiceManagerFailure() in index.ts reads all three.
+      throw e
+    }
+  }
+}
+
+export function isInstalled(): boolean {
+  return fs.existsSync(plistPath())
+}
+
 export function install(program: ServiceProgram): void {
   fs.mkdirSync(path.dirname(plistPath()), { recursive: true })
   fs.mkdirSync(path.dirname(serviceLogPath(program.config)), { recursive: true })
   fs.writeFileSync(plistPath(), generateLaunchdPlist(program), 'utf-8')
-  // Unload first in case a stale copy is already loaded (e.g. re-running install to change ports).
-  try { execFileSync('launchctl', ['bootout', serviceTarget()], { stdio: 'ignore' }) } catch { /* not loaded — fine */ }
-  execFileSync('launchctl', ['bootstrap', guiTarget(), plistPath()], { stdio: 'inherit' })
+  bootOutAndWait()   // handles the "re-running install" case without racing the teardown
+  bootstrapWithRetry()
 }
 
 export function uninstall(): void {

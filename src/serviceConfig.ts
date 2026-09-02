@@ -168,6 +168,21 @@ export function describeNpmFailure(err: unknown): string {
   return e.message ? e.message.split('\n')[0] : 'unknown error'
 }
 
+/** Condenses whatever `child_process` threw when the OS service manager (launchctl / systemctl /
+ *  schtasks) failed during `service install` into one short clause. `tool` names the command so
+ *  the message reads naturally on every platform. Captured stderr (when the caller passed it
+ *  through) is preferred over a bare exit code — it's what actually explains the failure. */
+export function describeServiceManagerFailure(err: unknown, tool = 'the service manager'): string {
+  const e = (err ?? {}) as { code?: string; status?: number; message?: string; stderr?: unknown }
+  const stderr = typeof e.stderr === 'string' ? e.stderr : Buffer.isBuffer(e.stderr) ? e.stderr.toString() : ''
+  const firstStderrLine = stderr.split('\n').map(l => l.trim()).find(Boolean)
+  if (e.code === 'ENOENT') { return `${tool} command was not found on your PATH` }
+  if (firstStderrLine) { return firstStderrLine }
+  if (typeof e.status === 'number') { return `${tool} exited with code ${e.status}` }
+  if (e.code) { return `${tool} could not be run (${e.code})` }
+  return e.message ? e.message.split('\n')[0] : 'unknown error'
+}
+
 /** Warning shown when the latest agentlens-dashboard can't be fetched. `fallbackVersion` is the
  *  version already on disk that the service will run instead (undefined if there is none). Not
  *  fatal on its own — callers that truly have nothing to fall back on report that separately. */
