@@ -310,7 +310,7 @@ OTLP_PORT=4319 UI_PORT=3001 bunx agentlens-dashboard
 
 ```bash
 # One command — works whether or not agentlens-dashboard is already installed globally
-npx agentlens-dashboard service install
+npx agentlens-dashboard@latest service install
 
 agentlens service status      # check whether it's running and reachable
 agentlens service logs        # print the service's log file
@@ -321,9 +321,14 @@ agentlens service update      # upgrade to the latest version and restart on it
 agentlens service uninstall   # remove it (your data in ~/.agentlens is untouched)
 ```
 
-> **Installing the background service does not make it auto-update.** It keeps running whatever
-> version was installed until you run `agentlens service update` yourself — that pulls the latest
-> `agentlens-dashboard` from npm and restarts the service on it.
+`service install` fetches the latest `agentlens-dashboard` from npm before it writes the service
+definition, so re-running it is also how you upgrade. If that download can't happen (offline, npm
+registry unreachable), it prints a clear notice that the new version couldn't be downloaded and
+installs the service on whichever version is already present rather than failing.
+
+> **Once installed, the running service does not otherwise auto-update.** It keeps running whatever
+> version is installed until you run `agentlens service update` (or re-run `service install`) —
+> either one pulls the latest `agentlens-dashboard` from npm and restarts the service on it.
 
 `service install` uses whichever OS-native mechanism fits your platform, all installed per-user
 with no admin/root privileges required:
@@ -343,7 +348,8 @@ agentlens service install --ui-port 3001 --otlp-port 4319 --data-dir ~/agentlens
 
 Since `npx` always runs from a temporary cache with no stable path to launch from, running
 `service install` under `npx` installs `agentlens-dashboard` globally first (equivalent to
-`npm install -g agentlens-dashboard`) so the service definition has something fixed to point at.
+`npm install -g agentlens-dashboard@latest`) so the service definition has something fixed to
+point at.
 
 ### Docker (OTEL only)
 

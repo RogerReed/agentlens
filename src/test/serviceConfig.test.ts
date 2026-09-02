@@ -9,6 +9,7 @@ import {
   generateLaunchdPlist, generateSystemdUnit, generateWindowsWrapperScript,
   launchdLabel, SYSTEMD_UNIT_NAME, WINDOWS_TASK_NAME,
   generateAuthToken, ensureAuthToken,
+  describeNpmFailure, couldNotDownloadMessage,
   type ServiceProgram,
 } from '../serviceConfig'
 
@@ -240,6 +241,54 @@ suite('serviceConfig', () => {
       assert.strictEqual(launchdLabel(), 'com.agentlens.server')
       assert.strictEqual(SYSTEMD_UNIT_NAME, 'agentlens.service')
       assert.strictEqual(WINDOWS_TASK_NAME, 'AgentLens')
+    })
+  })
+
+  suite('describeNpmFailure', () => {
+    test('names a missing npm binary explicitly', () => {
+      assert.strictEqual(describeNpmFailure({ code: 'ENOENT' }), 'npm was not found on your PATH')
+    })
+
+    test('reports a non-zero npm exit code', () => {
+      assert.strictEqual(
+        describeNpmFailure({ status: 1 }),
+        'npm exited with code 1 — see its output above',
+      )
+      // status 0 is still a "failure" only because execFileSync threw — but report it faithfully
+      assert.ok(describeNpmFailure({ status: 0 }).includes('code 0'))
+    })
+
+    test('falls back to a non-ENOENT error code', () => {
+      assert.strictEqual(describeNpmFailure({ code: 'EACCES' }), 'npm could not be run (EACCES)')
+    })
+
+    test('falls back to the first line of an error message', () => {
+      assert.strictEqual(
+        describeNpmFailure({ message: 'network timeout\n    at ClientRequest' }),
+        'network timeout',
+      )
+    })
+
+    test('handles a thrown non-object', () => {
+      assert.strictEqual(describeNpmFailure(undefined), 'unknown error')
+      assert.strictEqual(describeNpmFailure('boom'), 'unknown error')
+    })
+  })
+
+  suite('couldNotDownloadMessage', () => {
+    test('names the reason and the fallback version when one exists', () => {
+      const msg = couldNotDownloadMessage('npm exited with code 1', '0.14.0')
+      assert.ok(msg.includes('npm exited with code 1'))
+      assert.ok(msg.includes('v0.14.0'))
+      assert.ok(msg.includes('agentlens service update'))
+      assert.ok(msg.startsWith('[AgentLens]'))
+    })
+
+    test('says there is nothing to fall back on when no version is installed', () => {
+      const msg = couldNotDownloadMessage('offline', undefined)
+      assert.ok(msg.includes('offline'))
+      assert.ok(/nothing is installed/i.test(msg))
+      assert.ok(!msg.includes('v'.concat('undefined')))
     })
   })
 })
