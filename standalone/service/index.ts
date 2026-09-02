@@ -305,8 +305,12 @@ export async function runServiceCli(args: string[]): Promise<number> {
       try {
         platformService.install(program)
       } catch (e) {
+        // install() writes the service-definition file before registering it, so a failure here
+        // can leave that file orphaned — roll it back so `service status` doesn't report a
+        // service that was never actually started.
+        try { platformService.uninstall() } catch { /* best effort */ }
         console.error(`[AgentLens] Couldn't register the background service with ${serviceManagerName()}: ${describeServiceManagerFailure(e, serviceManagerName())}`)
-        console.error('[AgentLens] Nothing was left half-installed. To retry: `agentlens service uninstall` then `agentlens service install`. If it keeps failing, `agentlens service logs` shows any server-side error.')
+        console.error('[AgentLens] Rolled back — nothing is left half-installed. Fix the cause above, then re-run `agentlens service install`.')
         return 1
       }
 
