@@ -83,6 +83,25 @@ suite('pricing', () => {
     assert.strictEqual(cost, 0)
   })
 
+  test('calcTokenCostUsd resolves the free Zen models added 2026-09-01', () => {
+    for (const m of ['ling-3.0-flash-fin-free', 'muse-spark-1.2-contributor-free']) {
+      assert.notStrictEqual(lookupRates(m), null, `${m} should be in RATES`)
+      assert.strictEqual(calcTokenCostUsd(500_000, 0, 0, 100_000, m), 0, `${m} should be free`)
+    }
+  })
+
+  test('calcTokenCostUsd prices claude-fable-5-1 with the 0.025x cache-read rate', () => {
+    // Fable 5.1 matches Fable 5 on input/output/cache-write but reads cache at $0.25/MTok (0.025x),
+    // not $1.00/MTok (0.1x). A dotted telemetry ID must normalize to the hyphenated key.
+    const rates = lookupRates('claude-fable-5.1')
+    assert.notStrictEqual(rates, null, 'claude-fable-5.1 should normalize to claude-fable-5-1')
+    assert.strictEqual(rates!.cacheReadPerMTok, 0.25)
+    assert.strictEqual(rates!.inputPerMTok, 10.00)
+    // 1M input + 1M cache-read + 1M output = 10.00 + 0.25 + 50.00
+    const cost = calcTokenCostUsd(1_000_000, 1_000_000, 0, 1_000_000, 'claude-fable-5-1')
+    assert.ok(Math.abs(cost - 60.25) < 0.001, `Expected ~$60.25, got $${cost}`)
+  })
+
   test('calcTokenCostUsd uses flat rate for claude-sonnet-4 under threshold', () => {
     // 100K input + 50K output — all below 200K, so same as flat rate
     const cost = calcTokenCostUsd(100_000, 0, 0, 50_000, 'claude-sonnet-4')

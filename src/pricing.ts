@@ -1,6 +1,6 @@
 // Pricing data for extension-host cost computation (cost_usd stored in sessions table).
 // Rate table is kept in sync with media/src/pricing.ts — update both when rates change.
-// PRICING_LAST_UPDATED: 2026-08-26
+// PRICING_LAST_UPDATED: 2026-09-01
 
 export interface ModelRates {
   inputPerMTok: number
@@ -133,6 +133,12 @@ const RATES: Record<string, ModelRates> = {
   'claude-fable-5':      { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
   // claude-mythos-5: limited-availability preview (anthropic.com/glasswing), same rates as Fable 5.
   'claude-mythos-5':     { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
+  // claude-fable-5-1 / claude-mythos-5-1: added 2026-09-01 — new on Anthropic's pricing page. Same input/output
+  // and cache-write rates as Fable 5, but cache reads are 0.025x base input ($0.25/MTok) instead of the usual
+  // 0.1x ($1.00/MTok) — the one rate that differs between the .0 and .1 releases. Slug follows the file's
+  // hyphenated-minor convention (claude-opus-4-8); normalizeCostKey resolves a dotted telemetry ID to it.
+  'claude-fable-5-1':   { inputPerMTok: 10.00, cacheReadPerMTok: 0.25, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
+  'claude-mythos-5-1':  { inputPerMTok: 10.00, cacheReadPerMTok: 0.25, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, contextWindowTokens: 1_000_000 },
   // ── Google ─────────────────────────────────────────────────────────────────
   'gemini-2.5-pro':  { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, contextWindowTokens: 1_000_000 },
   'gemini-3-flash':  { inputPerMTok: 0.50, cacheReadPerMTok: 0.05,  cacheWritePerMTok: 0, outputPerMTok:  3.00, contextWindowTokens: 1_000_000 },
@@ -164,6 +170,11 @@ const RATES: Record<string, ModelRates> = {
   'ling-3.0-tiny-free':           { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
   'nemotron-3-ultra-free':        { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
   'nemotron-3.5-lightning-free':  { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
+  // Added 2026-09-01 from the Zen docs. muse-spark-1.2-contributor-free's slug was flagged unconfirmed last
+  // refresh and is now confirmed. ling-3.0-flash-fin-free is new this pass; ling-3.0-tiny-free (kept below) is
+  // no longer on the page — likely renamed to it, but left in place since it's $0 either way (see PRICING_SOURCES.md).
+  'ling-3.0-flash-fin-free':      { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
+  'muse-spark-1.2-contributor-free': { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, contextWindowTokens: 0 },
 }
 
 // Exported so callers that build a model ID by appending their own suffix (e.g.

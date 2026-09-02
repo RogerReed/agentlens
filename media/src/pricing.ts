@@ -2,7 +2,7 @@
 // Token rates (post Jun 1, 2026):        https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
 // Request multipliers (pre Jun 1, 2026): https://docs.github.com/en/copilot/concepts/billing/copilot-requests
 // Annual-plan multipliers (post Jun 1):  https://docs.github.com/en/copilot/reference/copilot-billing/model-multipliers-for-annual-plans
-export const PRICING_LAST_UPDATED = '2026-08-26'
+export const PRICING_LAST_UPDATED = '2026-09-01'
 
 // Three billing modes:
 //   'token'          — new token-based AI Credits billing, effective Jun 1, 2026
@@ -128,6 +128,10 @@ export const RATES: Record<string, ModelRates> = {
   'claude-opus-5-fast':    { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 30, multiplierAnnualPostJun1: 30 },
   'claude-fable-5':        { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },  // not yet listed in Copilot billing docs
   'claude-mythos-5':       { inputPerMTok: 10.00, cacheReadPerMTok: 1.00, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },  // limited availability preview; not yet listed in Copilot billing docs
+  // claude-fable-5-1 / claude-mythos-5-1: added 2026-09-01 — new on Anthropic's pricing page. Same as Fable 5
+  // except cache reads are 0.025x base input ($0.25/MTok) instead of 0.1x ($1.00/MTok). Not in Copilot billing docs.
+  'claude-fable-5-1':      { inputPerMTok: 10.00, cacheReadPerMTok: 0.25, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },
+  'claude-mythos-5-1':     { inputPerMTok: 10.00, cacheReadPerMTok: 0.25, cacheWritePerMTok: 12.50, outputPerMTok:  50.00, multiplier: 0,  multiplierAnnualPostJun1: 0 },
   // ── Google ─────────────────────────────────────────────────────────────────────────────────────
   'gemini-2.5-pro':   { inputPerMTok: 1.25, cacheReadPerMTok: 0.125, cacheWritePerMTok: 0, outputPerMTok: 10.00, multiplier: 1,    multiplierAnnualPostJun1: 1 },  // long-context surcharge (>200K tokens) not implemented
   'gemini-3-flash':   { inputPerMTok: 0.50, cacheReadPerMTok: 0.05,  cacheWritePerMTok: 0, outputPerMTok: 3.00,  multiplier: 0.33, multiplierAnnualPostJun1: 0.33 },
@@ -173,6 +177,11 @@ export const RATES: Record<string, ModelRates> = {
   'ling-3.0-tiny-free':          { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
   'nemotron-3-ultra-free':       { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
   'nemotron-3.5-lightning-free': { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  // Added 2026-09-01 from the Zen docs. muse-spark-1.2-contributor-free's slug (flagged unconfirmed last refresh)
+  // is now confirmed. ling-3.0-flash-fin-free is new; ling-3.0-tiny-free (kept) is no longer on the page — likely
+  // renamed to it, left in place since it's $0 either way (see PRICING_SOURCES.md).
+  'ling-3.0-flash-fin-free':     { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
+  'muse-spark-1.2-contributor-free': { inputPerMTok: 0, cacheReadPerMTok: 0, cacheWritePerMTok: 0, outputPerMTok: 0, multiplier: 0, multiplierAnnualPostJun1: 0 },
 }
 
 // ── UI display grouping ──────────────────────────────────────────────────────────
@@ -190,7 +199,7 @@ export interface PricingSection {
 export const PRICING_SECTIONS: PricingSection[] = [
   {
     label: 'OpenAI (GPT / Codex family)',
-    verified: '2026-08-26',
+    verified: '2026-09-01',
     sources: [
       { label: 'Copilot model pricing', url: 'https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing' },
       { label: 'OpenAI API pricing', url: 'https://developers.openai.com/api/docs/pricing' },
@@ -205,7 +214,7 @@ export const PRICING_SECTIONS: PricingSection[] = [
   },
   {
     label: 'Anthropic (Claude)',
-    verified: '2026-08-26',
+    verified: '2026-09-01',
     sources: [
       { label: 'Anthropic API pricing', url: 'https://platform.claude.com/docs/en/about-claude/pricing' },
       { label: 'Copilot model pricing', url: 'https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing' },
@@ -215,12 +224,12 @@ export const PRICING_SECTIONS: PricingSection[] = [
       'claude-sonnet-4', 'claude-sonnet-4-5', 'claude-sonnet-4-6', 'claude-sonnet-5',
       'claude-opus-4-5', 'claude-opus-4-6', 'claude-opus-4-7', 'claude-opus-4-8', 'claude-opus-5',
       'claude-opus-4-6-fast', 'claude-opus-4-7-fast', 'claude-opus-4-8-fast', 'claude-opus-5-fast',
-      'claude-fable-5', 'claude-mythos-5',
+      'claude-fable-5', 'claude-mythos-5', 'claude-fable-5-1', 'claude-mythos-5-1',
     ],
   },
   {
     label: 'Google (Gemini)',
-    verified: '2026-08-26',
+    verified: '2026-09-01',
     sources: [
       { label: 'Copilot model pricing', url: 'https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing' },
     ],
@@ -228,7 +237,7 @@ export const PRICING_SECTIONS: PricingSection[] = [
   },
   {
     label: 'Fine-tuned & other Copilot-marketplace models',
-    verified: '2026-08-26',
+    verified: '2026-09-01',
     sources: [
       { label: 'Copilot model pricing', url: 'https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing' },
     ],
@@ -236,13 +245,14 @@ export const PRICING_SECTIONS: PricingSection[] = [
   },
   {
     label: 'OpenCode Zen (free evaluation models)',
-    verified: '2026-08-26',
+    verified: '2026-09-01',
     sources: [
       { label: 'OpenCode Zen docs', url: 'https://opencode.ai/docs/zen/' },
     ],
     modelKeys: [
       'big-pickle', 'deepseek-v4-flash-free', 'mimo-v2.5-free', 'hy3-free',
-      'laguna-s-2.1-free', 'ling-3.0-tiny-free', 'nemotron-3-ultra-free', 'nemotron-3.5-lightning-free',
+      'laguna-s-2.1-free', 'ling-3.0-tiny-free', 'ling-3.0-flash-fin-free', 'nemotron-3-ultra-free',
+      'nemotron-3.5-lightning-free', 'muse-spark-1.2-contributor-free',
     ],
   },
 ]
