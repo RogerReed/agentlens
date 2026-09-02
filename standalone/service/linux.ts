@@ -15,6 +15,10 @@ function systemctl(...args: string[]): void {
   execFileSync('systemctl', ['--user', ...args], { stdio: 'inherit' })
 }
 
+export function isInstalled(): boolean {
+  return fs.existsSync(unitPath())
+}
+
 export function install(program: ServiceProgram): void {
   fs.mkdirSync(path.dirname(unitPath()), { recursive: true })
   fs.mkdirSync(path.dirname(serviceLogPath(program.config)), { recursive: true })

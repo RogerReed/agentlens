@@ -10,6 +10,15 @@ function wrapperScriptPath(program: ServiceProgram): string {
   return path.join(program.config.dataDir, 'service', 'run.cmd')
 }
 
+export function isInstalled(): boolean {
+  try {
+    execFileSync('schtasks', ['/query', '/tn', WINDOWS_TASK_NAME], { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function install(program: ServiceProgram): void {
   const scriptPath = wrapperScriptPath(program)
   fs.mkdirSync(path.dirname(scriptPath), { recursive: true })

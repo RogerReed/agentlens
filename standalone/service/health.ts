@@ -13,3 +13,15 @@ export async function probeServiceHealth(uiPort: number, bindHost: string): Prom
     return false
   }
 }
+
+/** Polls `probeServiceHealth` until it succeeds or `timeoutMs` elapses. Used right after
+ *  `service install` to confirm the freshly-registered service actually came up, rather than
+ *  printing "installed and started" and hoping. */
+export async function waitForServiceHealth(uiPort: number, bindHost: string, timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    if (await probeServiceHealth(uiPort, bindHost)) { return true }
+    if (Date.now() >= deadline) { return false }
+    await new Promise(resolve => setTimeout(resolve, 500))
+  }
+}
